@@ -1,0 +1,8 @@
+# Buff / debuff icons: only the set YunaUI uses is published
+images/status/*
+!images/status/XIView_HD/
+
+# Things YunaUI writes while you play
+logs/
+enmity_*.txt
+inline_dump.txt
