@@ -34,7 +34,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'soft', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -1743,6 +1743,14 @@ local function draw_target(dt)
         local mdx, mdy = FIGHT.off('mb');                            -- the Magic Burst line: its own place (over the bar's start), movable in Edit Mode
         FIGHT.anc.mb = { x, y - nh * 0.85 - 6 * sc, math.min(w, 420 * sc), nh * 0.85 };
         if cfg.fight_info ~= false then pcall(FIGHT.draw, dl, fsid, x + mdx, y + mdy, w, sc); end
+        local nh0 = nh;                                              -- TARGET > Target name size: the name (and its distance) in its own size
+        local nk = math.max(0.5, math.min(2.5, tonumber(cfg.target_name_scale) or 1));
+        if nk ~= 1 then
+            unsized(pushed);
+            pushed = sized('chat', 20 * sc * nk);
+            nw, nh = imgui.CalcTextSize(name);
+            FIGHT.anc.tn = { x, y, nw + 60 * sc * nk, nh };
+        end
         text(dl, x + tdx, y + tdy, name, { 1, 1, 1, 1 });
         do                                                           -- how far it is, just after the name (in yalms)
             local ok, d2 = pcall(function() return ent:GetDistance(idx); end);
@@ -1757,9 +1765,10 @@ local function draw_target(dt)
                 imgui.SetWindowFontScale(fs);
             end
         end
+        if nk ~= 1 then unsized(pushed); pushed = sized('chat', 20 * sc); end   -- (the HP % keeps the bar's size, on the name's line)
         local pct = string.format('%d%%', math.floor(hpp * 100 + 0.5));
         local pw = imgui.CalcTextSize(pct);
-        text(dl, x + w - pw, y, pct, { 1, 1, 1, 0.95 });
+        text(dl, x + w - pw, y + (nh - nh0), pct, { 1, 1, 1, 0.95 });
         unsized(pushed);
         local by = y + nh + 6;
         if (cfg.target_look or 'dd2') == 'dd2' then                  -- TARGET > Bar style: the glowing bar (its own glow; no overlay, no edge)
@@ -4056,6 +4065,7 @@ end
 -- How the letters are edged (CHAT > Letter edge): strong = dark all round (the old look, best on snow), soft = a
 -- lighter edge so the letters keep their shape, shadow = only a soft drop shadow (the cleanest, for darker places)
 local CHAT_EDGE = {
+    outline = { { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } }, 0.85 },   -- (a thin black line all round)
     strong = { OUTLINE, 0.9 },
     soft   = { { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { 1, 1 } }, 0.75 },
     shadow = { { { 1, 1 }, { 2, 2 } }, 0.55 },
@@ -4303,7 +4313,10 @@ local function draw_chat(n)
             if n == 1 then if right then sr_ = true; else sl_ = true; end
             else if right then sl_ = true; else sr_ = true; end end
         end
-        soft_ground(dl, x, y, w, h, st.hv, sl_, sr_);
+        -- CHAT > Dark ground: a soft see-through shade behind the lines that are showing (gone when they've faded out)
+        local ga = (cfg.chat_ground ~= false) and math.max(0, math.min(1, tonumber(cfg.chat_ground_a) or 0.5)) * (st.vis or 0) or 0;
+        soft_ground(dl, x, y, w, h, math.max(st.hv, ga), sl_, sr_);
+        st.vis_n = 0;
         -- the text, from the bottom up
         local size = tonumber(cfg.chat_size) or 16;
         local pushed = sized('chat', size);
@@ -4334,6 +4347,7 @@ local function draw_chat(n)
                 else
                     local a = math.max(0, math.min(1, (ly - y) / (h * 0.25))) * vis;    -- fades toward the top
                     if a > 0.01 then
+                        st.vis_n = math.max(st.vis_n or 0, vis);
                         -- readable on any ground (snow, sand, bright floors): a full dark outline round every letter
                         local c = chat_col(e.cat);
                         if bright >= 1 then                          -- brighter: toward white; dimmer: toward dark
@@ -4359,6 +4373,7 @@ local function draw_chat(n)
             end
             ::next_line::
         end
+        st.vis = st.vis_n;
         imgui.PopClipRect();
         if typing then                                               -- the typing line: a dark strip, your text, a blinking caret
             local tx0, ty0 = x + pad - 4, y + h - bar - type_h - 2;
@@ -6173,6 +6188,7 @@ local function draw_window()
             row_switch('##yui_t', 'Show', 'target');
             row_switch('##yui_tfi', 'Casts and skillchains', 'fight_info', 'Under the bar: what the monster is casting or readying. From the bar\'s start: a fan of your weapon skills that close the skillchain. Over the name: the Magic Burst window and its elements.');
             row_slider('##yui_s_t', 'Size', 'target_scale', 0.6, 2.0, 0.05, '%.2fx');
+            row_slider('##yui_tnsc', 'Target name size', 'target_name_scale', 0.5, 2.5, 0.05, '%.2fx');
             row_slider('##yui_fansc', 'Skillchain fan size', 'fan_scale', 0.4, 2.0, 0.05, '%.2fx');
             row_slider('##yui_mbsc', 'Magic Burst size', 'mb_scale', 0.5, 2.5, 0.05, '%.2fx');
             row_slider('##yui_ecsc', 'Enemy cast size', 'ecast_scale', 0.4, 2.0, 0.05, '%.2fx');
@@ -6275,8 +6291,10 @@ local function draw_window()
             section('TEXT');
             row_slider('##yui_s_c', 'Size', 'chat_size', 11, 34, 1, '%d px');
             row_slider('##yui_s_cg', 'Line spacing', 'chat_gap', 0, 16, 1, '%d px');
-            row_pick('##yui_cedge', 'Letter edge', 'chat_outline', { { 'strong', 'Strong' }, { 'soft', 'Soft' }, { 'shadow', 'Shadow only' } });
-            hint('Letter edge: Strong reads on snow and bright floors; Soft keeps the letters cleaner; Shadow only is the cleanest.');
+            row_pick('##yui_cedge', 'Letter edge', 'chat_outline', { { 'outline', 'Outline' }, { 'strong', 'Strong' }, { 'soft', 'Soft' }, { 'shadow', 'Shadow only' } });
+            hint('Letter edge: Outline is a thin black line round every letter; Strong reads on snow and bright floors; Soft keeps the letters cleaner; Shadow only is the cleanest.');
+            row_switch('##yui_cgr', 'Dark ground', 'chat_ground', 'On: a soft dark shade behind the lines that are showing, so they read on bright floors. It fades away with them.');
+            if cfg.chat_ground ~= false then row_slider('##yui_s_cgr', 'Ground strength', 'chat_ground_a', 0.1, 1.0, 0.05, '%.2f'); end
             row_slider('##yui_s_cb', 'Brightness', 'chat_bright', 0.5, 1.6, 0.05, '%.2fx');
             hint('Font: ' .. (fonts.chat_name or 'AvantGarde not found - using a fallback'));
             section('COLOURS');
@@ -6472,6 +6490,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
     if not cfg.plate_v1 then cfg.plate_v1 = true; end
     if not cfg.style_v3 then cfg.style_v3 = true; end
     if not cfg.tags_v2 then cfg.tag_look, cfg.tags_v2 = 'role', true; pcall(save); end   -- (once: back to the coloured job tags)
+    if not cfg.chatread_v1 then cfg.chat_outline, cfg.chat_ground, cfg.chat_ground_a, cfg.chatread_v1 = 'outline', true, 0.5, true; pcall(save); end   -- (once: the new readable chat)
     if not cfg.tbuff_v1 then cfg.target_buff_scale, cfg.tbuff_v1 = tonumber(cfg.buff_scale) or 1, true; pcall(save); end   -- (once: the target's buffs start at the party's size)
     if not cfg.style_v4 then cfg.card_style, cfg.style_v4 = 'clean', true; pcall(save); end   -- (once: Clean - no cards)
     if not cfg.clean_v1 then                                         -- (once: the options taken out of the panel take their default)
