@@ -41,9 +41,6 @@ the AvantGarde-style font everywhere, and every piece placed where you like.
 
 ## Credits
 
-- Skillchain data: `skillchains.lua` from the Chains addon, Copyright © 2017 Ivaar (BSD licence, kept in the file).
-- Debuff durations: `debuff_durations.lua` from [XIUI](https://github.com/tirem/XIUI) (GPL-3.0), built from the
-  LandSandBoat server scripts. Enemy cast and buff tracking follow XIUI's approach.
 - Enmity values from LandSandBoat. Cooldown reading follows the Timers addon.
 - Font: TeX Gyre Adventor (GUST Font License). Animated effects: FootageCrate.
 - Job hats and buff icons redrawn for YunaUI.
