@@ -228,6 +228,26 @@ local function tex(name)
     end);
     return texs[name] or nil;
 end
+-- A picture made at exactly the size it's drawn (px x px), shrunk once with a smooth filter when it's loaded:
+-- sharper than letting the screen squeeze a big picture every frame. Each size you use gets its own copy.
+function C.tex_at(name, px)
+    local key = name .. '@' .. px;
+    if texs[key] ~= nil then return texs[key] or nil; end
+    texs[key] = false;
+    pcall(function()
+        local f = io.open(addon.path .. '/images/' .. name, 'rb');
+        if f == nil then return; end
+        local data = f:read('*a');
+        f:close();
+        local ptr = ffi.new('IDirect3DTexture8*[1]');
+        if ffi.C.D3DXCreateTextureFromFileInMemoryEx(d3d.get_device(), data, #data, px, px, 1, 0,
+                ffi.C.D3DFMT_A8R8G8B8, ffi.C.D3DPOOL_MANAGED, 4, ffi.C.D3DX_DEFAULT, 0, nil, nil, ptr) == ffi.C.S_OK then   -- (4: the triangle filter)
+            local t = d3d.gc_safe_release(ffi.cast('IDirect3DTexture8*', ptr[0]));
+            texs[key] = { tex = t, ptr = tonumber(ffi.cast('uint32_t', t)) };
+        end
+    end);
+    return texs[key] or nil;
+end
 local function image(dl, t, x1, y1, x2, y2, col)
     if t == nil then return; end
     pcall(function() dl:AddImage(t.ptr, { x1, y1 }, { x2, y2 }, { 0, 0 }, { 1, 1 }, u32(col or { 1, 1, 1, 1 })); end);
@@ -850,11 +870,17 @@ local function member_buffs(i)
     return deb;
 end
 local icons = {};
-local function buff_icon(id)
+local function buff_icon(id, px)
     -- your redrawn sets (images/status/HD, XIView, Tetsouou: <id>.png); a missing one falls back to the game's icon
     local set = cfg.buff_set or 'HD';
     if set ~= 'game' then
-        local t = tex('status/' .. set .. '/' .. id .. '.png');
+        local name = 'status/' .. set .. '/' .. id .. '.png';
+        px = px and math.floor(px + 0.5) or nil;
+        if px and px >= 8 and px <= 128 then                         -- (made at the size it's drawn: crisp at any Size)
+            local t = C.tex_at(name, px);
+            if t then return t; end
+        end
+        local t = tex(name);
         if t then return t; end
     end
     if icons[id] ~= nil then return icons[id] or nil; end
@@ -934,7 +960,8 @@ local function draw_buffs(dl, x, y, list, size, perrow, rows, dir, timers, fold)
             image(dl, buff_icon(id), cx - size * k / 2, cy - size * k / 2, cx + size * k / 2, cy + size * k / 2, { 1, 1, 1, math.min(1, p * 1.6) });
             goto next_buff;
         end
-        image(dl, buff_icon(id), ix, iy, ix + size, iy + size);
+        ix, iy = math.floor(ix + 0.5), math.floor(iy + 0.5);           -- (on whole pixels: the icon's pixels land on the screen's)
+        image(dl, buff_icon(id, size), ix, iy, ix + size, iy + size);
         local secs = timers and timers[id];
         if secs then
             local str = (secs >= 100) and string.format('%dm', math.floor(secs / 60 + 0.5)) or string.format('%d', math.ceil(secs));
@@ -6570,7 +6597,8 @@ EDIT.G.STEPS = {
         "Who your target is looking at, and the monsters fighting you. Click a monster in the list to target it." }, { { 'subtarget', 'TARGET (Target of target)' }, { 'enemylist', 'TARGET (Enemy list)' } } },
     { "Party", function(G) return { G.win('party_x') }; end, {
         "Each member: the job tag in its role colour (tank, healer, damage, support), the name, HP, MP and TP.",
-        "The job tags are animated: click one to hide or show that member's buffs. A member under 30% HP trembles and beats red." }, { { 'party', 'PARTY' } } },
+        "The job tags are animated: click one to hide or show that member's buffs. A member under 30% HP trembles and beats red.",
+        "The arrow next to the anchor icon, by PARTY, hides or shows the whole list." }, { { 'party', 'PARTY' } } },
     { "Alliance", function(G) return { G.win('alliance_x'), G.win('ally2_x') }; end, {
         "The other two parties of your alliance, smaller, so a full alliance doesn't fill your screen." }, { { 'alliance', 'PARTY (Alliance)' } } },
     { "Your HP, MP and TP", function(G) return { G.eq() }; end, {
