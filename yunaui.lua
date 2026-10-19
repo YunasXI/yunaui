@@ -58,7 +58,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, target_fx = 'blade', target_fx_mobs = true, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -1867,12 +1867,66 @@ end
 ----------------------------------------------------------------------------------------------------
 -- Target bar: the name over a long thin glowing bar, the HP % at the right
 ----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+-- TARGET > Entrance: a short show when you target something (about half a second): a line of light opens from the
+-- middle, the bar opens behind it, then the name fades in. Drawn without moving clip areas (they shake every window on
+-- plain Ashita): the bar's own size changes and the light is drawn on top.
+----------------------------------------------------------------------------------------------------
+FIGHT.fx = { idx = nil, t0 = -10 };
+FIGHT.FXDUR = { blade = 0.6 };
+function FIGHT.fx_cl(t) return math.max(0, math.min(1, t)); end
+function FIGHT.fx_eo(t) t = FIGHT.fx_cl(t); return 1 - (1 - t) ^ 3; end
+function FIGHT.fxstate(idx, ent, fake)
+    local kind = (cfg.target_fx == 'off') and 'off' or 'blade';
+    local F = FIGHT.fx;
+    local now = os.clock();
+    if kind == 'off' then F.idx = idx; return nil; end
+    if idx ~= F.idx then                                             -- a new target: the show starts (monsters only, unless set otherwise)
+        F.idx = idx;
+        local mob = true;
+        if not fake and cfg.target_fx_mobs ~= false then
+            local ok, fl = pcall(function() return ent:GetSpawnFlags(idx); end);
+            mob = ok and type(fl) == 'number' and bit.band(fl, 0x10) ~= 0;
+        end
+        if mob then F.t0 = now; end
+    end
+    local e = (now - F.t0) / (FIGHT.FXDUR[kind] or 0.6);
+    if e < 0 or e >= 1 then return nil; end
+    local cl, eo = FIGHT.fx_cl, FIGHT.fx_eo;
+    local st = { kind = kind, e = e, fa = 1, nla = 1, bwk = 1, bal = 1, hk = 1, chars = nil, yoff = 0 };
+    st.bwk = eo((e - 0.12) / 0.5);
+    st.nla = cl((e - 0.45) / 0.4);
+    return st;
+end
+function FIGHT.fxdraw(st, x, top, by, w, h, sc)
+    local fg = nil;
+    pcall(function() fg = imgui.GetForegroundDrawList(); end);
+    if fg == nil then return; end
+    local e, cl, eo = st.e, FIGHT.fx_cl, FIGHT.fx_eo;
+    local cx, cy = x + w / 2, by + h / 2;
+    local pk, vi = C.hp, C.mp2;
+    if st.kind == 'blade' then                                       -- the line of light, opening from the middle
+        local L = (w / 2) * eo(e / 0.42);
+        local la = (e < 0.45) and 1 or cl(1 - (e - 0.45) / 0.35);
+        if la > 0.01 then
+            fg:AddLine({ cx - L, cy }, { cx + L, cy }, u32({ vi[1], vi[2], vi[3], 0.22 * la }), 9 * sc);
+            fg:AddLine({ cx - L, cy }, { cx + L, cy }, u32({ pk[1], pk[2], pk[3], 0.45 * la }), 4 * sc);
+            fg:AddLine({ cx - L, cy }, { cx + L, cy }, u32({ 1, 1, 1, 0.95 * la }), math.max(1.5, 1.6 * sc));
+            for _, ex in ipairs({ cx - L, cx + L }) do                -- bright sparks riding the two ends
+                fg:AddCircleFilled({ ex, cy }, 5 * sc, u32({ pk[1], pk[2], pk[3], 0.35 * la }), 14);
+                fg:AddCircleFilled({ ex, cy }, 2.2 * sc, u32({ 1, 1, 1, la }), 10);
+            end
+        end
+        local fl = cl(1 - e / 0.25);                                 -- the flash where it starts
+        if fl > 0.01 then fg:AddCircleFilled({ cx, cy }, (6 + 18 * (1 - fl)) * sc, u32({ 1, 1, 1, 0.55 * fl }), 24); end
+    end
+end
 local function draw_target(dt)
     if not cfg.target then return; end
     local idx = target_index();
     local fake = false;
     if idx == nil or idx == 0 then
-        if not (EDIT.on or FIGHT.show) then return; end
+        if not (EDIT.on or FIGHT.show) then FIGHT.fx.idx = nil; return; end   -- (no target: the next one gets its entrance)
         idx, fake = 0, true;                                         -- (Edit Mode / preview: a pretend target to place)
     end
     local ent = AshitaCore:GetMemoryManager():GetEntity();
@@ -1881,10 +1935,16 @@ local function draw_target(dt)
     local hpp = fake and 0.65 or ((ent:GetHPPercent(idx) or 0) / 100);
     local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.target_scale) or 1);
     local w, h = (tonumber(cfg.target_w) or 520) * sc, math.max(1, math.floor((tonumber(cfg.target_bar_h) or 4) * sc + 0.5));   -- TARGET > Bar thickness
+    local fxs = FIGHT.fxstate(idx, ent, fake);                       -- (TARGET > Entrance, while it plays)
     if plain_window('YunaUI Target##yui_target', 'target_x', 'target_y') then
         local dl = imgui.GetWindowDrawList();
         local x, y = imgui.GetCursorScreenPos();
         x, y = x + 6, y + 4;
+        local fa_ = fxs and fxs.fa or 1;
+        local nla = fxs and fxs.nla or 1;
+        if fxs then y = y + fxs.yoff * sc; end
+        if fa_ < 1 then imgui.PushStyleVar(ImGuiStyleVar_Alpha, math.max(0.01, fa_)); end
+        local top_ = y;
         local pushed = sized('chat', 20 * sc);                       -- (AvantGarde, as the rest of YunaUI)
         local nw, nh = imgui.CalcTextSize(name);
         local fsid = fake and -1 or ent:GetServerId(idx);
@@ -1903,7 +1963,7 @@ local function draw_target(dt)
             nw, nh = imgui.CalcTextSize(name);
             FIGHT.anc.tn = { x, y, nw + 60 * sc * nk, nh };
         end
-        text(dl, x + tdx, y + tdy, name, { 1, 1, 1, 1 });
+        text(dl, x + tdx, y + tdy, name, { 1, 1, 1, nla });
         do                                                           -- how far it is, just after the name (in yalms)
             local ok, d2 = pcall(function() return ent:GetDistance(idx); end);
             local d = (ok and type(d2) == 'number' and d2 >= 0) and math.sqrt(d2) or nil;
@@ -1913,23 +1973,35 @@ local function draw_target(dt)
                 local fs = FS or 1;
                 imgui.SetWindowFontScale(fs * 0.78);
                 local _, dh = imgui.CalcTextSize(ds);
-                text(dl, x + tdx + nw + 10 * sc, y + tdy + (nh - dh) * 0.75, ds, far and { 1, 0.66, 0.80, 1 } or { 0.96, 0.95, 1, 1 });
+                local da = nla;
+                text(dl, x + tdx + nw + 10 * sc, y + tdy + (nh - dh) * 0.75, ds, far and { 1, 0.66, 0.80, da } or { 0.96, 0.95, 1, da });
                 imgui.SetWindowFontScale(fs);
             end
         end
         if nk ~= 1 then unsized(pushed); pushed = sized('chat', 20 * sc); end   -- (the HP % keeps the bar's size, on the name's line)
         local pct = string.format('%d%%', math.floor(hpp * 100 + 0.5));
         local pw = imgui.CalcTextSize(pct);
-        text(dl, x + w - pw, y + (nh - nh0), pct, { 1, 1, 1, 0.95 });
+        text(dl, x + w - pw, y + (nh - nh0), pct, { 1, 1, 1, 0.95 * nla });
         unsized(pushed);
         local by = y + nh + 6;
-        if (cfg.target_look or 'dd2') == 'dd2' then                  -- TARGET > Bar style: the glowing bar (its own glow; no overlay, no edge)
-            C.dd2bar(dl, x, by, w, h, hpp, lagged('target' .. idx, hpp, dt), 0.5);
-        else
-            glow_bar(dl, x, by, w, h, hpp, lagged('target' .. idx, hpp, dt), C.tgt1 or { 1, 0.78, 0.96 }, C.tgt2 or C.hp2, 0.5);   -- (BARS > Target bar)
-            bar_overlay(x, by, w * hpp, h, bar_fx_for('target'), 0.5, C.fxtint(cfg.target_hp_color or 'pink'));   -- (in the bar's colour)
-            pcall(C.outline, dl, x, by, w, h);                       -- (a thin black edge: BARS > Black edge)
+        do                                                           -- the bar (Entrance: opening from the middle, lighting up or filling up)
+            local lg = lagged('target' .. idx, hpp, dt);
+            local bwk, bal, hk = fxs and fxs.bwk or 1, fxs and fxs.bal or 1, fxs and fxs.hk or 1;
+            local bx, bw = x + w * (1 - bwk) / 2, w * bwk;
+            local pa = bal < 1;
+            if pa then imgui.PushStyleVar(ImGuiStyleVar_Alpha, math.max(0.01, bal * fa_)); end
+            if bw >= 2 and bal > 0.01 then
+                if (cfg.target_look or 'dd2') == 'dd2' then          -- TARGET > Bar style: the glowing bar (its own glow; no overlay, no edge)
+                    C.dd2bar(dl, bx, by, bw, h, hpp * hk, lg * hk, 0.5);
+                else
+                    glow_bar(dl, bx, by, bw, h, hpp * hk, lg * hk, C.tgt1 or { 1, 0.78, 0.96 }, C.tgt2 or C.hp2, 0.5);   -- (BARS > Target bar)
+                    bar_overlay(bx, by, bw * hpp * hk, h, bar_fx_for('target'), 0.5, C.fxtint(cfg.target_hp_color or 'pink'));   -- (in the bar's colour)
+                    pcall(C.outline, dl, bx, by, bw, h);             -- (a thin black edge: BARS > Black edge)
+                end
+            end
+            if pa then imgui.PopStyleVar(1); end
         end
+        if fxs then pcall(FIGHT.fxdraw, fxs, x, top_, by, w, h, sc); end
         if cfg.fight_info ~= false and (cfg.fan_place or 'bar') ~= 'free' then   -- the skillchain fan, to the left (its own size; movable in Edit Mode)
             local fdx, fdy = FIGHT.off('fo');
             local fsc = sc * FIGHT.fsc();
@@ -1957,6 +2029,7 @@ local function draw_target(dt)
         end
         imgui.Dummy({ w + 12, nh + h + 18 + bh2 + ch });
         if fullclip then pcall(function() dl:PopClipRect(); end); end
+        if fa_ < 1 then imgui.PopStyleVar(1); end
         end_plain('target_x', 'target_y');
     else
         imgui.End(); imgui.PopStyleVar(2);
@@ -6402,6 +6475,13 @@ local function draw_window()
             row_slider('##yui_ecft', 'Enemy cast text', 'ecast_font', 0.5, 2.5, 0.05, '%.2fx');
             row_slider('##yui_tbs', 'Buffs / debuffs size', 'target_buff_scale', 0.6, 2.5, 0.05, '%.2fx');
             hint('Move the name, the skillchain fan and the enemy cast in Edit Mode (GENERAL > LAYOUT).');
+            section('ENTRANCE');
+            row_pick('##yui_tfx', 'When you target', 'target_fx', { { 'off', 'Off' }, { 'blade', 'Blade of light' } });
+            if (cfg.target_fx or 'blade') ~= 'off' then
+                row_switch('##yui_tfxm', 'Only for monsters', 'target_fx_mobs', 'On: the entrance plays only when you target a monster (not players or NPCs).');
+                if accent_button('PLAY IT##yui_tfxp', { ROW_W, 0 }) then FIGHT.fx.t0 = os.clock(); end
+                hint('Target something (or turn on "Show them to place them") and press PLAY IT to see it again.');
+            end
             do
                 local sh = { show = FIGHT.show };
                 row_switch('##yui_fshow', 'Show them to place them', 'show', 'On: the skillchain fan, the Magic Burst line and the enemy cast stay on screen (on a pretend target if you have none), so you can see where they go. Turn it off when you are done.',
