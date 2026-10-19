@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.0';
+addon.version = '1.0.9';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -902,7 +902,11 @@ local function member(i)
     if p:GetMemberIsActive(i) == 0 then
         if (i < 6 and PREVIEW.party) or (i >= 6 and PREVIEW.alliance) then
             local k = i % 6 + 1;
-            return { name = (i < 6) and DEMO[k] or ('Ally ' .. (i - 5)), zone = 0, job = (i * 7) % 22 + 1, lvl = 75, sub = (i * 5) % 22 + 1,
+            local nm = (i < 6) and DEMO[k] or ('Ally ' .. (i - 5));
+            for j = 0, 17 do                                         -- (never the name of someone really there: two cards would share a place)
+                if p:GetMemberIsActive(j) ~= 0 and (p:GetMemberName(j) or '') == nm then nm = 'Member ' .. (i + 1); break; end
+            end
+            return { name = nm, zone = 0, job = (i * 7) % 22 + 1, lvl = 75, sub = (i * 5) % 22 + 1,
                      sublvl = 37, hp = 900 + i * 61, mp = 300 + i * 47, tp = (i * 450) % 3000, hpp = 1 - (i % 5) * 0.17,
                      mpp = 1 - (i % 4) * 0.2, idx = 0, inzone = true, fake = true, leader = (k == 1), aleader = (i == 0), far = (k == 5) };
         end
@@ -3734,7 +3738,7 @@ end
 -- Comings and goings: a member who joins fades in; one who leaves slides off to the right as it fades (a "ghost" of its
 -- card, kept for a moment); the others glide to their new places. The arrow by PARTY slides every list off to the right
 -- of the screen (and back), the anchor by it ties the alliances to the party (or frees them).
-function ALLY.vkey(key, e) return 's' .. tostring(key) .. ':' .. tostring((e[1] and e[1].name) or e[2]); end
+function ALLY.vkey(key, e) return 's' .. tostring(key) .. ':' .. tostring((e[1] and e[1].name) or e[2]) .. ((e[1] and e[1].fake) and ('#' .. tostring(e[2])) or ''); end
 ALLY.yp, ALLY.seen, ALLY.ghosts, ALLY.hbh, ALLY.hold = {}, {}, {}, {}, {};
 function ALLY.hide_k()                                               -- 0 shown .. 1 slid away (eased)
     local h = ALLY.hk or 0;
@@ -4452,14 +4456,43 @@ function legacy.hide_logs(on)
     pcall(legacy.ui_hide, 'chat1', on); pcall(legacy.ui_hide, 'chat2', on);
     pcall(legacy.ui_hide, 'logwin', on); pcall(legacy.ui_hide, 'fulllog', on);
 end
--- Pad players: the log button (Triangle / Y), pressed with no menu open, is kept from the game (its own log would show
--- through) and opens YunaUI's chat instead: all lines shown, L1 / R1 (LB / RB) change the tab, the D-pad up / down
--- scrolls. Circle / B (or Triangle / Y again) closes it. Those buttons are kept from the game only while it's open.
-legacy.pad = { open = false, mine = false, big = false, menu = '' };
+-- Pad players: every pad has its own layout (on many Xbox pads Y is the main menu and X the log), so YunaUI learns it:
+-- the button that opened the game's own log is remembered (cfg.pad_log, e.g. 'd51' = DirectInput Triangle, 'x14' =
+-- XInput X), and the one that then opened the full log (cfg.pad_big). Until then no button is taken from the game.
+-- Once learned, the log button, pressed with no menu open, opens YunaUI's chat instead: all lines shown, L1 / R1
+-- (LB / RB) change the tab, the D-pad up / down scrolls, the big-log button makes it big, Circle / B (or the log button
+-- again) closes it. Those buttons are kept from the game only while it's open. CHAT > Pad: learn again forgets them.
+legacy.pad = { open = false, mine = false, big = false, menu = '', prev = '' };
+legacy.PADN = { d = { [48] = 'SQUARE', [49] = 'CROSS', [50] = 'CIRCLE', [51] = 'TRIANGLE', [52] = 'L1', [53] = 'R1', [54] = 'L2', [55] = 'R2' },
+    x = { [12] = 'A', [13] = 'B', [14] = 'X', [15] = 'Y', [8] = 'LB', [9] = 'RB', [4] = 'START', [5] = 'BACK' } };
+function legacy.pad_name(id)
+    if type(id) ~= 'string' then return '?'; end
+    local n = tonumber(id:sub(2));
+    return (legacy.PADN[id:sub(1, 1)] or {})[n] or ('BUTTON ' .. tostring(n));
+end
+function legacy.pad_press(api, b)                                    -- (a press: maybe the one that opens the game's log)
+    legacy.pad.last, legacy.pad.last_t, legacy.pad.kind = api .. b, os.clock(), api;
+end
+function legacy.pad_btn(api, what)                                   -- (the learned button, or the usual one for this pad)
+    if what == 'log' then return cfg.pad_log; end
+    if what == 'big' then return cfg.pad_big or ((api == 'd') and 'd49' or 'x12'); end
+    return (api == 'd') and 'd50' or 'x13';                          -- back: Circle / B
+end
 function legacy.pad_tick()
     local ok, _, _, name = pcall(legacy.menu_ptrs);
     legacy.pad.menu = (ok and name) or '';
     local game = legacy.pad.menu:find('logwindo', 1, true) ~= nil or legacy.pad.menu:find('fulllog', 1, true) ~= nil;
+    local was = legacy.pad.prev;
+    legacy.pad.prev = legacy.pad.menu;
+    if legacy.pad.last and os.clock() - (legacy.pad.last_t or 0) < 0.7 and was ~= legacy.pad.menu then   -- (learn the pad's layout)
+        local now_log, now_full = legacy.pad.menu:find('logwindo', 1, true) ~= nil, legacy.pad.menu:find('fulllog', 1, true) ~= nil;
+        local was_log = was:find('logwindo', 1, true) ~= nil;
+        if now_log and not was_log and was:find('fulllog', 1, true) == nil and cfg.pad_log ~= legacy.pad.last then
+            cfg.pad_log = legacy.pad.last; legacy.pad.last = nil; pcall(save);
+        elseif now_full and was_log and cfg.pad_big ~= legacy.pad.last then
+            cfg.pad_big = legacy.pad.last; legacy.pad.last = nil; pcall(save);
+        end
+    end
     if not (cfg.chat and cfg.hide_game_chat) then legacy.pad.mine = false; end
     if legacy.pad.mine and legacy.pad.menu ~= '' and not game then legacy.pad.mine, legacy.pad.big = false, false; end   -- (a menu opened: it closes)
     local open = legacy.pad.mine or (game and cfg.chat and cfg.hide_game_chat) or false;
@@ -4740,7 +4773,9 @@ local function draw_chat(n)
             local tname = legacy.pad.combat and 'Combat log' or (CHANNELS[tonumber(cfg.chat_tab) or 1] or { 'All' })[1];
             text(dl, x + 16, y + 10, 'CHAT LOG  ' .. string.upper(tname), { 0.97, 0.96, 0.99, 1 });
             pcall(function() dl:AddRectFilledMultiColor({ x + 16, y + 34 }, { x + 76, y + 36 }, u32(C.hp), u32(C.mp2), u32(C.mp2), u32(C.hp)); end);
-            local hint = 'TRIANGLE / F / L1 / R1  tab     UP / DOWN / PAGE UP / DOWN  scroll     CIRCLE / ESC  back';
+            local xb = legacy.pad.kind == 'x';
+            local hint = legacy.pad_name(cfg.pad_log or (xb and 'x15' or 'd51')) .. ' / F / ' .. (xb and 'LB / RB' or 'L1 / R1') .. '  tab     UP / DOWN / PAGE UP / DOWN  scroll     '
+                .. legacy.pad_name(legacy.pad_btn(xb and 'x' or 'd', 'back')) .. ' / ESC  back';
             local hw = imgui.CalcTextSize(hint);
             text(dl, x + w - hw - 16, y + 10, hint, { 0.70, 0.68, 0.80, 1 });
             unsized(tp);
@@ -6825,6 +6860,13 @@ local function draw_window()
             row_switch('##yui_c', 'Show', 'chat');
             row_switch('##yui_ctype', 'Show what you type', 'chat_typing', "On: while you type, your text also shows in YunaUI's chat (a line above the tabs). Off: only the game's own typing bar shows it.");
             row_switch('##yui_ch', 'Hide the game chat', 'hide_game_chat', 'On: while YunaUI chat is on, the game\'s own chat windows are not drawn at all.');
+            if cfg.pad_log then
+                imgui.TextColored(C.text, 'Pad: log on ' .. legacy.pad_name(cfg.pad_log) .. ', big on ' .. legacy.pad_name(cfg.pad_big or ((cfg.pad_log:sub(1, 1) == 'd') and 'd49' or 'x12')));
+            else
+                imgui.TextColored(C.text, 'Pad: not learned yet');
+            end
+            if accent_button('PAD: LEARN AGAIN##yui_cpad', { ROW_W, 0 }) then cfg.pad_log, cfg.pad_big = nil, nil; legacy.pad_toggle(false); save(); end
+            hint("YunaUI learns your pad: the button that opens the game's log (Triangle, X...) then opens YunaUI's chat instead. Learn again: forget it, then press your log button once.");
             row_switch('##yui_c2', 'Split combat log', 'chat_split', 'On: battle messages go to a second chat window of their own (move and size it like the first).');
             row_switch('##yui_ct', 'Timestamps', 'chat_time');
             if cfg.chat_time then row_switch('##yui_ctd', 'Timestamps in grey', 'chat_time_dim', 'On: the time is grey, so the message itself stands out.'); end
@@ -7751,7 +7793,9 @@ end);
 
 ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStation and other DirectInput pads
     local b, st = e.button, e.state or 0;
-    if b == 51 and cfg.chat and cfg.hide_game_chat and (legacy.pad.menu == '' or legacy.pad.mine) then   -- Triangle: YunaUI's chat, not the game's log
+    local id = 'd' .. b;
+    if b ~= 32 and st >= 128 then legacy.pad_press('d', b); end
+    if id == cfg.pad_log and cfg.chat and cfg.hide_game_chat and (legacy.pad.menu == '' or legacy.pad.mine) then   -- the learned log button: YunaUI's chat, not the game's log
         if st >= 128 and legacy.pad_once('log') then
             if legacy.pad.big then legacy.pad_tab(1); else legacy.pad_toggle(not legacy.pad.mine); end
         end
@@ -7759,12 +7803,12 @@ ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStati
         return;
     end
     if not legacy.pad.open then return; end
-    if b == 50 and legacy.pad.mine then                              -- Circle: back (big -> lit -> closed)
+    if id == legacy.pad_btn('d', 'back') and legacy.pad.mine then    -- Circle: back (big -> lit -> closed)
         if st >= 128 and legacy.pad_once('close') then legacy.pad_back(); end
         e.blocked = true;
         return;
     end
-    if b == 49 and legacy.pad.mine then                              -- X: the big chat (as the game's full log)
+    if id == legacy.pad_btn('d', 'big') and legacy.pad.mine then     -- the full-log button (usually Cross): the big chat
         if st >= 128 and legacy.pad_once('big') then legacy.pad.big = not legacy.pad.big; legacy.pad.combat = false; cw[1].scroll = 0; end
         e.blocked = true;
         return;
@@ -7779,7 +7823,9 @@ ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStati
 end);
 ashita.events.register('xinput_button', 'yui_pad_x', function(e)    -- Xbox (XInput) pads
     local b, st = e.button, e.state or 0;
-    if b == 15 and cfg.chat and cfg.hide_game_chat and (legacy.pad.menu == '' or legacy.pad.mine) then   -- Y: YunaUI's chat, not the game's log
+    local id = 'x' .. b;
+    if b > 3 and st ~= 0 then legacy.pad_press('x', b); end
+    if id == cfg.pad_log and cfg.chat and cfg.hide_game_chat and (legacy.pad.menu == '' or legacy.pad.mine) then   -- the learned log button (often X): YunaUI's chat
         if st ~= 0 and legacy.pad_once('log') then
             if legacy.pad.big then legacy.pad_tab(1); else legacy.pad_toggle(not legacy.pad.mine); end
         end
@@ -7787,12 +7833,12 @@ ashita.events.register('xinput_button', 'yui_pad_x', function(e)    -- Xbox (XIn
         return;
     end
     if not legacy.pad.open then return; end
-    if b == 13 and legacy.pad.mine then                              -- B: back (big -> lit -> closed)
+    if id == legacy.pad_btn('x', 'back') and legacy.pad.mine then    -- B: back (big -> lit -> closed)
         if st ~= 0 and legacy.pad_once('close') then legacy.pad_back(); end
         e.blocked = true;
         return;
     end
-    if b == 12 and legacy.pad.mine then                              -- A: the big chat
+    if id == legacy.pad_btn('x', 'big') and legacy.pad.mine then     -- the full-log button (usually A): the big chat
         if st ~= 0 and legacy.pad_once('big') then legacy.pad.big = not legacy.pad.big; legacy.pad.combat = false; cw[1].scroll = 0; end
         e.blocked = true;
         return;
