@@ -6995,6 +6995,9 @@ ashita.events.register('text_in', 'yui_text', function(e)
     local mode = bit.band(e.mode, 0xFF);
     if mode == 152 then return; end
     chat_add(mode, e.message);
+    -- (as FancyChat does) battle lines go only to YunaUI's chat: the game's own chat never gets them, so in a busy fight
+    -- it doesn't keep trying to pop open. Talk, NPC dialogue (150 / 151) and system lines still reach it.
+    if cfg.chat and cfg.hide_game_chat and is_combat(mode) then e.blocked = true; end
 end);
 
 ashita.events.register('command', 'yui_command', function(e)
