@@ -7,3 +7,7 @@ logs/
 enmity_*.txt
 inline_dump.txt
 yunaui-errors.txt
+
+# Maps redrawn from your own installed maps: made on your PC, never published
+mapsimg/
+maptable.txt

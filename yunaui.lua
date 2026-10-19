@@ -58,7 +58,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, target_fx = 'blade', target_fx_mobs = true, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -4333,6 +4333,18 @@ local function chat_line(dl, x, y, s, c, a, lh)
     local oc = u32({ 0, 0, 0, edge[2] * a });
     local tc = u32({ c[1], c[2], c[3], a });
     local cx = x;
+    do                                                               -- "<Name>" at the start: a little room inside the brackets
+        local nm, rest = s:match('^<([^<>\1\2]+)>(.*)$');
+        if nm then
+            local gap = math.max(1, imgui.GetTextLineHeight() * 0.14);
+            for _, seg in ipairs({ { '<', gap }, { nm, gap }, { '>', 0 } }) do
+                for _, o in ipairs(OUTLINE) do dl:AddText({ cx + o[1], y + o[2] }, oc, seg[1]); end
+                dl:AddText({ cx, y }, tc, seg[1]);
+                cx = cx + imgui.CalcTextSize(seg[1]) + seg[2];
+            end
+            s = rest;
+        end
+    end
     local i, n = 1, #s;
     while i <= n do
         local j = s:find('[\1\2]', i);
@@ -4385,6 +4397,8 @@ legacy.UI = {
     chat1  = { sig = '66C78182000000????C7818C000000????????C781900000', off = 0x0F },
     chat2  = { sig = '66C78182000000????C7818C000000????????C781900000', off = 0x37 },
     inline = { focused = 'inline' },
+    logwin = { focused = 'logwindo', fresh = true },                 -- the log the pad expands (Triangle) and its full view (then X):
+    fulllog = { focused = 'fulllog', fresh = true },                 -- hidden too, YunaUI's chat opens instead (see legacy.pad)
 };
 function legacy.in_game(a)
     if type(a) ~= 'number' or a < 0x10000 then return false; end
@@ -4423,6 +4437,8 @@ function legacy.ui_hide(key, on)
         if row.obj ~= obj then row.obj, row.orig = obj, ashita.memory.read_uint8(obj + 0x69); end
         if row.orig ~= 0 and ashita.memory.read_uint8(obj + 0x69) ~= 0 then ashita.memory.write_uint8(obj + 0x69, 0); end
         row.found = true;
+    elseif row.fresh then
+        row.obj, row.orig = nil, nil;                                -- (a menu made anew each time: nothing to put back)
     elseif row.obj then
         local obj = legacy.ui_object(row) or (row.focused and row.obj);  -- (the typing bar: put back even when closed)
         if obj == row.obj and ashita.memory.read_uint8(obj + 0x69) == 0 and (row.orig or 0) ~= 0 then
@@ -4432,7 +4448,55 @@ function legacy.ui_hide(key, on)
     end
 end
 function legacy.hide_input(on) pcall(legacy.ui_hide, 'inline', on); end
-function legacy.hide_logs(on) pcall(legacy.ui_hide, 'chat1', on); pcall(legacy.ui_hide, 'chat2', on); end
+function legacy.hide_logs(on)
+    pcall(legacy.ui_hide, 'chat1', on); pcall(legacy.ui_hide, 'chat2', on);
+    pcall(legacy.ui_hide, 'logwin', on); pcall(legacy.ui_hide, 'fulllog', on);
+end
+-- Pad players: the log button (Triangle / Y), pressed with no menu open, is kept from the game (its own log would show
+-- through) and opens YunaUI's chat instead: all lines shown, L1 / R1 (LB / RB) change the tab, the D-pad up / down
+-- scrolls. Circle / B (or Triangle / Y again) closes it. Those buttons are kept from the game only while it's open.
+legacy.pad = { open = false, mine = false, big = false, menu = '' };
+function legacy.pad_tick()
+    local ok, _, _, name = pcall(legacy.menu_ptrs);
+    legacy.pad.menu = (ok and name) or '';
+    local game = legacy.pad.menu:find('logwindo', 1, true) ~= nil or legacy.pad.menu:find('fulllog', 1, true) ~= nil;
+    if not (cfg.chat and cfg.hide_game_chat) then legacy.pad.mine = false; end
+    if legacy.pad.mine and legacy.pad.menu ~= '' and not game then legacy.pad.mine, legacy.pad.big = false, false; end   -- (a menu opened: it closes)
+    local open = legacy.pad.mine or (game and cfg.chat and cfg.hide_game_chat) or false;
+    if open and not legacy.pad.open then cw[1].scroll = 0; end
+    legacy.pad.open = open;
+end
+function legacy.pad_once(key)                                        -- (each press arrives twice: count it once)
+    legacy.pad.t = legacy.pad.t or {};
+    local now = os.clock();
+    if now - (legacy.pad.t[key] or -1) < 0.12 then return false; end
+    legacy.pad.t[key] = now;
+    return true;
+end
+function legacy.pad_toggle(on)                                       -- (the log button: no menu open, YunaUI chat on)
+    legacy.pad.mine = on;
+    legacy.pad.open = on;
+    if not on then legacy.pad.big, legacy.pad.combat = false, false; end
+    cw[1].scroll = 0;
+end
+function legacy.pad_back()                                           -- (Circle / B: from big back to lit, then closed)
+    if legacy.pad.big then legacy.pad.big, legacy.pad.combat = false, false; else legacy.pad_toggle(false); end
+end
+function legacy.pad_tab(dir)
+    local n = #CHANNELS;
+    local combat = legacy.pad.big;                                   -- (the combat log: a tab of its own in the big chat)
+    local count = combat and (n + 1) or n;
+    local cur = legacy.pad.combat and (n + 1) or (tonumber(cfg.chat_tab) or 1);
+    local t = (cur - 1 + dir) % count + 1;
+    legacy.pad.combat = (t == n + 1);
+    if not legacy.pad.combat then cfg.chat_tab = t; unread[t] = nil; end
+    cw[1].scroll = 0;
+    pcall(save);
+end
+function legacy.pad_scroll(lines)
+    local lg = (legacy.pad.combat and cfg.chat_split) and logs[2] or logs[1];
+    cw[1].scroll = math.max(0, math.min(#lg * 2, (cw[1].scroll or 0) + lines));
+end
 function legacy.snapshot()
     if (legacy.snapped or 0) >= 2 then return; end
     local now = os.clock();
@@ -4523,8 +4587,85 @@ local function typing_now()
     return ok and r or nil;
 end
 local CHATFLAGS = nil;
+-- YunaGearOpt's neon bezel (its actions.neon_corner): a bottom-left 'L' - a bar on the left edge brightening downwards,
+-- a slanted foot, a glossy highlight, a soft glow, and a thin line running off along the bottom. o.fx / o.fy mirror it
+-- (right side / top); o.k its size; o.bare: no faint backing.
+function C.neon_corner(dl, x, y, w, h, o)
+    o = o or {};
+    local function col(r, g, b, al) return u32({ r, g, b, al }); end
+    local function P(px, py) return o.fx and (2 * x + w - px) or px, o.fy and (2 * y + h - py) or py; end
+    local function rect(ax, ay, bx, by, cul, cur, cbr, cbl)
+        local x0, y0 = P(ax, ay);
+        local x1, y1 = P(bx, by);
+        if o.fx then x0, x1 = x1, x0; cul, cur = cur, cul; cbl, cbr = cbr, cbl; end
+        if o.fy then y0, y1 = y1, y0; cul, cbl = cbl, cul; cur, cbr = cbr, cur; end
+        pcall(function() dl:AddRectFilledMultiColor({ x0, y0 }, { x1, y1 }, cul, cur, cbr, cbl); end);
+    end
+    local k = o.k or h / 26;
+    local bx0, bx1 = x - 1, x - 1 + math.max(3, math.floor(4 * k));
+    local yt, yb, ye = y + 3 * k, y + h - 6 * k, y + h;
+    local foot = { { bx0, yb }, { bx1, yb - 3 * k }, { bx1 + 11 * k, ye - 1 }, { bx1 + 5 * k, ye + 1 } };
+    local function quad(q, c, grow)
+        local g = grow or 0;
+        local a1, a2 = P(q[1][1] - g, q[1][2]);
+        local b1, b2 = P(q[2][1] + g, q[2][2] - g);
+        local c1, c2 = P(q[3][1] + g, q[3][2]);
+        local d1, d2 = P(q[4][1], q[4][2] + g);
+        if (o.fx and true or false) ~= (o.fy and true or false) then
+            a1, a2, b1, b2, c1, c2, d1, d2 = d1, d2, c1, c2, b1, b2, a1, a2;
+        end
+        pcall(function() dl:AddQuadFilled({ a1, a2 }, { b1, b2 }, { c1, c2 }, { d1, d2 }, c); end);
+    end
+    if not o.bare then
+        rect(x, y, x + w, y + h, col(0.55, 0.30, 0.95, 0.05), col(0.55, 0.30, 0.95, 0),
+            col(0.55, 0.30, 0.95, 0.05), col(0.60, 0.35, 1.0, 0.15));
+    end
+    for _, gp in ipairs({ { 4, 0.05 }, { 2, 0.10 } }) do
+        rect(bx0 - gp[1], yt + 4 * k, bx1 + gp[1], yb, col(0.6, 0.3, 1, 0), col(0.6, 0.3, 1, 0),
+            col(0.7, 0.4, 1, gp[2]), col(0.7, 0.4, 1, gp[2]));
+        quad(foot, col(0.75, 0.45, 1, gp[2]), gp[1]);
+    end
+    local gx, gy = P(bx1 + 4 * k, ye - 2 * k);
+    dl:AddCircleFilled({ gx, gy }, 6 * k, col(0.75, 0.45, 1, 0.06));
+    rect(bx0, yt, bx1, yb, col(0.40, 0.18, 0.75, 0.0), col(0.40, 0.18, 0.75, 0.0),
+        col(0.80, 0.52, 1.0, 1.0), col(0.70, 0.42, 1.0, 1.0));
+    quad(foot, col(0.82, 0.56, 1.0, 1.0));
+    rect(bx1 - 1.5, y + h * 0.35, bx1 - 0.5, yb - 2 * k, col(1, 0.9, 1, 0), col(1, 0.9, 1, 0),
+        col(1, 0.92, 1, 0.9), col(1, 0.92, 1, 0.9));
+    local l1, l2 = P(bx1 - 1, yb - 2.5 * k);
+    local m1, m2 = P(bx1 + 8 * k, ye - 1.5);
+    dl:AddLine({ l1, l2 }, { m1, m2 }, col(1, 0.94, 1, 0.85), 1.2);
+    rect(bx1 + 8 * k, ye - 1, x + w, ye, col(0.75, 0.45, 1, 0.9), col(0.6, 0.3, 1, 0.0),
+        col(0.6, 0.3, 1, 0.0), col(0.75, 0.45, 1, 0.9));
+end
+-- YunaGearOpt's window corner (its actions.frame_corner): (cx, cy) the corner, sx / sy = +1 or -1 pointing into the
+-- window; arms lx along the top / bottom and ly down the side, t thick; bright at the corner, fading along the arms
+function C.frame_corner(dl, cx, cy, sx, sy, lx, ly, t)
+    local function col(r, g, b, al) return u32({ r, g, b, al }); end
+    local function arm(nx0, ny0, nx1, ny1, horiz, near, far)
+        local x0, x1, y0, y1 = math.min(nx0, nx1), math.max(nx0, nx1), math.min(ny0, ny1), math.max(ny0, ny1);
+        local ul, ur, br, bl;
+        if horiz then
+            local left_near = nx0 <= nx1;
+            ul = left_near and near or far; bl = ul; ur = left_near and far or near; br = ur;
+        else
+            local top_near = ny0 <= ny1;
+            ul = top_near and near or far; ur = ul; bl = top_near and far or near; br = bl;
+        end
+        pcall(function() dl:AddRectFilledMultiColor({ x0, y0 }, { x1, y1 }, ul, ur, br, bl); end);
+    end
+    local function shape(g, near, far)
+        arm(cx, cy - sy * g, cx + sx * lx, cy + sy * (t + g), true, near, far);
+        arm(cx - sx * g, cy, cx + sx * (t + g), cy + sy * ly, false, near, far);
+    end
+    shape(3, col(0.70, 0.40, 1.0, 0.07), col(0.6, 0.3, 1, 0));      -- glow
+    shape(0, col(0.85, 0.62, 1.0, 1.0), col(0.55, 0.30, 1.0, 0));   -- the frame
+    arm(cx, cy, cx + sx * lx * 0.5, cy + sy * 1, true, col(1, 0.92, 1, 0.7), col(1, 0.92, 1, 0));   -- a fine bright edge
+    arm(cx, cy, cx + sx * 1, cy + sy * ly * 0.5, false, col(1, 0.92, 1, 0.7), col(1, 0.92, 1, 0));
+end
 local function draw_chat(n)
     if not cfg.chat or (n == 2 and not cfg.chat_split) then return; end
+    if n == 2 and legacy.pad.big then return; end                    -- (the big chat is open: the combat log shows inside it, as a tab)
     if CHATFLAGS == nil then
         CHATFLAGS = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoScrollbar,
             ImGuiWindowFlags_NoScrollWithMouse, ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_NoBackground,
@@ -4544,7 +4685,20 @@ local function draw_chat(n)
         st.relink = true;
     end
     local w, h = math.max(200, tonumber(cfg[p .. 'w']) or 600), math.max(80, tonumber(cfg[p .. 'h']) or 260);
-    imgui.SetNextWindowPos({ tonumber(cfg[p .. 'x']) or 20, tonumber(cfg[p .. 'y']) or 700 }, (WATCH.move > 0 or st.relink) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
+    local big = (n == 1) and legacy.pad.big;                         -- (the pad's big chat: Triangle, then X)
+    if big then
+        local SW, SH = C.screen();
+        local bw = math.floor(math.max(math.min(w, SW - 40), SW * 0.55));
+        local bh = math.floor(SH * 0.70);
+        local bx = math.floor((SW - bw) / 2);
+        local by = SH - bh - math.max(6, math.floor(SH * 0.01));      -- (sits on the bottom of the screen, any resolution)
+        imgui.SetNextWindowPos({ bx, by }, ImGuiCond_Always);
+        w, h = bw, bh;
+        st.wasbig = true;
+    else
+        if st.wasbig then st.wasbig, st.relink = nil, true; end      -- (back to its own size and place)
+        imgui.SetNextWindowPos({ tonumber(cfg[p .. 'x']) or 20, tonumber(cfg[p .. 'y']) or 700 }, (WATCH.move > 0 or st.relink) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
+    end
     st.relink = false;                                               -- (resized by its linked twin: placed again, its bottom kept)
     imgui.SetNextWindowSize({ w, h }, ImGuiCond_Always);
     local flags = CHATFLAGS;
@@ -4573,6 +4727,24 @@ local function draw_chat(n)
         -- CHAT > Dark ground: a soft see-through shade behind the lines that are showing (gone when they've faded out)
         local ga = (cfg.chat_ground ~= false) and math.max(0, math.min(1, tonumber(cfg.chat_ground_a) or 0.5)) * (st.vis or 0) or 0;
         if cfg.chat_linebg == false then soft_ground(dl, x, y, w, h, math.max(st.hv, ga), sl_, sr_); end   -- (Line backgrounds on: no ground at all, the strips do it)
+        if big then                                                  -- the pad's big chat: a panel like the game's full log
+            local all = C.rall;
+            dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.035, 0.032, 0.050, 0.90 }), 6);
+            dl:AddRect({ x, y }, { x + w, y + h }, u32({ 0, 0, 0, 0.85 }), 6, all, 1.2);   -- (a black edge; the violet is only in YGO's bezels)
+            local lx, ly, t_ = math.min(150, w * 0.22), math.min(80, h * 0.18), 2;   -- YGO's frame: a neon corner on each corner
+            C.frame_corner(dl, x, y, 1, 1, lx, ly, t_);
+            C.frame_corner(dl, x + w, y, -1, 1, lx, ly, t_);
+            C.frame_corner(dl, x, y + h, 1, -1, lx, ly, t_);
+            C.frame_corner(dl, x + w, y + h, -1, -1, lx, ly, t_);
+            local tp = sized('chat', 17);
+            local tname = legacy.pad.combat and 'Combat log' or (CHANNELS[tonumber(cfg.chat_tab) or 1] or { 'All' })[1];
+            text(dl, x + 16, y + 10, 'CHAT LOG  ' .. string.upper(tname), { 0.97, 0.96, 0.99, 1 });
+            pcall(function() dl:AddRectFilledMultiColor({ x + 16, y + 34 }, { x + 76, y + 36 }, u32(C.hp), u32(C.mp2), u32(C.mp2), u32(C.hp)); end);
+            local hint = 'TRIANGLE / F / L1 / R1  tab     UP / DOWN / PAGE UP / DOWN  scroll     CIRCLE / ESC  back';
+            local hw = imgui.CalcTextSize(hint);
+            text(dl, x + w - hw - 16, y + 10, hint, { 0.70, 0.68, 0.80, 1 });
+            unsized(tp);
+        end
         st.vis_n = 0;
         -- the text, from the bottom up
         local size = tonumber(cfg.chat_size) or 16;
@@ -4589,10 +4761,18 @@ local function draw_chat(n)
         local hold, fade = tonumber(cfg.chat_hold) or 12, 3;
         local bright = tonumber(cfg.chat_bright) or 1;
         local tab = (n == 1) and (tonumber(cfg.chat_tab) or 1) or 1;
+        local only = nil;                                            -- (the big chat: 'combat' = only battle lines, 'talk' = none)
+        if big then
+            if legacy.pad.combat then
+                if cfg.chat_split then log = logs[2]; else only = 'combat'; end
+                tab = 1;
+            elseif not cfg.chat_split then only = 'talk'; end
+        end
         local i = #log;
         while i >= 1 and ly > y - lh do
             local e = log[i];
             if tab ~= 1 and TAB_OF[e.mode or 0] ~= tab then i = i - 1; goto next_line; end
+            if only and ((only == 'combat') ~= is_combat(e.mode or 0)) then i = i - 1; goto next_line; end
             do
             local life = 1;
             if cfg.chat_fade then life = math.max(0, math.min(1, 1 - ((now - (e.t or now)) - hold) / fade)); end
@@ -4659,11 +4839,18 @@ local function draw_chat(n)
         if n == 1 and st.hv > 0.05 then
             local bx, by = x + pad, y + h - bar - 2;
             local mx, my = imgui.GetMousePos();
-            for ci, ch in ipairs(CHANNELS) do
+            local tabs_ = CHANNELS;
+            if big then                                              -- (the big chat: the Combat log tab at the end)
+                tabs_ = {};
+                for _, ch in ipairs(CHANNELS) do tabs_[#tabs_ + 1] = ch; end
+                tabs_[#tabs_ + 1] = { 'Combat' };
+            end
+            for ci, ch in ipairs(tabs_) do
                 local tw = imgui.CalcTextSize(ch[1]);
                 local bw2 = tw + 16;
                 local over = mx >= bx and mx < bx + bw2 and my >= by and my < by + bar - 4;
-                local on = (tab == ci);
+                local cmb = big and ci == #CHANNELS + 1;
+                local on = (big and legacy.pad.combat) and cmb or (not cmb and tab == ci and not (big and legacy.pad.combat));
                 local col = { 0.95, 0.95, 0.97 };                -- the tabs are plain white
                 -- just the words (no boxes): the chosen tab bright with a short line under it, the others dimmer
                 local ty_ = by + (bar - 4 - lh + 2) / 2;
@@ -4679,7 +4866,8 @@ local function draw_chat(n)
                 end
                 imgui.SetCursorScreenPos({ bx, by });
                 if imgui.InvisibleButton('##yui_ch' .. ci, { bw2, bar - 4 }) then
-                    cfg.chat_tab = ci; unread[ci] = nil; st.scroll = 0; save();
+                    if cmb then legacy.pad.combat = true; st.scroll = 0;
+                    else legacy.pad.combat = false; cfg.chat_tab = ci; unread[ci] = nil; st.scroll = 0; save(); end
                 end
                 bx = bx + bw2 + 6;
             end
@@ -4706,7 +4894,7 @@ local function draw_chat(n)
         local nowc = os.clock();                                     -- (the corner icons fade 5 s after the mouse leaves; back when it's over)
         if hov or st.lastov == nil then st.lastov = nowc; end
         local gf = math.max(0, math.min(1, 1 - (nowc - st.lastov - 5) / 0.6));
-        if n == 1 and cfg.chat_split and gf > 0.02 then              -- the anchor (bottom right of the chat, by the tabs): the combat log beside it
+        if n == 1 and cfg.chat_split and gf > 0.02 and not big then  -- the anchor (bottom right of the chat, by the tabs): the combat log beside it
             local bs = 22;
             local ax, ay = x + w - bs - 10, y + h - bar + (bar - bs) / 2 - 2;
             imgui.SetCursorScreenPos({ ax, ay });
@@ -4723,7 +4911,7 @@ local function draw_chat(n)
             dl:AddCircleFilled({ cx - 5, cy }, 3.3, u32(c), 12);
             dl:AddCircleFilled({ cx + 5, cy }, 3.3, u32(c), 12);
         end
-        if not cfg.locked then
+        if not cfg.locked and not big then                           -- (the big chat has no resize grip)
             imgui.SetCursorScreenPos({ x + w - 24, y });
             imgui.InvisibleButton('##yui_chat_size' .. n, { 24, 24 });
             local act = imgui.IsItemActive();
@@ -4758,14 +4946,16 @@ local function draw_chat(n)
             end
         end
         local wx, wy = imgui.GetWindowPos();
-        cfg[p .. 'x'], cfg[p .. 'y'] = wx, wy;
-        do                                                           -- (always on the screen)
-            local nx, ny, moved = YUI_ONSCREEN(wx, wy, tonumber(cfg[p .. 'w']) or w, tonumber(cfg[p .. 'h']) or h);
-            if moved then cfg[p .. 'x'], cfg[p .. 'y'] = nx, ny; st.relink = true; end
+        if not big then                                              -- (the big chat's place is never kept)
+            cfg[p .. 'x'], cfg[p .. 'y'] = wx, wy;
+            do                                                       -- (always on the screen)
+                local nx, ny, moved = YUI_ONSCREEN(wx, wy, tonumber(cfg[p .. 'w']) or w, tonumber(cfg[p .. 'h']) or h);
+                if moved then cfg[p .. 'x'], cfg[p .. 'y'] = nx, ny; st.relink = true; end
+            end
+            local key = string.format('%d,%d,%d,%d', math.floor(wx), math.floor(wy), math.floor(cfg[p .. 'w']), math.floor(cfg[p .. 'h']));
+            if st.saved == nil then st.saved = key; end
+            if key ~= st.saved and not imgui.IsMouseDown(0) then st.saved = key; save(); end
         end
-        local key = string.format('%d,%d,%d,%d', math.floor(wx), math.floor(wy), math.floor(cfg[p .. 'w']), math.floor(cfg[p .. 'h']));
-        if st.saved == nil then st.saved = key; end
-        if key ~= st.saved and not imgui.IsMouseDown(0) then st.saved = key; save(); end
     end
     imgui.End();
     imgui.PopStyleVar(2);
@@ -4838,6 +5028,61 @@ function FIGHT.win()
         else imgui.End(); imgui.PopStyleVar(2); end
     end
 end
+-- BARS > EXP BAR: the ring. A picture of 40 glowing dashes, pink at the top turning violet (images/exp_ring.png, made
+-- from the user's own design), drawn in 40 slices: each dash lit or faint by how far the experience has got.
+-- Beside it: the jobs, the points and the % in pink.
+C.RING = { n = 40, mid = 0.435, r1 = 0.355, r2 = 0.5 };             -- (in the picture: the dashes' middle, the slices' inner and outer edge)
+function C.exp_ring(sc, v, job, label)
+    if not plain_window('YunaUI Exp##yui_exp', 'exp_x', 'exp_y') then imgui.End(); imgui.PopStyleVar(2); return; end
+    local dl = imgui.GetWindowDrawList();
+    local x, y = imgui.GetCursorScreenPos();
+    x, y = x + 10, y + 10;
+    local G = C.RING;
+    local R = 36 * sc;                                               -- the dashes' middle on screen
+    local S_ = R / G.mid;                                            -- (the whole picture's size on screen)
+    local half = S_ * G.r2;
+    local cx, cy = math.floor(x + half) + 0.5, math.floor(y + half) + 0.5;
+    local px = math.max(16, math.min(1024, math.floor(S_ + 0.5)));
+    local t = C.tex_at('exp_ring.png', px) or tex('exp_ring.png');   -- (made at the size it's drawn: sharp)
+    local head = v * G.n;
+    if t then
+        local step = math.pi * 2 / G.n;
+        for k = 0, G.n - 1 do
+            local a0 = -math.pi / 2 + (k - 0.5) * step;
+            local a1 = a0 + step;
+            local c0, s0, c1, s1 = math.cos(a0), math.sin(a0), math.cos(a1), math.sin(a1);
+            local function P(cc, ss, r) return { cx + cc * r * S_, cy + ss * r * S_ }; end
+            local function U(cc, ss, r) return { 0.5 + cc * r, 0.5 + ss * r }; end
+            local on = (k + 1) <= head + 0.001;
+            pcall(function()
+                dl:AddImageQuad(t.ptr, P(c0, s0, G.r1), P(c0, s0, G.r2), P(c1, s1, G.r2), P(c1, s1, G.r1),
+                    U(c0, s0, G.r1), U(c0, s0, G.r2), U(c1, s1, G.r2), U(c1, s1, G.r1), u32({ 1, 1, 1, on and 1 or 0.14 }));
+            end);
+        end
+    end
+    local L = half - R;                                              -- (for the layout below: from the dashes' middle to the edge)
+    do                                                               -- the % in the middle of the ring, in pink
+        local pp = sized('chat', 17 * sc);                           -- (small: it sits well inside the dashes)
+        local ps = string.format('%d%%', math.floor(v * 100));
+        local pw = tonumber((imgui.CalcTextSize(ps))) or 0;
+        local ph = imgui.GetTextLineHeight();                        -- (the line's height: CalcTextSize gives only the width here)
+        outlined(dl, math.floor(cx - pw / 2 + 0.5), math.floor(cy - ph / 2 + 0.5), ps, { 1.00, 0.62, 0.80, 1 });
+        unsized(pp);
+    end
+    -- beside it, with room: the jobs, the points, the % in pink
+    local tsc = (tonumber(cfg.scale) or 1) * math.max(0.5, math.min(2.5, tonumber(cfg.exp_text) or 1));   -- BARS > EXP BAR > Text size
+    local pushed = sized('chat', 20 * tsc);
+    local lh = imgui.GetTextLineHeight();
+    local gap = 6 * tsc;
+    local tx = cx + R + L + 24 * sc;
+    local ty = cy - (lh * 2 + gap) / 2;                              -- (two lines beside it: the % is inside the ring)
+    outlined(dl, tx, ty, job, { 0.97, 0.96, 0.98, 1 });
+    outlined(dl, tx, ty + lh + gap, label, { 0.84, 0.83, 0.88, 1 });
+    local tw = math.max(imgui.CalcTextSize(job), imgui.CalcTextSize(label));
+    unsized(pushed);
+    imgui.Dummy({ (tx - x) + tw + 20, math.max(R * 2 + L * 2, lh * 2 + gap) + 20 });
+    end_plain('exp_x', 'exp_y');
+end
 local function draw_exp(dt)
     if not cfg.expbar then return; end
     local pl = AshitaCore:GetMemoryManager():GetPlayer();
@@ -4856,6 +5101,7 @@ local function draw_exp(dt)
     end
     v = math.max(0, math.min(1, v));
     local job = (JOBS[pl:GetMainJob()] or '?') .. ' ' .. lvl .. ((JOBS[sub] and sublvl > 0) and (' / ' .. JOBS[sub] .. ' ' .. sublvl) or '');
+    do return C.exp_ring(sc, v, job, label); end                     -- (the ring: the old bar look is gone)
     if plain_window('YunaUI Exp##yui_exp', 'exp_x', 'exp_y') then
         local dl = imgui.GetWindowDrawList();
         local x, y = imgui.GetCursorScreenPos();
@@ -4885,7 +5131,7 @@ local function draw_gil()
     local gil = 0;
     pcall(function() local it = AshitaCore:GetMemoryManager():GetInventory():GetContainerItem(0, 0); gil = (it and it.Count) or 0; end);
     if gil_start == nil and gil > 0 then gil_start = gil; end
-    local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.gb_scale) or 1);
+    local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.gil_scale) or tonumber(cfg.gb_scale) or 1);   -- BARS > GIL > Size
     first_place('gil_x', 'gil_y', 300, -112);
     if plain_window('YunaUI Gil##yui_gil', 'gil_x', 'gil_y') then
         local dl = imgui.GetWindowDrawList();
@@ -5912,7 +6158,7 @@ local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 
 -- middle, timers right) and Compact (everything gathered round the bars, a little below the middle).
 -- My layout 1 / 2: SAVE keeps where everything is now, LOAD puts it back.
 local LAYOUT = {
-    KEYS = { 'target', 'sub', 'enemy', 'party', 'alliance', 'ally2', 'chat', 'chat2', 'exp', 'gil', 'bag', 'cast', 'timer', 'pet', 'doll' },
+    KEYS = { 'target', 'sub', 'enemy', 'party', 'alliance', 'ally2', 'chat', 'chat2', 'exp', 'gil', 'bag', 'cast', 'timer', 'pet', 'doll', 'map', 'bigmap' },
     GUESS = { target = { 540, 50 }, sub = { 320, 50 }, enemy = { 230, 220 }, party = { 340, 300 }, alliance = { 260, 265 },
               ally2 = { 260, 265 }, exp = { 540, 34 }, gil = { 170, 26 }, bag = { 320, 26 }, cast = { 320, 44 },
               timer = { 290, 220 }, pet = { 290, 90 }, doll = { 300, 420 } },
@@ -6046,7 +6292,7 @@ end
 LAYOUT.SIZES = { 'scale', 'target_scale', 'target_name_scale', 'target_w', 'target_bar_h', 'fan_scale', 'mb_scale', 'ecast_scale',
     'ecast_font', 'target_buff_scale', 'sub_scale', 'sub_w', 'enemy_scale', 'enemy_w', 'party_scale', 'icon_scale', 'ally1_scale',
     'ally1_icon', 'ally2_scale', 'ally2_icon', 'buff_scale', 'party_bar_h', 'party_vgap', 'card_h', 'exp_scale', 'exp_w', 'cast_scale',
-    'cast_w', 'cast_h', 'pet_scale', 'pet_w', 'gb_scale', 'chat_size', 'chat_gap', 'timers_scale', 'timers_w', 'timers_h', 'strip_icon' };
+    'cast_w', 'cast_h', 'pet_scale', 'pet_w', 'gb_scale', 'gil_scale', 'exp_text', 'chat_size', 'chat_gap', 'timers_scale', 'timers_w', 'timers_h', 'strip_icon' };
 LAYOUT.EQ_SIZES = { 'sb_scale', 'sb_thick', 'sb_hp_size', 'sb_hp_len', 'sb_mp_thick', 'sb_mp_size', 'sb_mp_len', 'sb_tp_size', 'sb_tp_len' };
 function LAYOUT.use(name) LAYOUT.apply(LAYOUT.build(name)); LAYOUT.msg = 'Layout: ' .. name; end
 -- GENERAL > MY LAYOUTS: five slots, each with a name you type (kept in cfg.layout_names; the layouts in cfg.layouts)
@@ -6537,8 +6783,8 @@ local function draw_window()
             if YUI_EQ_BARS then YUI_EQ_BARS(); end
             section('EXP BAR');
             row_switch('##yui_e', 'Show', 'expbar', 'Experience, or limit points and merits when limit mode is on.');
-            row_slider('##yui_s_e', 'Size', 'exp_scale', 0.6, 2.0, 0.05, '%.2fx');
-            row_slider('##yui_s_ew', 'Length', 'exp_w', 250, 1000, 10, '%d px');
+            row_slider('##yui_s_e', 'Ring size', 'exp_scale', 0.5, 2.5, 0.05, '%.2fx');
+            row_slider('##yui_s_et', 'Text size', 'exp_text', 0.5, 2.5, 0.05, '%.2fx');
             section('CAST BAR');
             row_switch('##yui_cb', 'Show', 'castbar', 'The spell or item you are casting, over a bar that fills (a preview shows while this tab is open).');
             row_pick('##yui_cbfx', 'Effect', 'cast_fx', { { 'same', 'As the bars' }, { 'still', 'Still' }, { 'flow', 'Flow' }, { 'pulse', 'Pulse' } });
@@ -6556,10 +6802,23 @@ local function draw_window()
             row_slider('##yui_ptw', 'Length', 'pet_w', 150, 600, 10, '%d px');
             section('GIL');
             row_switch('##yui_g', 'Show', 'gil', 'Your gil, and what you\'ve made since you logged in.');
+            if cfg.gil_scale == nil then cfg.gil_scale = tonumber(cfg.gb_scale) or 1; end
+            row_slider('##yui_s_gil', 'Size', 'gil_scale', 0.5, 2.5, 0.05, '%.2fx');
             section('BAG');
             row_switch('##yui_bg', 'Show', 'bag', 'How full your bag is.');
             row_pick('##yui_bs', 'Look', 'bag_style', { { 'row', 'Row' }, { 'grid', 'Grid' }, { 'dots', 'Dots' }, { 'bar', 'Bar' } });
-            row_slider('##yui_s_gb', 'Gil and bag size', 'gb_scale', 0.6, 2.0, 0.05, '%.2fx');
+            row_slider('##yui_s_gb', 'Size', 'gb_scale', 0.5, 2.5, 0.05, '%.2fx');
+            if YMAP.have() then                                          -- (only with the maps made on this PC: they're never published)
+            section('MINIMAP');
+            row_switch('##yui_mm', 'Show', 'minimap', 'The map around you, redrawn dark in YunaUI\'s look: you (the pink arrow), your party in their role colours, monsters and your target.');
+            row_slider('##yui_mms', 'Size', 'map_size', 120, 480, 5, '%d px');
+            row_slider('##yui_mmz', 'Zoom', 'map_zoom', 16, 256, 2, '%d');
+            hint('Zoom: how much of the map shows round you (smaller is closer).');
+            row_switch('##yui_mmm', 'Monsters', 'map_mobs');
+            row_slider('##yui_bms', 'Big map size', 'bigmap_size', 400, 1200, 10, '%d px');
+            if accent_button('OPEN THE BIG MAP##yui_bigmap_open', { ROW_W, 0 }) then YMAP.big = true; ui.open = false; end
+            hint('The big map, with its grid: /yui map opens or closes it. Move both in Edit Mode like everything else.');
+            end
         elseif tab == 5 then
             ------------------------------------------------------------------ CHAT
             section('CHAT');
@@ -6763,6 +7022,274 @@ function C.outline(dl, x, y, w, h)
     dl:AddRect({ x - 1, y - 1 }, { x + w + 1, y + h + 1 }, u32({ 0, 0, 0, 0.92 }), h / 2 + 1, all, 1.5);   -- (touching the bar: no gap of background inside it)
 end
 YUI_BAR_OUTLINE = function(dl, x, y, w, h) pcall(C.outline, dl, x, y, w, h); end
+----------------------------------------------------------------------------------------------------
+-- Minimap and big map (BARS > MINIMAP, /yui map): the game's own maps, redrawn dark in YunaUI's look (mapsimg\
+-- <zone>_<floor>.png, made from your installed maps), placed the way the game places them. Which map and floor: the
+-- game's map table and its floor check, found in FFXiMain.dll as boussole (loonsies, github.com/loonsies/boussole)
+-- does. A map is 512 "map pixels"; a world spot is at X * |scale| / 5, -Y * |scale| / 5, less the map's offset.
+----------------------------------------------------------------------------------------------------
+YMAP = { zone = -1, floor = -1, entry = nil, tex = nil, mobs = {}, mobs_t = 0, check_t = 0, big = false };
+function YMAP.have()                                                 -- (the maps are made on your own PC and never published:
+    if YMAP.has == nil then                                          --  without the mapsimg folder there is no minimap at all)
+        local ok, r = pcall(function() return ashita.fs.exists((addon.path:gsub('[\\/]+$', '')) .. '\\mapsimg'); end);
+        YMAP.has = (ok and r) and true or false;
+    end
+    return YMAP.has;
+end
+pcall(ffi.cdef, 'typedef int32_t (__thiscall* YUI_FloorFn)(void* pThis, float X, float Y, float Z);');
+function YMAP.table_ptr()
+    if YMAP.tp == nil then
+        YMAP.tp = 0;
+        pcall(function()
+            local at = ashita.memory.find('FFXiMain.dll', 0, '8A0D????????5333C05684C95774??8A5424188B7424148B7C2410B9', 0, 0);
+            if at ~= 0 then YMAP.tp = ashita.memory.read_uint32(at + 0x1C); end
+        end);
+    end
+    return YMAP.tp;
+end
+function YMAP.floor_of(x, y, z)                                      -- the game's own floor check (Y and Z swapped, as it wants)
+    if YMAP.ffn == nil then
+        YMAP.ffn = false;
+        pcall(function()
+            local fa = ashita.memory.find('FFXiMain.dll', 0, '8B542408568D4424108BF18B4C2410508B44240C', 0, 0);
+            local ta = ashita.memory.find('FFXiMain.dll', 0, '8B7424148B4424108B7C240C8B0D', 0x0E, 0);
+            if fa ~= 0 and ta ~= 0 then YMAP.ffn, YMAP.fthis = ffi.cast('YUI_FloorFn', fa), ta; end
+        end);
+    end
+    if not YMAP.ffn then return 0; end
+    local ok, f = pcall(function()
+        local this = ashita.memory.read_uint32(ashita.memory.read_uint32(YMAP.fthis));
+        if this == 0 then return 0; end
+        return YMAP.ffn(ffi.cast('void*', this), x, z, y);
+    end);
+    return (ok and tonumber(f)) or 0;
+end
+function YMAP.entry_of(zone, floor)                                  -- the map table's line for this zone and floor
+    local tp = YMAP.table_ptr();
+    if tp == 0 then return nil; end
+    local first = nil;
+    for i = 0, 1999 do
+        local b = tp + i * 0x0E;
+        local z = ashita.memory.read_uint16(b);
+        local dat = ashita.memory.read_uint16(b + 8);
+        if z == 0 and dat == 0 and i > 10 then break; end
+        if z == zone then
+            local s = ashita.memory.read_uint8(b + 5);
+            local e = { zone = z, floor = ashita.memory.read_uint8(b + 2), scale = (s >= 0x80) and (s - 0x100) or s,
+                        ox = ashita.memory.read_int16(b + 0x0A), oy = ashita.memory.read_int16(b + 0x0C) };
+            if e.floor == floor then return e; end
+            first = first or e;
+        end
+    end
+    return first;
+end
+function YMAP.load_tex(path)
+    local t = nil;
+    pcall(function()
+        local f = io.open(path, 'rb');
+        if f == nil then return; end
+        local data = f:read('*a');
+        f:close();
+        local ptr = ffi.new('IDirect3DTexture8*[1]');
+        if ffi.C.D3DXCreateTextureFromFileInMemoryEx(d3d.get_device(), data, #data, 0xFFFFFFFF, 0xFFFFFFFF, 1, 0,
+                ffi.C.D3DFMT_A8R8G8B8, ffi.C.D3DPOOL_MANAGED, ffi.C.D3DX_DEFAULT, ffi.C.D3DX_DEFAULT, 0, nil, nil, ptr) == ffi.C.S_OK then
+            local tx = d3d.gc_safe_release(ffi.cast('IDirect3DTexture8*', ptr[0]));
+            t = { tex = tx, ptr = tonumber(ffi.cast('uint32_t', tx)) };
+        end
+    end);
+    return t;
+end
+function YMAP.update(ent, me, zid)                                   -- the right map for where you are (checked a few times a second)
+    local now = os.clock();
+    if zid == YMAP.zone and now - YMAP.check_t < 0.5 then return; end
+    YMAP.check_t = now;
+    local x, y, z = ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0, ent:GetLocalPositionZ(me) or 0;
+    local fl = YMAP.floor_of(x, y, z);
+    if zid == YMAP.zone and fl == YMAP.floor then return; end
+    YMAP.zone, YMAP.floor = zid, fl;
+    pcall(function() YMAP.name = AshitaCore:GetResourceManager():GetString('zones.names', zid) or ''; end);
+    YMAP.entry = YMAP.entry_of(zid, fl);
+    YMAP.tex = nil;
+    if YMAP.entry then
+        local dir = (addon.path:gsub('[\\/]+$', '')) .. '\\mapsimg\\';
+        YMAP.tex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '.png');
+    end
+end
+function YMAP.to_map(wx, wy)                                         -- world (x east, y north) to map pixels (0..512)
+    local e = YMAP.entry;
+    local k = math.abs(e.scale) / 2560 * 512;
+    return wx * k - e.ox, -wy * k - e.oy;
+end
+function YMAP.mobs_near(ent)                                         -- monsters around, refreshed a few times a second
+    local now = os.clock();
+    if now - YMAP.mobs_t < 0.25 then return YMAP.mobs; end
+    YMAP.mobs_t = now;
+    local out = {};
+    for i = 1, 0x3FF do
+        pcall(function()
+            local fl = ent:GetSpawnFlags(i);
+            if fl and bit.band(fl, 0x10) ~= 0 and (ent:GetHPPercent(i) or 0) > 0 and (ent:GetRenderFlags0(i) or 0) ~= 0 then
+                out[#out + 1] = { ent:GetLocalPositionX(i), ent:GetLocalPositionY(i), i };
+            end
+        end);
+    end
+    YMAP.mobs = out;
+    return out;
+end
+-- What sits on the map: monsters, the party in their role colours, the target, and you (a pink arrow)
+function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside)
+    local tidx = target_index() or 0;
+    local function dot(wx, wy, col, r, ring)
+        local sx, sy = tomap(wx, wy);
+        if not inside(sx, sy) then return; end
+        dl:AddCircleFilled({ sx, sy }, r + 1.2, u32({ 0, 0, 0, 0.85 }), 12);
+        dl:AddCircleFilled({ sx, sy }, r, u32(col), 12);
+        if ring then dl:AddCircle({ sx, sy }, r + 4 * sc, u32({ 1, 1, 1, 0.95 }), 16, 1.6); end
+    end
+    if cfg.map_mobs ~= false then
+        for _, m in ipairs(YMAP.mobs_near(ent)) do dot(m[1], m[2], { 0.89, 0.35, 0.33, 0.9 }, 2.4 * sc, m[3] == tidx); end
+    end
+    for i = 1, 17 do
+        if party:GetMemberIsActive(i) ~= 0 and party:GetMemberZone(i) == zid then
+            local idx = party:GetMemberTargetIndex(i) or 0;
+            if idx ~= 0 then
+                local tc = ALLY.TAGCOL[ALLY.ROLE[party:GetMemberMainJob(i) or 0] or 'dps'][1];
+                local col = (i < 6) and { tc[1], tc[2], tc[3], 1 } or { 0.70, 0.69, 0.75, 0.9 };
+                dot(ent:GetLocalPositionX(idx) or 0, ent:GetLocalPositionY(idx) or 0, col, 3.2 * sc, idx == tidx);
+            end
+        end
+    end
+    if tidx ~= 0 and tidx ~= me then
+        local ok, tx, ty = pcall(function() return ent:GetLocalPositionX(tidx), ent:GetLocalPositionY(tidx); end);
+        if ok and tx then
+            local sx, sy = tomap(tx, ty);
+            if inside(sx, sy) then dl:AddCircle({ sx, sy }, 5 * sc, u32({ 1, 1, 1, 0.95 }), 16, 1.6); end
+        end
+    end
+    local px, py = tomap(ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0);
+    local yaw = 0;
+    pcall(function() yaw = ent:GetLocalPositionYaw(me) or 0; end);
+    local fx, fy = math.cos(yaw), math.sin(yaw);
+    local s = 7 * sc;
+    local tip = { px + fx * s, py + fy * s };
+    local l = { px - fx * s * 0.7 - fy * s * 0.65, py - fy * s * 0.7 + fx * s * 0.65 };
+    local r = { px - fx * s * 0.7 + fy * s * 0.65, py - fy * s * 0.7 - fx * s * 0.65 };
+    local back = { px - fx * s * 0.35, py - fy * s * 0.35 };
+    ALLY.poly(dl, { tip, r, back }, u32({ 1.0, 0.36, 0.62, 1 }));
+    ALLY.poly(dl, { tip, back, l }, u32({ 1.0, 0.36, 0.62, 1 }));
+    local wc = u32({ 1, 1, 1, 1 });
+    dl:AddLine(tip, l, wc, 1.2); dl:AddLine(l, back, wc, 1.2); dl:AddLine(back, r, wc, 1.2); dl:AddLine(r, tip, wc, 1.2);
+end
+function YMAP.draw()
+    if not YMAP.have() then return; end
+    local mm = AshitaCore:GetMemoryManager();
+    local party, ent = mm:GetParty(), mm:GetEntity();
+    local zid = party:GetMemberZone(0) or 0;
+    local me = party:GetMemberTargetIndex(0) or 0;
+    if me == 0 then return; end
+    if cfg.minimap == false and not YMAP.big then return; end
+    YMAP.update(ent, me, zid);
+    local sc = tonumber(cfg.scale) or 1;
+    if cfg.minimap ~= false then pcall(YMAP.mini, party, ent, zid, me, sc); end
+    if YMAP.big then pcall(YMAP.bigmap, party, ent, zid, me, sc); end
+end
+function YMAP.mini(party, ent, zid, me, sc)                          -- the minimap: the map around you, no grid
+    local M = math.floor((tonumber(cfg.map_size) or 220) * sc);
+    first_place('map_x', 'map_y', 560, -560);
+    if not plain_window('YunaUI Map##yui_map', 'map_x', 'map_y') then imgui.End(); imgui.PopStyleVar(2); return; end
+    local dl = imgui.GetWindowDrawList();
+    local x, y = imgui.GetCursorScreenPos();
+    x, y = math.floor(x + 4), math.floor(y + 4);
+    local cx, cy = x + M / 2, y + M / 2;
+    if imgui.IsWindowHovered() then                                  -- the mouse wheel zooms in and out (as the Minimap plugin does)
+        local wheel = imgui.GetIO().MouseWheel or 0;
+        if wheel ~= 0 then
+            local z = tonumber(cfg.map_zoom) or 60;
+            z = (wheel > 0) and (z / 1.18) or (z * 1.18);
+            cfg.map_zoom = math.floor(math.max(16, math.min(256, z)) + 0.5);
+            WATCH.later = true;                                      -- (saved a moment later, not every notch)
+        end
+    end
+    dl:AddRectFilled({ x, y }, { x + M, y + M }, u32({ 0.055, 0.05, 0.078, 0.92 }), 8 * sc);   -- (the party cards' violet, a little darker)
+    local e = YMAP.entry;
+    if e and YMAP.tex then
+        local R = math.max(8, tonumber(cfg.map_zoom) or 60);           -- map pixels from the middle to the edge
+        local k = (M / 2) / R;
+        local pmx, pmy = YMAP.to_map(ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0);
+        -- the part of the map in view (kept inside the picture, so its edge never repeats)
+        local u0, v0, u1, v1 = pmx - R, pmy - R, pmx + R, pmy + R;
+        local a0, b0 = math.max(0, u0), math.max(0, v0);
+        local a1, b1 = math.min(512, u1), math.min(512, v1);
+        if a1 > a0 and b1 > b0 then
+            dl:AddImage(YMAP.tex.ptr, { x + (a0 - u0) * k, y + (b0 - v0) * k }, { x + (a1 - u0) * k, y + (b1 - v0) * k },
+                { a0 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, u32({ 1, 1, 1, 1 }));
+        end
+        local function tomap(wx, wy) local mx, my = YMAP.to_map(wx, wy); return cx + (mx - pmx) * k, cy + (my - pmy) * k; end
+        local function inside(sx, sy) return sx > x + 2 and sx < x + M - 2 and sy > y + 2 and sy < y + M - 2; end
+        YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside);
+    end
+    dl:AddRect({ x, y }, { x + M, y + M }, u32({ 1, 1, 1, 0.10 }), 8 * sc, C.rall, 1);
+    local pushed = sized('chat', 13 * sc);
+    text(dl, x + 8 * sc, y + 5 * sc, (YMAP.name and YMAP.name ~= '') and YMAP.name or '?', { 0.95, 0.95, 0.97, 0.95 });
+    if not (e and YMAP.tex) then
+        local m_ = 'No map here';
+        local mw = imgui.CalcTextSize(m_);
+        text(dl, x + (M - mw) / 2, y + M / 2 - 8 * sc, m_, { 0.7, 0.7, 0.75, 0.9 });
+    end
+    unsized(pushed);
+    imgui.Dummy({ M + 8, M + 8 });
+    end_plain('map_x', 'map_y');
+end
+function YMAP.bigmap(party, ent, zid, me, sc)                        -- the big map (/yui map): the whole map, YunaUI's grid
+    local M = math.floor((tonumber(cfg.bigmap_size) or 640) * sc);
+    first_place('bigmap_x', 'bigmap_y', -M / 2, -M - 160);
+    if not plain_window('YunaUI Big map##yui_bigmap', 'bigmap_x', 'bigmap_y') then imgui.End(); imgui.PopStyleVar(2); return; end
+    local dl = imgui.GetWindowDrawList();
+    local x, y = imgui.GetCursorScreenPos();
+    x, y = math.floor(x + 4), math.floor(y + 4);
+    local top = math.floor(30 * sc);
+    dl:AddRectFilled({ x, y }, { x + M, y + M + top }, u32({ 0.055, 0.05, 0.078, 0.95 }), 10 * sc);   -- (the party cards' violet, a little darker)
+    dl:AddRect({ x, y }, { x + M, y + M + top }, u32({ NEON2[1], NEON2[2], NEON2[3], 0.6 }), 10 * sc, C.rall, 1.2);
+    local my0 = y + top;
+    local k = M / 512;
+    local e = YMAP.entry;
+    if e and YMAP.tex then
+        dl:AddImage(YMAP.tex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 }));
+        local gc = u32({ 1, 1, 1, 0.10 });
+        for i = 0, 15 do                                             -- the grid: every 32 map pixels from the 16th
+            local v = (16 + 32 * i) * k;
+            dl:AddLine({ x + v, my0 + 16 * k }, { x + v, my0 + M - 16 * k }, gc, 1);
+            dl:AddLine({ x + 16 * k, my0 + v }, { x + M - 16 * k, my0 + v }, gc, 1);
+        end
+        local pushed = sized('chat', 12 * sc);
+        for i = 0, 14 do                                             -- its letters and numbers, in YunaUI's font
+            local c = (32 + 32 * i) * k;
+            local L_, N_ = string.char(65 + i), tostring(i + 1);
+            local lw, lh = imgui.CalcTextSize(L_);
+            text(dl, x + c - lw / 2, my0 + 8 * k - lh / 2, L_, { 0.86, 0.84, 0.92, 0.75 });
+            local nw = imgui.CalcTextSize(N_);
+            text(dl, x + 8 * k - nw / 2, my0 + c - lh / 2, N_, { 0.86, 0.84, 0.92, 0.75 });
+        end
+        unsized(pushed);
+        local function tomap(wx, wy) local mx, my = YMAP.to_map(wx, wy); return x + mx * k, my0 + my * k; end
+        local function inside(sx, sy) return sx > x and sx < x + M and sy > my0 and sy < my0 + M; end
+        YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside);
+    end
+    local pushed = sized('chat', 16 * sc);                           -- the zone's name, and X to close it
+    text(dl, x + 12 * sc, y + 6 * sc, (YMAP.name and YMAP.name ~= '') and YMAP.name or '?', { 1, 1, 1, 1 });
+    unsized(pushed);
+    local bx = x + M - 26 * sc;
+    imgui.SetCursorScreenPos({ bx, y + 4 * sc });
+    if imgui.InvisibleButton('##yui_bigmap_x', { 22 * sc, 22 * sc }) then YMAP.big = false; end
+    local hov = imgui.IsItemHovered();
+    local xc, yc, rr = bx + 11 * sc, y + 15 * sc, 5 * sc;
+    local xcol = u32(hov and { 1, 1, 1, 1 } or { 0.8, 0.78, 0.9, 0.9 });
+    dl:AddLine({ xc - rr, yc - rr }, { xc + rr, yc + rr }, xcol, 1.6);
+    dl:AddLine({ xc - rr, yc + rr }, { xc + rr, yc - rr }, xcol, 1.6);
+    imgui.SetCursorScreenPos({ x, y });
+    imgui.Dummy({ M + 8, M + top + 8 });
+    end_plain('bigmap_x', 'bigmap_y');
+end
 ----------------------------------------------------------------------------------------------------
 -- The first-time guide (also /yui guide): one card at a time, the screen dimmed except the piece it talks about.
 -- Edit Mode stays on underneath, so every piece shows (a pretend target, fight, party, pet...). The last card hands
@@ -7171,7 +7698,8 @@ ashita.events.register('d3d_present', 'yui_present', function()
         legacy.hide_logs(cfg.chat and cfg.hide_game_chat);               -- the game's chat windows: not drawn at all
         legacy.hide_input(cfg.chat and cfg.hide_game_input);             -- the game's typing bar: not drawn (you type in YunaUI's)
         if YUI_OPEN_EQUIP then YUI_OPEN_EQUIP = false; ui.open = true; ui.tab = 6; end
-        chat_lit_all = ui.open or not cfg.setup_done or EDIT.G.on;
+        pcall(legacy.pad_tick);                                      -- (the pad opened the game's log: YunaUI's chat instead)
+        chat_lit_all = ui.open or not cfg.setup_done or EDIT.G.on or legacy.pad.open;
         if ui.open then ui.was_open = true;
         elseif ui.was_open and not cfg.setup_done then cfg.setup_done = true; save(); end
         piece(draw_chat, 1);
@@ -7182,6 +7710,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(draw_cast);
         PET.preview = (ui.open and ui.tab == 4) or EDIT.on;         -- the BARS tab (and Edit Mode) show a pretend pet
         piece(PET.draw, dt);
+        piece(YMAP.draw);                                            -- the minimap (BARS > MINIMAP)
         TIMERS.preview = (ui.open and ui.tab == 7) or EDIT.on;      -- the TIMERS tab (and Edit Mode) show a preview of it
         piece(TIMERS.draw);
         YUI_EQ_HIDE = ((cfg.equip_look or 'wheel') ~= 'wheel');
@@ -7220,6 +7749,105 @@ ashita.events.register('text_in', 'yui_text', function(e)
     if cfg.chat and cfg.hide_game_chat and is_combat(mode) then e.blocked = true; end
 end);
 
+ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStation and other DirectInput pads
+    local b, st = e.button, e.state or 0;
+    if b == 51 and cfg.chat and cfg.hide_game_chat and (legacy.pad.menu == '' or legacy.pad.mine) then   -- Triangle: YunaUI's chat, not the game's log
+        if st >= 128 and legacy.pad_once('log') then
+            if legacy.pad.big then legacy.pad_tab(1); else legacy.pad_toggle(not legacy.pad.mine); end
+        end
+        e.blocked = true;
+        return;
+    end
+    if not legacy.pad.open then return; end
+    if b == 50 and legacy.pad.mine then                              -- Circle: back (big -> lit -> closed)
+        if st >= 128 and legacy.pad_once('close') then legacy.pad_back(); end
+        e.blocked = true;
+        return;
+    end
+    if b == 49 and legacy.pad.mine then                              -- X: the big chat (as the game's full log)
+        if st >= 128 and legacy.pad_once('big') then legacy.pad.big = not legacy.pad.big; legacy.pad.combat = false; cw[1].scroll = 0; end
+        e.blocked = true;
+        return;
+    end
+    if b == 52 or b == 53 then                                       -- L1 / R1: the tab
+        if st >= 128 and legacy.pad_once('tab' .. b) then legacy.pad_tab((b == 52) and -1 or 1); end
+        e.blocked = true;
+    elseif b == 32 then                                              -- the D-pad (an angle): up / down scroll
+        if st == 0 or st == 4500 or st == 31500 then if legacy.pad_once('up') then legacy.pad_scroll(3); end e.blocked = true;
+        elseif st == 18000 or st == 13500 or st == 22500 then if legacy.pad_once('down') then legacy.pad_scroll(-3); end e.blocked = true; end
+    end
+end);
+ashita.events.register('xinput_button', 'yui_pad_x', function(e)    -- Xbox (XInput) pads
+    local b, st = e.button, e.state or 0;
+    if b == 15 and cfg.chat and cfg.hide_game_chat and (legacy.pad.menu == '' or legacy.pad.mine) then   -- Y: YunaUI's chat, not the game's log
+        if st ~= 0 and legacy.pad_once('log') then
+            if legacy.pad.big then legacy.pad_tab(1); else legacy.pad_toggle(not legacy.pad.mine); end
+        end
+        e.blocked = true;
+        return;
+    end
+    if not legacy.pad.open then return; end
+    if b == 13 and legacy.pad.mine then                              -- B: back (big -> lit -> closed)
+        if st ~= 0 and legacy.pad_once('close') then legacy.pad_back(); end
+        e.blocked = true;
+        return;
+    end
+    if b == 12 and legacy.pad.mine then                              -- A: the big chat
+        if st ~= 0 and legacy.pad_once('big') then legacy.pad.big = not legacy.pad.big; legacy.pad.combat = false; cw[1].scroll = 0; end
+        e.blocked = true;
+        return;
+    end
+    if b == 8 or b == 9 then                                         -- LB / RB: the tab
+        if st ~= 0 and legacy.pad_once('tab' .. b) then legacy.pad_tab((b == 8) and -1 or 1); end
+        e.blocked = true;
+    elseif b == 0 or b == 1 then                                     -- D-pad up / down: scroll
+        if st ~= 0 and legacy.pad_once('sc' .. b) then legacy.pad_scroll((b == 0) and 3 or -3); end
+        e.blocked = true;
+    end
+end);
+-- Keyboard players, the same as the pad: F is Triangle / Y (YunaUI's chat; with the big chat open, the next tab), Enter
+-- is X / A (the big chat), Escape is Circle / B (back), Page Up / Page Down scroll. F works only with no menu open and
+-- nothing being typed; the others only while YunaUI's chat is open. A key is kept from the game only when it did something.
+legacy.kb = { held = {}, keys = { 0x21, 0x1C, 0x9C, 0x01, 0xC9, 0xD1 } };
+function legacy.kb_act(k)                                            -- (what a key does right now, or nil)
+    if not (cfg.chat and cfg.hide_game_chat) then return nil; end
+    local io = imgui.GetIO();
+    if io.WantTextInput or io.KeyCtrl or io.KeyAlt or io.KeyShift then return nil; end
+    if k == 0x21 then return (legacy.pad.menu == '' or legacy.pad.mine) and 'log' or nil; end
+    if not (legacy.pad.open and legacy.pad.mine) then return nil; end
+    if k == 0x1C or k == 0x9C then return 'big'; end
+    if k == 0x01 then return 'back'; end
+    if k == 0xC9 then return 'up'; end
+    if k == 0xD1 then return 'down'; end
+    return nil;
+end
+function legacy.kb_do(a)
+    if a == 'log' then if legacy.pad.big then legacy.pad_tab(1); else legacy.pad_toggle(not legacy.pad.mine); end
+    elseif a == 'big' then legacy.pad.big = not legacy.pad.big; legacy.pad.combat = false; cw[1].scroll = 0;
+    elseif a == 'back' then legacy.pad_back();
+    else legacy.pad_scroll((a == 'up') and 6 or -6); end
+end
+ashita.events.register('key_data', 'yui_kb', function(e)
+    local k = e.key;
+    if not e.down then
+        if legacy.kb.held[k] then legacy.kb.held[k] = nil; e.blocked = true; end
+        return;
+    end
+    if legacy.kb.held[k] then e.blocked = true; return; end          -- (held down: once per press)
+    local ok, a = pcall(legacy.kb_act, k);
+    if not ok or a == nil then return; end
+    legacy.kb.held[k] = true;
+    pcall(legacy.kb_do, a);
+    e.blocked = true;
+end);
+ashita.events.register('key_state', 'yui_kb_state', function(e)    -- (the game also reads held keys from here)
+    local keys = ffi.cast('uint8_t*', e.data_raw);
+    for _, k in ipairs(legacy.kb.keys) do
+        if keys[k] == 0 then legacy.kb.held[k] = nil;                -- (a key up whose event got lost: let it go)
+        elseif legacy.kb.held[k] then keys[k] = 0;
+        else local ok, a = pcall(legacy.kb_act, k); if ok and a then keys[k] = 0; end end
+    end
+end);
 ashita.events.register('command', 'yui_command', function(e)
     local args = e.command:args();
     if #args == 0 then return; end
@@ -7231,7 +7859,35 @@ ashita.events.register('command', 'yui_command', function(e)
     elseif sub == 'edit' then EDIT.on = not EDIT.on; if EDIT.on then ui.open = false; end
     elseif sub == 'welcome' then EDIT.welcome = true; EDIT.G.start();   -- (what a new player sees on the first launch; settings untouched)
     elseif sub == 'guide' or sub == 'tour' then EDIT.G.start();      -- the first-time guide again
+    elseif sub == 'map' and YMAP.have() then YMAP.big = not YMAP.big;                -- the big map
+    elseif sub == 'mapdump' then                                     -- (temporary, for building the minimap: the game's map table to a file)
+        local ok, err = pcall(function()
+            local mem = ashita.memory;
+            local at = mem.find('FFXiMain.dll', 0, '8A0D????????5333C05684C95774??8A5424188B7424148B7C2410B9', 0, 0);
+            if at == 0 then error('map table not found'); end
+            local tp = mem.read_uint32(at + 0x1C);
+            local rm = AshitaCore:GetResourceManager();
+            local out = {};
+            for i = 0, 1999 do
+                local b = tp + i * 0x0E;
+                local zone = mem.read_uint16(b);
+                local flags = mem.read_uint8(b + 4);
+                local datoff = mem.read_uint16(b + 8);
+                if zone == 0 and datoff == 0 and i > 10 then break; end
+                local low = bit.band(flags, 0x0F);
+                local fid = (low == 0 and datoff + 5312) or (low == 1 and datoff + 53295) or (low == 2 and datoff + 54295) or 5522;
+                local path = '';
+                pcall(function() path = rm:GetFilePath(fid) or ''; end);
+                out[#out + 1] = table.concat({ i, zone, mem.read_uint8(b + 2), mem.read_uint8(b + 3), flags, mem.read_int8(b + 5),
+                    datoff, mem.read_int16(b + 0x0A), mem.read_int16(b + 0x0C), fid, path }, '\t');
+            end
+            local f = io.open((addon.path:gsub('[\\/]+$', '')) .. '\\maptable.txt', 'w');
+            f:write('index\tzone\tfloor\tfloorindex\tflags\tscale\tdatoff\toffx\toffy\tfileid\tpath\n' .. table.concat(out, '\n') .. '\n');
+            f:close();
+            msg('Map table written: ' .. #out .. ' maps (maptable.txt).');
+        end);
+        if not ok then msg('Map dump failed: ' .. tostring(err)); end
     elseif sub == 'lock' or sub == 'unlock' then cfg.locked = (sub == 'lock'); save(); msg(cfg.locked and 'Locked.' or 'Unlocked.');
     elseif sub == 'reset' then settings.reset(); msg('Reset to default (reload the addon to move everything back).');
-    else msg('/yui  - open YunaUI   |   /yui edit   |   /yui guide   |   /yui lock | unlock   |   /yui reset'); end
+    else msg('/yui  - open YunaUI   |   /yui edit   |   /yui guide   |   ' .. (YMAP.have() and '/yui map   |   ' or '') .. '/yui lock | unlock   |   /yui reset'); end
 end);
