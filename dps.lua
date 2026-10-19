@@ -990,7 +990,7 @@ local function push_font()
     local f = ui.font;
     if f == nil then return false; end
     local ok = false;
-    if f.LegacySize ~= nil then
+    if YUI_NEWFONT(f) then
         ok = pcall(imgui.PushFont, f, 16);                    -- newer ImGui draws fonts at any size itself
         scale.f = 1;
     else
@@ -1750,7 +1750,8 @@ ashita.events.register('d3d_present', 'ym_present', function()
     pcall(hate.tick);
     if lg.f and now() - lg.snap_t > 10 and fighting() then lg.snap_t = now(); pcall(lg.snapshot, hate.focus(), 'every 10s'); end
     send_chat_queue();
-    draw_ui();
+    local ok, err = pcall(draw_ui);
+    if not ok then pcall(YUI_ERRLOG, 'meter draw', err); end
 end);
 
 ashita.events.register('packet_in', 'ym_packet_in', function(e)

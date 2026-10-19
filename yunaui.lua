@@ -11,6 +11,30 @@ local chat     = require('chat');
 local ffi      = require('ffi');
 local d3d      = require('d3d8');
 
+-- Is this font from the newer ImGui (VanaCore: any size when pushed) or the older one (plain Ashita: fixed size)?
+-- Asked safely: on plain Ashita even asking a font for LegacySize is an error, which broke everything drawn with a font.
+YUI_FONTNEW = YUI_FONTNEW or setmetatable({}, { __mode = 'k' });
+-- Plain Ashita (its older ImGui, DirectX 8): every addon's fonts go into one shared texture of at most 4096 x 4096. With
+-- other addons' fonts it is already full, and one more leaves it unusable for everyone: shapes and letters go blank,
+-- only pictures still show. So there YunaUI adds only its own font at three sizes and scales the rest. VanaCore keeps them all.
+YUI_OLDIMGUI = (function()
+    local ok, vana = pcall(function() return AshitaCore:GetInstallPath():lower():find('vanacore', 1, true) ~= nil; end);
+    if ok and vana then return false; end
+    local ok2, v = pcall(function() return AshitaCore:GetPluginManager():Get('addons'):GetInterfaceVersion(); end);
+    if ok2 and tonumber(v) and tonumber(v) >= 4.3 then return false; end
+    return true;
+end)();
+YUI_NEWFONT = function(f)
+    if f == nil then return false; end
+    local v = YUI_FONTNEW[f];
+    if v == nil then
+        local ok, ls = pcall(function() return f.LegacySize; end);
+        v = (ok and ls ~= nil) and true or false;
+        pcall(function() YUI_FONTNEW[f] = v; end);
+    end
+    return v;
+end
+
 ----------------------------------------------------------------------------------------------------
 -- Settings
 ----------------------------------------------------------------------------------------------------
@@ -67,6 +91,18 @@ local function save()
     WATCH.own = own_file('settings.lua');                          -- our own change: not "from outside"
 end
 local function msg(t) print(chat.header(addon.name):append(chat.message(t))); end
+-- Errors also go to a file (yunaui-errors.txt in the addon's folder): with the game's chat hidden they can't always
+-- be seen in game
+YUI_ERRSEEN = {};
+YUI_ERRLOG = function(where, err)
+    local e = tostring(err);
+    if YUI_ERRSEEN[e] then return; end
+    YUI_ERRSEEN[e] = true;
+    pcall(function()
+        local f = io.open((addon.path:gsub('[\\/]+$', '')) .. '\\yunaui-errors.txt', 'a');
+        if f then f:write(os.date('%Y-%m-%d %H:%M:%S') .. '  [' .. where .. ']  ' .. e .. '\n'); f:close(); end
+    end);
+end
 
 -- YunaEquip, now part of YunaUI: its code is equip.lua, its pictures and fonts are in the equip folder. It reads
 -- YunaUI's bar effect through YUI_BAR_FX, and asks for its settings tab with YUI_OPEN_EQUIP.
@@ -74,12 +110,12 @@ YUI_EQ_PATH = (addon.path:gsub('[\\/]+$', '')) .. '\\equip';
 YUI_BAR_FX = function() return cfg.bar_fx or 'flow'; end
 do
     local ok, err = pcall(require, 'equip');
-    if not ok then print('[yunaui] YunaEquip part failed to load: ' .. tostring(err)); end
+    if not ok then print('[yunaui] YunaEquip part failed to load: ' .. tostring(err)); YUI_ERRLOG('load equip', err); end
 end
 -- The Damage Meter (it was the separate YunaDPS addon): dps.lua, settings in its own dps.lua, the DAMAGE METER tab
 do
     local ok, err = pcall(require, 'dps');
-    if not ok then print('[yunaui] Damage Meter part failed to load: ' .. tostring(err)); end
+    if not ok then print('[yunaui] Damage Meter part failed to load: ' .. tostring(err)); YUI_ERRLOG('load dps', err); end
 end
 
 ----------------------------------------------------------------------------------------------------
@@ -108,6 +144,27 @@ local C = {
     mp2      = { 0.62, 0.40, 1.00 },
 };
 local function u32(c) return imgui.GetColorU32(c); end
+-- Every clip area goes through here: inside the screen, on whole pixels and at least 1 px. Plain Ashita (DirectX 8)
+-- can't draw with one bigger than the screen (every window after it vanishes, the settings too), and one partly off the
+-- screen, on half pixels or with no size makes every addon's window shake (as equip.lua's JOBS.clip already knew).
+function C.screen()
+    local ds = imgui.GetIO().DisplaySize;
+    return math.floor((ds and tonumber(ds.x)) or 1920), math.floor((ds and tonumber(ds.y)) or 1080);
+end
+function C.cliprect(a, b)
+    local w, h = C.screen();
+    local x1 = math.floor(math.max(0, math.min(w - 1, a[1])));
+    local y1 = math.floor(math.max(0, math.min(h - 1, a[2])));
+    local x2 = math.ceil(math.max(x1 + 1, math.min(w, b[1])));
+    local y2 = math.ceil(math.max(y1 + 1, math.min(h, b[2])));
+    return { x1, y1 }, { x2, y2 };
+end
+function C.clip(dl, a, b, inter) local p1, p2 = C.cliprect(a, b); dl:PushClipRect(p1, p2, inter); end
+function C.iclip(a, b, inter) local p1, p2 = C.cliprect(a, b); imgui.PushClipRect(p1, p2, inter); end
+function C.fullclip(dl)                                              -- (drawing outside a window's own box: the whole screen)
+    local w, h = C.screen();
+    dl:PushClipRect({ 0, 0 }, { w, h }, false);
+end
 
 -- Tooltips in YunaUI's style (used by the whole UI, the Damage Meter and the bars too): a dark violet card with
 -- rounded corners, a thin violet edge, a pink-to-violet line along the top; the first line white, the rest softer.
@@ -146,6 +203,28 @@ local function esc(t) return (tostring(t):gsub('%%', '%%%%')); end
 
 local fonts = { main = nil, title = nil };
 local function load_fonts()
+    if YUI_OLDIMGUI then                                             -- (plain Ashita, see YUI_OLDIMGUI: just YunaUI's own font at three
+        fonts.sized = { main = {}, semi = {}, chat = {} };          --  sizes, for everything; the rest scaled down from them, so sharp)
+        local file = addon.path .. '/fonts/texgyreadventor-regular.otf';
+        local fh = io.open(file, 'rb');
+        if fh then
+            fh:close();
+            for _, px in ipairs({ 16, 26, 40 }) do
+                local ok, ft = pcall(imgui.AddFontFromFileTTF, file, px);
+                if ok and ft then
+                    local e = { ft, px };
+                    table.insert(fonts.sized.chat, e); table.insert(fonts.sized.main, e); table.insert(fonts.sized.semi, e);
+                end
+            end
+        end
+        local l = fonts.sized.chat;
+        fonts.main = l[1] and l[1][1] or nil;
+        fonts.semi, fonts.chat = fonts.main, fonts.main;
+        fonts.title = (l[2] and l[2][1]) or fonts.main;
+        YUI_FONTS = fonts;
+        if YUI_EQ_SETFONTS then pcall(YUI_EQ_SETFONTS, fonts); end   -- (the bars use the same ones)
+        return;
+    end
     local dir = (os.getenv('WINDIR') or 'C:\\Windows') .. '\\Fonts\\';
     local function add(name, size)
         local f = io.open(dir .. name, 'rb');
@@ -159,7 +238,7 @@ local function load_fonts()
     fonts.title = add('bahnschrift.ttf', 22);
     -- the same fonts made at a few sizes, so the size sliders stay sharp (the nearest bigger one is shrunk a little)
     fonts.sized = { main = {}, semi = {}, chat = {} };
-    for _, px in ipairs({ 13, 17, 22, 28, 36 }) do
+    for _, px in ipairs(YUI_OLDIMGUI and { 17 } or { 13, 17, 22, 28, 36 }) do
         local m = (px == 17) and fonts.main or (add('segoeui.ttf', px) or add('SegUIVar.ttf', px));
         local s = (px == 17) and fonts.semi or add('seguisb.ttf', px);
         if m then table.insert(fonts.sized.main, { m, px }); end
@@ -174,7 +253,7 @@ local function load_fonts()
         local f = io.open(fdir .. n, 'rb');
         if f then f:close(); file = fdir .. n; fonts.chat_name = n; break; end
     end
-    for _, px in ipairs({ 13, 16, 20, 26, 34 }) do
+    for _, px in ipairs(YUI_OLDIMGUI and { 16, 26 } or { 13, 16, 20, 26, 34 }) do
         local font = nil;
         if file then
             local ok, ff = pcall(imgui.AddFontFromFileTTF, file, px);
@@ -188,7 +267,7 @@ local function load_fonts()
 end
 local function push_font(f, size)
     if f == nil then return false; end
-    if f.LegacySize ~= nil then return (pcall(imgui.PushFont, f, size)); end
+    if YUI_NEWFONT(f) then return (pcall(imgui.PushFont, f, size)); end
     return (pcall(imgui.PushFont, f));
 end
 -- Text at any size: picks the nearest made size at or above it and scales it down a touch. Returns a token for unsize().
@@ -498,7 +577,18 @@ local function plain_window(name, kx, ky, force)
             ImGuiWindowFlags_NoScrollbar, ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_NoBackground,
             ImGuiWindowFlags_NoFocusOnAppearing, ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoSavedSettings);
     end
-    imgui.SetNextWindowPos({ tonumber(cfg[kx]) or 100, tonumber(cfg[ky]) or 100 }, (WATCH.move > 0 or force) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
+    local one = WATCH.one and WATCH.one[kx];                        -- (just this window put back on the screen: only it moves)
+    if one then WATCH.one[kx] = (one > 1) and (one - 1) or nil; end
+    local px, py = tonumber(cfg[kx]) or 100, tonumber(cfg[ky]) or 100;
+    if px > -1000 and py > -1000 then                                -- (kept on the screen before it's drawn, by its last size: on plain
+        local W, H = C.screen();                                     --  Ashita a window partly off the screen for even one frame hides the
+        local sz = WATCH.size and WATCH.size[kx];                    --  windows drawn after it, the settings panel flickered)
+        local sw, sh = (sz and sz[1]) or 1, (sz and sz[2]) or 1;
+        local nx = math.max(0, math.min(W - math.min(sw, W), px));
+        local ny = math.max(0, math.min(H - math.min(sh, H), py));
+        if nx ~= px or ny ~= py then px, py, one = nx, ny, one or 1; cfg[kx], cfg[ky] = nx, ny; end
+    end
+    imgui.SetNextWindowPos({ px, py }, (WATCH.move > 0 or force or one) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
     local flags = NOFRAME;
     if (cfg.locked and not EDIT.on) or force then flags = bit.bor(flags, ImGuiWindowFlags_NoMove); end
     imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
@@ -540,7 +630,12 @@ local function end_plain(kx, ky)
         end
     end
     local nx, ny, moved = YUI_ONSCREEN(wx, wy, sw, sh);              -- (always on the screen)
-    if moved then cfg[kx], cfg[ky] = nx, ny; WATCH.move = math.max(WATCH.move, 2); save(); end
+    if moved then                                                    -- only this window goes back (moving all of them made the whole UI
+        cfg[kx], cfg[ky] = nx, ny;                                   --  tremble while one was growing, e.g. the pet bar popping in);
+        WATCH.one = WATCH.one or {};                                 --  saved at most once a second
+        WATCH.one[kx] = 2;
+        if os.clock() - (WATCH.saved or 0) > 1 then WATCH.saved = os.clock(); save(); else WATCH.later = true; end
+    end
     imgui.End();
     imgui.PopStyleVar(2);
 end
@@ -603,7 +698,7 @@ local function glow_bar(dl, x, y, w, h, v, lag, c1, c2, seed, fxo)
         -- second, brightening in pulses (never outside the bar)
         local beat = math.max(0, math.sin(now * 2.6 + seed)) ^ 3;
         local a = 0.18 + 0.55 * beat;
-        dl:PushClipRect({ x, y }, { x + fw, y + h }, true);
+        C.clip(dl, { x, y }, { x + fw, y + h }, true);
         local tick = math.floor(now * 14);
         local step = math.max(4, h * 1.8);
         for pass = 1, 2 do
@@ -1238,7 +1333,7 @@ function FIGHT.draw(dl, sid, x, y, w, sc)
     local fs = FS or 1;
     local k = math.max(0.5, math.min(2.5, tonumber(cfg.mb_scale) or 1));   -- (TARGET > Magic Burst size)
     local s2 = sc * k;
-    pcall(function() dl:PushClipRect({ 0, 0 }, { 99999, 99999 }, false); end);
+    pcall(function() C.fullclip(dl); end);
     imgui.SetWindowFontScale(fs * 0.80 * k);
     local lh = imgui.GetTextLineHeight();
     local st = FIGHT.sc[sid];
@@ -1272,7 +1367,7 @@ function FIGHT.draw(dl, sid, x, y, w, sc)
             dl:AddRectFilled({ x0, y0 }, { x1, y1 }, u32({ 0.045, 0.040, 0.065, 0.88 * al }), rr);   -- the card (the fan's Tab look)
             FIGHT.drawn.mb = { x0, y0, x1 - x0, y1 - y0, now };
             pcall(function()                                         -- (the chain's part a little lighter)
-                dl:PushClipRect({ sepx, y0 - 2 }, { x1 + 2, y1 + 2 }, true);
+                C.clip(dl, { sepx, y0 - 2 }, { x1 + 2, y1 + 2 }, true);
                 dl:AddRectFilled({ x0, y0 }, { x1, y1 }, u32({ 0.09, 0.08, 0.12, 0.88 * al }), rr);
                 dl:PopClipRect();
             end);
@@ -1314,7 +1409,7 @@ function FIGHT.draw_fan(dl, sid, hx, hy, sc)
     if t > st.dur then return false; end
     local opts = (sid == -1) and { { 'Savage Blade', 'Light', 3 }, { 'Requiescat', 'Gravitation', 2 }, { 'Red Lotus Blade', 'Liquefaction', 1 } }
         or FIGHT.options(st);
-    pcall(function() dl:PushClipRect({ 0, 0 }, { 99999, 99999 }, false); end);
+    pcall(function() C.fullclip(dl); end);
     local fk = FIGHT.font(17 * sc);
     local lh = imgui.GetTextLineHeight();
     local all = ImDrawFlags_RoundCornersAll or ImDrawCornerFlags_All or 15;
@@ -1458,7 +1553,7 @@ function FIGHT.card(dl, o, x2, ym, cw, ch, cut, wn, wa, lh, sc, al, pc, best, go
         local rr = (shape == 'pill') and ch / 2 or 6 * sc;
         dl:AddRectFilled({ x1, y1 }, { x2, y2 }, u32({ base[1], base[2], base[3], ea * al }), rr);
         pcall(function()                                             -- the result part, a little lighter
-            dl:PushClipRect({ sepx, y1 - 2 }, { x2 + 2, y2 + 2 }, true);
+            C.clip(dl, { sepx, y1 - 2 }, { x2 + 2, y2 + 2 }, true);
             dl:AddRectFilled({ x1, y1 }, { x2, y2 }, u32({ light[1], light[2], light[3], ea * al }), rr);
             dl:PopClipRect();
         end);
@@ -1784,7 +1879,7 @@ local function draw_target(dt)
         local nw, nh = imgui.CalcTextSize(name);
         local fsid = fake and -1 or ent:GetServerId(idx);
         if fake then pcall(FIGHT.preview); else pcall(FIGHT.showing, fsid); end   -- (pretend cast, chain and burst, looping)
-        local fullclip = pcall(function() dl:PushClipRect({ 0, 0 }, { 99999, 99999 }, false); end);   -- (moved pieces may sit outside the window)
+        local fullclip = pcall(function() C.fullclip(dl); end);   -- (moved pieces may sit outside the window)
         local tdx, tdy = FIGHT.off('tn');                            -- (Edit Mode: the name can be moved)
         FIGHT.anc.tn = { x, y, nw + 60 * sc, nh };
         local mdx, mdy = FIGHT.off('mb');                            -- the Magic Burst line: its own place (over the bar's start), movable in Edit Mode
@@ -2901,7 +2996,7 @@ end
 -- A soft vertical band of light (centre cx, half-width bw) inside x0..x1
 function ALLY.band(dl, cx, bw, x0, x1, y1, y2, col, a)
     if cx + bw < x0 or cx - bw > x1 or x1 <= x0 then return; end
-    if not pcall(function() dl:PushClipRect({ x0, y1 }, { x1, y2 }, true); end) then return; end
+    if not pcall(function() C.clip(dl, { x0, y1 }, { x1, y2 }, true); end) then return; end
     local c0, cA = { col[1], col[2], col[3], 0 }, { col[1], col[2], col[3], a };
     ALLY.grad(dl, { cx - bw, y1 }, { cx, y2 }, c0, cA, cA, c0);
     ALLY.grad(dl, { cx, y1 }, { cx + bw, y2 }, cA, c0, c0, cA);
@@ -3231,7 +3326,7 @@ function ALLY.plate(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     if #fb >= 3 then                                                 -- (the colour: strong at the foot, gone at the top)
         local mid = (y1 + y2) / 2;
         pcall(function()
-            dl:PushClipRect({ x1, y1 }, { x1 + bw, y2 }, true);
+            C.clip(dl, { x1, y1 }, { x1 + bw, y2 }, true);
             ALLY.grad(dl, { x1, mid - 2 }, { x1 + bw, y2 }, { rc[1], rc[2], rc[3], 0 }, { rc[1], rc[2], rc[3], 0 }, { rc[1], rc[2], rc[3], 0.55 * v * dim }, { rc[1], rc[2], rc[3], 0.55 * v * dim });
             dl:PopClipRect();
         end);
@@ -3567,7 +3662,7 @@ function ALLY.spine(dl, list, x, y, sc, dt, tidx, n, party)
     end
     local hk = ALLY.hide_k();
     local SW = (ALLY.screen()) or 1920;
-    local clipped = (ee < 1 or party or hk > 0) and pcall(function() dl:PushClipRect({ 0, 0 }, { 99999, 99999 }, false); end);   -- (it may come from outside its window; the party's buffs sit outside it)
+    local clipped = (ee < 1 or party or hk > 0) and pcall(function() C.fullclip(dl); end);   -- (it may come from outside its window; the party's buffs sit outside it)
     local thr = (tonumber(cfg.ally_smart_hp) or 75) / 100;
     local now = os.clock();
     local fs = FS or 1;
@@ -3830,7 +3925,7 @@ function ALLY.draw(dl, x, y, first, style, sc, dt, tidx, n)
             if v > 0.02 then
                 local rh = 0;
                 local ok = pcall(function()
-                    dl:PushClipRect({ x - 6, yy - 2 }, { x + w + 6, yy + 40 * sc * v }, true);
+                    C.clip(dl, { x - 6, yy - 2 }, { x + w + 6, yy + 40 * sc * v }, true);
                     rh = ALLY.row(dl, m, i, x, yy, w, sc, dt, tidx);
                     dl:PopClipRect();
                 end);
@@ -4375,7 +4470,7 @@ local function draw_chat(n)
         local pad = 12;
         local bar = math.floor(size * 1.5 + 6);                       -- room for the tabs (the combat window's label)
         local maxw = w - pad * 2;
-        imgui.PushClipRect({ x, y }, { x + w, y + h }, true);
+        C.iclip({ x, y }, { x + w, y + h }, true);
         local ly = y + h - pad - lh - bar;
         local type_h = typing and (lh + 10) or 0;                     -- room for the typing line above the tabs
         ly = ly - type_h;
@@ -4441,7 +4536,7 @@ local function draw_chat(n)
             local c = chat_col(typing.cat);
             local cx = line_w(typing.before);
             local shift = math.max(0, cx - (maxw - 14));               -- long text: keep the caret in view
-            imgui.PushClipRect({ tx0 + 2, ty0 }, { tx0 + tw0 - 2, ty0 + th0 }, true);
+            C.iclip({ tx0 + 2, ty0 }, { tx0 + tw0 - 2, ty0 + th0 }, true);
             chat_line(dl, x + pad - shift, ty0 + 3, typing.text, c, 1, lh);
             if math.floor(now * 2.4) % 2 == 0 then
                 local kx = x + pad - shift + cx + 1;
@@ -5568,7 +5663,7 @@ function PET.draw(dt)
         return;
     end
     local fx = 'wipe';                                               -- (the pop-in: Wipe, the cleanest; the others are kept in the code)
-    if cfg.pet_anim == false then fx = 'none'; end
+    if cfg.pet_anim == false or YUI_OLDIMGUI then fx = 'none'; end   -- (plain Ashita: no pop-in, its moving clip made the settings panel flicker)
     local appear = (fx == 'none') and 1 or math.max(0, math.min(1, (now - (PET.born or 0)) / (PET.FX_DUR[fx] or 0.5)));
     local ease = 1 - (1 - appear) ^ 3;
     local out = PET.gone and math.max(0, 1 - (now - PET.gone) / 0.4) or 1;   -- fading away when it's dismissed
@@ -5600,7 +5695,7 @@ function PET.draw(dt)
         imgui.PushStyleVar(ImGuiStyleVar_Alpha, math.max(0.01, alpha));
         local clipped = false;
         if fx == 'wipe' and appear < 1 then                          -- revealed left to right
-            clipped = pcall(function() dl:PushClipRect({ x - 8, y_top - 4 }, { x - 8 + (w + 24 * sc) * ease, y_top + 2000 }, true); end);
+            clipped = pcall(function() C.clip(dl, { x - 8, y_top - 4 }, { x - 8 + (w + 24 * sc) * ease, y_top + 2000 }, true); end);
         end
         -- the name (and how far it is), its HP% on the right
         local pushed = sized('semi', 16 * sc);
@@ -6197,7 +6292,7 @@ local function draw_window()
         local dl = imgui.GetWindowDrawList();
         local pf = fonts.chat or fonts.main;
         C.wfs = 1;                                                   -- older ImGui can't size a font: scale the window's text
-        if pf == nil or pf.LegacySize == nil then C.wfs = C.ps; imgui.SetWindowFontScale(C.wfs); end
+        if pf == nil or not YUI_NEWFONT(pf) then C.wfs = C.ps; imgui.SetWindowFontScale(C.wfs); end
         local wx, wy = imgui.GetWindowPos();
         PANEL.frame(dl, wx, wy, WIN_W, WIN_H, SW);
         PANEL.sidebar(dl, wx + 26 * ps, wy + 34 * ps, SW - 40 * ps);
@@ -6872,7 +6967,8 @@ ashita.events.register('d3d_present', 'yui_present', function()
         cfg.fan_shape, cfg.fan_tint, cfg.party_cols = 'tab', 'dark', 1;
         cfg.clean_v1 = true; WATCH.move = 3; pcall(save);
     end
-    if not cfg.slim_v2 then cfg.card_style, cfg.spine_line, cfg.spine_trace, cfg.slim_v2 = 'slim', true, true, true; pcall(save); end   -- (once: back to Slim + spine + outline)
+    if not cfg.slim_v2 then cfg.spine_line, cfg.spine_trace, cfg.slim_v2 = true, true, true; pcall(save); end   -- (an old step; it used to put Slim back on new installs)
+    if cfg.card_style ~= 'clean' then cfg.card_style = 'clean'; pcall(save); end   -- (the party's look is fixed: Clean, the CARDS options are gone)
     if not cfg.spine_v2 then                                         -- (once: the new default places)
         pcall(function()
             local ds = imgui.GetIO().DisplaySize;
@@ -6903,6 +6999,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         local function piece(fn, ...)
             local ok2, e2 = pcall(fn, ...);
             if not ok2 then
+                YUI_ERRLOG('draw', e2);
                 if ui.last_err ~= tostring(e2) then ui.last_err = tostring(e2); msg('Draw error: ' .. ui.last_err); end
             end
         end
@@ -6938,6 +7035,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
             end
         end
         if WATCH.move > 0 then WATCH.move = WATCH.move - 1; end
+        if WATCH.later and os.clock() - (WATCH.saved or 0) > 1 then WATCH.later, WATCH.saved = nil, os.clock(); pcall(save); end
         if not ui.open and not EDIT.on then ALLY.pick = nil; end     -- (the pretend selection mark lasts only while placing things)
         SUBPREVIEW = SUBPREVIEW or function() return (ui.open and ui.tab == 2) or EDIT.on; end
         if EDIT.on then PREVIEW.party, PREVIEW.alliance = true, true;
@@ -6977,6 +7075,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(EDIT.G.draw);                                          -- the first-time guide (/yui guide)
         piece(EDIT.G.splash);                                        -- and its send-off
     end);
+    if not ok then YUI_ERRLOG('frame', err); end
     if not ok and ui.last_err ~= tostring(err) then ui.last_err = tostring(err); msg('Draw error: ' .. ui.last_err); end
 end);
 

@@ -187,6 +187,8 @@ local NAME_FONTS = {
     { 'Shojumaru', 'Shojumaru-Regular.ttf', 17 },   -- Japanese-style brush caps (OFL)
 };
 local function load_fonts()
+    fonts.yui = {};
+    if YUI_OLDIMGUI then return; end                                 -- (plain Ashita: no fonts of our own, see YUI_OLDIMGUI in yunaui.lua)
     local dir = (os.getenv('WINDIR') or 'C:\\Windows') .. '\\Fonts\\';
     local function add(name, size)
         local f = io.open(dir .. name, 'rb');
@@ -205,15 +207,17 @@ local function load_fonts()
     local yh = io.open(yf, 'rb');
     if yh then
         yh:close();
-        for _, px in ipairs({ 13, 18, 24, 32, 44 }) do
+        for _, px in ipairs(YUI_OLDIMGUI and { 18, 32 } or { 13, 18, 24, 32, 44 }) do
             local ok, ft = pcall(imgui.AddFontFromFileTTF, yf, px);
             if ok and ft then fonts.yui[#fonts.yui + 1] = { ft, px }; end
         end
     end
-    for _, sf in ipairs(SET_FONTS) do fonts.set[sf[1]] = add(sf[3], 26); end
+    for _, sf in ipairs(SET_FONTS) do                                -- (plain Ashita: only the one in use, see YUI_OLDIMGUI)
+        if not YUI_OLDIMGUI or sf[1] == (cfg.set_font or 'bahn') then fonts.set[sf[1]] = add(sf[3], 26); end
+    end
     -- The state name's fonts: every one in NAME_FONTS that is there (missing ones are skipped)
     local mine = (YUI_EQ_PATH:gsub('[\\/]+$', '')) .. '\\fonts\\';
-    for _, nf in ipairs(NAME_FONTS) do
+    for _, nf in ipairs(YUI_OLDIMGUI and {} or NAME_FONTS) do
         local font = nil;
         if nf[2] then
             local f = io.open(mine .. nf[2], 'rb');
@@ -230,12 +234,12 @@ local function load_fonts()
 end
 local function push_font(f, size)
     if f == nil then return false; end
-    if f.LegacySize ~= nil then return (pcall(imgui.PushFont, f, size)); end   -- newer ImGui: any size
+    if YUI_NEWFONT(f) then return (pcall(imgui.PushFont, f, size)); end   -- newer ImGui: any size
     return (pcall(imgui.PushFont, f));
 end
 -- Older ImGui can't size a pushed font, so the card scales it with the window font scale instead
 local function font_scale(sc)
-    if fonts.main and fonts.main.LegacySize ~= nil then return 1; end
+    if fonts.main and YUI_NEWFONT(fonts.main) then return 1; end
     return sc;
 end
 -- The name font (Shojumaru) and its size; nil = it didn't load, the card's font is used
@@ -1056,7 +1060,7 @@ local function draw_state(dl, cx, ytop, sc, text, c1, c2, maxw)
     end
     local f, fsz = label_font();
     local pushed = push_font(f, math.floor(fsz * sc + 0.5));
-    imgui.SetWindowFontScale((pushed and f.LegacySize ~= nil) and 1 or sc);
+    imgui.SetWindowFontScale((pushed and YUI_NEWFONT(f)) and 1 or sc);
     local tw, th = imgui.CalcTextSize(text);
     if maxw and tw + 14 * sc > maxw then                             -- too wide for this card: leave it out
         if pushed then imgui.PopFont(); end
@@ -1197,7 +1201,7 @@ local function draw_mp_timer(dl, cx, ybot, sc, c1, c2, maxw)
     local al = math.min(1, (os.clock() - ye.rest.t0) / 0.4);       -- fades in when you sit down
     local f, fsz = label_font();
     local pushed = push_font(f, math.floor(14 * sc + 0.5));
-    imgui.SetWindowFontScale((pushed and f.LegacySize ~= nil) and 1 or sc * 14 / 17);
+    imgui.SetWindowFontScale((pushed and YUI_NEWFONT(f)) and 1 or sc * 14 / 17);
     local tw, th = imgui.CalcTextSize(text);
     if maxw and tw + 14 * sc > maxw then                             -- narrow card: just the time
         text = short;
@@ -1511,7 +1515,7 @@ function JOBS.stat(dl, x, y, ax, label, value, c, fs, bs, ytop, frac, beat)
     local ss = math.max(0.6, math.min(2.0, tonumber(cfg.stat_size) or 1));
     bs = bs * ss;                                                    -- everything in the group grows with the text
     local pushed = push_font(fonts.semi, math.floor(20 * bs + 0.5));
-    local new = fonts.semi and fonts.semi.LegacySize ~= nil;
+    local new = fonts.semi and YUI_NEWFONT(fonts.semi);
     local base = pushed and (new and (20 * bs) or 20) or 17;
     local function scale(px) imgui.SetWindowFontScale((pushed and new) and (px / (20 * bs)) or (px / base)); end
     scale(14 * bs);
@@ -1964,7 +1968,7 @@ end
 -- Text in Georgia (or the card font), with a dark edge; ax 0 = centred. Returns width, height.
 function JOBS.serif(dl, x, y, str, px, col, spacing)
     local pushed = push_font(fonts.serif, math.floor(px + 0.5));
-    local new = pushed and fonts.serif.LegacySize ~= nil;
+    local new = pushed and YUI_NEWFONT(fonts.serif);
     imgui.SetWindowFontScale(pushed and (new and 1 or px / 18) or (px / 17));
     local sp = spacing or 0;
     local w, h = 0, 0;
@@ -1985,7 +1989,7 @@ end
 -- Text in Bahnschrift (YGO's title font), centred on x, with a dark edge. Returns width, height.
 function JOBS.bahn(dl, x, y, str, px, col, spacing)
     local pushed = push_font(fonts.title, math.floor(px + 0.5));
-    local new = pushed and fonts.title.LegacySize ~= nil;
+    local new = pushed and YUI_NEWFONT(fonts.title);
     imgui.SetWindowFontScale(pushed and (new and 1 or px / 22) or (px / 17));
     local sp = spacing or 0;
     local w, h = 0, 0;
@@ -2309,7 +2313,7 @@ function JOBS.mid_label(dl, cx, cy, half, bs, fs, label, jkey)
         if str == nil or a <= 0.01 then return; end
         local px_ = 34 * bs * sc;
         local pushed = push_font(f, math.floor(px_ + 0.5));
-        local new = pushed and f.LegacySize ~= nil;
+        local new = pushed and YUI_NEWFONT(f);
         local base = pushed and (new and 1 or px_ / 26) or (px_ / 17);
         imgui.SetWindowFontScale(base);
         local sp = 3 * bs * sc;                                     -- spaced-out capitals
@@ -3390,6 +3394,12 @@ YUI_EQ_SETTINGS = function()
 end
 -- Settings copied in from another character (YunaUI sees the file change): take them at once, move everything
 YUI_EQ_GET = function() return cfg; end
+YUI_EQ_SETFONTS = function(f)                                        -- (plain Ashita: YunaUI's few fonts, shared; see YUI_OLDIMGUI)
+    fonts.yui = (f.sized and f.sized.chat) or {};
+    fonts.main, fonts.semi, fonts.serif = f.main, f.main, f.main;
+    fonts.title = f.title or f.main;
+    fonts.set[cfg.set_font or 'bahn'] = fonts.title;
+end
 YUI_EQ_RECT = function()                                             -- where your HP / MP / TP bars are, all together (YunaUI's guide)
     local x0, y0, x1, y1;
     for key, sz in pairs(JOBS.sb_size or {}) do
@@ -3433,6 +3443,7 @@ ashita.events.register('d3d_present', 'ye_present', function()
         if cfg.visible and not YUI_EQ_HIDE then draw_card(status); end   -- (YunaUI's paper doll replaces the wheel when on)
         JOBS.statbars();
     end);
+    if not ok then pcall(YUI_ERRLOG, 'equip draw', err); end
     if not ok and ye.last_err ~= tostring(err) then
         ye.last_err = tostring(err);
         msg('Draw error: ' .. ye.last_err);
