@@ -26,7 +26,7 @@ the AvantGarde-style font everywhere, and every piece placed where you like.
 1. Download the latest release zip and unzip it into `Ashita\addons\` (so you have `Ashita\addons\yunaui\yunaui.lua`).
    On VanaCore use `VanaCore\addons\ashita\` instead.
 2. In game: `/addon load yunaui`. Add that line to your startup script to load it every time.
-3. The first time, Edit Mode opens: place everything, then press **DONE**.
+3. The first time, a short guide shows what every piece does, then Edit Mode opens: place everything, then press **DONE**.
 
 ## Commands
 
@@ -34,6 +34,7 @@ the AvantGarde-style font everywhere, and every piece placed where you like.
 | --- | --- |
 | `/yui` | Open or close the settings |
 | `/yui edit` | Edit Mode: move every piece |
+| `/yui guide` | The first-time guide again |
 | `/yui lock` / `/yui unlock` | Stop or allow dragging |
 | `/yui reset` | Back to the default settings |
 | `/dps` | The Damage Meter's own commands |

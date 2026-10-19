@@ -3389,11 +3389,24 @@ YUI_EQ_SETTINGS = function()
     return ok, e;
 end
 -- Settings copied in from another character (YunaUI sees the file change): take them at once, move everything
-YUI_EQ_GET = function() return cfg; end                          -- (YunaUI's GENERAL > LAYOUT reads the bars' places)
+YUI_EQ_GET = function() return cfg; end
+YUI_EQ_RECT = function()                                             -- where your HP / MP / TP bars are, all together (YunaUI's guide)
+    local x0, y0, x1, y1;
+    for key, sz in pairs(JOBS.sb_size or {}) do
+        local x, y = tonumber(cfg[key .. 'bar_x']), tonumber(cfg[key .. 'bar_y']);
+        if x and y and x >= 0 and (key == 'hp' or cfg['sb_' .. key] ~= false) then
+            x0, y0 = math.min(x0 or x, x), math.min(y0 or y, y);
+            x1, y1 = math.max(x1 or (x + sz[1]), x + sz[1]), math.max(y1 or (y + sz[2]), y + sz[2]);
+        end
+    end
+    if x0 then return { x0, y0, x1 - x0, y1 - y0 }; end
+    return nil;
+end                          -- (YunaUI's GENERAL > LAYOUT reads the bars' places)
 YUI_EQ_APPLY = function(t)
     for k, v in pairs(t) do cfg[k] = v; end
     ui.place = true;
     JOBS.sb_move = 3;
+    pcall(save);                                                     -- (kept: a layout loaded from YunaUI)
 end
 
 ----------------------------------------------------------------------------------------------------
