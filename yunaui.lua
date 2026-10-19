@@ -58,7 +58,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -904,7 +904,7 @@ local function member(i)
             local k = i % 6 + 1;
             return { name = (i < 6) and DEMO[k] or ('Ally ' .. (i - 5)), zone = 0, job = (i * 7) % 22 + 1, lvl = 75, sub = (i * 5) % 22 + 1,
                      sublvl = 37, hp = 900 + i * 61, mp = 300 + i * 47, tp = (i * 450) % 3000, hpp = 1 - (i % 5) * 0.17,
-                     mpp = 1 - (i % 4) * 0.2, idx = 0, inzone = true, fake = true, leader = (k == 1), aleader = (i == 0) };
+                     mpp = 1 - (i % 4) * 0.2, idx = 0, inzone = true, fake = true, leader = (k == 1), aleader = (i == 0), far = (k == 5) };
         end
         return nil;
     end
@@ -913,6 +913,16 @@ local function member(i)
                 tp = p:GetMemberTP(i), hpp = p:GetMemberHPPercent(i) / 100, mpp = p:GetMemberMPPercent(i) / 100,
                 idx = p:GetMemberTargetIndex(i) };
     m.inzone = (m.zone == p:GetMemberZone(0));
+    if i ~= 0 and m.inzone then                                      -- how far they are: beyond spell range (or too far to be seen) = far
+        pcall(function()
+            if (m.idx or 0) == 0 then m.far = true; return; end
+            local d2 = AshitaCore:GetMemoryManager():GetEntity():GetDistance(m.idx);
+            if type(d2) == 'number' and d2 >= 0 then
+                m.dist = math.sqrt(d2);
+                m.far = m.dist > (tonumber(cfg.party_range) or 20.8);
+            end
+        end);
+    end
     pcall(function()
         local sid = p:GetMemberServerId(i);
         local lead = (i < 6 and p:GetAlliancePartyLeaderServerId1()) or (i < 12 and p:GetAlliancePartyLeaderServerId2()) or p:GetAlliancePartyLeaderServerId3();
@@ -3247,6 +3257,18 @@ function ALLY.slim(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
         local sp = 1.0 * sc;
         local nm = (m.name or '?'):upper();
         local room = bx1 - pw - tx - 8 * sc;
+        local dist = nil;                                            -- PARTY > Distance: how far they are, small, after the name
+        if cfg.party_dist ~= false and i ~= 0 and m.inzone then
+            dist = m.dist or (m.fake and (m.far and 32.4 or (3 + (i * 3.7) % 15))) or nil;
+        end
+        local dstr = dist and string.format('%.1f', dist) or nil;
+        local dw = 0;
+        if dstr then
+            imgui.SetWindowFontScale((FS or 1) * 0.80 * 0.66);
+            dw = imgui.CalcTextSize(dstr) + 7 * sc;
+            imgui.SetWindowFontScale((FS or 1) * 0.80);
+            room = room - dw;
+        end
         if spaced_w(nm, sp) > room then
             while #nm > 2 and spaced_w(nm .. '.', sp) > room do nm = nm:sub(1, -2); end
             nm = nm .. '.';
@@ -3256,6 +3278,14 @@ function ALLY.slim(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
             local chr = nm:sub(k, k);
             text(dl, cx, top - 1, chr, { nc[1], nc[2], nc[3], (m.inzone and 1 or 0.5) * v });
             cx = cx + imgui.CalcTextSize(chr) + sp;
+        end
+        if dstr then                                                 -- (white, clearly readable; pink when out of range, as on the target bar)
+            local _, nh_ = imgui.CalcTextSize('A');
+            imgui.SetWindowFontScale((FS or 1) * 0.80 * 0.66);
+            local _, dh_ = imgui.CalcTextSize(dstr);
+            local far_ = dist > (tonumber(cfg.party_range) or 20.8);
+            text(dl, cx + 6 * sc, top - 1 + (nh_ - dh_) * 0.80, dstr, far_ and { 1, 0.55, 0.75, v } or { 0.96, 0.95, 1, v });
+            imgui.SetWindowFontScale((FS or 1) * 0.80);
         end
         text(dl, bx1 - pw, top - 1, pct, { nc[1] * 0.88, nc[2] * 0.86, nc[3] * 0.94, 0.95 * v });
     else
@@ -3388,7 +3418,15 @@ function ALLY.plate(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
 end
 -- One whole card (centred on ny, from x1 to tip): the card, its edge, the MP bar (your party), the hat, the name and HP %.
 -- live = its hat is alive (a click folds the buffs); off for the settings' preview.
+-- PARTY > Fade far members: a member out of spell range is drawn faded (the whole card, every style)
 function ALLY.card(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
+    if not (m.far and cfg.party_dim_far ~= false) then return ALLY.card_(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live); end
+    imgui.PushStyleVar(ImGuiStyleVar_Alpha, 0.42);
+    local ok, err = pcall(ALLY.card_, dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live);
+    imgui.PopStyleVar(1);
+    if not ok then error(err, 0); end
+end
+function ALLY.card_(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     if ALLY.lowtest and m.inzone then m = setmetatable({ hpp = math.min(m.hpp or 1, 0.22) }, { __index = m }); end   -- (Preview low HP)
     if cfg.card_low ~= false and m.inzone and (m.hpp or 1) < 0.30 then   -- low HP: the card trembles, in bursts
         local t = os.clock();
@@ -6386,6 +6424,9 @@ local function draw_window()
             row_switch('##yui_pp', 'Pretend members (to place it)', 'party', 'Fills the empty places so you can place and size the list when alone.', PREVIEW, function() end);
             row_pick('##yui_plook', 'Party look', 'party_look', { { 'spine', 'Spine (YunaUI line)' }, { 'classic', 'Classic (with MP / TP)' } });
             row_slider('##yui_s_p', 'Size', 'party_scale', 0.6, 2.0, 0.05, '%.2fx');
+            row_switch('##yui_pfar', 'Fade far members', 'party_dim_far', 'On: a member farther than the distance below (out of range for spells like Cure) is shown faded, party and alliance. A pretend member shows it while you place the list.');
+            if cfg.party_dim_far ~= false then row_slider('##yui_s_pfar', 'Far from', 'party_range', 10, 50, 0.5, '%.1f yalms'); end
+            row_switch('##yui_pdist', 'Distance', 'party_dist', 'On: how far each member is (in yalms), small, after the name. Pink when out of range.');
             row_slider('##yui_s_ji', 'Job icons', 'icon_scale', 0.4, 2.5, 0.05, '%.2fx');
             section('ALLIANCE');
             row_switch('##yui_a', 'Show', 'alliance');
