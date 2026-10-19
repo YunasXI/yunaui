@@ -1,6 +1,7 @@
-# Buff / debuff icons: only the set YunaUI uses is published
-images/status/*
-!images/status/XIView_HD/
+# HD item and buff icons: an optional pack of their own (github.com/YunasXI/yunaui-icons);
+# without them YunaUI uses the game's own icons
+images/status/
+images/items/
 
 # Things YunaUI writes while you play
 logs/

@@ -39,6 +39,11 @@ the AvantGarde-style font everywhere, and every piece placed where you like.
 | `/yui reset` | Back to the default settings |
 | `/dps` | The Damage Meter's own commands |
 
+## HD icons (optional)
+
+YunaUI uses the game's own item and buff icons. For sharper HD ones, install the separate pack
+[YunaUI Icons](https://github.com/YunasXI/yunaui-icons): extract its zip into your `addons` folder.
+
 ## Credits
 
 - Enmity values from LandSandBoat. Cooldown reading follows the Timers addon.
