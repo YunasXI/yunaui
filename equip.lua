@@ -3440,7 +3440,8 @@ ashita.events.register('d3d_present', 'ye_present', function()
         local status = player_status();
         if status == nil then return; end                           -- zoning / not logged in
         if not cfg.imported then JOBS.import(); end
-        if cfg.visible and not YUI_EQ_HIDE then draw_card(status); end   -- (YunaUI's paper doll replaces the wheel when on)
+        -- (the old gear wheel is gone: YunaUI's strip shows your gear. It never draws, not even for the frame or two
+        -- while the game closes, when YunaUI's settings fall back to their defaults)
         JOBS.statbars();
     end);
     if not ok then pcall(YUI_ERRLOG, 'equip draw', err); end

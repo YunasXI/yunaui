@@ -7,8 +7,12 @@ images/items/
 logs/
 enmity_*.txt
 inline_dump.txt
+log_dump.txt
 yunaui-errors.txt
 
 # Maps redrawn from your own installed maps: made on your PC, never published
 mapsimg/
 maptable.txt
+
+# A temporary list of the game menu names (finding its map window)
+menus.txt

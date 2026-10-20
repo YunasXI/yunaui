@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.11';
+addon.version = '1.0.12';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -46,7 +46,7 @@ local defaults = T{
     alliance = true, alliance_x = 40, alliance_y = 250, ally2_x = 330, ally2_y = 250, ally1_scale = 0.75, ally2_scale = 0.75, party_cols = 1, ally1_cols = 1, ally2_cols = 1, party_gap = 0,
     barfx = 'none', barfx_target = 'same', barfx_party = 'same', barfx_alliance = 'same', barfx_equip = 'same', barfx_pet = 'same', barfx_alpha = 1.0, barfx_size = 0.6,
     strip_under = 'mp', strip_fx = 'muzzle', strip_fit = true, strip_cols = 8, strip_icon = 26, strip_dim = 0.35, strip_swap_only = false, strip_x = -1, strip_y = -1,
-    equip_look = 'wheel', doll_x = -1, doll_y = -1, doll_scale = 1.0, doll_slot = 34, doll_alpha = 0.85, ring_radius = 175, center_size = 1.3, portal_strength = 1.0,
+    equip_look = 'strip', doll_x = -1, doll_y = -1, doll_scale = 1.0, doll_slot = 34, doll_alpha = 0.85, ring_radius = 175, center_size = 1.3, portal_strength = 1.0,
     buffs = true, job_icons = 'hats', icon_scale = 1.0, arrow_scale = 1.0, target_mark = 'flare', flare_try = false, glow_style = 4, glow_anim = 'still', inferno_try = false, glow_bright = 1.3, glow_len = 1.0, buff_set = 'XIView_Elemental', crisp_try = false, tets_pick = false, pixel_try = false, remaster_try = false, elem_try = false, hat_anim = 'float', bar_fx = 'still',
     subtarget = true, sub_x = 560, sub_y = 140, sub_w = 300, sub_scale = 1.0,
     enemylist = true, enemy_x = 1500, enemy_y = 200, enemy_w = 200, enemy_scale = 1.0, enemy_max = 8,
@@ -4457,9 +4457,11 @@ end
 -- Pad players: every pad has its own layout (on many Xbox pads Y is the main menu and X the log), so YunaUI learns it:
 -- the button that opened the game's own log is remembered (cfg.pad_log, e.g. 'd51' = DirectInput Triangle, 'x14' =
 -- XInput X), and the one that then opened the full log (cfg.pad_big). Until then no button is taken from the game.
--- Once learned, the log button, pressed with no menu open, opens YunaUI's chat instead: all lines shown, L1 / R1
--- (LB / RB) change the tab, the D-pad up / down scrolls, the big-log button makes it big, Circle / B (or the log button
--- again) closes it. Those buttons are kept from the game only while it's open. CHAT > Pad: learn again forgets them.
+-- The log button stays the game's: its own log opens (moved below the screen, see legacy.log_away) and YunaUI's chat
+-- lights up, and a second press highlights your buffs (top left, to cancel one) as always. The big-log button (Cross /
+-- A) opens YunaUI's big chat instead of the game's full log; Circle / B closes it. While YunaUI's chat is lit, L1 / R1
+-- (LB / RB) change the tab and the D-pad up / down scrolls; in the big chat the log button is the next tab.
+-- CHAT > Pad: learn again forgets the learned buttons.
 legacy.pad = { open = false, mine = false, big = false, menu = '', prev = '' };
 legacy.PADN = { d = { [48] = 'SQUARE', [49] = 'CROSS', [50] = 'CIRCLE', [51] = 'TRIANGLE', [52] = 'L1', [53] = 'R1', [54] = 'L2', [55] = 'R2' },
     x = { [12] = 'A', [13] = 'B', [14] = 'X', [15] = 'Y', [8] = 'LB', [9] = 'RB', [4] = 'START', [5] = 'BACK' } };
@@ -4482,6 +4484,7 @@ function legacy.pad_tick()
     local game = legacy.pad.menu:find('logwindo', 1, true) ~= nil or legacy.pad.menu:find('fulllog', 1, true) ~= nil;
     local was = legacy.pad.prev;
     legacy.pad.prev = legacy.pad.menu;
+    pcall(legacy.log_away);                                          -- (the game's log, while open: below the screen)
     if legacy.pad.last and os.clock() - (legacy.pad.last_t or 0) < 0.7 and was ~= legacy.pad.menu then   -- (learn the pad's layout)
         local now_log, now_full = legacy.pad.menu:find('logwindo', 1, true) ~= nil, legacy.pad.menu:find('fulllog', 1, true) ~= nil;
         local was_log = was:find('logwindo', 1, true) ~= nil;
@@ -4496,6 +4499,30 @@ function legacy.pad_tick()
     local open = legacy.pad.mine or (game and cfg.chat and cfg.hide_game_chat) or false;
     if open and not legacy.pad.open then cw[1].scroll = 0; end
     legacy.pad.open = open;
+    if not open and legacy.pad.big then legacy.pad.big, legacy.pad.combat = false, false; end   -- (the log closed: the big chat too)
+end
+-- The game's log, while active, is chat window 1 grown taller (the same menu object; its +0x69 "draw" byte is ignored
+-- then), so it can't be hidden the usual way: it's moved below the screen instead (its y at +0x3C and +0x8E), every
+-- frame while it's open, and put back when it closes. Still the game's: a second press of the log button highlights
+-- your buffs (top left) as always.
+function legacy.log_away()
+    local open = legacy.pad.menu:find('logwindo', 1, true) ~= nil and cfg.chat and cfg.hide_game_chat;
+    local T = legacy.lt or {};
+    legacy.lt = T;
+    if not open then
+        if T.obj then
+            for off, v in pairs(T.orig or {}) do pcall(ashita.memory.write_uint16, T.obj + off, v); end
+            T.obj, T.orig = nil, nil;
+        end
+        return;
+    end
+    local obj = legacy.menu_ptrs();
+    if obj == nil then return; end
+    if T.obj ~= obj then
+        T.obj, T.orig = obj, {};
+        for _, off in ipairs({ 0x3C, 0x8E }) do T.orig[off] = ashita.memory.read_uint16(obj + off); end
+    end
+    ashita.memory.write_uint16(obj + 0x3C, 0x3000); ashita.memory.write_uint16(obj + 0x8E, 0x3000);
 end
 function legacy.pad_once(key)                                        -- (each press arrives twice: count it once)
     legacy.pad.t = legacy.pad.t or {};
@@ -7755,7 +7782,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(YMAP.draw);                                            -- the minimap (BARS > MINIMAP)
         TIMERS.preview = (ui.open and ui.tab == 7) or EDIT.on;      -- the TIMERS tab (and Edit Mode) show a preview of it
         piece(TIMERS.draw);
-        YUI_EQ_HIDE = ((cfg.equip_look or 'wheel') ~= 'wheel');
+        YUI_EQ_HIDE = true;                                          -- (the old gear wheel never shows)
         YUI_LOCKED = cfg.locked and true or false;                 -- the HP / MP / TP bars (equip.lua) follow this lock
         DOLL.preview = (ui.open and ui.tab == 6) or (EDIT.G.on and EDIT.G.STEPS[EDIT.G.i][1] == 'Gear');                     -- the EQUIP tab shows the strip at full brightness
         piece(draw_strip);      -- the wheel steps aside while the paper doll is on
@@ -7795,7 +7822,7 @@ ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStati
     local b, st = e.button, e.state or 0;
     local id = 'd' .. b;
     if b ~= 32 and st >= 128 then legacy.pad_press('d', b); end
-    if id == cfg.pad_log and cfg.chat and cfg.hide_game_chat and (legacy.pad.menu == '' or legacy.pad.mine) then   -- the learned log button: YunaUI's chat, not the game's log
+    if id == cfg.pad_log and cfg.chat and cfg.hide_game_chat and (legacy.pad.big or legacy.pad.mine) then   -- the log button: the game's (its log, a 2nd press your buffs), but the next tab in the big chat
         if st >= 128 and legacy.pad_once('log') then
             if legacy.pad.big then legacy.pad_tab(1); else legacy.pad_toggle(not legacy.pad.mine); end
         end
@@ -7803,12 +7830,12 @@ ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStati
         return;
     end
     if not legacy.pad.open then return; end
-    if id == legacy.pad_btn('d', 'back') and legacy.pad.mine then    -- Circle: back (big -> lit -> closed)
+    if id == legacy.pad_btn('d', 'back') and (legacy.pad.mine or legacy.pad.big) then    -- Circle: back (big -> lit -> closed)
         if st >= 128 and legacy.pad_once('close') then legacy.pad_back(); end
         e.blocked = true;
         return;
     end
-    if id == legacy.pad_btn('d', 'big') and legacy.pad.mine then     -- the full-log button (usually Cross): the big chat
+    if id == legacy.pad_btn('d', 'big') and legacy.pad.open then     -- the full-log button (usually Cross): the big chat
         if st >= 128 and legacy.pad_once('big') then legacy.pad.big = not legacy.pad.big; legacy.pad.combat = false; cw[1].scroll = 0; end
         e.blocked = true;
         return;
@@ -7825,7 +7852,7 @@ ashita.events.register('xinput_button', 'yui_pad_x', function(e)    -- Xbox (XIn
     local b, st = e.button, e.state or 0;
     local id = 'x' .. b;
     if b > 3 and st ~= 0 then legacy.pad_press('x', b); end
-    if id == cfg.pad_log and cfg.chat and cfg.hide_game_chat and (legacy.pad.menu == '' or legacy.pad.mine) then   -- the learned log button (often X): YunaUI's chat
+    if id == cfg.pad_log and cfg.chat and cfg.hide_game_chat and (legacy.pad.big or legacy.pad.mine) then   -- the log button (often X): as above
         if st ~= 0 and legacy.pad_once('log') then
             if legacy.pad.big then legacy.pad_tab(1); else legacy.pad_toggle(not legacy.pad.mine); end
         end
@@ -7833,12 +7860,12 @@ ashita.events.register('xinput_button', 'yui_pad_x', function(e)    -- Xbox (XIn
         return;
     end
     if not legacy.pad.open then return; end
-    if id == legacy.pad_btn('x', 'back') and legacy.pad.mine then    -- B: back (big -> lit -> closed)
+    if id == legacy.pad_btn('x', 'back') and (legacy.pad.mine or legacy.pad.big) then    -- B: back (big -> lit -> closed)
         if st ~= 0 and legacy.pad_once('close') then legacy.pad_back(); end
         e.blocked = true;
         return;
     end
-    if id == legacy.pad_btn('x', 'big') and legacy.pad.mine then     -- the full-log button (usually A): the big chat
+    if id == legacy.pad_btn('x', 'big') and legacy.pad.open then     -- the full-log button (usually A): the big chat
         if st ~= 0 and legacy.pad_once('big') then legacy.pad.big = not legacy.pad.big; legacy.pad.combat = false; cw[1].scroll = 0; end
         e.blocked = true;
         return;
