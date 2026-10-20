@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.12';
+addon.version = '1.0.13';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -58,7 +58,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -3234,7 +3234,7 @@ end
 ALLY.TAGCOL = {                                                      -- flat role colours, the job written in the darkest of each
     tank = { { 0.216, 0.541, 0.867 }, { 0.016, 0.173, 0.325 } }, heal = { { 0.365, 0.792, 0.647 }, { 0.016, 0.204, 0.173 } },
     sup  = { { 0.498, 0.467, 0.867 }, { 0.149, 0.129, 0.361 } }, dps  = { { 0.886, 0.294, 0.290 }, { 0.314, 0.075, 0.075 } } };
-function ALLY.tag(dl, m, i, x, ny, ch, sc, v, live)
+function ALLY.tag(dl, m, i, x, ny, ch, sc, v, live, mir)            -- (mir: x is its RIGHT edge, the slant on its left - the card mirrored)
     local tc = ALLY.TAGCOL[ALLY.ROLE[m.job or 0] or 'dps'];
     local dim = m.inzone and 1 or 0.45;
     local job = JOBS[m.job or 0] or '?';
@@ -3245,6 +3245,7 @@ function ALLY.tag(dl, m, i, x, ny, ch, sc, v, live)
     local th = math.floor(math.min(ch * 0.78, jh + 6 * sc) + 0.5);
     local s = th * 0.30;
     local tw = math.floor(math.max(jw, imgui.CalcTextSize('WHM')) + 12 * sc + s);   -- (all the same width, so the names line up)
+    if mir then x = x - tw; end
     local key = m.name or ('m' .. i);
     local h = 0;
     if live then
@@ -3261,15 +3262,18 @@ function ALLY.tag(dl, m, i, x, ny, ch, sc, v, live)
     local bump = (t < 0.35) and (math.sin(math.pi * t / 0.35) * (1 - t / 0.35) * 3 * sc) or 0;
     local y0 = ny - th / 2 - 1.5 * sc * h - bump;
     local pts = { { x, y0 }, { x + tw, y0 }, { x + tw - s, y0 + th }, { x, y0 + th } };
+    local jx = x + (tw - s - jw) / 2 + 1 * sc;
+    if mir then pts, jx = { { x + s, y0 }, { x + tw, y0 }, { x + tw, y0 + th }, { x, y0 + th } }, x + s + (tw - s - jw) / 2; end
     local f, ink = tc[1], tc[2];
     if (cfg.tag_look or 'role') == 'black' then                     -- (PARTY > CARDS > Job tags: black, the job in white with a dark edge)
         ALLY.poly(dl, pts, u32({ 0.035, 0.03, 0.045, 0.92 * v * dim }));
-        text(dl, x + (tw - s - jw) / 2 + 1 * sc, y0 + (th - jh) / 2, job, { 1, 1, 1, v * dim });
+        text(dl, jx, y0 + (th - jh) / 2, job, { 1, 1, 1, v * dim });
     else
         ALLY.poly(dl, pts, u32({ f[1], f[2], f[3], v * dim }));      -- (one flat colour: no sheen, no outline)
-        dl:AddText({ x + (tw - s - jw) / 2 + 1 * sc, y0 + (th - jh) / 2 }, u32({ ink[1], ink[2], ink[3], v }), job);
+        dl:AddText({ jx, y0 + (th - jh) / 2 }, u32({ ink[1], ink[2], ink[3], v }), job);
     end
     imgui.SetWindowFontScale(fs0);
+    if mir then return x, s; end
     return x + tw;
 end
 function ALLY.tpw(sc)                                                -- the TP column's width (room for "3000")
@@ -3316,13 +3320,20 @@ function ALLY.slim(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     local pw = imgui.CalcTextSize(pct);
     local nc = low and { 1, 1 - 0.62 * beat, 1 - 0.58 * beat } or { 1, 1, 1 };   -- (low HP: the name and % beat red)
     if style == 'clean' then                                         -- Clean: a slanted tag in its role's colour with its job, the name in capitals
-        local tend = ALLY.tag(dl, m, i, x1 + 2 * sc, ny, ch, sc, v, live);
         local sl = ch * 0.30;
         local gp = 3 * sc;
-        local card = { { tend + gp, y1 }, { tip, y1 }, { tip - sl, y2 }, { tend + gp - sl, y2 } };
+        local mir = party and cfg.party_buff_side == 'right';        -- (PARTY > Buffs side: right - the card mirrored: its tag at the right end, by the buffs)
+        local tend, cend = nil, tip;
+        if mir then
+            local ts_, s_ = ALLY.tag(dl, m, i, tip - 2 * sc, ny, ch, sc, v, live, true);
+            tend, cend = x1 + 2 * sc - gp, ts_ + (s_ or 0) - gp;      -- (its slanted edge just off the tag's, as on the left)
+        else
+            tend = ALLY.tag(dl, m, i, x1 + 2 * sc, ny, ch, sc, v, live);
+        end
+        local card = { { tend + gp, y1 }, { cend, y1 }, { cend - sl, y2 }, { tend + gp - sl, y2 } };
         if low then pcall(ALLY.glow_ring, dl, card, (1.2 + 1.6 * beat) * sc, u32({ 1.0, 0.24, 0.30, (0.12 + 0.28 * beat) * v })); end   -- (a thin glow, hugging the card)
         ALLY.poly(dl, card, u32({ 0.085, 0.08, 0.115, 0.82 * v }));
-        ALLY.grad(dl, { tend + gp, y1 }, { tip - sl, y1 + 1 }, { 1, 1, 1, 0.14 * v }, { 1, 1, 1, 0 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0.14 * v });
+        ALLY.grad(dl, { tend + gp, y1 }, { cend - sl, y1 + 1 }, { 1, 1, 1, 0.14 * v }, { 1, 1, 1, 0 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0.14 * v });
         local tg = ALLY.is_tgt(m, i, ALLY.tidx_cur);
         if low then
             ALLY.poly(dl, card, u32({ 1.0, 0.20, 0.26, (0.06 + 0.14 * beat) * v }));
@@ -3331,7 +3342,7 @@ function ALLY.slim(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
             for k = 1, 4 do dl:AddLine(card[k], card[k % 4 + 1], tg and u32({ 1, 1, 1, 0.85 * v }) or u32({ 0, 0, 0, 0.85 * v }), tg and 1.2 or 1); end
         end
         tx = tend + gp + 6 * sc;
-        bx1 = tip - sl * 0.5 - 6 * sc - tpc;
+        bx1 = cend - sl * 0.5 - 6 * sc - tpc;
         local sp = 1.0 * sc;
         local nm = (m.name or '?'):upper();
         local room = bx1 - pw - tx - 8 * sc;
@@ -3892,10 +3903,15 @@ function ALLY.spine(dl, list, x, y, sc, dt, tidx, n, party)
                     dl:AddCircleFilled({ lx + (tip - lx) * v, ny }, 2.2 * sc, u32({ 1, 1, 1, 0.9 * (1 - v) }), 10);
                 end
             end
-            if party and cfg.buffs then                               -- your party: its buffs to the left of the card (fold away on a hat click)
+            if party and cfg.buffs then                               -- your party: its buffs left of the card, or right of the line (PARTY > Buffs side)
                 local bs = math.floor(16 * sc * (tonumber(cfg.buff_scale) or 1));
-                pcall(function() draw_buffs(dl, x1 - 6 * sc - lp - ((tgt and ch * 0.72 + 4 * sc) or 0), ny - bs / 2, member_buffs(i), bs, 16, 1, -1, nil,
-                    BUFFS.val(m.name or i)); end);
+                if cfg.party_buff_side == 'right' then
+                    pcall(function() draw_buffs(dl, math.max(lx, tip) + 6 * sc, ny - bs / 2, member_buffs(i), bs, 16, 1, 1, nil,
+                        BUFFS.val(m.name or i)); end);
+                else
+                    pcall(function() draw_buffs(dl, x1 - 6 * sc - lp - ((tgt and ch * 0.72 + 4 * sc) or 0), ny - bs / 2, member_buffs(i), bs, 16, 1, -1, nil,
+                        BUFFS.val(m.name or i)); end);
+                end
             end
             imgui.SetWindowFontScale(fs);
         end
@@ -4336,14 +4352,32 @@ local function chat_line(dl, x, y, s, c, a, lh)
     local oc = u32({ 0, 0, 0, edge[2] * a });
     local tc = u32({ c[1], c[2], c[3], a });
     local cx = x;
+    local low = -math.floor(imgui.GetTextLineHeight() * 0.11 + 0.5);   -- (this font draws < and > low, centred on small letters: raised to sit centred on capitals and numbers, as in "<3")
+    local function put(str)                                          -- (a piece of text at cx, its < and > set down)
+        local p_ = 1;
+        while p_ <= #str do
+            local q = str:find('[<>]', p_);
+            local run = str:sub(p_, (q or (#str + 1)) - 1);
+            if run ~= '' then
+                for _, o in ipairs(OUTLINE) do dl:AddText({ cx + o[1], y + o[2] }, oc, run); end
+                dl:AddText({ cx, y }, tc, run);
+                cx = cx + imgui.CalcTextSize(run);
+            end
+            if q == nil then break; end
+            local ch = str:sub(q, q);
+            for _, o in ipairs(OUTLINE) do dl:AddText({ cx + o[1], y + low + o[2] }, oc, ch); end
+            dl:AddText({ cx, y + low }, tc, ch);
+            cx = cx + imgui.CalcTextSize(ch);
+            p_ = q + 1;
+        end
+    end
     do                                                               -- "<Name>" at the start: a little room inside the brackets
         local nm, rest = s:match('^<([^<>\1\2]+)>(.*)$');
         if nm then
             local gap = math.max(1, imgui.GetTextLineHeight() * 0.14);
             for _, seg in ipairs({ { '<', gap }, { nm, gap }, { '>', 0 } }) do
-                for _, o in ipairs(OUTLINE) do dl:AddText({ cx + o[1], y + o[2] }, oc, seg[1]); end
-                dl:AddText({ cx, y }, tc, seg[1]);
-                cx = cx + imgui.CalcTextSize(seg[1]) + seg[2];
+                put(seg[1]);
+                cx = cx + seg[2];
             end
             s = rest;
         end
@@ -4352,11 +4386,7 @@ local function chat_line(dl, x, y, s, c, a, lh)
     while i <= n do
         local j = s:find('[\1\2]', i);
         local seg = s:sub(i, (j or (n + 1)) - 1);
-        if seg ~= '' then
-            for _, o in ipairs(OUTLINE) do dl:AddText({ cx + o[1], y + o[2] }, oc, seg); end
-            dl:AddText({ cx, y }, tc, seg);
-            cx = cx + imgui.CalcTextSize(seg);
-        end
+        if seg ~= '' then put(seg); end
         if j == nil then break; end
         cx = cx + at_icon(dl, cx, y, lh - 2, s:byte(j) == 1, a);
         i = j + 1;
@@ -6818,6 +6848,7 @@ local function draw_window()
             row_slider('##yui_s_p', 'Size', 'party_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_switch('##yui_pfar', 'Fade far members', 'party_dim_far', 'On: a member farther than the distance below (out of range for spells like Cure) is shown faded, party and alliance. A pretend member shows it while you place the list.');
             if cfg.party_dim_far ~= false then row_slider('##yui_s_pfar', 'Far from', 'party_range', 10, 50, 0.5, '%.1f yalms'); end
+            row_pick('##yui_pbside', 'Buffs side', 'party_buff_side', { { 'left', 'Left of the cards' }, { 'right', 'Right of the line' } });
             row_switch('##yui_pdist', 'Distance', 'party_dist', 'On: how far each member is (in yalms), small, after the name. Pink when out of range.');
             section('ALLIANCE');
             row_switch('##yui_a', 'Show', 'alliance');
