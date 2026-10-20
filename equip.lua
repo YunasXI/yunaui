@@ -3437,6 +3437,7 @@ ashita.events.register('unload', 'ye_unload', function() end);
 ashita.events.register('d3d_present', 'ye_present', function()
     local ok, err = pcall(function()
         if not AshitaCore:GetFontManager():GetVisible() then return; end
+        if YUI_MAPCOVER then return; end                              -- (YunaUI's big map is open over the game's Map: only it shows)
         local status = player_status();
         if status == nil then return; end                           -- zoning / not logged in
         if not cfg.imported then JOBS.import(); end

@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.14';
+addon.version = '1.0.15';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -58,7 +58,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, target_friend_look = 'banner',  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -1087,7 +1087,7 @@ end
 -- Debuffs on enemies (XIUI's way): the server never lists a monster's effects, so they're followed from the action
 -- packets (0x028: "is afflicted with...", Dia/Bio and the like) and dropped on "wears off" / death (0x029).
 local SPELL_DEBUFF = {};
-for k, v in ('230=135,231=135,232=135,23=134,24=134,25=134,33=134,58=4,80=4,56=13,79=13,357=13,216=12,217=12,254=5,276=5,361=5,59=6,359=6,253=2,' ..
+for k, v in ('230=135,231=135,232=135,23=134,33=134,24=134,25=134,58=4,80=4,56=13,79=13,357=13,216=12,217=12,254=5,276=5,361=5,59=6,359=6,253=2,' ..
     '259=19,273=2,274=19,258=11,362=11,252=10,220=3,221=3,222=3,223=3,224=3,225=3,226=3,227=3,228=3,229=3,239=132,238=131,' ..
     '237=130,236=129,235=128,240=133,421=194,422=194,423=194,368=192,369=192,370=192,371=192,372=192,373=192,374=192,376=193,' ..
     '377=193,463=193,471=193,466=14,472=223,454=217,455=217,456=217,457=217,458=217,459=217,460=217,461=217,597=13,341=4,' ..
@@ -1926,6 +1926,154 @@ function FIGHT.fxdraw(st, x, top, by, w, h, sc)
         if fl > 0.01 then fg:AddCircleFilled({ cx, cy }, (6 + 18 * (1 - fl)) * sc, u32({ 1, 1, 1, 0.55 * fl }), 24); end
     end
 end
+-- TARGET > Friends look different: what the target is - 'mob', 'pc' (a player, or anyone in your party / alliance,
+-- trusts too: then its member slot) or 'npc'
+function C.tkind(idx, ent, fake)
+    if fake then return 'mob'; end
+    local sid = ent:GetServerId(idx);
+    local p = AshitaCore:GetMemoryManager():GetParty();
+    for i = 0, 17 do
+        if p:GetMemberIsActive(i) ~= 0 and p:GetMemberServerId(i) == sid and p:GetMemberName(i) == ent:GetName(idx) then return 'pc', i; end
+    end
+    local ok, fl = pcall(function() return ent:GetSpawnFlags(idx); end);
+    if ok and type(fl) == 'number' then
+        if bit.band(fl, 0x10) ~= 0 then return 'mob'; end
+        if bit.band(fl, 0x01) ~= 0 then return 'pc'; end
+    end
+    return 'npc';
+end
+C.TFRIEND = { pc = { 0.40, 0.95, 0.80 }, npc = { 1.0, 0.86, 0.50 } };   -- the Ally banner's colour: aqua for players, gold for NPCs
+-- A friend in the target bar's place (TARGET > Friends look): 'card' = its party-list card, bigger (job tag, name, HP,
+-- and for a party / alliance member its MP and TP); 'banner' = a slim frame with a cross, the name, HP and MP side by
+-- side. Gives back the height it used.
+function C.tfriend(dl, x, y, w, sc, idx, ent, name, hpp, tk, tmi, look, dt)
+    local m = tmi and member(tmi) or nil;
+    if m == nil then
+        m = { name = name, hpp = hpp, mpp = 0, tp = 0, inzone = true };                                                       -- (no tag: only party / alliance members show their job)
+        pcall(function() local d2 = ent:GetDistance(idx); if type(d2) == 'number' and d2 >= 0 then m.dist = math.sqrt(d2); end end);
+    end
+    m.far = nil;                                                     -- (never faded here)
+    local nohp = (tk == 'npc');                                      -- (NPCs and objects have no HP worth showing: the banner, no bars)
+    if nohp then look = 'banner'; end
+    if look == 'card' then
+        local k = 1.35;
+        local pushed = sized('chat', 17 * sc * k);
+        local fs = FS or 1;
+        imgui.SetWindowFontScale(fs * 0.66);
+        local lh = imgui.GetTextLineHeight();
+        local party = tmi ~= nil;
+        local ch = C.ALLY.ch(lh, sc * k, party);
+        local cw = math.min(w, 250 * sc * k);
+        C.ALLY.card(dl, m, 90 + (tmi or 0), x, x + cw, y + ch / 2, ch, lh, sc * k, 1, party, false);
+        imgui.SetWindowFontScale(fs);
+        unsized(pushed);
+        return ch;
+    end
+    local col = C.TFRIEND[tk] or C.TFRIEND.pc;                       -- 'banner'
+    -- Laid out before anything is drawn, so nothing ever overlaps at any size or resolution: on one line when it fits
+    -- (the bars may shrink a little first), else on two - the tag, name and distance on top, HP and MP under them.
+    -- On either line the distance goes, then the name is shortened with "...", before anything could touch.
+    local pushed = sized('chat', 18 * sc);
+    local fs = FS or 1;
+    local lh = imgui.GetTextLineHeight();
+    local nmw = imgui.CalcTextSize(name);
+    imgui.SetWindowFontScale(fs * 0.74);                             -- (the job tag's width, as ALLY.tag makes it)
+    local tagtxt = m.tagtext or (m.job and JOBS[m.job]) or nil;
+    local jw, jh = imgui.CalcTextSize(tagtxt or 'WHM');
+    local th_ = math.min(lh * 0.95 * 0.78, (tonumber(jh) or 10) + 6 * sc);
+    local tagw = tagtxt and (math.floor(math.max(jw, imgui.CalcTextSize('WHM')) + 12 * sc + th_ * 0.30) + 8 * sc) or 0;
+    imgui.SetWindowFontScale(fs * 0.78);
+    local _, sh = imgui.CalcTextSize('A');
+    local dstr = m.dist and string.format('%.1f', m.dist) or nil;
+    local dw = dstr and imgui.CalcTextSize(dstr) or 0;
+    local hlab = 'HP ' .. math.floor((m.hpp or hpp) * 100 + 0.5) .. '%';
+    local hlw = imgui.CalcTextSize(hlab);
+    local hasmp = tmi ~= nil and ((m.mp or 0) > 0 or (m.mpp or 0) > 0);
+    local mlw = hasmp and imgui.CalcTextSize('MP') or 0;
+    imgui.SetWindowFontScale(fs);
+    local g1, g2, g3 = 7 * sc, 18 * sc, 16 * sc;                     -- label-bar, between HP and MP, between the two sides
+    local left0, right0 = x + 14 * sc, x + w - 14 * sc;
+    local hpw, mpw = math.floor(w * 0.22), hasmp and math.floor(w * 0.16) or 0;
+    local hmin, mmin = math.floor(48 * sc), hasmp and math.floor(34 * sc) or 0;
+    local function rw() if nohp then return 0; end return hlw + g1 + hpw + (hasmp and (g2 + mlw + g1 + mpw) or 0); end
+    local left_need = tagw + nmw + (dstr and (10 * sc + dw) or 0);
+    local over = left_need + rw() - (right0 - left0 - g3);
+    if over > 0 then                                                 -- the bars give way first, down to their minimum
+        local take = math.min(over, (hpw - hmin) + (mpw - mmin));
+        if take > 0 then
+            local share = (hpw - hmin) / math.max(1, (hpw - hmin) + (mpw - mmin));
+            hpw = math.floor(hpw - take * share);
+            mpw = math.floor(mpw - take * (1 - share));
+        end
+        over = left_need + rw() - (right0 - left0 - g3);
+    end
+    local two = over > 0 and not nohp;                               -- still no room: two lines
+    local room1 = two and (right0 - left0) or (right0 - left0 - g3 - rw());   -- (the name line's room)
+    if two then                                                      -- (the bars' line: HP and MP share the whole width)
+        local bars = (right0 - left0) - hlw - g1 - (hasmp and (g2 + mlw + g1) or 0);
+        if hasmp and bars < 40 * sc then hasmp = false; bars = (right0 - left0) - hlw - g1; end   -- (too narrow for both: HP only)
+        bars = math.max(0, bars);
+        hpw = hasmp and math.floor(bars * 0.58) or math.floor(bars);
+        mpw = hasmp and math.floor(bars - hpw) or 0;
+    end
+    if tagw + nmw + (dstr and (10 * sc + dw) or 0) > room1 then dstr = nil; end
+    local nm = name;
+    if tagw + nmw > room1 then
+        local maxw = math.max(0, room1 - tagw);
+        while #nm > 1 and imgui.CalcTextSize(nm .. '...') > maxw do nm = nm:sub(1, -2); end
+        nm = nm .. '...';
+        nmw = imgui.CalcTextSize(nm);
+    end
+    local h = math.floor(two and (lh * 2 + 18 * sc) or (lh + 14 * sc));
+    local cy = y + 7 * sc + lh / 2;                                  -- (the name line's middle)
+    local by_ = two and (cy + lh * 0.5 + 4 * sc + sh / 2) or cy;     -- (the bars' line's middle)
+    local obj = false;                                               -- (NPCs and objects alike: the gold banner, no tag, no HP - custom NPCs can't be told from doors)
+    if not obj then pcall(function()                                 -- a dark band behind it (readable on any ground), fading at both ends
+        local d1, d0 = u32({ 0.02, 0.02, 0.04, 0.62 }), u32({ 0.02, 0.02, 0.04, 0 });
+        local e = math.min(80 * sc, w * 0.18);
+        dl:AddRectFilledMultiColor({ x, y }, { x + e, y + h }, d0, d1, d1, d0);
+        dl:AddRectFilled({ x + e, y }, { x + w - e, y + h }, d1);
+        dl:AddRectFilledMultiColor({ x + w - e, y }, { x + w, y + h }, d1, d0, d0, d1);
+    end); end
+    local function line(ly)                                          -- (a thin line, brightest in the middle, fading at both ends)
+        local c1, c0 = u32({ col[1], col[2], col[3], 0.9 }), u32({ col[1], col[2], col[3], 0 });
+        pcall(function()
+            dl:AddRectFilledMultiColor({ x, ly }, { x + w / 2, ly + 1.2 * sc }, c0, c1, c1, c0);
+            dl:AddRectFilledMultiColor({ x + w / 2, ly }, { x + w, ly + 1.2 * sc }, c1, c0, c0, c1);
+        end);
+    end
+    if not obj then line(y); line(y + h); end
+    local tx = left0;
+    pcall(function()                                                 -- its job tag in its role's colour, as in the party list (PC / NPC when unknown)
+        local fs_ = FS or 1;
+        FS = fs_ / 0.80;
+        if tagw > 0 then C.ALLY.tag(dl, m, 95, tx, cy, lh * 0.95, sc, 1, false); end
+        FS = fs_;
+        imgui.SetWindowFontScale(fs_);
+    end);
+    tx = tx + tagw;
+    text(dl, tx, cy - lh / 2, nm, { 1, 1, 1, 1 });
+    tx = tx + nmw + 10 * sc;
+    imgui.SetWindowFontScale(fs * 0.78);
+    if dstr then text(dl, tx, cy - sh / 2, dstr, (m.dist > (tonumber(cfg.party_range) or 20.8)) and { 1, 0.66, 0.80, 1 } or { 0.96, 0.95, 1, 1 }); end
+    local bh = math.max(4, math.floor(6 * sc));
+    local function bar(bx, label, lw, v, bw, c)                      -- a label, then its bar; gives back where it ends
+        text(dl, bx, by_ - sh / 2, label, { 0.97, 0.96, 1, 1 });
+        bx = bx + lw + g1;
+        dl:AddRectFilled({ bx - 1, by_ - bh / 2 - 1 }, { bx + bw + 1, by_ + bh / 2 + 1 }, u32({ 0, 0, 0, 0.9 }), 2);
+        dl:AddRectFilled({ bx, by_ - bh / 2 }, { bx + bw, by_ + bh / 2 }, u32({ 0.16, 0.15, 0.21, 1 }), 2);
+        dl:AddRectFilled({ bx, by_ - bh / 2 }, { bx + bw * math.max(0, math.min(1, v)), by_ + bh / 2 }, u32({ c[1], c[2], c[3], 1 }), 2);
+        return bx + bw;
+    end
+    if not nohp then
+        local bx0 = two and left0 or (right0 - rw());
+        local e1 = bar(bx0, hlab, hlw, m.hpp or hpp, hpw, col);
+        if hasmp then bar(e1 + g2, 'MP', mlw, m.mpp or 0, mpw, { 0.48, 0.58, 1.0 }); end
+    end
+    imgui.SetWindowFontScale(fs);
+    unsized(pushed);
+    return h + 2 * sc;
+end
 local function draw_target(dt)
     if not cfg.target then return; end
     local idx = target_index();
@@ -1945,6 +2093,23 @@ local function draw_target(dt)
         local dl = imgui.GetWindowDrawList();
         local x, y = imgui.GetCursorScreenPos();
         x, y = x + 6, y + 4;
+        local tk, tmi = C.tkind(idx, ent, fake);                     -- TARGET > Friends look: a player / NPC never looks like a monster
+        local flook = cfg.target_friend_look or 'banner';
+        if tk ~= 'mob' and flook ~= 'off' then
+            local used = 0;
+            local okf, errf = pcall(function() used = C.tfriend(dl, x, y, w, sc, idx, ent, name, hpp, tk, tmi, flook, dt); end);
+            if not okf then pcall(YUI_ERRLOG, 'target friend', errf); end
+            local bh2 = 0;
+            if cfg.buffs then                                        -- its buffs, under it
+                local blist, bleft = target_buffs(idx);
+                local tbs = tonumber(cfg.target_buff_scale) or tonumber(cfg.buff_scale) or 1;
+                local _, bu = draw_buffs(dl, x, y + used + 6 * sc, blist, math.floor(22 * sc * tbs), 16, 2, 1, bleft);
+                bh2 = bu > 0 and (bu + 6 * sc) or 0;
+            end
+            imgui.Dummy({ w + 12, used + 10 + bh2 });
+            end_plain('target_x', 'target_y');
+            return;
+        end
         local fa_ = fxs and fxs.fa or 1;
         local nla = fxs and fxs.nla or 1;
         if fxs then y = y + fxs.yoff * sc; end
@@ -2596,6 +2761,7 @@ end
 --   smart:   one line of six dots coloured by HP; a member opens into a compact row only when it matters - low HP, your
 --            target, or the mouse over that alliance - and closes again (smoothly) when it doesn't
 local ALLY = { v = {}, hov = {} };
+C.ALLY = ALLY;                                                       -- (for the target bar, drawn earlier in the file: a member's job tag)
 function ALLY.fit(str, room)                                        -- a name cut short (with a dot) to fit room
     if imgui.CalcTextSize(str) <= room then return str; end
     while #str > 2 and imgui.CalcTextSize(str .. '.') > room do str = str:sub(1, -2); end
@@ -2969,7 +3135,21 @@ function ALLY.keep(kx, ky)                                          -- (after en
         save();
         return;
     end
-    if imgui.IsMouseDown(0) then return; end                         -- (not while it's being dragged)
+    if imgui.IsMouseDown(0) then ALLY.lastw = ALLY.lastw or {}; ALLY.lastw[kx] = sw; return; end   -- (not while it's being dragged)
+    ALLY.lastw = ALLY.lastw or {};
+    local ek = ({ party_x = 'PARTY', alliance_x = '1', ally2_x = '2' })[kx];   -- (while it slides in - the party forming, a trust's first
+    local t0 = ek and ALLY.t0 and ALLY.t0[ek];                       --  card: it reaches past its place for a moment - leave it be,
+    if t0 and os.clock() - t0 < 2.0 then ALLY.lastw[kx] = nil; return; end   --  or it'd be pushed left and stay there)
+    local pw = ALLY.lastw[kx];
+    ALLY.lastw[kx] = sw;
+    if pw and math.abs(pw - sw) > 1 then                             -- it got wider / narrower (a trust joined...): on the right half of the
+        local x0 = tonumber(cfg[kx]) or 0;                           -- screen its RIGHT edge stays put, so a list by the screen's right edge
+        if x0 + pw / 2 > W / 2 then                                  -- doesn't creep left
+            cfg[kx] = math.floor(x0 + pw - sw);
+            WATCH.move = 2;
+            save();
+        end
+    end
     local x, y = tonumber(cfg[kx]) or 0, tonumber(cfg[ky]) or 0;
     local nx, ny = ALLY.inside(x, y, sw, sh);
     if math.abs(nx - x) > 1 or math.abs(ny - y) > 1 then
@@ -3237,7 +3417,7 @@ ALLY.TAGCOL = {                                                      -- flat rol
 function ALLY.tag(dl, m, i, x, ny, ch, sc, v, live, mir)            -- (mir: x is its RIGHT edge, the slant on its left - the card mirrored)
     local tc = ALLY.TAGCOL[ALLY.ROLE[m.job or 0] or 'dps'];
     local dim = m.inzone and 1 or 0.45;
-    local job = JOBS[m.job or 0] or '?';
+    local job = m.tagtext or JOBS[m.job or 0] or '?';
     local fs0 = (FS or 1) * 0.80;
     imgui.SetWindowFontScale(fs0 * 0.74);
     local jw, jh = imgui.CalcTextSize(job);
@@ -4093,7 +4273,9 @@ local function draw_party(dt)
             h, w = ALLY.spine(dl, list, x + 4, y + 4, psc, dt, tidx, 'PARTY', true);
             bl = 0;                                                  -- (the box is just the list; the buffs sit outside it)
             for name, r in pairs(ALLY.hbtn or {}) do                 -- the arrow and the anchor by PARTY
-                imgui.SetCursorScreenPos({ r[1], r[2] });
+                -- (kept inside the list's own width: while the party slides in from the right they'd reach past it, the window
+                --  would grow, and being kept on the screen it was pushed left - a party by the right edge crept left at every trust)
+                imgui.SetCursorScreenPos({ math.max(x, math.min(r[1], x + w + 8 - r[3])), r[2] });
                 if imgui.InvisibleButton('##yui_pb_' .. name, { r[3], r[4] }) then
                     if name == 'anchor' then cfg.ally_anchor = not cfg.ally_anchor; else cfg.party_hidden = not cfg.party_hidden; end
                     save();
@@ -4295,6 +4477,208 @@ function CHATLOG.save_now()
     f:close();
     CHATLOG.msg = string.format('Saved %d lines to %s', #all, path);
 end
+-- CHAT > Combat feed: a spell or an ability is ONE line that grows as it happens - "Floona > Stoneskin > Floona", then
+-- a tick when it lands, the damage, the HP healed or "miss" - instead of "starts casting...", "casts...", "gains the
+-- effect of..." each on a line of its own. Returns 'new' (a feed line was added), 'merged' (an older one grew) or nil
+-- (not a feed line: added as usual).
+C.FEED = {};
+function C.feed_text(e)                                              -- (its plain text: the saved log, the line's width)
+    local f = e.feed;
+    local t = (e.tpre or '') .. f.actor .. ' > ' .. f.act .. (f.state == 'cast' and '...' or '');
+    if f.target then t = t .. ' > ' .. f.target; end
+    for _, r in ipairs(f.res) do
+        if r.dmg then t = t .. '  ' .. r.who .. ' ' .. r.dmg;
+        elseif r.heal then t = t .. '  ' .. r.who .. ' +' .. r.heal;
+        elseif r.miss then t = t .. '  ' .. r.who .. ' miss';
+        else t = t .. '  ok ' .. ((r.who ~= f.target) and r.who or ''); end
+    end
+    return t;
+end
+function C.feed_take(log, line, mode)
+    if cfg.chat_feed == false then return nil; end
+    local F = C.FEED;
+    local now = os.clock();
+    local sl = line:gsub('[\1\2]', '');
+    local function new(actor, act, target, kind, state)
+        local e = { raw = line, cat = cat_of(mode), t = now, t0 = now, flash = now, ts = os.time(), mode = mode,
+            tpre = cfg.chat_time and os.date('[%H:%M] ') or nil,
+            feed = { actor = actor, act = act, target = target, kind = kind, state = state, res = {} } };
+        e.text = C.feed_text(e);
+        CHATLOG.add(log, e);
+        F.last, F.last_t = e, now;
+        return 'new';
+    end
+    local function grow(e)
+        e.t, e.flash = now, now;
+        e.text, e.lines = C.feed_text(e), nil;
+        F.last, F.last_t = e, now;
+        pcall(CHATLOG.write, { raw = line, cat = cat_of(mode), ts = os.time() });
+        return 'merged';
+    end
+    local a, sp, tg = sl:match('^(.-) starts casting (.-) on (.-)%.$');
+    if a then return new(a, sp, tg, 'magic', 'cast'); end
+    a, sp = sl:match('^(.-) starts casting (.-)%.$');
+    if a then return new(a, sp, nil, 'magic', 'cast'); end
+    a, sp = sl:match('^(.-) casts (.-)%.$');
+    if a then
+        for i = #log, math.max(1, #log - 40), -1 do                  -- (its "starts casting" line, if it's recent)
+            local e = log[i];
+            if e.feed and e.feed.state == 'cast' and e.feed.actor == a and e.feed.act == sp and now - (e.t0 or 0) < 30 then
+                e.feed.state = 'done';
+                return grow(e);
+            end
+        end
+        return new(a, sp, nil, 'magic', 'done');
+    end
+    a, sp = sl:match('^(.-) uses (.-)%.$');
+    if a then return new(a, sp, nil, 'ability', 'done'); end
+    local L = F.last;                                                -- the results: onto the spell / ability that just went off
+    if L and L.feed and L.feed.state == 'done' and now - (F.last_t or 0) < 2.5 then
+        local r = nil;
+        local w, x = sl:match('^(.-) gains the effect of (.-)%.$');
+        if w then r = { who = w }; end
+        if not r then w = sl:match('^(.-) receives the effect of .-%.$'); if w then r = { who = w }; end end
+        if not r then w, x = sl:match('^(.-) takes (%d+) points? of damage%.$'); if w then r = { who = w, dmg = x }; end end
+        if not r then w, x = sl:match('^(.-) takes (%d+) damage%.$'); if w then r = { who = w, dmg = x }; end end
+        if not r then w, x = sl:match('^(.-) recovers (%d+) HP%.$'); if w then r = { who = w, heal = x }; end end
+        if not r then w = sl:match('^(.-) resists the spell%.$') or sl:match('^.- misses (.-)%.$'); if w then r = { who = w, miss = true }; end end
+        if r then
+            if #L.feed.res < 6 then L.feed.res[#L.feed.res + 1] = r; end
+            return grow(L);
+        end
+    end
+    return nil;
+end
+-- CHAT > Speech bubbles. Who said a line, and what: "Name : text" (say, shout, yell), "Name>> text"
+-- (a tell to you), "(Name) text" (party), "[1]<Name> text" (linkshells).
+function C.speaker(mode, line)
+    local sl = line:gsub('[\1\2]', '');
+    if mode == 12 then return sl:match('^(%S+)>> ?(.*)$'); end
+    if mode == 5 or mode == 13 then return sl:match('^%((%S+)%) (.*)$'); end
+    if mode == 6 or mode == 14 or mode == 213 or mode == 214 then return sl:match('^%[?%d?%]?<(%S+)> (.*)$'); end
+    if mode == 1 or mode == 9 or mode == 2 or mode == 10 or mode == 3 or mode == 11 then return sl:match('^(%S+) : (.*)$'); end
+    return nil;
+end
+function C.atext(dl, x, y, str, col)                             -- (text with a dark edge that fades with it)
+    local oc = u32({ 0, 0, 0, 0.8 * (col[4] or 1) });
+    for _, o in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do dl:AddText({ x + o[1], y + o[2] }, oc, str); end
+    dl:AddText({ x, y }, u32(col), str);
+end
+C.BUBS = {};
+function C.me()
+    local ok, n = pcall(function() return AshitaCore:GetMemoryManager():GetParty():GetMemberName(0); end);
+    return ok and n or '';
+end
+function C.chat_pop(mode, line)                                      -- (from chat_add: say / party -> a bubble)
+    local who, msg = C.speaker(mode, line);
+    if who == nil or msg == nil or msg == '' then return; end
+    local now = os.clock();
+    if cfg.chat_bubbles ~= false and (mode == 1 or mode == 9 or mode == 5 or mode == 13) then
+        local idx = nil;
+        pcall(function()                                             -- (who said it, nearby: their entity)
+            local ent = AshitaCore:GetMemoryManager():GetEntity();
+            for i = 0, 2303 do
+                if ent:GetRawEntity(i) ~= nil and ent:GetName(i) == who then idx = i; break; end
+            end
+        end);
+        if idx then C.BUBS[who] = { idx = idx, msg = msg, cat = cat_of(mode), t = now }; end
+    end
+end
+-- A point in the world on the screen (nil when behind the camera): the game's own view and projection
+function C.w2s(wx, wy, wz)
+    local dev = d3d.get_device();
+    local _, v = dev:GetTransform(ffi.C.D3DTS_VIEW);
+    local _, pj = dev:GetTransform(ffi.C.D3DTS_PROJECTION);
+    if v == nil or pj == nil then return nil; end
+    local x = wx * v._11 + wy * v._21 + wz * v._31 + v._41;
+    local y = wx * v._12 + wy * v._22 + wz * v._32 + v._42;
+    local z = wx * v._13 + wy * v._23 + wz * v._33 + v._43;
+    local cx = x * pj._11 + y * pj._21 + z * pj._31 + pj._41;
+    local cy = x * pj._12 + y * pj._22 + z * pj._32 + pj._42;
+    local cw = x * pj._14 + y * pj._24 + z * pj._34 + pj._44;
+    if cw < 0.1 then return nil; end
+    local ds = imgui.GetIO().DisplaySize;
+    return (cx / cw + 1) * 0.5 * ds.x, (1 - cy / cw) * 0.5 * ds.y;
+end
+-- Text broken into rows of at most maxw (at most 3 rows; the last one cut with "...")
+function C.pop_rows(msg, maxw)
+    local rows, cur = {}, '';
+    local words = {};
+    for word in msg:gmatch('%S+') do                                 -- (a word too long for a row - "aaaaaaaa..." - is cut into pieces that fit)
+        while #word > 1 and imgui.CalcTextSize(word) > maxw do
+            local k = #word - 1;
+            while k > 1 and imgui.CalcTextSize(word:sub(1, k)) > maxw do k = k - 1; end
+            words[#words + 1] = word:sub(1, k);
+            word = word:sub(k + 1);
+        end
+        words[#words + 1] = word;
+    end
+    for _, word in ipairs(words) do
+        local try = (cur == '') and word or (cur .. ' ' .. word);
+        if cur ~= '' and imgui.CalcTextSize(try) > maxw then rows[#rows + 1] = cur; cur = word; else cur = try; end
+    end
+    if cur ~= '' then rows[#rows + 1] = cur; end
+    if #rows > 3 then
+        rows = { rows[1], rows[2], rows[3] };
+        while #rows[3] > 1 and imgui.CalcTextSize(rows[3] .. '...') > maxw do rows[3] = rows[3]:sub(1, -2); end
+        rows[3] = rows[3] .. '...';
+    end
+    return rows;
+end
+-- Say and party lines: a bubble over the head of whoever said it, nearby, for a few seconds
+function C.bubble_draw()
+    if next(C.BUBS) == nil then return; end
+    -- (its text size needs a window of its own - without one ImGui opens its "Debug" window): an invisible one, the
+    -- whole screen, that takes no clicks
+    local ds = imgui.GetIO().DisplaySize;
+    imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
+    imgui.SetNextWindowSize({ ds.x, ds.y }, ImGuiCond_Always);
+    local fl = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoMove, ImGuiWindowFlags_NoInputs,
+        ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing,
+        ImGuiWindowFlags_NoBringToFrontOnFocus, ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoScrollbar);
+    if imgui.Begin('##yui_bubbles', { true }, fl) then pcall(C.bubble_draw_); end
+    imgui.End();
+end
+function C.bubble_draw_()
+    local now = os.clock();
+    local ent = AshitaCore:GetMemoryManager():GetEntity();
+    local bg = imgui.GetBackgroundDrawList();
+    local SW, SH = C.screen();
+    local sc = math.max(0.8, SH / 1080);
+    local pushed = sized('chat', 15 * sc);
+    local lh = imgui.GetTextLineHeight();
+    for who, B in pairs(C.BUBS) do
+        local life = 5 + math.min(5, #B.msg / 25);
+        local age = now - B.t;
+        if age > life or ent:GetRawEntity(B.idx) == nil or ent:GetName(B.idx) ~= who then C.BUBS[who] = nil;
+        else
+            local ok, sx, sy = pcall(function()
+                local ap = ent:GetActorPointer(B.idx);
+                if ap == nil or ap == 0 then return nil; end
+                local px, py, pz = ashita.memory.read_float(ap + 0x678), ashita.memory.read_float(ap + 0x680), ashita.memory.read_float(ap + 0x67C);
+                return C.w2s(px, pz - 2.25, py);                     -- (over the head: the game's "up" is minus)
+            end);
+            local dist = (ent:GetDistance(B.idx) or 0);
+            if ok and sx and sy and dist < 30 * 30 and sx > -200 and sx < SW + 200 and sy > -100 and sy < SH + 100 then
+                local inn = 1 - (1 - math.min(1, age / 0.25)) ^ 3;
+                local a = inn * math.max(0, math.min(1, (life - age) / 0.5));
+                local c = chat_col(B.cat);
+                local rows = C.pop_rows(B.msg, 240 * sc);
+                local w = 0;
+                for _, row in ipairs(rows) do w = math.max(w, imgui.CalcTextSize(row)); end
+                w = w + 20 * sc;
+                local h = lh * #rows + 12 * sc;
+                local x, y = sx + 30 * sc + (1 - inn) * 8 * sc, sy + 16 * sc - h / 2;   -- right of the head, sliding in
+                local sh = tex('bubble_soft.png');                       -- on a soft shadow: one smooth picture, darkest in the middle
+                if sh then image(bg, sh, x - 26 * sc, y - 14 * sc, x + w + 26 * sc, y + h + 14 * sc, { 1, 1, 1, 0.80 * a }); end
+                for r, row in ipairs(rows) do
+                    C.atext(bg, x + 10 * sc, y + 6 * sc + lh * (r - 1), row, { 0.97, 0.96, 1, a });
+                end
+            end
+        end
+    end
+    unsized(pushed);
+end
 local function chat_add(mode, raw)
     local ok, s = pcall(function()
         local m = raw;
@@ -4311,10 +4695,15 @@ local function chat_add(mode, raw)
         line = line:match('^%s*(.-)%s*$');
         if line ~= '' then
             local raw_line = line;
-            if cfg.chat_time then line = os.date('[%H:%M] ') .. line; end
-            CHATLOG.add(log, { text = line, raw = raw_line, cat = cat_of(mode), t = os.clock(), ts = os.time(), mode = mode });
-            if n == 1 then chat_seen_new(mode); end
-            if cw[n].scroll > 0 then cw[n].scroll = cw[n].scroll + 1; end
+            local fd = nil;
+            if is_combat(mode) then local okf, r = pcall(C.feed_take, log, raw_line, mode); fd = okf and r or nil; end   -- (CHAT > Combat feed)
+            if fd == nil then
+                if not is_combat(mode) then pcall(C.chat_pop, mode, raw_line); end   -- (CHAT > Tell pop-ups, Speech bubbles)
+                if cfg.chat_time then line = os.date('[%H:%M] ') .. line; end
+                CHATLOG.add(log, { text = line, raw = raw_line, cat = cat_of(mode), t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode });
+                if n == 1 then chat_seen_new(mode); end
+            end
+            if fd ~= 'merged' and cw[n].scroll > 0 then cw[n].scroll = cw[n].scroll + 1; end
         end
     end
 end
@@ -4347,7 +4736,7 @@ local CHAT_EDGE = {
     shadow = { { { 1, 1 }, { 2, 2 } }, 0.55 },
 };
 local function chat_line(dl, x, y, s, c, a, lh)
-    local edge = CHAT_EDGE[cfg.chat_outline or 'soft'] or CHAT_EDGE.soft;
+    local edge = CHAT_EDGE.outline;                                  -- (always: a thin dark line round every letter)
     local OUTLINE = edge[1];
     local oc = u32({ 0, 0, 0, edge[2] * a });
     local tc = u32({ c[1], c[2], c[3], a });
@@ -4391,6 +4780,67 @@ local function chat_line(dl, x, y, s, c, a, lh)
         cx = cx + at_icon(dl, cx, y, lh - 2, s:byte(j) == 1, a);
         i = j + 1;
     end
+end
+-- One combat-feed line: who (bright), a small chevron, the spell (violet) or ability (gold), dots while it's being cast,
+-- the target, then a green tick when it lands, damage in orange, HP healed in green, "miss" in red. Returns its width;
+-- measure = true only measures.
+function C.feed_draw(dl, x, y, e, a, lh, measure)
+    local f = e.feed;
+    local th = imgui.GetTextLineHeight();
+    local cx = x;
+    local function txt(str, col, al)
+        if str == nil or str == '' then return; end
+        if not measure then chat_line(dl, cx, y, str, col, a * (al or 1), lh); end
+        cx = cx + imgui.CalcTextSize(str);
+    end
+    local function chev(col)                                         -- (a small ">" drawn, with its dark edge)
+        local w_ = th * 0.42;
+        if not measure then
+            local x0, x1, ym = cx + w_ * 0.3, cx + w_ * 0.75, y + th * 0.52;
+            local p = { { x0, ym - th * 0.2 }, { x1, ym }, { x0, ym + th * 0.2 } };
+            dl:AddLine(p[1], p[2], u32({ 0, 0, 0, 0.8 * a }), 3.2); dl:AddLine(p[2], p[3], u32({ 0, 0, 0, 0.8 * a }), 3.2);
+            dl:AddLine(p[1], p[2], u32({ col[1], col[2], col[3], a }), 1.5); dl:AddLine(p[2], p[3], u32({ col[1], col[2], col[3], a }), 1.5);
+        end
+        cx = cx + w_;
+    end
+    local function tick()                                            -- (a green tick: it landed)
+        local w_ = th * 0.62;
+        if not measure then
+            local x0, ym = cx + w_ * 0.12, y + th * 0.55;
+            local p = { { x0, ym }, { x0 + w_ * 0.28, ym + th * 0.2 }, { x0 + w_ * 0.78, ym - th * 0.26 } };
+            dl:AddLine(p[1], p[2], u32({ 0, 0, 0, 0.8 * a }), 3.6); dl:AddLine(p[2], p[3], u32({ 0, 0, 0, 0.8 * a }), 3.6);
+            dl:AddLine(p[1], p[2], u32({ 0.45, 1.0, 0.55, a }), 1.8); dl:AddLine(p[2], p[3], u32({ 0.45, 1.0, 0.55, a }), 1.8);
+        end
+        cx = cx + w_;
+    end
+    local sp = imgui.CalcTextSize(' ');
+    if e.tpre then txt(e.tpre, { 0.62, 0.60, 0.68 }, 0.85); end
+    txt(f.actor, { 0.97, 0.96, 1.0 });
+    chev({ 0.70, 0.68, 0.80 });
+    local kc = (f.kind == 'magic') and { 0.74, 0.64, 1.0 } or { 1.0, 0.82, 0.45 };
+    txt(f.act, kc);
+    if f.state == 'cast' then                                        -- (being cast: three dots that pulse)
+        local k = math.floor(os.clock() * 3) % 3;
+        for d = 0, 2 do txt('.', kc, (d == k) and 1 or 0.35); end
+    end
+    if f.target then cx = cx + sp * 0.3; chev({ 0.70, 0.68, 0.80 }); txt(f.target, { 0.88, 0.87, 0.94 }); end
+    for _, r in ipairs(f.res) do
+        cx = cx + sp * 1.2;
+        if r.dmg then
+            if r.who ~= f.target then txt(r.who .. ' ', { 0.88, 0.87, 0.94 }); end
+            txt(r.dmg, { 1.0, 0.62, 0.32 });
+        elseif r.heal then
+            if r.who ~= f.target then txt(r.who .. ' ', { 0.88, 0.87, 0.94 }); end
+            txt('+' .. r.heal, { 0.45, 1.0, 0.55 });
+        elseif r.miss then
+            if r.who ~= f.target then txt(r.who .. ' ', { 0.88, 0.87, 0.94 }); end
+            txt('miss', { 1.0, 0.40, 0.45 });
+        else
+            tick();
+            if r.who ~= f.target then txt(r.who, { 0.88, 0.87, 0.94 }); end
+        end
+    end
+    return cx - x;
 end
 local function wrap(e, maxw, key)
     if e.ww == maxw and e.wk == key and e.lines then return e.lines; end
@@ -4512,6 +4962,15 @@ end
 function legacy.pad_tick()
     local ok, _, _, name = pcall(legacy.menu_ptrs);
     legacy.pad.menu = (ok and name) or '';
+    do                                                               -- the game's Map ("map0", then "mapframe" while open): YunaUI's big map
+        local inmap = legacy.pad.menu:find('map', 1, true) ~= nil;   --  opens over it, the whole screen (BARS > MINIMAP > Open with the game's Map)
+        if cfg.map_native_v == nil then cfg.map_native_v = 1; cfg.map_replace = false; end   -- (once: the game's own Map, now drawn in YunaUI's look, is used as it is)
+        if cfg.map_replace == true and YMAP.have() then
+            if inmap and not legacy.inmap then YMAP.big, YMAP.bygame = true, true; end
+            if not inmap and legacy.inmap and YMAP.bygame then YMAP.big, YMAP.bygame = false, nil; end
+        end
+        legacy.inmap = inmap;
+    end
     local game = legacy.pad.menu:find('logwindo', 1, true) ~= nil or legacy.pad.menu:find('fulllog', 1, true) ~= nil;
     local was = legacy.pad.prev;
     legacy.pad.prev = legacy.pad.menu;
@@ -4752,6 +5211,290 @@ function C.frame_corner(dl, cx, cy, sx, sy, lx, ly, t)
     arm(cx, cy, cx + sx * lx * 0.5, cy + sy * 1, true, col(1, 0.92, 1, 0.7), col(1, 0.92, 1, 0));   -- a fine bright edge
     arm(cx, cy, cx + sx * 1, cy + sy * ly * 0.5, false, col(1, 0.92, 1, 0.7), col(1, 0.92, 1, 0));
 end
+-- Items in the chat: a line that names an item (loot, "You obtain...", an auto-translate item in linkshell...) gets its
+-- icon at the end; the mouse over the icon shows a card with the item (its icon, name, level, jobs and stats).
+-- The game's item names are read once into a table, a few hundred a frame so it never stutters.
+C.ITEMS = { map = {}, nxt = 1, done = false };
+function C.items_index()
+    local I = C.ITEMS;
+    if I.done then return; end
+    local res = AshitaCore:GetResourceManager();
+    local stop = math.min(I.nxt + 700, 30000);
+    for id = I.nxt, stop do
+        local ok, it = pcall(function() return res:GetItemById(id); end);
+        if ok and it then
+            pcall(function()
+                for _, nm in ipairs({ it.Name and it.Name[1], it.LogNameSingular and it.LogNameSingular[1], it.LogNamePlural and it.LogNamePlural[1] }) do
+                    if type(nm) == 'string' and #nm > 2 then
+                        local k = nm:lower();
+                        if I.map[k] == nil then I.map[k] = id; end
+                    end
+                end
+            end);
+        end
+    end
+    I.nxt = stop + 1;
+    if I.nxt > 30000 then I.done = true; end
+end
+function C.items_find(line)                                          -- (the item ids a chat line names; {} when none)
+    local I = C.ITEMS;
+    local out, seen = {}, {};
+    local function try(nm)
+        if nm == nil then return; end
+        nm = nm:gsub('^%s+', ''):gsub('%s+$', ''):gsub('%.$', ''):gsub('^the ', ''):gsub('^an? ', '');
+        local id = I.map[nm:lower()];
+        if id == nil then id = I.map[(nm:gsub('^%d+ ', '')):lower()]; end   -- ("3 beastcoins")
+        if id and not seen[id] and #out < 3 then seen[id] = true; out[#out + 1] = id; end
+    end
+    for nm in line:gmatch('\1([^\1\2]+)\2') do try(nm); end         -- auto-translate phrases
+    local sl = line:gsub('[\1\2]', '');
+    for _, pat in ipairs({ 'obtains? (.+)%.', 'Obtained: (.+)%.', 'finds? (.+) on ', 'finds? (.+)%.', 'You buy (.+) for', 'You sell (.+) for',
+                           'bought (.+) for', 'sold (.+) for', 'You throw away (.+)%.', 'lost (.+)%.', 'receive[sd]? (.+)%.' }) do
+        local m = sl:match(pat);
+        if m then try(m); end
+    end
+    return out;
+end
+-- The item card: drawn by YunaUI (not ImGui's plain tooltip) next to the mouse - a soft shadow, a dark rounded panel,
+-- the icon, name, level and jobs, Rare / Ex, then the stats, with the game's element marks drawn as little gems in
+-- each element's colour (the font can't show the game's own symbols).
+C.ELEM = { [0x1F] = { 1.0, 0.36, 0.26 }, [0x20] = { 0.60, 0.88, 1.0 }, [0x01] = { 0.60, 0.88, 1.0 }, [0x21] = { 0.45, 0.95, 0.50 }, [0x22] = { 0.86, 0.70, 0.36 },
+           [0x23] = { 0.78, 0.52, 1.0 }, [0x24] = { 0.32, 0.56, 1.0 }, [0x25] = { 1.0, 0.98, 0.82 }, [0x26] = { 0.42, 0.30, 0.62 } };
+function C.elem_gem(dl, x, cy, r, col, a)
+    local pts = { { x + r, cy - r }, { x + 2 * r, cy }, { x + r, cy + r }, { x, cy } };
+    dl:AddQuadFilled(pts[1], pts[2], pts[3], pts[4], u32({ 0, 0, 0, 0.85 * a }));
+    local k = r * 0.78;
+    dl:AddQuadFilled({ x + r, cy - k }, { x + r + k, cy }, { x + r, cy + k }, { x + r - k, cy }, u32({ col[1], col[2], col[3], a }));
+    dl:AddCircleFilled({ x + r - k * 0.3, cy - k * 0.35 }, math.max(1, k * 0.22), u32({ 1, 1, 1, 0.75 * a }), 8);
+end
+-- A black brush stroke behind a line of text (the Paint Stroke frames, tinted black), painted in when the card opens
+function C.brush(dl, x, cy, w, th, t, flip, a)
+    local p = math.max(0, math.min(1, t / 0.28));
+    local f = math.max(0, math.min(59, math.floor((1 - (1 - p) ^ 2) * 59 + 0.5)));
+    local tx = tex(string.format('paint/%03d.png', f));
+    if tx == nil then return; end
+    local hh = th * 1.35;                                            -- (the stroke's band is ~40% of its picture: it covers the text)
+    local x0, x1 = x - th * 0.9, x + w + th * 1.6;
+    local u0, u1 = flip and 1 or 0, flip and 0 or 1;
+    pcall(function() dl:AddImage(tx.ptr, { x0, cy - hh }, { x1, cy + hh }, { u0, 0 }, { u1, 1 }, u32({ 0, 0, 0, a })); end);
+end
+function C.item_card(id)
+    -- The item card: a solid dark card (nothing shows through it), above the mouse so it never covers the line you're
+    -- reading. A coloured edge on the left (gold Rare, violet Ex, else soft blue), the icon in a framed slot, the name,
+    -- level and jobs, RARE / EX pills, a thin line, then the stats as little chips, each on its own - "DEF:6",
+    -- "Attack+8", "Double Attack"+1% - with the element marks as coloured gems. A line like "On Darksdays: ..." gets its
+    -- condition as a small heading over its own chips. Laid out first, then drawn; it opens with a quick fade and rise.
+    local ok, it = pcall(function() return AshitaCore:GetResourceManager():GetItemById(id); end);
+    if not ok or it == nil then return; end
+    local fg = imgui.GetForegroundDrawList();
+    local SW, SH = C.screen();
+    local sc = math.max(0.8, SH / 1080);
+    local CD = C.CARD or {};
+    C.CARD = CD;
+    if CD.id ~= id or os.clock() - (CD.seen or 0) > 0.3 then CD.id, CD.t0 = id, os.clock(); end
+    CD.seen = os.clock();
+    local k = 1 - (1 - math.min(1, (os.clock() - CD.t0) / 0.18)) ^ 3;  -- (its opening: 0 -> 1)
+    local pushed = sized('chat', 13.5 * sc);
+    local fs = FS or 1;
+    local lh = imgui.GetTextLineHeight();
+    local name = (it.Name and it.Name[1]) or '?';
+    local lv = tonumber(it.Level) or 0;
+    local jobs = tonumber(it.Jobs) or 0;
+    local js;
+    if bit.band(jobs, 0x007FFFFE) == 0x007FFFFE then js = 'All jobs';
+    else local t_ = {}; for j = 1, 22 do if bit.band(jobs, bit.lshift(1, j)) ~= 0 then t_[#t_ + 1] = JOBS[j]; end end; js = table.concat(t_, ' '); end
+    local sub = ((lv > 0) and ('Lv.' .. lv) or '') .. ((lv > 0 and js ~= '') and '  \xC2\xB7  ' or '') .. js;
+    sub = sub:gsub('\xC2\xB7', '-');
+    local fl = tonumber(it.Flags) or 0;
+    local rare, ex = bit.band(fl, 0x8000) ~= 0, bit.band(fl, 0x6040) ~= 0;
+    local acc = rare and { 0.95, 0.76, 0.31 } or (ex and { 0.76, 0.66, 1.0 } or { 0.45, 0.70, 1.0 });
+    -- the stats: groups (a heading or none, then chips); a chip is a list of pieces (text, or an element gem)
+    local d = ((it.Description and it.Description[1]) or ''):gsub('\x81\x60', '~'):gsub('\xEF\x20', '\xEF\x01');
+    local groups = {};
+    local function chips_of(str)
+        local out, cur, inq = {}, '', false;
+        for i = 1, #str do
+            local ch = str:sub(i, i);
+            local prev = (i > 1) and str:byte(i - 1) or 0;
+            if ch == '"' then inq = not inq; end
+            if ch == ' ' and not inq and prev ~= 0xEF then
+                if cur ~= '' then out[#out + 1] = cur; end
+                cur = '';
+            else cur = cur .. ch; end
+        end
+        if cur ~= '' then out[#out + 1] = cur; end
+        local merged, pend = {}, nil;                                -- (a stat is words up to the one with its number: "Magic Accuracy+3")
+        for _, w_ in ipairs(out) do
+            pend = pend and (pend .. ' ' .. w_) or w_;
+            if w_:find('%d') then merged[#merged + 1] = pend; pend = nil; end
+        end
+        if pend then merged[#merged + 1] = pend; end
+        return merged;
+    end
+    for para in (d .. '\n'):gmatch('([^\n]*)\n') do
+        para = para:gsub('^%s+', ''):gsub('%s+$', '');
+        if para ~= '' then
+            local headp, rest = para:match('^([^:%d%+]+):%s+(.+)$');
+            if headp and #headp >= 3 then groups[#groups + 1] = { head = headp, chips = chips_of(rest) };
+            else
+                if #groups == 0 or groups[#groups].head then groups[#groups + 1] = { chips = {} }; end
+                for _, c_ in ipairs(chips_of(para)) do table.insert(groups[#groups].chips, c_); end
+            end
+        end
+    end
+    local SM = 0.84;                                                 -- (the chips' text: a little smaller than the name)
+    local isz = math.floor(lh * SM * 0.78);
+    local function parts_of(chip)                                    -- (a chip's pieces and its width, at the chips' size)
+        local parts, w_, i = {}, 0, 1;
+        while i <= #chip do
+            if chip:byte(i) == 0xEF and i < #chip and C.ELEM[chip:byte(i + 1)] then
+                parts[#parts + 1] = { gem = C.ELEM[chip:byte(i + 1)] }; w_ = w_ + isz + 3; i = i + 2;
+            else
+                local j = chip:find('\xEF', i + 1, true) or (#chip + 1);
+                local t_ = chip:sub(i, j - 1):gsub('[\x80-\xFF]', '');
+                if t_ ~= '' then parts[#parts + 1] = { t = t_ }; w_ = w_ + imgui.CalcTextSize(t_); end
+                i = j;
+            end
+        end
+        return parts, w_;
+    end
+    local W = math.floor(264 * sc);
+    local pad, gap = math.floor(10 * sc), math.floor(5 * sc);
+    local cpx, cpy = math.floor(6 * sc), math.floor(1 * sc);
+    imgui.SetWindowFontScale(fs * SM);
+    local clh = imgui.GetTextLineHeight();
+    local chh = clh + cpy * 2;
+    local maxw = W - pad * 2;
+    local layout, yy = {}, 0;                                         -- (each chip's place, from the stats' top)
+    for gi, g in ipairs(groups) do
+        if g.head then yy = yy + ((gi > 1) and 4 * sc or 0); layout[#layout + 1] = { head = g.head, y = yy }; yy = yy + clh + 3 * sc; end
+        local cx_ = 0;
+        for _, chip in ipairs(g.chips) do
+            local parts, cw = parts_of(chip);
+            local wbox = cw + cpx * 2;
+            if cx_ > 0 and cx_ + wbox > maxw then cx_ = 0; yy = yy + chh + gap; end
+            layout[#layout + 1] = { parts = parts, x = cx_, y = yy, w = math.min(wbox, maxw) };
+            cx_ = cx_ + wbox + gap;
+        end
+        if #g.chips > 0 then yy = yy + chh + gap; end
+    end
+    imgui.SetWindowFontScale(fs);
+    local isl = math.floor(30 * sc);                                 -- (the icon's slot)
+    local pills = (rare and 1 or 0) + (ex and 1 or 0);
+    local avail = W - pad - (pad + isl + math.floor(9 * sc));        -- (the room right of the icon)
+    local subrows = {};
+    imgui.SetWindowFontScale(fs * SM);
+    do
+        local cur_ = '';
+        for word in sub:gmatch('%S+') do
+            local try = (cur_ == '') and word or (cur_ .. ' ' .. word);
+            if cur_ ~= '' and imgui.CalcTextSize(try) > avail then subrows[#subrows + 1] = cur_; cur_ = word; else cur_ = try; end
+        end
+        if cur_ ~= '' then subrows[#subrows + 1] = cur_; end
+    end
+    imgui.SetWindowFontScale(fs);
+    if imgui.CalcTextSize(name) > avail then
+        while #name > 1 and imgui.CalcTextSize(name .. '...') > avail do name = name:sub(1, -2); end
+        name = name .. '...';
+    end
+    local textblock = lh + clh * #subrows + ((pills > 0) and (clh + 6 * sc) or 0);
+    local headh = math.max(isl, textblock);
+    local H = pad + headh + ((yy > 0) and (pad * 0.8 + 1 + pad * 0.8 + yy - gap) or 0) + pad;
+    local mx, my = imgui.GetMousePos();
+    local x = math.max(4, math.min(mx - 20 * sc, SW - W - 4));
+    local y = my - H - 16 * sc;                                      -- (above the mouse; under it only if there's no room)
+    if y < 4 then y = math.min(my + 22 * sc, SH - H - 4); end
+    y = y + (1 - k) * 8 * sc;
+    x, y, H = math.floor(x), math.floor(y), math.floor(H);            -- (whole pixels: crisp edges, nothing blurred)
+    local A = k;
+    local r = math.floor(7 * sc);
+    local rgt = ImDrawFlags_RoundCornersRight or ImDrawCornerFlags_Right or 10;
+    local sh_ = tex('bubble_soft.png');                              -- a soft shadow under it
+    if sh_ then image(fg, sh_, x - 24 * sc, y - 10 * sc, x + W + 24 * sc, y + H + 26 * sc, { 1, 1, 1, 0.65 * A }); end
+    -- the card: a thin dark line all round it (it stands out on any ground), then its colour as the left edge - the
+    -- whole card filled in that colour, the dark face laid over it from 3 px in, so the edge follows the round corners
+    -- exactly - then a fine light rim inside, brighter along the top
+    fg:AddRect({ x - 1, y - 1 }, { x + W + 1, y + H + 1 }, u32({ 0, 0, 0, 0.85 * A }), r + 1, C.rall, 1.5);
+    fg:AddRectFilled({ x, y }, { x + W, y + H }, u32({ acc[1], acc[2], acc[3], A }), r);
+    local ew = math.max(3, math.floor(3 * sc));
+    fg:AddRectFilled({ x + ew, y }, { x + W, y + H }, u32({ 0.050, 0.046, 0.075, A }), r, rgt);
+    fg:AddRect({ x + 0.5, y + 0.5 }, { x + W - 0.5, y + H - 0.5 }, u32({ 0.36, 0.33, 0.50, 0.55 * A }), r, C.rall, 1);
+    pcall(function()                                                 -- (the top rim: a touch of light, fading toward the ends)
+        local c1, c0 = u32({ 1, 1, 1, 0.16 * A }), u32({ 1, 1, 1, 0 });
+        fg:AddRectFilledMultiColor({ x + r, y + 1 }, { x + W / 2, y + 2 }, c0, c1, c1, c0);
+        fg:AddRectFilledMultiColor({ x + W / 2, y + 1 }, { x + W - r, y + 2 }, c1, c0, c0, c1);
+    end);
+    local ix, iy = x + pad, y + pad;                                 -- the icon in its slot
+    fg:AddRectFilled({ ix, iy }, { ix + isl, iy + isl }, u32({ 0.10, 0.095, 0.15, A }), 6);
+    fg:AddRect({ ix, iy }, { ix + isl, iy + isl }, u32({ 0.30, 0.28, 0.42, A }), 6, C.rall, 1);
+    local t = YUI_EQ_ICON and YUI_EQ_ICON(id) or nil;
+    local ip = math.floor(3 * sc);
+    if t then pcall(function() fg:AddImage(t.ptr, { ix + ip, iy + ip }, { ix + isl - ip, iy + isl - ip }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, A })); end); end
+    local tx = ix + isl + 9 * sc;
+    local ty = iy + (headh - textblock) / 2;
+    C.atext(fg, tx, ty, name, { 1, 1, 1, A });
+    imgui.SetWindowFontScale(fs * SM);
+    for ri, row in ipairs(subrows) do C.atext(fg, tx, ty + lh + clh * (ri - 1), row, { 0.70, 0.64, 0.90, A }); end
+    if pills > 0 then                                                -- RARE / EX
+        local px_, py_ = tx, ty + lh + clh * #subrows + 6 * sc;
+        imgui.SetWindowFontScale(fs * SM * 0.86);
+        local plh = imgui.GetTextLineHeight();
+        for _, pl in ipairs({ rare and { 'RARE', { 0.95, 0.76, 0.31 } } or nil, ex and { 'EX', { 0.76, 0.66, 1.0 } } or nil }) do
+            if pl then
+                local pw = imgui.CalcTextSize(pl[1]) + 14 * sc;
+                fg:AddRectFilled({ px_, py_ }, { px_ + pw, py_ + plh + 2 * sc }, u32({ pl[2][1] * 0.28, pl[2][2] * 0.24, pl[2][3] * 0.30, A }), (plh + 2 * sc) / 2);
+                fg:AddText({ px_ + 7 * sc, py_ + 1 * sc }, u32({ pl[2][1], pl[2][2], pl[2][3], A }), pl[1]);
+                px_ = px_ + pw + 6 * sc;
+            end
+        end
+        imgui.SetWindowFontScale(fs * SM);
+    end
+    if yy > 0 then                                                   -- a thin line, then the stats
+        local ly_ = y + pad + headh + pad * 0.8;
+        pcall(function() fg:AddRectFilledMultiColor({ x + pad, ly_ }, { x + W - pad, ly_ + 1 }, u32({ 0.40, 0.36, 0.60, A }), u32({ 0.40, 0.36, 0.60, 0 }), u32({ 0.40, 0.36, 0.60, 0 }), u32({ 0.40, 0.36, 0.60, A })); end);
+        local sy0 = ly_ + 1 + pad * 0.8;
+        for _, L_ in ipairs(layout) do
+            if L_.head then
+                C.atext(fg, x + pad, sy0 + L_.y, L_.head, { 0.58, 0.54, 0.76, A });
+            else
+                local bx, by = x + pad + L_.x, sy0 + L_.y;
+                fg:AddRectFilled({ bx, by }, { bx + L_.w, by + chh }, u32({ 0.12, 0.11, 0.17, A }), 5);
+                local cx2 = bx + cpx;
+                for _, pt in ipairs(L_.parts) do
+                    if pt.gem then C.elem_gem(fg, cx2, by + chh / 2, isz / 2, pt.gem, A); cx2 = cx2 + isz + 3;
+                    else fg:AddText({ cx2, by + cpy }, u32({ 0.93, 0.92, 0.98, A }), pt.t); cx2 = cx2 + imgui.CalcTextSize(pt.t); end
+                end
+            end
+        end
+    end
+    imgui.SetWindowFontScale(fs);
+    unsized(pushed);
+end
+-- The chat's ground, by how bright it is where you are (no options): darker in the snow, the desert and the sun, lighter
+-- at night - from the zone, Vana'diel's time and the weather (the real pixels behind it can't be read cheaply here)
+C.AMB = { v = 0.55, wx = 0 };
+C.BRIGHT_ZONES = { [111] = true, [112] = true, [5] = true, [203] = true, [114] = true, [125] = true, [247] = true, [130] = true,
+                   [178] = true, [119] = true, [120] = true, [24] = true, [25] = true };
+function C.amb_alpha(dt)
+    local A = C.AMB;
+    local hr = math.floor((os.time() - 1009810800) * 25 / 3600) % 24;   -- (Vana'diel's hour)
+    local b = (hr >= 7 and hr <= 16) and 0.6 or ((hr >= 20 or hr <= 4) and 0.25 or 0.45);
+    local zid = 0;
+    pcall(function() zid = AshitaCore:GetMemoryManager():GetParty():GetMemberZone(0) or 0; end);
+    if C.BRIGHT_ZONES[zid] then b = b + 0.3; end
+    local wx = A.wx or 0;
+    if wx == 1 or wx == 12 or wx == 13 or wx == 16 or wx == 17 then b = b + 0.15;
+    elseif wx == 3 or wx == 6 or wx == 7 or wx == 18 or wx == 19 then b = b - 0.1; end
+    b = math.max(0, math.min(1, b));
+    A.v = A.v + (b - A.v) * math.min(1, (dt or 0.016) * 0.5);       -- (changes slowly, never jumps)
+    return 0.40 + 0.40 * A.v;
+end
+function C.weather_packet(e)                                         -- (0x057: the weather changed; 0x00A: a new zone)
+    local w = nil;
+    if e.id == 0x057 then w = struct.unpack('H', e.data, 0x08 + 1);
+    elseif e.id == 0x00A then w = struct.unpack('H', e.data, 0x68 + 1); end
+    if w and w >= 0 and w <= 19 then C.AMB.wx = w; end
+end
 local function draw_chat(n)
     if n == 1 then C.bigchat = false; end
     if not cfg.chat or (n == 2 and not cfg.chat_split) then return; end
@@ -4767,11 +5510,15 @@ local function draw_chat(n)
     if n == 2 and cfg.chat_link then                                 -- anchored: the combat log sits right beside the chat, the same size,
         local tw, th = tonumber(cfg.chat_w) or 620, tonumber(cfg.chat_h) or 260;   -- its edges lined up, and follows it when it moves
         local cx_, cy_ = tonumber(cfg.chat_x) or 20, tonumber(cfg.chat_y) or 700;
-        local W = (ALLY.screen()) or 1920;
-        local nx = cx_ + tw;                                         -- (edge to edge: one panel)
-        if nx + tw > W then nx = cx_ - tw; end                        -- (no room on its right: on its left)
+        local W, H = ALLY.screen();
+        W, H = W or 1920, H or 1080;
+        local nx, ny = cx_ + tw, cy_;                                -- (edge to edge: one panel)
+        if cfg.chat_link_v then                                      -- (the anchor's 2nd click: on top of the chat, or under it if there's no room)
+            nx, ny = cx_, cy_ - th;
+            if ny < 0 then ny = cy_ + th; end
+        elseif nx + tw > W then nx = cx_ - tw; end                   -- (no room on its right: on its left)
         cfg.chat2_w, cfg.chat2_h = tw, th;
-        cfg.chat2_x, cfg.chat2_y = math.floor(nx), math.floor(cy_);
+        cfg.chat2_x, cfg.chat2_y = math.floor(nx), math.floor(ny);
         st.relink = true;
     end
     local w, h = math.max(200, tonumber(cfg[p .. 'w']) or 600), math.max(80, tonumber(cfg[p .. 'h']) or 260);
@@ -4811,17 +5558,32 @@ local function draw_chat(n)
         local linked = cfg.chat_link and cfg.chat_split;
         local other = cw[(n == 1) and 2 or 1];
         local hovx = hov or (linked and other.hovraw) or false;     -- (anchored: the mouse over either lights both)
-        local want = (hovx or typing or chat_lit_all or not cfg.chat_fade or st.scroll > 0) and 1 or 0;
+        local want = (hovx or typing or chat_lit_all or st.scroll > 0) and 1 or 0;
         st.hv = st.hv + (want - st.hv) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 8);
         local right = (tonumber(cfg.chat2_x) or 0) > (tonumber(cfg.chat_x) or 0);   -- (which side the combat log is on)
         local sl_, sr_ = false, false;
-        if linked then
+        if linked and not cfg.chat_link_v then
             if n == 1 then if right then sr_ = true; else sl_ = true; end
             else if right then sl_ = true; else sr_ = true; end end
         end
-        -- CHAT > Dark ground: a soft see-through shade behind the lines that are showing (gone when they've faded out)
-        local ga = (cfg.chat_ground ~= false) and math.max(0, math.min(1, tonumber(cfg.chat_ground_a) or 0.5)) * (st.vis or 0) or 0;
-        if cfg.chat_linebg == false then soft_ground(dl, x, y, w, h, math.max(st.hv, ga), sl_, sr_); end   -- (Line backgrounds on: no ground at all, the strips do it)
+        -- The chat's one look (no options): a soft dark ground with no edges, behind the newest lines when it's at rest (a
+        -- little darker for a moment when a line arrives), growing to the whole chat when it's lit (the mouse over it,
+        -- typing, scrolling). Readable on grass, snow or sand, and never a box.
+        do
+            local lg_ = logs[(n == 1) and 1 or 2];
+            local last = (lg_ and lg_[#lg_] and (lg_[#lg_].t0 or lg_[#lg_].t)) or -99;
+            local pulse = math.max(0, 1 - (now - last) / 2.5);
+            st.pulse = pulse;
+            local uh = st.used_h or 0;
+            if linked then                                           -- (anchored: both grounds the same height and strength, so where they meet
+                uh = math.max(uh, other.used_h or 0);                 --  there's no step and no seam)
+                pulse = math.max(pulse, other.pulse or 0);
+            end
+            local gh = math.min(h, uh + 26);
+            local gy = y + (h - gh) * (1 - st.hv);
+            local base = C.amb_alpha(imgui.GetIO().DeltaTime);           -- (how dark, by how bright it is where you are)
+            if gh > 30 or st.hv > 0.02 then soft_ground(dl, x, gy, w, (y + h) - gy, math.min(1, base + 0.15 * pulse + 0.30 * st.hv), sl_, sr_); end
+        end
         if big then                                                  -- the pad's big chat: a panel like the game's full log
             local all = C.rall;
             dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.035, 0.032, 0.050, 0.90 }), 6);
@@ -4843,6 +5605,8 @@ local function draw_chat(n)
             unsized(tp);
         end
         st.vis_n = 0;
+        pcall(C.items_index);                                         -- (the game's item names, read a little each frame until done)
+        local itip = nil;                                            -- (an item icon under the mouse: its card, after the text)
         -- the text, from the bottom up
         local size = tonumber(cfg.chat_size) or 16;
         local pushed = sized('chat', size);
@@ -4856,7 +5620,7 @@ local function draw_chat(n)
         ly = ly - type_h;
         local skip = st.scroll;
         local hold, fade = tonumber(cfg.chat_hold) or 12, 3;
-        local bright = tonumber(cfg.chat_bright) or 1;
+        local bright = 1.4;                                          -- (the chat's brightness: fixed, Yunas's own setting)
         local tab = (n == 1) and (tonumber(cfg.chat_tab) or 1) or 1;
         local only = nil;                                            -- (the big chat: 'combat' = only battle lines, 'talk' = none)
         if big then
@@ -4866,20 +5630,25 @@ local function draw_chat(n)
             elseif not cfg.chat_split then only = 'talk'; end
         end
         local i = #log;
+        local rown = 0;                                              -- (rows drawn so far, from the bottom: at rest the newest 3 show, 2 more fade)
         while i >= 1 and ly > y - lh do
             local e = log[i];
             if tab ~= 1 and TAB_OF[e.mode or 0] ~= tab then i = i - 1; goto next_line; end
             if only and ((only == 'combat') ~= is_combat(e.mode or 0)) then i = i - 1; goto next_line; end
             do
-            local life = 1;
-            if cfg.chat_fade then life = math.max(0, math.min(1, 1 - ((now - (e.t or now)) - hold) / fade)); end
+            local life = (rown < 5) and 1 or 0;
             local vis = math.max(st.hv, life);
             if vis <= 0.01 and skip <= 0 then break; end            -- older lines are all faded out
-            local lines = wrap(e, maxw, size);
+            local lines = e.feed and { e.text } or wrap(e, maxw, size);  -- (a combat-feed line: one row, drawn by C.feed_draw)
+            local age = (cfg.chat_anim ~= false) and (now - (e.t0 or -99)) or 99;   -- CHAT > Animated lines: slides in, then settles
+            local slide, ain = 0, 1;
+            if age < 0.35 then local q = 1 - (1 - age / 0.35) ^ 3; slide, ain = (1 - q) * 28, q; end
+            local glow = (cfg.chat_anim ~= false) and math.max(0, 1 - (now - (e.flash or e.t0 or -99)) / 0.9) or 0;
             for k = #lines, 1, -1 do
                 if skip > 0 then skip = skip - 1;
                 else
-                    local a = math.max(0, math.min(1, (ly - y) / (h * 0.25))) * vis;    -- fades toward the top
+                    local rest = math.max(0, math.min(1, 1 - (rown - 2) / 2.5));   -- (at rest: rows 1-3 full, 4-5 fading)
+                    local a = math.max(0, math.min(1, (ly - y) / (h * 0.25))) * math.max(st.hv, rest) * ain;    -- fades toward the top
                     if a > 0.01 then
                         st.vis_n = math.max(st.vis_n or 0, vis);
                         -- readable on any ground (snow, sand, bright floors): a full dark outline round every letter
@@ -4891,22 +5660,48 @@ local function draw_chat(n)
                             c = { c[1] * bright, c[2] * bright, c[3] * bright };
                         end
                         local txt = lines[k];
-                        if cfg.chat_linebg ~= false then             -- CHAT > Line backgrounds: a dark strip just as long as the text, fading with it
-                            local la = 0.62 * a;                     -- (the chat has no ground then, lit up or not)
-                            if la > 0.01 then
-                                local th = lh - math.max(0, math.min(16, tonumber(cfg.chat_gap) or 6));
-                                dl:AddRectFilled({ x + pad - 5, ly - 2 }, { x + pad + line_w(txt) + 5, ly + th + 1 }, u32({ 0, 0, 0, la }), 4);
-                            end
+                        local px = x + pad - slide;                  -- (where this row starts: sliding in when new)
+                        local tw_ = e.feed and C.feed_draw(dl, px, ly, e, a, lh, true) or line_w(txt);
+                        local th = lh - math.max(0, math.min(16, tonumber(cfg.chat_gap) or 6));
+                        if glow > 0.01 then                          -- (new, or a feed line that just grew: a soft glow in its colour)
+                            dl:AddRectFilled({ px - 5, ly - 2 }, { px + tw_ + 5, ly + th + 1 }, u32({ c[1], c[2], c[3], 0.22 * glow * glow * a }), 4);
                         end
-                        local ts = (k == 1 and cfg.chat_time and cfg.chat_time_dim ~= false) and txt:match('^(%[%d%d:%d%d%] )') or nil;
-                        if ts then                                   -- the time in grey, so the words stand out
-                            chat_line(dl, x + pad, ly, ts, { 0.62, 0.60, 0.68 }, a * 0.85, lh);
-                            chat_line(dl, x + pad + line_w(ts), ly, txt:sub(#ts + 1), c, a, lh);
+                        local fresh = (cfg.chat_anim ~= false) and math.max(0, math.min(1, 1 - ((now - (e.flash or e.t0 or -99)) - 1.5) / 1.5)) or 0;
+                        if fresh > 0.01 then                         -- (new, or a feed line that just grew: a short bar in its colour on the
+                            dl:AddRectFilled({ px - 10, ly }, { px - 7, ly + th - 1 }, u32({ c[1], c[2], c[3], 0.9 * fresh * a }), 1.5);   --  left, for a moment)
+                        end
+                        local ts = (not e.feed and k == 1 and cfg.chat_time and cfg.chat_time_dim ~= false) and txt:match('^(%[%d%d:%d%d%] )') or nil;
+                        if e.feed then
+                            C.feed_draw(dl, px, ly, e, a, lh);
+                        elseif ts then                               -- the time in grey, so the words stand out
+                            chat_line(dl, px, ly, ts, { 0.62, 0.60, 0.68 }, a * 0.85, lh);
+                            chat_line(dl, px + line_w(ts), ly, txt:sub(#ts + 1), c, a, lh);
                         else
-                            chat_line(dl, x + pad, ly, txt, c, a, lh);
+                            chat_line(dl, px, ly, txt, c, a, lh);
+                        end
+                        if k == #lines and not e.feed and C.ITEMS.done then   -- the items it names: their icons after its last row
+                            if e.items == nil then local oki, r_ = pcall(C.items_find, e.raw or e.text or ''); e.items = oki and r_ or {}; end
+                            local ix = px + tw_ + 6;
+                            local isz = math.floor(th * 0.82);
+                            local ly0 = ly;
+                            ly = ly0 + (th - isz) / 2;
+                            for _, iid in ipairs(e.items) do
+                                local t = YUI_EQ_ICON and YUI_EQ_ICON(iid) or nil;
+                                if t then
+                                    pcall(function() dl:AddImage(t.ptr, { ix, ly }, { ix + isz, ly + isz }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, a })); end);
+                                    local mx, my = imgui.GetMousePos();
+                                    if a > 0.3 and mx >= ix and mx <= ix + isz and my >= ly and my <= ly + isz then
+                                        itip = iid;
+                                        dl:AddRect({ ix - 1, ly - 1 }, { ix + isz + 1, ly + isz + 1 }, u32({ 1, 1, 1, 0.8 }), 2, C.rall, 1.2);
+                                    end
+                                    ix = ix + isz + 3;
+                                end
+                            end
+                            ly = ly0;
                         end
                     end
                     ly = ly - lh;
+                    rown = rown + 1;
                     if ly <= y - lh then break; end
                 end
             end
@@ -4915,13 +5710,15 @@ local function draw_chat(n)
             ::next_line::
         end
         st.vis = st.vis_n;
+        st.used_h = math.min(rown, 5) * lh + bar + pad + type_h;     -- (how tall the resting ground is: the newest rows)
         imgui.PopClipRect();
+        if itip then pcall(C.item_card, itip); end
         if typing then                                               -- the typing line: a dark strip, your text, a blinking caret
             local tx0, ty0 = x + pad - 4, y + h - bar - type_h - 2;
             local tw0, th0 = maxw + 8, lh + 6;
             dl:AddRectFilled({ tx0, ty0 }, { tx0 + tw0, ty0 + th0 }, u32({ 0.03, 0.03, 0.05, 0.75 }), 6);
             dl:AddRect({ tx0, ty0 }, { tx0 + tw0, ty0 + th0 }, u32({ 0.74, 0.66, 0.95, 0.35 }), 6, C.rall, 1);
-            local c = chat_col(typing.cat);
+            local c = { 1, 1, 1 };                                -- (what you type: always white, whatever channel it goes to)
             local cx = line_w(typing.before);
             local shift = math.max(0, cx - (maxw - 14));               -- long text: keep the caret in view
             C.iclip({ tx0 + 2, ty0 }, { tx0 + tw0 - 2, ty0 + th0 }, true);
@@ -4995,18 +5792,27 @@ local function draw_chat(n)
             local bs = 22;
             local ax, ay = x + w - bs - 10, y + h - bar + (bar - bs) / 2 - 2;
             imgui.SetCursorScreenPos({ ax, ay });
-            if imgui.InvisibleButton('##yui_chat_link', { bs, bs }) then
-                cfg.chat_link = not cfg.chat_link;
+            if imgui.InvisibleButton('##yui_chat_link', { bs, bs }) then   -- clicks go round: beside the chat -> on top of it (if there's room) -> free
+                if not cfg.chat_link then cfg.chat_link, cfg.chat_link_v = true, false;
+                elseif not cfg.chat_link_v then
+                    local _, H = ALLY.screen();
+                    local th_, cy_ = tonumber(cfg.chat_h) or 260, tonumber(cfg.chat_y) or 700;
+                    if cy_ - th_ >= 0 or cy_ + 2 * th_ <= (H or 1080) then cfg.chat_link_v = true;   -- (room above, or under)
+                    else cfg.chat_link, cfg.chat_link_v = false, false; end
+                else cfg.chat_link, cfg.chat_link_v = false, false; end
                 save();
             end
             local hv2 = imgui.IsItemHovered();
-            if hv2 then YUI_TIP(cfg.chat_link and 'Anchored to the chat (click to free it)' or 'Anchor the combat log to the chat: beside it, the same size'); end
+            if hv2 then YUI_TIP((not cfg.chat_link) and 'Anchor the combat log to the chat: beside it, the same size'
+                or ((not cfg.chat_link_v) and 'Beside the chat (click: on top of it)' or 'On top of the chat (click to free it)')); end
             local on = cfg.chat_link == true;
             local c = on and { 0.86, 0.58, 1.0, (hv2 and 1 or 0.9) * gf } or { 0.62, 0.60, 0.70, (hv2 and 1 or 0.7) * gf };
             local cx, cy = ax + bs / 2, ay + bs / 2;
-            if on then dl:AddLine({ cx - 5, cy }, { cx + 5, cy }, u32(c), 2.2); end
-            dl:AddCircleFilled({ cx - 5, cy }, 3.3, u32(c), 12);
-            dl:AddCircleFilled({ cx + 5, cy }, 3.3, u32(c), 12);
+            local vx, vy = 5, 0;                                     -- (the two dots: side by side, or one above the other when on top)
+            if on and cfg.chat_link_v then vx, vy = 0, 5; end
+            if on then dl:AddLine({ cx - vx, cy - vy }, { cx + vx, cy + vy }, u32(c), 2.2); end
+            dl:AddCircleFilled({ cx - vx, cy - vy }, 3.3, u32(c), 12);
+            dl:AddCircleFilled({ cx + vx, cy + vy }, 3.3, u32(c), 12);
         end
         if not cfg.locked and not big then                           -- (the big chat has no resize grip)
             imgui.SetCursorScreenPos({ x + w - 24, y });
@@ -5222,7 +6028,7 @@ local function draw_exp(dt)
         imgui.End(); imgui.PopStyleVar(2);
     end
 end
--- Gil: a little coin, the amount, and under it what's changed since you logged in
+-- Gil: a little coin and the amount
 local function draw_gil()
     if not cfg.gil then return; end
     local gil = 0;
@@ -5246,14 +6052,6 @@ local function draw_gil()
         outlined(dl, x + cr * 2 + 6 * sc, y, gs, { GOLD[1], GOLD[2], GOLD[3], 1 });
         local gw = imgui.CalcTextSize(gs);
         local h2 = lh;
-        local diff = gil - (gil_start or gil);
-        if diff ~= 0 then
-            local fs = FS;
-            imgui.SetWindowFontScale(fs * 0.8);
-            outlined(dl, x + cr * 2 + 6 * sc, y + lh, (diff > 0 and '+' or '') .. commas(diff), diff > 0 and { 0.55, 1, 0.65, 1 } or { 1, 0.5, 0.65, 1 });
-            h2 = lh + imgui.GetTextLineHeight();
-            imgui.SetWindowFontScale(fs);
-        end
         unsized(pushed);
         imgui.Dummy({ cr * 2 + 6 * sc + gw + 16, h2 + 12 });
         end_plain('gil_x', 'gil_y');
@@ -6249,7 +7047,7 @@ function PET.draw(dt)
     end
 end
 
-local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 'DAMAGE METER' };
+local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 'DAMAGE METER', 'MINIMAP' };
 -- Layouts (GENERAL > LAYOUT): one click puts every piece of the UI in its place for your screen size.
 -- Built-in: Classic (bars bottom middle, party top right, timers left), Raid (party top left, bars stacked bottom
 -- middle, timers right) and Compact (everything gathered round the bars, a little below the middle).
@@ -6812,6 +7610,7 @@ local function draw_window()
             row_switch('##yui_tfi', 'Casts and skillchains', 'fight_info', 'Under the bar: what the monster is casting or readying. From the bar\'s start: a fan of your weapon skills that close the skillchain. Over the name: the Magic Burst window and its elements.');
             row_slider('##yui_s_t', 'Size', 'target_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_slider('##yui_tnsc', 'Target name size', 'target_name_scale', 0.5, 2.5, 0.05, '%.2fx');
+            row_pick('##yui_tfl', 'Friends look', 'target_friend_look', { { 'card', 'Party card' }, { 'banner', 'Ally banner' }, { 'off', 'Like monsters' } });
             row_slider('##yui_fansc', 'Skillchain fan size', 'fan_scale', 0.4, 2.0, 0.05, '%.2fx');
             row_slider('##yui_mbsc', 'Magic Burst size', 'mb_scale', 0.5, 2.5, 0.05, '%.2fx');
             row_slider('##yui_ecsc', 'Enemy cast size', 'ecast_scale', 0.4, 2.0, 0.05, '%.2fx');
@@ -6895,24 +7694,13 @@ local function draw_window()
             row_slider('##yui_pts', 'Size', 'pet_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_slider('##yui_ptw', 'Length', 'pet_w', 150, 600, 10, '%d px');
             section('GIL');
-            row_switch('##yui_g', 'Show', 'gil', 'Your gil, and what you\'ve made since you logged in.');
+            row_switch('##yui_g', 'Show', 'gil', 'Your gil.');
             if cfg.gil_scale == nil then cfg.gil_scale = tonumber(cfg.gb_scale) or 1; end
             row_slider('##yui_s_gil', 'Size', 'gil_scale', 0.5, 2.5, 0.05, '%.2fx');
             section('BAG');
             row_switch('##yui_bg', 'Show', 'bag', 'How full your bag is.');
             row_pick('##yui_bs', 'Look', 'bag_style', { { 'row', 'Row' }, { 'grid', 'Grid' }, { 'dots', 'Dots' }, { 'bar', 'Bar' } });
             row_slider('##yui_s_gb', 'Size', 'gb_scale', 0.5, 2.5, 0.05, '%.2fx');
-            if YMAP.have() then                                          -- (only with the maps made on this PC: they're never published)
-            section('MINIMAP');
-            row_switch('##yui_mm', 'Show', 'minimap', 'The map around you, redrawn dark in YunaUI\'s look: you (the pink arrow), your party in their role colours, monsters and your target.');
-            row_slider('##yui_mms', 'Size', 'map_size', 120, 480, 5, '%d px');
-            row_slider('##yui_mmz', 'Zoom', 'map_zoom', 16, 256, 2, '%d');
-            hint('Zoom: how much of the map shows round you (smaller is closer).');
-            row_switch('##yui_mmm', 'Monsters', 'map_mobs');
-            row_slider('##yui_bms', 'Big map size', 'bigmap_size', 400, 1200, 10, '%d px');
-            if accent_button('OPEN THE BIG MAP##yui_bigmap_open', { ROW_W, 0 }) then YMAP.big = true; ui.open = false; end
-            hint('The big map, with its grid: /yui map opens or closes it. Move both in Edit Mode like everything else.');
-            end
         elseif tab == 5 then
             ------------------------------------------------------------------ CHAT
             section('CHAT');
@@ -6929,8 +7717,9 @@ local function draw_window()
             row_switch('##yui_c2', 'Split combat log', 'chat_split', 'On: battle messages go to a second chat window of their own (move and size it like the first).');
             row_switch('##yui_ct', 'Timestamps', 'chat_time');
             if cfg.chat_time then row_switch('##yui_ctd', 'Timestamps in grey', 'chat_time_dim', 'On: the time is grey, so the message itself stands out.'); end
-            row_switch('##yui_cf', 'Fade when idle', 'chat_fade', 'On: only new lines show, and they fade away; put the mouse over the chat to see it all.');
-            if cfg.chat_fade then row_slider('##yui_s_h', 'Lines stay for', 'chat_hold', 3, 60, 1, '%d s'); end
+            row_switch('##yui_canim', 'Animated lines', 'chat_anim', 'On: new lines slide in with a soft glow, and a thin bar in their channel\'s colour on the left.');
+            row_switch('##yui_cfeed', 'Combat feed', 'chat_feed', 'On: a spell or ability is one line that grows as it happens (who > spell > target, then a tick, the damage, the HP healed or miss) instead of three or four lines. Only new lines.');
+            row_switch('##yui_cbub', 'Speech bubbles', 'chat_bubbles', 'On: say and party lines also show as a bubble over the head of whoever said it (when they\'re near you).');
             section('HISTORY');
             row_switch('##yui_csave', 'Save chat logs', 'chat_save', 'On: every chat line is also written to a text file, one per day: Ashita\\chatlogs\\<your name>_<date>.txt');
             if accent_button('SAVE THE CHAT NOW##yui_csnow', { ROW_W, 0 }) then pcall(CHATLOG.save_now); end
@@ -6941,14 +7730,6 @@ local function draw_window()
             section('TEXT');
             row_slider('##yui_s_c', 'Size', 'chat_size', 11, 34, 1, '%d px');
             row_slider('##yui_s_cg', 'Line spacing', 'chat_gap', 0, 16, 1, '%d px');
-            row_pick('##yui_cedge', 'Letter edge', 'chat_outline', { { 'outline', 'Outline' }, { 'strong', 'Strong' }, { 'soft', 'Soft' }, { 'shadow', 'Shadow only' } });
-            hint('Letter edge: Outline is a thin black line round every letter; Strong reads on snow and bright floors; Soft keeps the letters cleaner; Shadow only is the cleanest.');
-            row_switch('##yui_clbg', 'Line backgrounds', 'chat_linebg', 'On: each line gets a dark strip behind it, just as long as the text, and it fades away with the line. The chat itself has no background then (the channel tabs stay).');
-            if cfg.chat_linebg == false then
-                row_switch('##yui_cgr', 'Dark ground', 'chat_ground', 'On: a soft dark shade behind the lines that are showing, so they read on bright floors. It fades away with them.');
-                if cfg.chat_ground ~= false then row_slider('##yui_s_cgr', 'Ground strength', 'chat_ground_a', 0.1, 1.0, 0.05, '%.2f'); end
-            end
-            row_slider('##yui_s_cb', 'Brightness', 'chat_bright', 0.5, 1.6, 0.05, '%.2fx');
             hint('Font: ' .. (fonts.chat_name or 'AvantGarde not found - using a fallback'));
             section('COLOURS');
             for _, cc in ipairs(CHAT_COLS) do colour_row('col_' .. cc[1], cc[2], cc[3], true); end
@@ -6973,7 +7754,26 @@ local function draw_window()
             colour_row('timers_cma', 'Spells', { 0.55, 0.80, 1.00 }, true);
             colour_row('timers_csp', 'One-hour abilities', { 1.00, 0.45, 0.75 }, true);
             colour_row('timers_tc', 'Names', { 1, 1, 1 });
+            if accent_button('RESTORE DEFAULT COLOURS##yui_tmcr', { ROW_W, 0 }) then
+                cfg.timers_cja, cfg.timers_cma, cfg.timers_csp, cfg.timers_tc = nil, nil, nil, nil;
+                save();
+            end
             hint('Drag the list to move it.');
+        elseif tab == 9 then
+            ------------------------------------------------------------------ MINIMAP
+            section('MINIMAP');
+            if YMAP.have() then
+            row_switch('##yui_mm', 'Show', 'minimap', 'The map around you, redrawn dark in YunaUI\'s look: you (the arrow), your party in their role colours, monsters and your target.');
+            row_switch('##yui_mm3f', 'Turn with you', 'map3d_follow', 'The minimap turns as you do, looking the way you face. Off: north stays up.');
+            row_pick('##yui_mmc', 'Lines', 'map_color', { { 'white', 'White' }, { 'pink', 'Pink' }, { 'cyan', 'Cyan' } });
+            if accent_button('PLAY IT##yui_mmt_play', { ROW_W, 0 }) then YMAP.tt = os.clock(); end
+            row_slider('##yui_mms', 'Size', 'map_size', 120, 480, 5, '%d px');
+            row_slider('##yui_mmz', 'Zoom', 'map_zoom', 16, 256, 2, '%d');
+            hint('Zoom: how much of the map shows round you (smaller is closer).');
+            row_switch('##yui_mmm', 'Monsters', 'map_mobs');
+            else
+                hint('The minimap needs its map files (the mapsimg and maps3d folders in YunaUI\'s folder).');
+            end
         else
             ------------------------------------------------------------------ DAMAGE METER
             local D = YUI_DPS;
@@ -7137,6 +7937,13 @@ function YMAP.have()                                                 -- (the map
     end
     return YMAP.has;
 end
+YMAP.COLS = { white = { 1.00, 1.00, 1.00 }, pink = { 1.00, 0.55, 0.78 },                                      -- BARS > MINIMAP > Lines
+              cyan = { 0.55, 0.85, 1.00 } };                                                                       -- (cyan: the Target of Target's)
+function YMAP.lcol(dim)                                              -- (dim: the place names, softer than the lines)
+    local c = YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
+    local m = dim and 0.66 or 1;
+    return u32({ c[1] * m, c[2] * m, c[3] * m, 1 });
+end
 pcall(ffi.cdef, 'typedef int32_t (__thiscall* YUI_FloorFn)(void* pThis, float X, float Y, float Z);');
 function YMAP.table_ptr()
     if YMAP.tp == nil then
@@ -7210,10 +8017,12 @@ function YMAP.update(ent, me, zid)                                   -- the righ
     YMAP.zone, YMAP.floor = zid, fl;
     pcall(function() YMAP.name = AshitaCore:GetResourceManager():GetString('zones.names', zid) or ''; end);
     YMAP.entry = YMAP.entry_of(zid, fl);
-    YMAP.tex = nil;
+    YMAP.tex, YMAP.ltex, YMAP.ntex = nil, nil, nil;
     if YMAP.entry then
         local dir = (addon.path:gsub('[\\/]+$', '')) .. '\\mapsimg\\';
-        YMAP.tex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '.png');
+        YMAP.tex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '.png');        -- the floor and the icons
+        YMAP.ltex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '_l.png');     -- the lines, white: tinted as drawn
+        YMAP.ntex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '_n.png');     -- the place names (tinted, softer)
     end
 end
 function YMAP.to_map(wx, wy)                                         -- world (x east, y north) to map pixels (0..512)
@@ -7237,7 +8046,7 @@ function YMAP.mobs_near(ent)                                         -- monsters
     YMAP.mobs = out;
     return out;
 end
--- What sits on the map: monsters, the party in their role colours, the target, and you (a pink arrow)
+-- What sits on the map: monsters, the party in their role colours, the target, and you (the glowing arrow)
 function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside)
     local tidx = target_index() or 0;
     local function dot(wx, wy, col, r, ring)
@@ -7271,6 +8080,19 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside)
     local yaw = 0;
     pcall(function() yaw = ent:GetLocalPositionYaw(me) or 0; end);
     local fx, fy = math.cos(yaw), math.sin(yaw);
+    do                                                               -- you: the neon outline arrow (images/map_arrow.png), turned your way
+        local h = 9.5 * sc;
+        local t = C.tex_at('map_arrow.png', math.max(16, math.min(256, math.floor(h * 2 + 0.5)))) or tex('map_arrow.png');
+        if t then
+            local rx, ry = -fy, fx;                                  -- (the picture's right, as it turns)
+            local ok = pcall(function()
+                dl:AddImageQuad(t.ptr, { px + (fx - rx) * h, py + (fy - ry) * h }, { px + (fx + rx) * h, py + (fy + ry) * h },
+                    { px + (-fx + rx) * h, py + (-fy + ry) * h }, { px + (-fx - rx) * h, py + (-fy - ry) * h },
+                    { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, YMAP.lcol());   -- (white, tinted like the map's lines)
+            end);
+            if ok then return; end
+        end
+    end
     local s = 7 * sc;
     local tip = { px + fx * s, py + fy * s };
     local l = { px - fx * s * 0.7 - fy * s * 0.65, py - fy * s * 0.7 + fx * s * 0.65 };
@@ -7281,6 +8103,277 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside)
     local wc = u32({ 1, 1, 1, 1 });
     dl:AddLine(tip, l, wc, 1.2); dl:AddLine(l, back, wc, 1.2); dl:AddLine(back, r, wc, 1.2); dl:AddLine(r, tip, wc, 1.2);
 end
+-- The 3D map (/yui map3d, and the minimap's 3D look): the zone's own shape in 3D - the edges of its collision mesh
+-- (maps3d\<zone>.lua, made from LandSandBoat's xiNavmeshOBJs, GPL-3.0) in the map's line colour, round you. Drag the
+-- window to turn it, the wheel zooms; far lines fade. You, your party, monsters and your target sit on it.
+YMAP.d3 = { yaw = 0.0, pitch = 0.95, dist = 110, zone = -1, on = false };
+function YMAP.d3load(zid)
+    local D = YMAP.d3;
+    if D.zone == zid then return D.mesh; end
+    D.zone, D.mesh, D.hs = zid, nil, nil;
+    local path = (addon.path:gsub('[\\/]+$', '')) .. '\\maps3d\\' .. tostring(zid) .. '.lua';
+    local f = io.open(path, 'r');
+    if f == nil then return nil; end
+    f:close();
+    local ok, m = pcall(dofile, path);
+    if ok and type(m) == 'table' and m.v and m.e then D.mesh = m; D.sx, D.sy, D.sd = {}, {}, {}; end
+    return D.mesh;
+end
+function YMAP.d3height(m, X, Y, Z)                                   -- (which way up the game's height runs against the mesh: once a zone)
+    local best, sgn = 1e9, -1;
+    local v = m.v;
+    for i = 1, #v, 3 do
+        local dx, dy = v[i] - X, v[i + 2] - Y;
+        if dx * dx + dy * dy < 9 then
+            local a, b = math.abs(v[i + 1] - Z), math.abs(v[i + 1] + Z);
+            if a < best then best, sgn = a, 1; end
+            if b < best then best, sgn = b, -1; end
+        end
+    end
+    return sgn;
+end
+function YMAP.d3facing(ent, me)                                      -- (a camera yaw behind you, looking the way you face)
+    local gy = 0;
+    pcall(function() gy = ent:GetLocalPositionYaw(me) or 0; end);
+    return math.atan2(math.cos(gy), -math.sin(gy));
+end
+-- The 3D drawing itself, into the box vx, vy, W, H: the zone's lines, then what sits on it
+function YMAP.cell(X, Y)                                             -- your square on the game's grid, as the game writes it: "H-7"
+    if not (YMAP.entry and YMAP.entry.scale and YMAP.entry.scale ~= 0) then return nil; end
+    local mx, my = YMAP.to_map(X, Y);
+    local c, r = math.floor((mx - 16) / 32), math.floor((my - 16) / 32) + 1;
+    if c < 0 or c > 14 or r < 1 or r > 15 then return nil; end
+    return string.char(65 + c) .. '-' .. r;
+end
+function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch, dist, soft, grid)
+    local D = YMAP.d3;
+    local X, Y, Z = ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0, ent:GetLocalPositionZ(me) or 0;
+    if D.hs == nil then D.hs = YMAP.d3height(m, X, Y, Z); end
+    local hs = D.hs;
+    local tx, th, ty = X, Z * hs, Y;
+    local cy_, sy_ = math.cos(yaw), math.sin(yaw);
+    local cp, sp = math.cos(pitch), math.sin(pitch);
+    local f = H * 1.1;
+    local cxs, cys = vx + W / 2, vy + H / 2;
+    local function proj(px, ph, py)                                  -- a world point -> the screen (nil behind the camera)
+        local dx, dh, dn = px - tx, ph - th, py - ty;
+        local rx = dx * cy_ - dn * sy_;
+        local rn = dx * sy_ + dn * cy_;
+        local depth = -dh * sp + rn * cp + dist;
+        if depth < 1 then return nil; end
+        local up = dh * cp + rn * sp;
+        return cxs + f * rx / depth, cys - f * up / depth, depth;
+    end
+    local v, e = m.v, m.e;
+    local SX, SY, SD = D.sx, D.sy, D.sd;
+    local n = #v / 3;
+    for i = 1, n do
+        local j = i * 3 - 2;
+        local dx, dh, dn = v[j] - tx, v[j + 1] - th, v[j + 2] - ty;
+        local rx = dx * cy_ - dn * sy_;
+        local rn = dx * sy_ + dn * cy_;
+        local depth = -dh * sp + rn * cp + dist;
+        if depth < 1 then SD[i] = -1; else
+            SD[i] = depth;
+            SX[i] = cxs + f * rx / depth;
+            SY[i] = cys - f * (dh * cp + rn * sp) / depth;
+        end
+    end
+    C.clip(dl, { vx + 2, vy + 2 }, { vx + W - 2, vy + H - 2 }, true);
+    local lc = YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
+    local fade = dist * 2.6;
+    local x0, x1, y0, y1 = vx, vx + W, vy, vy + H;
+    local cols = {};                                                 -- (a handful of brightness steps, made once a frame)
+    for k = 0, 8 do cols[k] = u32({ lc[1], lc[2], lc[3], 0.18 + 0.82 * k / 8 }); end
+    local softc = {};                                                -- (the soft edge: from nothing to full, in 16 steps)
+    for k = 0, 16 do softc[k] = u32({ lc[1], lc[2], lc[3], k / 16 }); end
+    local blackc = {};                                               -- (the outline: black, a little softer than the line)
+    for k = 0, 16 do blackc[k] = u32({ 0, 0, 0, 0.75 * k / 16 }); end
+    -- (open country: past m.net come the lines of the ground's net - left out: bent over the hills, it read as a crooked
+    --  copy of the position grid)
+    local netk = m.net or (#e + 1);
+    local last = netk - 1;
+    -- (the minimap: a black outline under every line first, so they read over bright ground; then the lines)
+    for pass = (soft and 1 or 2), 2 do
+    for k = 1, last, 2 do
+        local a, b = e[k], e[k + 1];
+        local da, db = SD[a], SD[b];
+        if da > 0 and db > 0 then
+            local ax, ay, bx_, by_ = SX[a], SY[a], SX[b], SY[b];
+            if not ((ax < x0 and bx_ < x0) or (ax > x1 and bx_ > x1) or (ay < y0 and by_ < y0) or (ay > y1 and by_ > y1)) then
+                local t = 1 - (da + db) / (2 * fade);
+                local dim = (k >= netk) and 0.28 or 1;
+                if soft or dim < 1 then                              -- (no edge at all: the lines fade out in a circle)
+                    local ef = 1;
+                    if soft then
+                        local ex, ey = ((ax + bx_) / 2 - cxs) / (W / 2), ((ay + by_) / 2 - cys) / (H / 2);
+                        ef = math.max(0, math.min(1, (1 - math.sqrt(ex * ex + ey * ey)) / 0.32));
+                    end
+                    local a_ = (0.18 + 0.82 * math.max(0, math.min(1, t))) * ef * dim;
+                    if a_ > 0.03 then
+                        if pass == 1 then dl:AddLine({ ax, ay }, { bx_, by_ }, blackc[math.floor(a_ * 16 + 0.5)], 3);
+                        else dl:AddLine({ ax, ay }, { bx_, by_ }, softc[math.floor(a_ * 16 + 0.5)], 1); end
+                    end
+                else
+                    local step = math.floor(math.max(0, math.min(1, t)) * 8 + 0.5);
+                    dl:AddLine({ ax, ay }, { bx_, by_ }, cols[step], 1);
+                end
+            end
+        end
+    end
+    end
+    if grid and YMAP.entry and YMAP.entry.scale and YMAP.entry.scale ~= 0 then   -- the position grid (A-O, 1-15) on the ground, at your height
+        local en = YMAP.entry;
+        local kk = math.abs(en.scale) / 2560 * 512;
+        local function w2(mx_, my_) return (mx_ + en.ox) / kk, -(my_ + en.oy) / kk; end   -- (map pixels -> the world)
+        local function fadeat(sx_, sy_)
+            if not soft then return 1; end
+            local ex, ey = (sx_ - cxs) / (W / 2), (sy_ - cys) / (H / 2);
+            return math.max(0, math.min(1, (1 - math.sqrt(ex * ex + ey * ey)) / 0.32));
+        end
+        local function seg(m0x, m0y, m1x, m1y, a_)
+            for q = 0, 11 do                                         -- (in pieces: a long line still bends right in perspective)
+                local ax0, ay0 = w2(m0x + (m1x - m0x) * q / 12, m0y + (m1y - m0y) * q / 12);
+                local ax1, ay1 = w2(m0x + (m1x - m0x) * (q + 1) / 12, m0y + (m1y - m0y) * (q + 1) / 12);
+                local sx0, sy0 = proj(ax0, th, ay0);
+                local sx1, sy1 = proj(ax1, th, ay1);
+                if sx0 and sx1 then
+                    local al = a_ * fadeat((sx0 + sx1) / 2, (sy0 + sy1) / 2);
+                    if al > 0.01 then dl:AddLine({ sx0, sy0 }, { sx1, sy1 }, u32({ lc[1], lc[2], lc[3], al }), 1); end
+                end
+            end
+        end
+        for i = 0, 15 do
+            local v = 16 + 32 * i;
+            seg(v, 16, v, 496, 0.24);
+            seg(16, v, 496, v, 0.24);
+        end
+        local pg = sized('chat', 12 * sc);
+        -- its letters along the top and bottom borders and numbers down both sides, as the game's maps have them: each
+        -- one where its column / row crosses the view (taken through where you stand)
+        local pmx, pmy = YMAP.to_map(X, Y);
+        local lh_ = imgui.GetTextLineHeight();
+        local lcol_ = { lc[1], lc[2], lc[3], 0.9 };
+        for i = 0, 14 do
+            local c = 32 + 32 * i;
+            local wx_, wy_ = w2(c, pmy);                             -- (column i, at your row)
+            local sx_ = proj(wx_, th, wy_);
+            if sx_ and sx_ > x0 + 14 and sx_ < x1 - 14 then
+                local L_ = string.char(65 + i);
+                local tw_ = imgui.CalcTextSize(L_);
+                outlined(dl, math.floor(sx_ - tw_ / 2), math.floor(y0 + 4 * sc), L_, lcol_);
+                outlined(dl, math.floor(sx_ - tw_ / 2), math.floor(y1 - lh_ - 4 * sc), L_, lcol_);
+            end
+            local wx2, wy2 = w2(pmx, c);                             -- (row i, at your column)
+            local _, sy_ = proj(wx2, th, wy2);
+            if sy_ and sy_ > y0 + lh_ + 8 and sy_ < y1 - lh_ - 8 then
+                local N_ = tostring(i + 1);
+                local nw_ = imgui.CalcTextSize(N_);
+                outlined(dl, math.floor(x0 + 6 * sc), math.floor(sy_ - lh_ / 2), N_, lcol_);
+                outlined(dl, math.floor(x1 - nw_ - 6 * sc), math.floor(sy_ - lh_ / 2), N_, lcol_);
+            end
+        end
+        unsized(pg);
+    end
+    local tidx = target_index() or 0;
+    local function dot(wx, wy, wz, col, r, ring)
+        local px, py = proj(wx, wz * hs, wy);
+        if px == nil or px < x0 or px > x1 or py < y0 or py > y1 then return; end
+        if soft then                                                 -- (outside the circle: not shown)
+            local ex, ey = (px - cxs) / (W / 2), (py - cys) / (H / 2);
+            if ex * ex + ey * ey > 0.80 then return; end
+        end
+        dl:AddCircleFilled({ px, py }, r + 1.2, u32({ 0, 0, 0, 0.85 }), 12);
+        dl:AddCircleFilled({ px, py }, r, u32(col), 12);
+        if ring then dl:AddCircle({ px, py }, r + 4 * sc, u32({ 1, 1, 1, 0.95 }), 16, 1.6); end
+    end
+    if cfg.map_mobs ~= false then
+        for _, mo in ipairs(YMAP.mobs_near(ent)) do
+            local ok, mz = pcall(function() return ent:GetLocalPositionZ(mo[3]); end);
+            dot(mo[1], mo[2], (ok and mz) or Z, { 0.89, 0.35, 0.33, 0.9 }, 2.6 * sc, mo[3] == tidx);
+        end
+    end
+    for i = 1, 17 do
+        if party:GetMemberIsActive(i) ~= 0 and party:GetMemberZone(i) == zid then
+            local idx = party:GetMemberTargetIndex(i) or 0;
+            if idx ~= 0 then
+                local tc = ALLY.TAGCOL[ALLY.ROLE[party:GetMemberMainJob(i) or 0] or 'dps'][1];
+                local col = (i < 6) and { tc[1], tc[2], tc[3], 1 } or { 0.70, 0.69, 0.75, 0.9 };
+                dot(ent:GetLocalPositionX(idx) or 0, ent:GetLocalPositionY(idx) or 0, ent:GetLocalPositionZ(idx) or 0, col, 3.4 * sc, idx == tidx);
+            end
+        end
+    end
+    do                                                               -- you: the arrow, laid on the ground and turned your way
+        local gy = 0;
+        pcall(function() gy = ent:GetLocalPositionYaw(me) or 0; end);
+        local fx, fy = math.cos(gy), -math.sin(gy);                  -- (the game's yaw: 0 east, turning towards south)
+        local L_ = 2.2;
+        local ax, ay = proj(X + fx * L_, th, Y + fy * L_);
+        local lx_, ly_ = proj(X - fx * L_ * 0.7 - fy * L_ * 0.7, th, Y - fy * L_ * 0.7 + fx * L_ * 0.7);
+        local rx_, ry_ = proj(X - fx * L_ * 0.7 + fy * L_ * 0.7, th, Y - fy * L_ * 0.7 - fx * L_ * 0.7);
+        local cx_, cy2 = proj(X, th, Y);
+        if ax and lx_ and rx_ and cx_ then
+            local wc = YMAP.lcol();
+            dl:AddCircleFilled({ cx_, cy2 }, 9 * sc, u32({ lc[1], lc[2], lc[3], 0.16 }), 20);
+            ALLY.poly(dl, { { ax, ay }, { rx_, ry_ }, { cx_, cy2 } }, wc);
+            ALLY.poly(dl, { { ax, ay }, { cx_, cy2 }, { lx_, ly_ } }, wc);
+        end
+    end
+    dl:PopClipRect();
+end
+function YMAP.d3draw(party, ent, zid, me, sc)
+    local D = YMAP.d3;
+    local W = math.floor((tonumber(cfg.map3d_size) or 560) * sc);
+    local H = math.floor(W * 0.72);
+    first_place('map3d_x', 'map3d_y', -W / 2, -H - 220);
+    if not plain_window('YunaUI 3D map##yui_map3d', 'map3d_x', 'map3d_y') then imgui.End(); imgui.PopStyleVar(2); return; end
+    local dl = imgui.GetWindowDrawList();
+    local x, y = imgui.GetCursorScreenPos();
+    x, y = math.floor(x + 4), math.floor(y + 4);
+    local top = math.floor(30 * sc);
+    dl:AddRectFilled({ x, y }, { x + W, y + H + top }, u32({ 0.035, 0.032, 0.05, 0.96 }), 10 * sc);
+    dl:AddRect({ x, y }, { x + W, y + H + top }, u32({ NEON2[1], NEON2[2], NEON2[3], 0.6 }), 10 * sc, C.rall, 1.2);
+    local pushed = sized('chat', 16 * sc);
+    text(dl, x + 12 * sc, y + 6 * sc, ((YMAP.name and YMAP.name ~= '') and YMAP.name or '?') .. '  -  3D', { 1, 1, 1, 1 });
+    unsized(pushed);
+    local bx = x + W - 26 * sc;                                      -- X to close it
+    imgui.SetCursorScreenPos({ bx, y + 4 * sc });
+    if imgui.InvisibleButton('##yui_map3d_x', { 22 * sc, 22 * sc }) then D.on = false; end
+    local xcol = u32(imgui.IsItemHovered() and { 1, 1, 1, 1 } or { 0.8, 0.78, 0.9, 0.9 });
+    local xc, yc, rr = bx + 11 * sc, y + 15 * sc, 5 * sc;
+    dl:AddLine({ xc - rr, yc - rr }, { xc + rr, yc + rr }, xcol, 1.6);
+    dl:AddLine({ xc - rr, yc + rr }, { xc + rr, yc - rr }, xcol, 1.6);
+    local vx, vy = x, y + top;
+    imgui.SetCursorScreenPos({ vx, vy });                            -- the view: drag to turn, the wheel to zoom
+    imgui.InvisibleButton('##yui_map3d_view', { W, H });
+    local io = imgui.GetIO();
+    local mx, my = tonumber(io.MousePos.x) or 0, tonumber(io.MousePos.y) or 0;
+    if imgui.IsItemActive() and D.lx then
+        D.yaw = D.yaw + (mx - D.lx) * 0.008;
+        D.pitch = math.max(0.12, math.min(1.50, D.pitch + (my - D.ly) * 0.006));
+    end
+    D.lx, D.ly = mx, my;
+    if imgui.IsItemHovered() then
+        local wheel = io.MouseWheel or 0;
+        if wheel ~= 0 then D.dist = math.max(12, math.min(700, D.dist * ((wheel > 0) and (1 / 1.15) or 1.15))); end
+    end
+    local m = YMAP.d3load(zid);
+    if m == nil then
+        local p2 = sized('chat', 14 * sc);
+        local s_ = 'No 3D map for this zone yet';
+        local sw = imgui.CalcTextSize(s_);
+        text(dl, vx + (W - sw) / 2, vy + H / 2 - 8 * sc, s_, { 0.75, 0.74, 0.8, 1 });
+        unsized(p2);
+    else
+        YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, D.yaw, D.pitch, D.dist, false, true);
+        local p3 = sized('chat', 11 * sc);                           -- how to use it
+        text(dl, vx + 10 * sc, vy + H - 18 * sc, 'Drag to turn  -  wheel to zoom', { 0.7, 0.68, 0.8, 0.8 });
+        unsized(p3);
+    end
+    imgui.SetCursorScreenPos({ x, y });
+    imgui.Dummy({ W + 8, H + top + 8 });
+    end_plain('map3d_x', 'map3d_y');
+end
 function YMAP.draw()
     if not YMAP.have() then return; end
     local mm = AshitaCore:GetMemoryManager();
@@ -7288,11 +8381,115 @@ function YMAP.draw()
     local zid = party:GetMemberZone(0) or 0;
     local me = party:GetMemberTargetIndex(0) or 0;
     if me == 0 then return; end
-    if cfg.minimap == false and not YMAP.big then return; end
+    if cfg.minimap == false and not YMAP.big and not YMAP.d3.on then return; end
     YMAP.update(ent, me, zid);
     local sc = tonumber(cfg.scale) or 1;
-    if cfg.minimap ~= false then pcall(YMAP.mini, party, ent, zid, me, sc); end
+    if cfg.minimap ~= false and not YUI_MAPCOVER then pcall(YMAP.mini, party, ent, zid, me, sc); end   -- (not under the big map)
     if YMAP.big then pcall(YMAP.bigmap, party, ent, zid, me, sc); end
+    if YMAP.d3.on then local ok, err = pcall(YMAP.d3draw, party, ent, zid, me, sc); if not ok then YUI_ERRLOG('map3d', err); end end
+end
+-- How bright the game is round the minimap (twice a second): the four corners of its square, outside its round fade, are
+-- copied from the back buffer and averaged. Bright ground (snow, sky, sand): the fade under the map goes darker; dark
+-- ground (caves, night): lighter. Eased over half a second; if the screen can't be read the fade stays as it is.
+YMAP.lum, YMAP.lum_t, YMAP.lum_s = nil, 0, 1;
+function YMAP.read_lum(x, y, M)
+    local dev = d3d.get_device();
+    local res, bb = dev:GetBackBuffer(0, 0);
+    if res ~= 0 or bb == nil then return nil; end
+    local out = nil;
+    pcall(function()
+        local r2, desc = bb:GetDesc();
+        if r2 ~= 0 or desc == nil then return; end
+        local fmt, BW, BH = tonumber(desc.Format), tonumber(desc.Width), tonumber(desc.Height);
+        if fmt ~= 21 and fmt ~= 22 then return; end                  -- (A8R8G8B8 / X8R8G8B8 only)
+        local SW, SH = C.screen();
+        local kx, ky = BW / SW, BH / SH;
+        local c = math.max(8, math.floor(M * 0.16 * kx));            -- (each corner patch, in back-buffer pixels)
+        local Y = YMAP.lumsurf;
+        if Y == nil or Y.c ~= c or Y.fmt ~= fmt then
+            local r3, s = dev:CreateImageSurface(c * 2, c * 2, fmt);
+            if r3 ~= 0 or s == nil then return; end
+            YMAP.lumsurf = { s = d3d.gc_safe_release(s), c = c, fmt = fmt }; Y = YMAP.lumsurf;
+        end
+        local rects = ffi.new('RECT[4]');
+        local pts = ffi.new('POINT[4]');
+        local corners = { { x, y }, { x + M, y }, { x, y + M }, { x + M, y + M } };
+        for i, p in ipairs(corners) do
+            local px = math.floor(p[1] * kx - ((i == 2 or i == 4) and c or 0));
+            local py = math.floor(p[2] * ky - ((i >= 3) and c or 0));
+            px = math.max(0, math.min(BW - c, px)); py = math.max(0, math.min(BH - c, py));
+            rects[i - 1].left, rects[i - 1].top, rects[i - 1].right, rects[i - 1].bottom = px, py, px + c, py + c;
+            pts[i - 1].x, pts[i - 1].y = ((i == 2 or i == 4) and c or 0), ((i >= 3) and c or 0);
+        end
+        if dev:CopyRects(bb, rects, 4, Y.s, pts) ~= 0 then return; end
+        local r4, lock = Y.s:LockRect(nil, 16);                      -- (D3DLOCK_READONLY)
+        if r4 ~= 0 or lock == nil then return; end
+        local bits, pitch = ffi.cast('uint8_t*', lock.pBits), tonumber(lock.Pitch);
+        local sum, n = 0, 0;
+        for yy = 0, c * 2 - 1, 3 do
+            local row = bits + yy * pitch;
+            for xx = 0, c * 2 - 1, 3 do
+                local q = row + xx * 4;
+                sum = sum + (0.0722 * q[0] + 0.7152 * q[1] + 0.2126 * q[2]); n = n + 1;
+            end
+        end
+        Y.s:UnlockRect();
+        if n > 0 then out = sum / n / 255; end
+    end);
+    bb:Release();
+    return out;
+end
+function YMAP.shade(x, y, M)                                         -- the fade's strength now: 0.5 (dark ground) .. 2.6 (bright)
+    local now = os.clock();
+    if now - YMAP.lum_t > 0.5 then
+        YMAP.lum_t = now;
+        local ok, l = pcall(YMAP.read_lum, x, y, M);
+        if ok and l then YMAP.lum = l; end
+    end
+    local target = 1;
+    if YMAP.lum then target = math.max(0.5, math.min(2.6, 0.45 + YMAP.lum * 2.2 + math.max(0, YMAP.lum - 0.35) * 2.6)); end   -- (bright ground: much darker)
+    YMAP.lum_s = YMAP.lum_s + (target - YMAP.lum_s) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 3);
+    return YMAP.lum_s;
+end
+-- The zone's name over the minimap, in the "Fade" look (no box, a soft shade, a hairline). It comes in with a little
+-- animation each time the zone changes. Gives back the room it took above the map.
+function YMAP.title(dl, x, y, M, sc)
+    local name = (YMAP.name and YMAP.name ~= '') and YMAP.name or '?';
+    local now = os.clock();
+    if YMAP.tname ~= name then YMAP.tname, YMAP.tt = name, now; end
+    local age = now - (YMAP.tt or 0);
+    local p = math.min(1, age / 0.6);
+    local ez = 1 - (1 - p) ^ 3;                                      -- (eased: fast, then settling)
+    sc = math.max(0.55, M / 220);                                    -- (it grows and shrinks with the minimap)
+    local H = math.floor(26 * sc);
+    local pushed = sized('chat', 14 * sc);
+    local s = name;
+    local tw = tonumber((imgui.CalcTextSize(s))) or 0;
+    if tw > M - 28 * sc and tw > 0 then                              -- (a long name: a smaller size, so it fits the map's width)
+        unsized(pushed);
+        pushed = sized('chat', math.max(9, 14 * sc * (M - 28 * sc) / tw));
+        tw = tonumber((imgui.CalcTextSize(s))) or 0;
+    end
+    local th = imgui.GetTextLineHeight();
+    local mid = x + M / 2;
+    local pk, vi = C.hp, C.mp2;
+    do                                                               -- the name with no box at all: on the same soft dark fade as the map,
+        local ty = math.floor(y + (H - th) / 2 + (1 - ez) * 4 * sc); --  a hairline under it fading out both ways
+        local ft = tex('map_fade.png');
+        if ft then
+            local gw, gh = tw * 0.85 + 30 * sc, H * 1.1;
+            dl:AddImage(ft.ptr, { mid - gw, ty + th / 2 - gh }, { mid + gw, ty + th / 2 + gh }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, ez }));
+        end
+        outlined(dl, math.floor(mid - tw / 2), ty, s, { 0.98, 0.97, 1.0, ez });
+        local lc = YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
+        local uw = (tw / 2 + 26 * sc) * ez;
+        local ly_ = ty + th + 3 * sc;
+        local c1, c0 = u32({ lc[1], lc[2], lc[3], 0.85 * ez }), u32({ lc[1], lc[2], lc[3], 0 });
+        pcall(function() dl:AddRectFilledMultiColor({ mid - uw, ly_ }, { mid, ly_ + 1 }, c0, c1, c1, c0); end);
+        pcall(function() dl:AddRectFilledMultiColor({ mid, ly_ }, { mid + uw, ly_ + 1 }, c1, c0, c0, c1); end);
+    end
+    unsized(pushed);
+    return H + math.floor(6 * sc);
 end
 function YMAP.mini(party, ent, zid, me, sc)                          -- the minimap: the map around you, no grid
     local M = math.floor((tonumber(cfg.map_size) or 220) * sc);
@@ -7301,6 +8498,8 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
     local dl = imgui.GetWindowDrawList();
     local x, y = imgui.GetCursorScreenPos();
     x, y = math.floor(x + 4), math.floor(y + 4);
+    local T = YMAP.title(dl, x, y, M, sc);                           -- the zone's name, above the map
+    y = y + T;
     local cx, cy = x + M / 2, y + M / 2;
     if imgui.IsWindowHovered() then                                  -- the mouse wheel zooms in and out (as the Minimap plugin does)
         local wheel = imgui.GetIO().MouseWheel or 0;
@@ -7311,8 +8510,29 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
             WATCH.later = true;                                      -- (saved a moment later, not every notch)
         end
     end
-    dl:AddRectFilled({ x, y }, { x + M, y + M }, u32({ 0.055, 0.05, 0.078, 0.92 }), 8 * sc);   -- (the party cards' violet, a little darker)
-    local e = YMAP.entry;
+    local ground = 'none';                                           -- (no frame: just the lines over the game, on a soft fade)
+    if ground ~= 'none' then
+        dl:AddRectFilled({ x, y }, { x + M, y + M }, u32({ 0.055, 0.05, 0.078, (ground == 'soft') and 0.38 or 0.92 }), 8 * sc);   -- (the party cards' violet, a little darker)
+    else                                                             -- (no frame: a smooth dark fade under the map, images/map_fade.png -
+        local ft = tex('map_fade.png');                              --  darkest in the middle, nothing at the edge, no rim anywhere)
+        if ft then                                                   -- (darker over bright ground, lighter over dark: YMAP.lum)
+            local k = YMAP.shade(x, y, M);
+            while k > 0.01 do                                        -- (above 1: drawn again on top, darker)
+                dl:AddImage(ft.ptr, { x, y }, { x + M, y + M }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, math.min(1, k) }));
+                k = k - 1;
+            end
+        end
+    end
+    local done3 = false;
+    do                                                               -- the minimap is 3D (2D only where a zone has no 3D shape; the wheel's zoom is its distance)
+        local m3 = YMAP.d3load(zid);
+        if m3 then
+            local yaw = (cfg.map3d_follow ~= false) and YMAP.d3facing(ent, me) or 0;
+            pcall(YMAP.d3render, dl, m3, ent, party, zid, me, sc, x, y, M, M, yaw, 0.95, math.max(16, tonumber(cfg.map_zoom) or 60), ground == 'none');
+            done3 = true;
+        end
+    end
+    local e = (not done3) and YMAP.entry or nil;
     if e and YMAP.tex then
         local R = math.max(8, tonumber(cfg.map_zoom) or 60);           -- map pixels from the middle to the edge
         local k = (M / 2) / R;
@@ -7324,39 +8544,125 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
         if a1 > a0 and b1 > b0 then
             dl:AddImage(YMAP.tex.ptr, { x + (a0 - u0) * k, y + (b0 - v0) * k }, { x + (a1 - u0) * k, y + (b1 - v0) * k },
                 { a0 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, u32({ 1, 1, 1, 1 }));
+            if YMAP.ltex then
+                local ix0, iy0, ix1, iy1 = x + (a0 - u0) * k, y + (b0 - v0) * k, x + (a1 - u0) * k, y + (b1 - v0) * k;
+                local bk = u32({ 0, 0, 0, 0.8 });                    -- (a black outline first: readable over bright ground)
+                for _, o in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }) do
+                    dl:AddImage(YMAP.ltex.ptr, { ix0 + o[1], iy0 + o[2] }, { ix1 + o[1], iy1 + o[2] }, { a0 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, bk);
+                end
+                dl:AddImage(YMAP.ltex.ptr, { ix0, iy0 }, { ix1, iy1 }, { a0 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, YMAP.lcol());
+            end
+            if YMAP.ntex then
+                dl:AddImage(YMAP.ntex.ptr, { x + (a0 - u0) * k, y + (b0 - v0) * k }, { x + (a1 - u0) * k, y + (b1 - v0) * k },
+                    { a0 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, YMAP.lcol(true));
+            end
         end
         local function tomap(wx, wy) local mx, my = YMAP.to_map(wx, wy); return cx + (mx - pmx) * k, cy + (my - pmy) * k; end
         local function inside(sx, sy) return sx > x + 2 and sx < x + M - 2 and sy > y + 2 and sy < y + M - 2; end
         YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside);
     end
-    dl:AddRect({ x, y }, { x + M, y + M }, u32({ 1, 1, 1, 0.10 }), 8 * sc, C.rall, 1);
+    if ground == 'dark' then dl:AddRect({ x, y }, { x + M, y + M }, u32({ 1, 1, 1, 0.10 }), 8 * sc, C.rall, 1); end
     local pushed = sized('chat', 13 * sc);
-    text(dl, x + 8 * sc, y + 5 * sc, (YMAP.name and YMAP.name ~= '') and YMAP.name or '?', { 0.95, 0.95, 0.97, 0.95 });
-    if not (e and YMAP.tex) then
+    if false then                                                    -- (the name sits over the map, never inside it)
+        text(dl, x + 8 * sc, y + 5 * sc, (YMAP.name and YMAP.name ~= '') and YMAP.name or '?', { 0.95, 0.95, 0.97, 0.95 });
+    end
+    if not done3 and not (e and YMAP.tex) then
         local m_ = 'No map here';
         local mw = imgui.CalcTextSize(m_);
         text(dl, x + (M - mw) / 2, y + M / 2 - 8 * sc, m_, { 0.7, 0.7, 0.75, 0.9 });
     end
     unsized(pushed);
-    imgui.Dummy({ M + 8, M + 8 });
+    imgui.Dummy({ M + 8, M + 8 + T });
     end_plain('map_x', 'map_y');
 end
-function YMAP.bigmap(party, ent, zid, me, sc)                        -- the big map (/yui map): the whole map, YunaUI's grid
-    local M = math.floor((tonumber(cfg.bigmap_size) or 640) * sc);
-    first_place('bigmap_x', 'bigmap_y', -M / 2, -M - 160);
-    if not plain_window('YunaUI Big map##yui_bigmap', 'bigmap_x', 'bigmap_y') then imgui.End(); imgui.PopStyleVar(2); return; end
+function YMAP.bigmap(party, ent, zid, me, sc)                        -- the big map (/yui map): the whole map with YunaUI's grid,
+    local M = math.floor((tonumber(cfg.bigmap_size) or 640) * sc);  --  or the zone in 3D (BARS > MINIMAP > Look) - in the minimap's look
+    local kx, ky = 'bigmap_x', 'bigmap_y';
+    if YMAP.bygame then                                              -- (opened by the game's Map: as big as the screen, centred, over a dark
+        local SW, SH = C.screen();                                   --  cover that hides the game's own map behind it)
+        sc = math.max(sc, math.min(SH - 100, SW - 60) / 900);         -- (its letters, name and marks grow with it: the same look at any resolution)
+        M = math.floor(math.min(SH - 38 * sc - 60, SW - 60));
+        kx, ky = 'gmap_x', 'gmap_y';
+        cfg.gmap_x, cfg.gmap_y = math.floor((SW - M - 8) / 2), math.floor((SH - M - 38 * sc - 8) / 2);
+        pcall(function()
+            local bg = imgui.GetBackgroundDrawList();
+            bg:AddRectFilled({ 0, 0 }, { SW, SH }, u32({ 0.02, 0.018, 0.03, 1.0 }));
+        end);
+    end
+    first_place(kx, ky, -M / 2, -M - 160);
+    if not plain_window('YunaUI Big map##yui_bigmap', kx, ky) then imgui.End(); imgui.PopStyleVar(2); return; end
     local dl = imgui.GetWindowDrawList();
     local x, y = imgui.GetCursorScreenPos();
     x, y = math.floor(x + 4), math.floor(y + 4);
-    local top = math.floor(30 * sc);
-    dl:AddRectFilled({ x, y }, { x + M, y + M + top }, u32({ 0.055, 0.05, 0.078, 0.95 }), 10 * sc);   -- (the party cards' violet, a little darker)
-    dl:AddRect({ x, y }, { x + M, y + M + top }, u32({ NEON2[1], NEON2[2], NEON2[3], 0.6 }), 10 * sc, C.rall, 1.2);
+    local top = math.floor(38 * sc);
     local my0 = y + top;
+    local soft = true;                                               -- (no frame: the soft fade)
+    if soft then                                                     -- (no frame: the same smooth dark fade as the minimap)
+        local ft = tex('map_fade.png');
+        if ft then
+            local g = M * 0.08;
+            dl:AddImage(ft.ptr, { x - g, my0 - g }, { x + M + g, my0 + M + g }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 }));
+        end
+    else
+        local ga = ((cfg.map_ground or 'none') == 'soft') and 0.45 or 0.95;
+        dl:AddRectFilled({ x, y }, { x + M, y + M + top }, u32({ 0.055, 0.05, 0.078, ga }), 10 * sc);   -- (the party cards' violet, a little darker)
+        if ga > 0.9 then dl:AddRect({ x, y }, { x + M, y + M + top }, u32({ NEON2[1], NEON2[2], NEON2[3], 0.6 }), 10 * sc, C.rall, 1.2); end
+    end
     local k = M / 512;
     local e = YMAP.entry;
-    if e and YMAP.tex then
-        dl:AddImage(YMAP.tex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 }));
+    local m3 = YMAP.d3load(zid);
+    if m3 and e then                                                 -- the zone's 3D shapes seen from straight above, the whole map
+        local lc = YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
+        if YMAP.ntex then dl:AddImage(YMAP.ntex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, YMAP.lcol(true)); end   -- (the place names)
+        local X, Y, Z = ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0, ent:GetLocalPositionZ(me) or 0;
+        if YMAP.d3.hs == nil then YMAP.d3.hs = YMAP.d3height(m3, X, Y, Z); end
+        local th = Z * YMAP.d3.hs;
+        local kk = math.abs(e.scale) / 2560 * 512;
+        local v, ed = m3.v, m3.e;
+        local SX, SY, SH = YMAP.d3.sx, YMAP.d3.sy, YMAP.d3.sd;
+        for i = 1, #v / 3 do
+            local j = i * 3 - 2;
+            SX[i] = x + (v[j] * kk - e.ox) * k;
+            SY[i] = my0 + (-v[j + 2] * kk - e.oy) * k;
+            SH[i] = v[j + 1];
+        end
+        local cols = {};                                             -- (brightest at your level, fainter above and below)
+        for q = 0, 8 do cols[q] = u32({ lc[1], lc[2], lc[3], 0.18 + 0.82 * q / 8 }); end
+        local last = (m3.net or (#ed + 1)) - 1;                      -- (open country: no ground net here)
+        C.clip(dl, { x, my0 }, { x + M, my0 + M }, true);
+        for q = 1, last, 2 do
+            local a_, b_ = ed[q], ed[q + 1];
+            local dh = math.abs((SH[a_] + SH[b_]) / 2 - th);
+            local st = 8 - math.floor(math.min(1, dh / 40) * 7 + 0.5);
+            dl:AddLine({ SX[a_], SY[a_] }, { SX[b_], SY[b_] }, cols[st], 1);
+        end
+        dl:PopClipRect();
         local gc = u32({ 1, 1, 1, 0.10 });
+        for i = 0, 15 do                                             -- the grid: every 32 map pixels from the 16th
+            local gv = (16 + 32 * i) * k;
+            dl:AddLine({ x + gv, my0 + 16 * k }, { x + gv, my0 + M - 16 * k }, gc, 1);
+            dl:AddLine({ x + 16 * k, my0 + gv }, { x + M - 16 * k, my0 + gv }, gc, 1);
+        end
+        local pushed = sized('chat', 12 * sc);
+        for i = 0, 14 do                                             -- its letters and numbers on the borders, in YunaUI's font
+            local c = (32 + 32 * i) * k;
+            local L_, N_ = string.char(65 + i), tostring(i + 1);
+            local lw, lh = imgui.CalcTextSize(L_);
+            outlined(dl, x + c - lw / 2, my0 + 8 * k - lh / 2, L_, { 0.86, 0.84, 0.92, 0.85 });
+            outlined(dl, x + c - lw / 2, my0 + M - 8 * k - lh / 2, L_, { 0.86, 0.84, 0.92, 0.85 });
+            local nw = imgui.CalcTextSize(N_);
+            outlined(dl, x + 8 * k - nw / 2, my0 + c - lh / 2, N_, { 0.86, 0.84, 0.92, 0.85 });
+            outlined(dl, x + M - 8 * k - nw / 2, my0 + c - lh / 2, N_, { 0.86, 0.84, 0.92, 0.85 });
+        end
+        unsized(pushed);
+        local function tomap(wx, wy) local mx, my = YMAP.to_map(wx, wy); return x + mx * k, my0 + my * k; end
+        local function inside(sx, sy) return sx > x and sx < x + M and sy > my0 and sy < my0 + M; end
+        YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside);
+    elseif e and YMAP.tex then
+        dl:AddImage(YMAP.tex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 }));
+        if YMAP.ltex then dl:AddImage(YMAP.ltex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, YMAP.lcol()); end
+        if YMAP.ntex then dl:AddImage(YMAP.ntex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, YMAP.lcol(true)); end
+        local gc = u32({ 1, 1, 1, 0.08 });
         for i = 0, 15 do                                             -- the grid: every 32 map pixels from the 16th
             local v = (16 + 32 * i) * k;
             dl:AddLine({ x + v, my0 + 16 * k }, { x + v, my0 + M - 16 * k }, gc, 1);
@@ -7367,29 +8673,48 @@ function YMAP.bigmap(party, ent, zid, me, sc)                        -- the big 
             local c = (32 + 32 * i) * k;
             local L_, N_ = string.char(65 + i), tostring(i + 1);
             local lw, lh = imgui.CalcTextSize(L_);
-            text(dl, x + c - lw / 2, my0 + 8 * k - lh / 2, L_, { 0.86, 0.84, 0.92, 0.75 });
+            outlined(dl, x + c - lw / 2, my0 + 8 * k - lh / 2, L_, { 0.86, 0.84, 0.92, 0.8 });
             local nw = imgui.CalcTextSize(N_);
-            text(dl, x + 8 * k - nw / 2, my0 + c - lh / 2, N_, { 0.86, 0.84, 0.92, 0.75 });
+            outlined(dl, x + 8 * k - nw / 2, my0 + c - lh / 2, N_, { 0.86, 0.84, 0.92, 0.8 });
         end
         unsized(pushed);
         local function tomap(wx, wy) local mx, my = YMAP.to_map(wx, wy); return x + mx * k, my0 + my * k; end
         local function inside(sx, sy) return sx > x and sx < x + M and sy > my0 and sy < my0 + M; end
         YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside);
     end
-    local pushed = sized('chat', 16 * sc);                           -- the zone's name, and X to close it
-    text(dl, x + 12 * sc, y + 6 * sc, (YMAP.name and YMAP.name ~= '') and YMAP.name or '?', { 1, 1, 1, 1 });
-    unsized(pushed);
-    local bx = x + M - 26 * sc;
+    do                                                               -- the zone's name, as the minimap's Fade: no box, a soft shade, a hairline
+        local name = (YMAP.name and YMAP.name ~= '') and YMAP.name or '?';
+        local cl_ = YMAP.cell(ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0);
+        if cl_ then name = name .. '   (' .. cl_ .. ')'; end                -- (your square on the grid)
+        local pushed = sized('chat', 18 * sc);
+        local tw = tonumber((imgui.CalcTextSize(name))) or 0;
+        local th = imgui.GetTextLineHeight();
+        local mid = x + M / 2;
+        local ty = math.floor(y + (top - th) / 2 - 2 * sc);
+        local ft = tex('map_fade.png');
+        if ft then
+            local gw, gh = tw * 0.85 + 34 * sc, th * 1.3;
+            dl:AddImage(ft.ptr, { mid - gw, ty + th / 2 - gh }, { mid + gw, ty + th / 2 + gh }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 }));
+        end
+        outlined(dl, math.floor(mid - tw / 2), ty, name, { 0.98, 0.97, 1.0, 1 });
+        local lc = YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
+        local uw, ly_ = tw / 2 + 30 * sc, ty + th + 4 * sc;
+        local c1, c0 = u32({ lc[1], lc[2], lc[3], 0.85 }), u32({ lc[1], lc[2], lc[3], 0 });
+        pcall(function() dl:AddRectFilledMultiColor({ mid - uw, ly_ }, { mid, ly_ + 1 }, c0, c1, c1, c0); end);
+        pcall(function() dl:AddRectFilledMultiColor({ mid, ly_ }, { mid + uw, ly_ + 1 }, c1, c0, c0, c1); end);
+        unsized(pushed);
+    end
+    local bx = x + M - 26 * sc;                                      -- X to close it (quiet until the mouse is on it)
     imgui.SetCursorScreenPos({ bx, y + 4 * sc });
     if imgui.InvisibleButton('##yui_bigmap_x', { 22 * sc, 22 * sc }) then YMAP.big = false; end
     local hov = imgui.IsItemHovered();
     local xc, yc, rr = bx + 11 * sc, y + 15 * sc, 5 * sc;
-    local xcol = u32(hov and { 1, 1, 1, 1 } or { 0.8, 0.78, 0.9, 0.9 });
+    local xcol = u32(hov and { 1, 1, 1, 1 } or { 0.8, 0.78, 0.9, 0.55 });
     dl:AddLine({ xc - rr, yc - rr }, { xc + rr, yc + rr }, xcol, 1.6);
     dl:AddLine({ xc - rr, yc + rr }, { xc + rr, yc - rr }, xcol, 1.6);
     imgui.SetCursorScreenPos({ x, y });
     imgui.Dummy({ M + 8, M + top + 8 });
-    end_plain('bigmap_x', 'bigmap_y');
+    end_plain(kx, ky);
 end
 ----------------------------------------------------------------------------------------------------
 -- The first-time guide (also /yui guide): one card at a time, the screen dimmed except the piece it talks about.
@@ -7752,6 +9077,12 @@ ashita.events.register('d3d_present', 'yui_present', function()
                 if ui.last_err ~= tostring(e2) then ui.last_err = tostring(e2); msg('Draw error: ' .. ui.last_err); end
             end
         end
+        YUI_MAPCOVER = (YMAP.big and YMAP.bygame) and true or false;  -- (the big map, opened by the game's Map: on its own, nothing else)
+        if YUI_MAPCOVER then
+            pcall(legacy.pad_tick);                                  -- (still watching for the game's Map closing)
+            piece(YMAP.draw);
+            return;
+        end
         -- settings copied in from another character? take them now
         if os.clock() >= WATCH.at then
             WATCH.at = os.clock() + 2;
@@ -7814,6 +9145,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(YMAP.draw);                                            -- the minimap (BARS > MINIMAP)
         TIMERS.preview = (ui.open and ui.tab == 7) or EDIT.on;      -- the TIMERS tab (and Edit Mode) show a preview of it
         piece(TIMERS.draw);
+        piece(C.bubble_draw);                                        -- (CHAT > Speech bubbles)
         YUI_EQ_HIDE = true;                                          -- (the old gear wheel never shows)
         YUI_LOCKED = cfg.locked and true or false;                 -- the HP / MP / TP bars (equip.lua) follow this lock
         DOLL.preview = (ui.open and ui.tab == 6) or (EDIT.G.on and EDIT.G.STEPS[EDIT.G.i][1] == 'Gear');                     -- the EQUIP tab shows the strip at full brightness
@@ -7836,7 +9168,8 @@ ashita.events.register('packet_in', 'yui_packet', function(e)
     elseif e.id == 0x068 then pcall(PET.sync, e);
     elseif e.id == 0x029 then pcall(read_message, e);
     elseif e.id == 0x00E then pcall(read_claim, e);
-    elseif e.id == 0x00A then enemies = {}; ENGAGED = {}; LASTHIT = {}; FIGHT.casts = {}; FIGHT.sc = {}; FIGHT.mine_at = nil;
+    elseif e.id == 0x057 then pcall(C.weather_packet, e);
+    elseif e.id == 0x00A then enemies = {}; ENGAGED = {}; LASTHIT = {}; FIGHT.casts = {}; FIGHT.sc = {}; FIGHT.mine_at = nil; pcall(C.weather_packet, e);
     elseif e.id == 0x0AC then FIGHT.mine_at = nil; end                -- (your weapon skills changed)
 end);
 
@@ -7913,15 +9246,18 @@ end);
 -- Keyboard players, the same as the pad: F is Triangle / Y (YunaUI's chat; with the big chat open, the next tab), Enter
 -- is X / A (the big chat), Escape is Circle / B (back), Page Up / Page Down scroll. F works only with no menu open and
 -- nothing being typed; the others only while YunaUI's chat is open. A key is kept from the game only when it did something.
+-- The game's own way works too: numpad + moves the game's focus (your buffs, the cursor, the chat); when it lands on
+-- the chat, the game's log is hidden (legacy.log_away) and YunaUI's chat lights up instead, and then Enter makes it big
+-- (not the game's full log), Escape goes back, Page Up / Down scroll - numpad + itself always stays the game's.
 legacy.kb = { held = {}, keys = { 0x21, 0x1C, 0x9C, 0x01, 0xC9, 0xD1 } };
 function legacy.kb_act(k)                                            -- (what a key does right now, or nil)
     if not (cfg.chat and cfg.hide_game_chat) then return nil; end
     local io = imgui.GetIO();
     if io.WantTextInput or io.KeyCtrl or io.KeyAlt or io.KeyShift then return nil; end
     if k == 0x21 then return (legacy.pad.menu == '' or legacy.pad.mine) and 'log' or nil; end
-    if not (legacy.pad.open and legacy.pad.mine) then return nil; end
+    if not legacy.pad.open then return nil; end                     -- (YunaUI's chat lit: opened with F, or the game's focus on its chat)
     if k == 0x1C or k == 0x9C then return 'big'; end
-    if k == 0x01 then return 'back'; end
+    if k == 0x01 then return (legacy.pad.mine or legacy.pad.big) and 'back' or nil; end   -- (else Escape is the game's: it leaves its chat)
     if k == 0xC9 then return 'up'; end
     if k == 0xD1 then return 'down'; end
     return nil;
@@ -7964,35 +9300,7 @@ ashita.events.register('command', 'yui_command', function(e)
     elseif sub == 'edit' then EDIT.on = not EDIT.on; if EDIT.on then ui.open = false; end
     elseif sub == 'welcome' then EDIT.welcome = true; EDIT.G.start();   -- (what a new player sees on the first launch; settings untouched)
     elseif sub == 'guide' or sub == 'tour' then EDIT.G.start();      -- the first-time guide again
-    elseif sub == 'map' and YMAP.have() then YMAP.big = not YMAP.big;                -- the big map
-    elseif sub == 'mapdump' then                                     -- (temporary, for building the minimap: the game's map table to a file)
-        local ok, err = pcall(function()
-            local mem = ashita.memory;
-            local at = mem.find('FFXiMain.dll', 0, '8A0D????????5333C05684C95774??8A5424188B7424148B7C2410B9', 0, 0);
-            if at == 0 then error('map table not found'); end
-            local tp = mem.read_uint32(at + 0x1C);
-            local rm = AshitaCore:GetResourceManager();
-            local out = {};
-            for i = 0, 1999 do
-                local b = tp + i * 0x0E;
-                local zone = mem.read_uint16(b);
-                local flags = mem.read_uint8(b + 4);
-                local datoff = mem.read_uint16(b + 8);
-                if zone == 0 and datoff == 0 and i > 10 then break; end
-                local low = bit.band(flags, 0x0F);
-                local fid = (low == 0 and datoff + 5312) or (low == 1 and datoff + 53295) or (low == 2 and datoff + 54295) or 5522;
-                local path = '';
-                pcall(function() path = rm:GetFilePath(fid) or ''; end);
-                out[#out + 1] = table.concat({ i, zone, mem.read_uint8(b + 2), mem.read_uint8(b + 3), flags, mem.read_int8(b + 5),
-                    datoff, mem.read_int16(b + 0x0A), mem.read_int16(b + 0x0C), fid, path }, '\t');
-            end
-            local f = io.open((addon.path:gsub('[\\/]+$', '')) .. '\\maptable.txt', 'w');
-            f:write('index\tzone\tfloor\tfloorindex\tflags\tscale\tdatoff\toffx\toffy\tfileid\tpath\n' .. table.concat(out, '\n') .. '\n');
-            f:close();
-            msg('Map table written: ' .. #out .. ' maps (maptable.txt).');
-        end);
-        if not ok then msg('Map dump failed: ' .. tostring(err)); end
     elseif sub == 'lock' or sub == 'unlock' then cfg.locked = (sub == 'lock'); save(); msg(cfg.locked and 'Locked.' or 'Unlocked.');
     elseif sub == 'reset' then settings.reset(); msg('Reset to default (reload the addon to move everything back).');
-    else msg('/yui  - open YunaUI   |   /yui edit   |   /yui guide   |   ' .. (YMAP.have() and '/yui map   |   ' or '') .. '/yui lock | unlock   |   /yui reset'); end
+    else msg('/yui  - open YunaUI   |   /yui edit   |   /yui guide   |   /yui lock | unlock   |   /yui reset'); end
 end);

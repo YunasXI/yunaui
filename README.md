@@ -49,6 +49,9 @@ YunaUI uses the game's own item and buff icons. For sharper HD ones, install the
 - Enmity values from LandSandBoat. Cooldown reading follows the Timers addon.
 - Font: TeX Gyre Adventor (GUST Font License). Animated effects: FootageCrate.
 - Job hats and buff icons redrawn for YunaUI.
+- Minimap: 2D maps restyled from remapster HD maps (remapster.com, by spalose), the ffxi-maps 1024x1024 map pack, and
+  Vana'diel Atlas / ffxi-atlas.com maps, used with permission; 3D zone shapes from LandSandBoat's xiNavmeshOBJs (GPL-3.0);
+  map table and floor reading after boussole by loonsies. FINAL FANTASY XI map art (c) SQUARE ENIX.
 
 ## Licence
 

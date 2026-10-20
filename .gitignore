@@ -10,9 +10,11 @@ inline_dump.txt
 log_dump.txt
 yunaui-errors.txt
 
-# Maps redrawn from your own installed maps: made on your PC, never published
+# The 2D minimap maps: only the ones the minimap needs are tracked (added with git add -f, see the release notes)
 mapsimg/
 maptable.txt
 
 # A temporary list of the game menu names (finding its map window)
 menus.txt
+party_dump.txt
+mapsimg_release.txt

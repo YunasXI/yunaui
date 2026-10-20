@@ -1741,6 +1741,7 @@ local function import_old()
     settings.save('dps');
 end
 ashita.events.register('d3d_present', 'ym_present', function()
+    if YUI_MAPCOVER then return; end                                  -- (YunaUI's big map is open over the game's Map: only it shows)
     if not s.imported then
         local nm = '';
         pcall(function() nm = AshitaCore:GetMemoryManager():GetParty():GetMemberName(0) or ''; end);
