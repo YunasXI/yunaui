@@ -1087,7 +1087,7 @@ end
 -- Debuffs on enemies (XIUI's way): the server never lists a monster's effects, so they're followed from the action
 -- packets (0x028: "is afflicted with...", Dia/Bio and the like) and dropped on "wears off" / death (0x029).
 local SPELL_DEBUFF = {};
-for k, v in ('230=135,23=134,24=134,25=134,58=4,80=4,56=13,79=13,357=13,216=12,217=12,254=5,276=5,361=5,59=6,359=6,253=2,' ..
+for k, v in ('230=135,231=135,232=135,23=134,24=134,25=134,33=134,58=4,80=4,56=13,79=13,357=13,216=12,217=12,254=5,276=5,361=5,59=6,359=6,253=2,' ..
     '259=19,273=2,274=19,258=11,362=11,252=10,220=3,221=3,222=3,223=3,224=3,225=3,226=3,227=3,228=3,229=3,239=132,238=131,' ..
     '237=130,236=129,235=128,240=133,421=194,422=194,423=194,368=192,369=192,370=192,371=192,372=192,373=192,374=192,376=193,' ..
     '377=193,463=193,471=193,466=14,472=223,454=217,455=217,456=217,457=217,458=217,459=217,460=217,461=217,597=13,341=4,' ..
@@ -1122,6 +1122,7 @@ end
 local function enemy_add(id, status, secs)
     if id == nil or id == 0 or status == nil or status <= 0 or status == 255 then return; end
     enemies[id] = enemies[id] or {};
+    if status == 134 then enemies[id][135] = nil; elseif status == 135 then enemies[id][134] = nil; end   -- (Dia and Bio overwrite each other)
     enemies[id][status] = os.clock() + (secs or DEBUFF_TIME[status] or 180);
 end
 local function enemy_off(id, status)
