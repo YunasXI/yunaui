@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.10';
+addon.version = '1.0.11';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -749,7 +749,7 @@ local function bar_fx_for(which)                                    -- which: 't
     return BAR_FX[k];
 end
 local function bar_overlay(x, y, fw, h, fx, seed, tint)
-    if fx == nil or fw < 2 then return; end
+    if fx == nil or fw < 2 or C.bigchat then return; end            -- (not over the pad's big chat: it draws on top of every window)
     local k = (math.floor(os.clock() * fx.fps) + math.floor(seed * 7)) % fx.n;
     local t = tex(string.format((tint and fx.wfmt) or fx.fmt, k));
     if t == nil then return; end
@@ -4066,7 +4066,7 @@ local function draw_party(dt)
         local top = 0;
         BUFFS.tick();
         local h, w;
-        if (cfg.party_look or 'spine') == 'spine' then               -- Spine: the YunaUI line and a card per member
+        do                                                           -- Spine (the only party look): the YunaUI line and a card per member
             unsized(pushed);
             pushed = sized('chat', 17 * psc);
             local list = {};
@@ -4085,8 +4085,6 @@ local function draw_party(dt)
                 if ALLY.hbh[name] then ALLY.tip = (name == 'anchor') and (cfg.ally_anchor and 'Free the alliances from the party' or 'Anchor the alliances to the party')
                     or (cfg.party_hidden and 'Bring the party back' or 'Slide the party away'); end
             end
-        else
-            h, w = draw_members(dl, x + 4 + bl, y + 4 + top, 0, 6, false, dt, tidx, nil, cols);
         end
         unsized(pushed);
         if ALLY.tip then YUI_TIP(ALLY.tip); ALLY.tip = nil; end           -- (the icons' tip, at the normal size: after the list's big font)
@@ -4114,7 +4112,7 @@ local function draw_party(dt)
                     local up = (tonumber(cfg.party_y) or 0) > ((ds and ds.y) or 1080) * 0.45;   -- (party low on screen: they go above it)
                     local nx = rx + rs[1] - me[1];
                     local pl, ml = ALLY.lx and ALLY.lx.PARTY, ALLY.lx and ALLY.lx[tostring(n)];
-                    if (cfg.party_look or 'spine') == 'spine' and pl and ml then nx = pl[1] - ml[2]; end   -- (its line on the party's line)
+                    if pl and ml then nx = pl[1] - ml[2]; end                -- (its line on the party's line)
                     cfg[a[2]], cfg[a[3]] = ALLY.inside(nx, up and (ry - me[2] - 6) or (ry + rs[2] + 6), me[1], me[2]);
                     if not (WATCH.size and WATCH.size[a[2]] and ml) then cfg[a[2]], cfg[a[3]] = -4000, -4000; end   -- (its first frame: measured off screen, so it never jumps)
                 end
@@ -4697,6 +4695,7 @@ function C.frame_corner(dl, cx, cy, sx, sy, lx, ly, t)
     arm(cx, cy, cx + sx * 1, cy + sy * ly * 0.5, false, col(1, 0.92, 1, 0.7), col(1, 0.92, 1, 0));
 end
 local function draw_chat(n)
+    if n == 1 then C.bigchat = false; end
     if not cfg.chat or (n == 2 and not cfg.chat_split) then return; end
     if n == 2 and legacy.pad.big then return; end                    -- (the big chat is open: the combat log shows inside it, as a tab)
     if CHATFLAGS == nil then
@@ -4719,6 +4718,7 @@ local function draw_chat(n)
     end
     local w, h = math.max(200, tonumber(cfg[p .. 'w']) or 600), math.max(80, tonumber(cfg[p .. 'h']) or 260);
     local big = (n == 1) and legacy.pad.big;                         -- (the pad's big chat: Triangle, then X)
+    if n == 1 then C.bigchat = big; end
     if big then
         local SW, SH = C.screen();
         local bw = math.floor(math.max(math.min(w, SW - 40), SW * 0.55));
@@ -4736,6 +4736,10 @@ local function draw_chat(n)
     imgui.SetNextWindowSize({ w, h }, ImGuiCond_Always);
     local flags = CHATFLAGS;
     if cfg.locked or (n == 2 and cfg.chat_link) then flags = bit.bor(flags, ImGuiWindowFlags_NoMove); end   -- (anchored: it moves with the chat)
+    if big then                                                      -- (the big chat sits on top of everything: bars, damage...)
+        flags = bit.band(flags, bit.bnot(ImGuiWindowFlags_NoBringToFrontOnFocus));
+        pcall(imgui.SetNextWindowFocus);
+    end
     imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
     imgui.PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
     if imgui.Begin((n == 1) and 'YunaUI Chat##yui_chat' or 'YunaUI Combat##yui_chat2', { true }, flags) then
@@ -6783,21 +6787,17 @@ local function draw_window()
             section('PARTY LIST');
             row_switch('##yui_p', 'Show', 'party');
             row_switch('##yui_pp', 'Pretend members (to place it)', 'party', 'Fills the empty places so you can place and size the list when alone.', PREVIEW, function() end);
-            row_pick('##yui_plook', 'Party look', 'party_look', { { 'spine', 'Spine (YunaUI line)' }, { 'classic', 'Classic (with MP / TP)' } });
             row_slider('##yui_s_p', 'Size', 'party_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_switch('##yui_pfar', 'Fade far members', 'party_dim_far', 'On: a member farther than the distance below (out of range for spells like Cure) is shown faded, party and alliance. A pretend member shows it while you place the list.');
             if cfg.party_dim_far ~= false then row_slider('##yui_s_pfar', 'Far from', 'party_range', 10, 50, 0.5, '%.1f yalms'); end
             row_switch('##yui_pdist', 'Distance', 'party_dist', 'On: how far each member is (in yalms), small, after the name. Pink when out of range.');
-            row_slider('##yui_s_ji', 'Job icons', 'icon_scale', 0.4, 2.5, 0.05, '%.2fx');
             section('ALLIANCE');
             row_switch('##yui_a', 'Show', 'alliance');
             row_switch('##yui_ap', 'Pretend members (to place it)', 'alliance', 'Shows both alliance parties so you can place and size them when not in an alliance.', PREVIEW, function() end);
             row_switch('##yui_aanc', 'Anchor to the party', 'ally_anchor', 'On: both alliance parties sit right under your party list, one under the other, at the party\'s size. They follow the party when you move it. Off: place and size each one as you like.');
             hint('Click a member to target them. With Pretend members on, a click just marks one, to see how it looks.');
             row_slider('##yui_s_a1', 'Alliance 1 size', 'ally1_scale', 0.6, 2.0, 0.05, '%.2fx');
-            row_slider('##yui_a1ji', 'Alliance 1 job icons', 'ally1_icon', 0.4, 2.5, 0.05, '%.2fx');
             row_slider('##yui_s_a2', 'Alliance 2 size', 'ally2_scale', 0.6, 2.0, 0.05, '%.2fx');
-            row_slider('##yui_a2ji', 'Alliance 2 job icons', 'ally2_icon', 0.4, 2.5, 0.05, '%.2fx');
             hint('Each alliance party is its own window: drag it anywhere.');
             section('CARDS');
             hint('Your party and the alliances: job tag, name, HP and MP for each member.');
