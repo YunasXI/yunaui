@@ -58,7 +58,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_walls = true, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_party = true, chat_f_trust = true, chat_f_others = true, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_party = true, chat_f_trust = true, chat_f_others = true, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -8531,7 +8531,6 @@ local function draw_window()
             hint('Zoom: how much of the map shows round you (smaller is closer). The mouse wheel over the minimap zooms too.');
             row_switch('##yui_mm3f', 'Turn with you', 'map3d_follow', 'The minimap turns as you do, looking the way you face. Off: north stays up.');
             row_switch('##yui_mmm', 'Monsters', 'map_mobs', 'On: monsters near you show as red dots.');
-            row_switch('##yui_mmw', '3D walls', 'map_walls', 'See-through walls rise from the lines, so the 3D minimap looks solid: low walls in caves and dungeons, buildings at their own height in Jeuno.');
             row_pick('##yui_mmc', 'Lines', 'map_color', { { 'white', 'White' }, { 'pink', 'Pink' }, { 'cyan', 'Cyan' } });
             row_pick('##yui_mma', 'Your arrow', 'map_arrow_color', { { 'lines', 'As the lines' }, { 'white', 'White' }, { 'pink', 'Pink' },
                 { 'violet', 'Violet' }, { 'cyan', 'Cyan' }, { 'gold', 'Gold' }, { 'green', 'Green' } });
@@ -8890,11 +8889,7 @@ function YMAP.d3load(zid)
     if f == nil then return nil; end
     f:close();
     local ok, m = pcall(dofile, path);
-    if ok and type(m) == 'table' and m.v and m.e then
-        D.mesh = m; D.sx, D.sy, D.sd, D.tx, D.ty = {}, {}, {}, {}, {};
-        local f2 = io.open(path, 'r');                               -- (drawn as floor outlines? those get walls raised)
-        if f2 then local l1 = f2:read('*l') or ''; m.outline = (l1:find('walkable', 1, true) ~= nil and not m.t); f2:close(); end
-    end
+    if ok and type(m) == 'table' and m.v and m.e then D.mesh = m; D.sx, D.sy, D.sd = {}, {}, {}; end
     return D.mesh;
 end
 function YMAP.d3height(m, X, Y, Z)                                   -- (which way up the game's height runs against the mesh: once a zone)
@@ -8945,9 +8940,6 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
     end
     local v, e = m.v, m.e;
     local SX, SY, SD = D.sx, D.sy, D.sd;
-    local TX, TY = D.tx, D.ty;                                       -- (the walls' tops, when they're raised)
-    local walls = (m.outline or m.t ~= nil) and cfg.map_walls ~= false;   -- (m.t: towns, each wall's own top height)
-    local WH = 2.6;                                                  -- (how tall the walls stand, in yalms)
     local n = #v / 3;
     for i = 1, n do
         local j = i * 3 - 2;
@@ -8959,14 +8951,6 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
             SD[i] = depth;
             SX[i] = cxs + f * rx / depth;
             SY[i] = cys - f * (dh * cp + rn * sp) / depth;
-            if walls then
-                local wh = m.t and (m.t[i] - v[j + 1]) or WH;
-                local d2 = depth - wh * sp;
-                if d2 < 1 then SD[i] = -1; else
-                    TX[i] = cxs + f * rx / d2;
-                    TY[i] = cys - f * ((dh + wh) * cp + rn * sp) / d2;
-                end
-            end
         end
     end
     C.clip(dl, { vx + 2, vy + 2 }, { vx + W - 2, vy + H - 2 }, true);
@@ -8983,47 +8967,6 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
     --  copy of the position grid)
     local netk = m.net or (#e + 1);
     local last = netk - 1;
-    -- the walls (zones drawn as floor outlines): a low see-through wall raised from each line, lit by the way it faces
-    if walls then
-        local wc = {};                                               -- (4 shades x 16 strengths, made once a frame)
-        for q = 0, 3 do
-            local sh = 0.45 + 0.55 * q / 3;
-            wc[q] = {};
-            for k = 0, 16 do wc[q][k] = u32({ lc[1] * sh, lc[2] * sh, lc[3] * sh, 0.30 * k / 16 }); end
-        end
-        local topc = {};
-        for k = 0, 16 do topc[k] = u32({ lc[1], lc[2], lc[3], 0.55 * k / 16 }); end
-        for k = 1, last, 2 do
-            local a, b = e[k], e[k + 1];
-            local da, db = SD[a], SD[b];
-            if da > 0 and db > 0 then
-                local ax, ay, bx_, by_ = SX[a], SY[a], SX[b], SY[b];
-                local atx, aty, btx, bty = TX[a], TY[a], TX[b], TY[b];
-                if not ((math.max(ax, bx_, atx, btx) < x0) or (math.min(ax, bx_, atx, btx) > x1) or (math.max(ay, by_, aty, bty) < y0) or (math.min(ay, by_, aty, bty) > y1)) then
-                    local t = 1 - (da + db) / (2 * fade);
-                    local fh = math.abs((v[a * 3 - 1] + v[b * 3 - 1]) / 2 - th);
-                    local hx, hy = (v[a * 3 - 2] + v[b * 3 - 2]) / 2 - tx, (v[a * 3] + v[b * 3]) / 2 - ty;
-                    local tol = 3.5 + math.min(3, 0.08 * math.sqrt(hx * hx + hy * hy));
-                    local dim = (fh > tol) and math.max(0, 1 - (fh - tol) / 4.5) or 1;
-                    local ef = 1;
-                    if soft then
-                        local ex, ey = ((ax + bx_) / 2 - cxs) / (W / 2), ((ay + by_) / 2 - cys) / (H / 2);
-                        ef = math.max(0, math.min(1, (1 - math.sqrt(ex * ex + ey * ey)) / 0.32));
-                    end
-                    local a_ = (0.18 + 0.82 * math.max(0, math.min(1, t))) * ef * dim;
-                    if a_ > 0.03 then
-                        local wx, wy = v[b * 3 - 2] - v[a * 3 - 2], v[b * 3] - v[a * 3];   -- (its face: lit from the north-west)
-                        local wl = math.sqrt(wx * wx + wy * wy);
-                        local lit = (wl > 0) and math.abs((-wy * 0.6 + wx * 0.8) / wl) or 0.5;
-                        local q = math.floor(lit * 3 + 0.5);
-                        local s16 = math.floor(a_ * 16 + 0.5);
-                        dl:AddQuadFilled({ ax, ay }, { bx_, by_ }, { btx, bty }, { atx, aty }, wc[q][s16]);
-                        dl:AddLine({ atx, aty }, { btx, bty }, topc[s16], 1);
-                    end
-                end
-            end
-        end
-    end
     -- (the minimap: a black outline under every line first, so they read over bright ground; then the lines)
     for pass = (soft and 1 or 2), 2 do
     for k = 1, last, 2 do
