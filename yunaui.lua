@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.17';
+addon.version = '1.0.18';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -58,7 +58,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, target_friend_look = 'banner',  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_friend_look = 'banner',  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -4492,6 +4492,36 @@ end
 -- effect of..." each on a line of its own. Returns 'new' (a feed line was added), 'merged' (an older one grew) or nil
 -- (not a feed line: added as usual).
 C.FEED = {};
+function C.ts_text(ts)                                              -- "[18:24] ", "[18:24:07] ", "[6:24pm] ", "[6:24:07 PM] "...
+    local t = os.date('*t', ts or os.time());
+    local h, suf = t.hour, '';
+    if cfg.chat_time_12 then
+        suf = (h < 12) and 'am' or 'pm';
+        if cfg.chat_time_case == 'upper' then suf = suf:upper(); end
+        if cfg.chat_time_sec then suf = ' ' .. suf; end
+        h = h % 12; if h == 0 then h = 12; end
+    end
+    local str = string.format(cfg.chat_time_12 and '%d:%02d' or '%02d:%02d', h, t.min);
+    if cfg.chat_time_sec then str = str .. string.format(':%02d', t.sec); end
+    return '[' .. str .. suf .. '] ';
+end
+function C.ts_col()
+    local c = cfg.chat_time_col;
+    if type(c) == 'table' and tonumber(c[1]) then return { c[1], c[2], c[3] }; end
+    return { 0.62, 0.60, 0.68 };
+end
+function C.ts_rebuild()                                              -- (the options changed: every line's time written again)
+    for _, lg in ipairs(logs) do
+        for _, e in ipairs(lg) do
+            if e.ts and e.raw then
+                local pre = cfg.chat_time and C.ts_text(e.ts) or '';
+                if e.feed then e.tpre = (pre ~= '') and pre or nil; e.text = C.feed_text(e);
+                else e.text, e.tslen = pre .. e.raw, #pre; end
+                e.lines = nil;
+            end
+        end
+    end
+end
 function C.feed_text(e)                                              -- (its plain text: the saved log, the line's width)
     local f = e.feed;
     local t = (e.tpre or '') .. f.actor .. ' > ' .. f.act .. (f.state == 'cast' and '...' or '');
@@ -4511,7 +4541,7 @@ function C.feed_take(log, line, mode)
     local sl = line:gsub('[\1\2]', '');
     local function new(actor, act, target, kind, state)
         local e = { raw = line, cat = cat_of(mode), t = now, t0 = now, flash = now, ts = os.time(), mode = mode,
-            tpre = cfg.chat_time and os.date('[%H:%M] ') or nil,
+            tpre = cfg.chat_time and C.ts_text(os.time()) or nil,
             feed = { actor = actor, act = act, target = target, kind = kind, state = state, res = {} } };
         e.text = C.feed_text(e);
         CHATLOG.add(log, e);
@@ -4733,8 +4763,9 @@ local function chat_add(mode, raw)
             if is_combat(mode) then local okf, r = pcall(C.feed_take, log_, raw_line, mode); fd = okf and r or nil; end   -- (CHAT > Combat feed)
             if fd == nil then
                 if not is_combat(mode) then pcall(C.chat_pop, mode, raw_line); end   -- (CHAT > Speech bubbles)
-                if cfg.chat_time then line = os.date('[%H:%M] ') .. line; end
-                CHATLOG.add(log_, { text = line, raw = raw_line, cat = cat_of(mode), t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode });
+                local pre = cfg.chat_time and C.ts_text(os.time()) or '';
+                line = pre .. line;
+                CHATLOG.add(log_, { text = line, raw = raw_line, cat = cat_of(mode), t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode, tslen = #pre });
                 if n_ == 1 then chat_seen_new(mode); end
             end
             if fd ~= 'merged' and cw[n_].scroll > 0 then cw[n_].scroll = cw[n_].scroll + 1; end
@@ -4865,7 +4896,7 @@ function C.feed_draw(dl, x, y, e, a, lh, measure)
         cx = cx + w_;
     end
     local sp = imgui.CalcTextSize(' ');
-    if e.tpre then txt(e.tpre, { 0.62, 0.60, 0.68 }, 0.85); end
+    if e.tpre then txt(e.tpre, C.ts_col(), 0.85); end
     txt(f.actor, { 0.97, 0.96, 1.0 });
     chev({ 0.70, 0.68, 0.80 });
     local kc = (f.kind == 'magic') and { 0.74, 0.64, 1.0 } or { 1.0, 0.82, 0.45 };
@@ -5547,6 +5578,10 @@ function C.weather_packet(e)                                         -- (0x057: 
     if w and w >= 0 and w <= 19 then C.AMB.wx = w; end
 end
 local function draw_chat(n)
+    if n == 1 then
+        local sig = tostring(cfg.chat_time) .. tostring(cfg.chat_time_sec) .. tostring(cfg.chat_time_12) .. tostring(cfg.chat_time_case);
+        if sig ~= C.tssig then if C.tssig then pcall(C.ts_rebuild); end C.tssig = sig; end
+    end
     if n == 1 then C.bigchat = false; end
     if not cfg.chat or (n == 2 and not cfg.chat_split) then return; end
     if n == 2 and legacy.pad.big then return; end                    -- (the big chat is open: the combat log shows inside it, as a tab)
@@ -5724,11 +5759,11 @@ local function draw_chat(n)
                         if fresh > 0.01 then                         -- (new, or a feed line that just grew: a short bar in its colour on the
                             dl:AddRectFilled({ px - 10, ly }, { px - 7, ly + th - 1 }, u32({ c[1], c[2], c[3], 0.9 * fresh * a }), 1.5);   --  left, for a moment)
                         end
-                        local ts = (not e.feed and k == 1 and cfg.chat_time and cfg.chat_time_dim ~= false) and txt:match('^(%[%d%d:%d%d%] )') or nil;
+                        local ts = (not e.feed and k == 1 and (e.tslen or 0) > 0 and #txt > e.tslen) and txt:sub(1, e.tslen) or nil;
                         if e.feed then
                             C.feed_draw(dl, px, ly, e, a, lh);
-                        elseif ts then                               -- the time in grey, so the words stand out
-                            chat_line(dl, px, ly, ts, { 0.62, 0.60, 0.68 }, a * 0.85, lh);
+                        elseif ts then                               -- the time in its own colour (CHAT > Timestamps > Colour), so the words stand out
+                            chat_line(dl, px, ly, ts, C.ts_col(), a * 0.85, lh);
                             chat_line(dl, px + line_w(ts), ly, txt:sub(#ts + 1), c, a, lh);
                         else
                             chat_line(dl, px, ly, txt, c, a, lh);
@@ -7825,7 +7860,12 @@ local function draw_window()
             hint("YunaUI learns your pad: the button that opens the game's log (Triangle, X...) then opens YunaUI's chat instead. Learn again: forget it, then press your log button once.");
             row_switch('##yui_c2', 'Split combat log', 'chat_split', 'On: battle messages go to a second chat window of their own (move and size it like the first).');
             row_switch('##yui_ct', 'Timestamps', 'chat_time');
-            if cfg.chat_time then row_switch('##yui_ctd', 'Timestamps in grey', 'chat_time_dim', 'On: the time is grey, so the message itself stands out.'); end
+            if cfg.chat_time then
+                row_switch('##yui_cts', 'Seconds', 'chat_time_sec');
+                row_switch('##yui_ct12', '12-hour clock (8:34pm)', 'chat_time_12');
+                if cfg.chat_time_12 then row_pick('##yui_ctc', 'AM/PM case', 'chat_time_case', { { 'lower', 'am / pm' }, { 'upper', 'AM / PM' } }); end
+                colour_row('chat_time_col', 'Colour', { 0.62, 0.60, 0.68 }, true);
+            end
             row_switch('##yui_canim', 'Animated lines', 'chat_anim', 'On: new lines slide in with a soft glow, and a thin bar in their channel\'s colour on the left.');
             row_switch('##yui_cfeed', 'Combat feed', 'chat_feed', 'On: a spell or ability is one line that grows as it happens (who > spell > target, then a tick, the damage, the HP healed or miss) instead of three or four lines. Only new lines.');
             row_switch('##yui_cfade', 'Fade when idle', 'chat_fade_old', 'On: at rest only the newest lines show, the older ones above them fade away until you put the mouse over the chat. Off: every line stays visible all the time.');
@@ -8135,12 +8175,13 @@ function YMAP.update(ent, me, zid)                                   -- the righ
     YMAP.zone, YMAP.floor = zid, fl;
     pcall(function() YMAP.name = AshitaCore:GetResourceManager():GetString('zones.names', zid) or ''; end);
     YMAP.entry = YMAP.entry_of(zid, fl);
-    YMAP.tex, YMAP.ltex, YMAP.ntex = nil, nil, nil;
+    YMAP.tex, YMAP.ltex, YMAP.ntex, YMAP.mtex = nil, nil, nil, nil;
     if YMAP.entry then
         local dir = (addon.path:gsub('[\\/]+$', '')) .. '\\mapsimg\\';
         YMAP.tex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '.png');        -- the floor and the icons
         YMAP.ltex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '_l.png');     -- the lines, white: tinted as drawn
         YMAP.ntex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '_n.png');     -- the place names (tinted, softer)
+        YMAP.mtex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '_m.png');     -- (some maps) the numbered exit boxes, as drawn
     end
 end
 function YMAP.to_map(wx, wy)                                         -- world (x east, y north) to map pixels (0..512)
@@ -8677,6 +8718,10 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
                 dl:AddImage(YMAP.ntex.ptr, { x + (a0 - u0) * k, y + (b0 - v0) * k }, { x + (a1 - u0) * k, y + (b1 - v0) * k },
                     { a0 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, YMAP.lcol(true));
             end
+            if YMAP.mtex then                                        -- (the numbered exit boxes: in their own colours, on top)
+                dl:AddImage(YMAP.mtex.ptr, { x + (a0 - u0) * k, y + (b0 - v0) * k }, { x + (a1 - u0) * k, y + (b1 - v0) * k },
+                    { a0 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, u32({ 1, 1, 1, 1 }));
+            end
         end
         local function tomap(wx, wy) local mx, my = YMAP.to_map(wx, wy); return cx + (mx - pmx) * k, cy + (my - pmy) * k; end
         local function inside(sx, sy) return sx > x + 2 and sx < x + M - 2 and sy > y + 2 and sy < y + M - 2; end
@@ -8783,6 +8828,7 @@ function YMAP.bigmap(party, ent, zid, me, sc)                        -- the big 
         dl:AddImage(YMAP.tex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 }));
         if YMAP.ltex then dl:AddImage(YMAP.ltex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, YMAP.lcol()); end
         if YMAP.ntex then dl:AddImage(YMAP.ntex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, YMAP.lcol(true)); end
+        if YMAP.mtex then dl:AddImage(YMAP.mtex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 })); end
         local gc = u32({ 1, 1, 1, 0.08 });
         for i = 0, 15 do                                             -- the grid: every 32 map pixels from the 16th
             local v = (16 + 32 * i) * k;
@@ -9136,7 +9182,12 @@ function EDIT.G.draw()
 end
 ashita.events.register('d3d_present', 'yui_present', function()
     pcall(C.apply_hp);
-    if cfg.welcomed == nil then                                      -- (the very first launch: Edit Mode opens once, to place everything;
+    local logged = false;                                            -- (logged in: a character really there - logging out or /shutdown
+    pcall(function()                                                 --  switches to the settings with no character, which look brand new)
+        local pt = AshitaCore:GetMemoryManager():GetParty();
+        logged = pt:GetMemberIsActive(0) ~= 0 and (pt:GetMemberName(0) or '') ~= '' and (pt:GetMemberServerId(0) or 0) ~= 0;
+    end);
+    if cfg.welcomed == nil and logged then                           -- (the very first launch: Edit Mode opens once, to place everything;
         cfg.welcomed = true;                                         --  a player who already had YunaUI doesn't get it)
         if not cfg.spine_v2 then EDIT.welcome = true; pcall(EDIT.G.start); end   -- (the guide first, then Edit Mode)
         pcall(save);
