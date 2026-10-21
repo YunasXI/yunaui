@@ -68,7 +68,8 @@ local ui = {
 settings.register('equip', 'ye_settings_update', function(s)
     if s ~= nil then cfg = s; end
     ui.place = true;
-end);
+    ui.sb_reset = true;                                              -- (logging in switches to your character's settings: the HP / MP / TP bars
+end);                                                                --  go back to its places, measured again - see JOBS.statbars)
 
 local function msg(t) print(chat.header(addon.name):append(chat.message(t))); end
 local function save() settings.save('equip'); end
@@ -2666,7 +2667,7 @@ function JOBS.ybar(dl, x, y, w, h, v, lag, c1, c2, seed, warn)
     warn = warn or 0;
     local now = os.clock();
     dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.05, 0.04, 0.07, 0.70 }), h / 2);
-    if lag and lag > v then dl:AddRectFilled({ x + w * v, y }, { x + w * lag, y + h }, u32({ 1, 0.92, 0.95, 0.40 }), h / 2); end
+    if lag and lag > v + 0.002 then dl:AddRectFilled({ x + math.max(0, math.min(w * v, w * lag - h)), y }, { x + w * lag, y + h }, u32({ 1, 0.92, 0.95, 0.40 }), h / 2); end   -- (what was just lost: never a sliver - that came out square, its corners poking out of the round edge)
     if v <= 0 then return; end
     local fw = w * v;
     local pulse = 0.5 + 0.5 * math.sin(now * 2.2 + seed);
@@ -2682,11 +2683,26 @@ function JOBS.ybar(dl, x, y, w, h, v, lag, c1, c2, seed, warn)
         local u = 0.5 + 0.5 * math.sin((f * 1.6 - ph) * math.pi * 2);
         return u32({ c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u, 1 });
     end
-    for k = 0, segs - 1 do
-        local f1, f2 = k / segs, (k + 1) / segs;
-        local x1, x2 = x + w * f1, math.min(x + fw, x + w * f2);
+    local r_ = math.min(h / 2, fw / 2);                              -- (the fill's two ends are round, like its edge)
+    local L_ = (v < 0.985) and math.min(fw, math.max(8, h * 2.6)) or 0;   -- (its end lights up in the bar's own colour: not on a full bar)
+    local lt_ = { c2[1] + (1 - c2[1]) * 0.85, c2[2] + (1 - c2[2]) * 0.85, c2[3] + (1 - c2[3]) * 0.85 };
+    local function colx(px)                                          -- the fill's colour at px: the flowing colours, lighter towards the end
+        local f = (px - x) / w;
+        local u = 0.5 + 0.5 * math.sin((f * 1.6 - ph) * math.pi * 2);
+        local c = { c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u };
+        local t = (L_ > 0) and 0.45 * math.max(0, math.min(1, (px - (x + fw - L_)) / math.max(1, L_ - r_))) or 0;
+        return u32({ c[1] + (lt_[1] - c[1]) * t, c[2] + (lt_[2] - c[2]) * t, c[3] + (lt_[3] - c[3]) * t, 1 });
+    end
+    dl:AddRectFilled({ x, y }, { x + math.min(fw, h), y + h }, colx(x), r_);
+    dl:AddRectFilled({ x + fw - math.min(fw, h), y }, { x + fw, y + h }, colx(x + fw), r_);
+    local cuts = {};                                                 -- (the strips: the colours' steps, and where the light starts)
+    for k = 0, segs do cuts[#cuts + 1] = x + w * k / segs; end
+    if L_ > 0 then cuts[#cuts + 1] = x + fw - L_; end
+    table.sort(cuts);
+    for k = 1, #cuts - 1 do
+        local x1, x2 = math.max(x + r_, cuts[k]), math.min(x + fw - r_, cuts[k + 1]);
         if x2 > x1 then
-            local a, b = col_at(f1), col_at(x2 == x + fw and (fw / w) or f2);
+            local a, b = colx(x1), colx(x2);
             dl:AddRectFilledMultiColor({ x1, y }, { x2, y + h }, a, b, b, a);
         end
     end
@@ -2694,7 +2710,7 @@ function JOBS.ybar(dl, x, y, w, h, v, lag, c1, c2, seed, warn)
     local sp = JOBS.frac(now * 0.32 + seed * 0.137);
     local hx, hw = x - 40 + sp * (fw + 80), 40;
     local function band(x1, x2, a1, a2)
-        local cx1, cx2 = math.max(x, x1), math.min(x + fw, x2);
+        local cx1, cx2 = math.max(x + math.min(h / 2, fw / 2), x1), math.min(x + fw - math.min(h / 2, fw / 2), x2);   -- (inside the round ends)
         if cx2 <= cx1 then return; end
         local f1, f2 = (cx1 - x1) / (x2 - x1), (cx2 - x1) / (x2 - x1);
         local b1, b2 = a1 + (a2 - a1) * f1, a1 + (a2 - a1) * f2;
@@ -2729,17 +2745,6 @@ function JOBS.ybar(dl, x, y, w, h, v, lag, c1, c2, seed, warn)
     elseif fx == 'pulse' then
         local pb = 0.5 - 0.5 * math.cos(now * 2.2 + seed);
         dl:AddRectFilled({ x, y }, { x + fw, y + h }, u32({ 1, 1, 1, 0.22 * pb }), h / 2);
-    end
-    if fw > 0.5 and v < 0.985 then                                   -- the end: a soft light in the bar's own colour, a fine bright edge (not on a full bar)
-        local e = c2 or { 1, 1, 1 };
-        local lt = { e[1] + (1 - e[1]) * 0.85, e[2] + (1 - e[2]) * 0.85, e[3] + (1 - e[3]) * 0.85 };
-        local L = math.min(fw, math.max(8, h * 2.6));
-        pcall(function()
-            dl:AddRectFilledMultiColor({ x + fw - L, y }, { x + fw, y + h }, u32({ lt[1], lt[2], lt[3], 0 }), u32({ lt[1], lt[2], lt[3], 0.50 }),
-                u32({ lt[1], lt[2], lt[3], 0.50 }), u32({ lt[1], lt[2], lt[3], 0 }));
-        end);
-        local cw_ = math.max(1.2, math.min(2, h * 0.25));
-        dl:AddRectFilled({ x + fw - cw_, y }, { x + fw, y + h }, u32({ 1, 1, 1, 0.95 }));
     end
 end
 -- Text with a dark outline all round (as YunaUI's chat)
@@ -2944,8 +2949,14 @@ function JOBS.import()
     save();
 end
 function JOBS.statbars()
+    if ui.sb_reset then                                              -- (new settings, at login: the old sizes and places were the other settings' -
+        ui.sb_reset = false;                                         --  kept, they stacked the bars on each other and wrote that back; forget
+        JOBS.sb_size, JOBS.sb_off, JOBS.sb_from, JOBS.sb_t0 = {}, {}, {}, nil;   --  them and put each bar at its saved place)
+        JOBS.sb_move = 3;
+    end
     if (JOBS.sb_move or 0) > 0 then JOBS.sb_move = JOBS.sb_move - 1; end
     if (cfg.stat_mode or 'wheel') ~= 'bars' then return; end
+    if YUI_HIDE_STATBARS and YUI_HIDE_STATBARS() then return; end    -- (YunaUI's BARS > Where: only over your head)
     local hp, mp, tp, hpp, mpp = JOBS.stats();
     local b = JOBS.bars;
     JOBS.statbar('hp', tostring(hp), b.hp, b.hp_lag, hpp);

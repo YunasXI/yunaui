@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.21';
+addon.version = '1.0.22';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -58,7 +58,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_party = true, chat_f_trust = true, chat_f_others = true, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_friend_look = 'banner',  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_party = true, chat_f_trust = true, chat_f_others = true, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -654,8 +654,8 @@ local function glow_bar(dl, x, y, w, h, v, lag, c1, c2, seed, fxo)
     seed = seed or 0;
     local now = os.clock();
     dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.05, 0.04, 0.07, 0.70 }), h / 2);
-    if lag and lag > v then
-        dl:AddRectFilled({ x + w * v, y }, { x + w * lag, y + h }, u32({ 1, 0.92, 0.95, 0.40 }), h / 2);
+    if lag and lag > v + 0.002 then
+        dl:AddRectFilled({ x + math.max(0, math.min(w * v, w * lag - h)), y }, { x + w * lag, y + h }, u32({ 1, 0.92, 0.95, 0.40 }), h / 2);   -- (what was just lost: never a sliver - that came out square, its corners poking out of the round edge)
     end
     if v <= 0 then return; end
     local fw = w * v;
@@ -672,11 +672,26 @@ local function glow_bar(dl, x, y, w, h, v, lag, c1, c2, seed, fxo)
         local u = 0.5 + 0.5 * math.sin((f * 1.6 - ph) * math.pi * 2);
         return u32({ c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u, 1 });
     end
-    for k = 0, segs - 1 do
-        local f1, f2 = k / segs, (k + 1) / segs;
-        local x1, x2 = x + w * f1, math.min(x + fw, x + w * f2);
+    local r_ = math.min(h / 2, fw / 2);                              -- (the fill's two ends are round, like its edge)
+    local L_ = (v < 0.985) and math.min(fw, math.max(8, h * 2.6)) or 0;   -- (its end lights up in the bar's own colour: not on a full bar)
+    local lt_ = { c2[1] + (1 - c2[1]) * 0.85, c2[2] + (1 - c2[2]) * 0.85, c2[3] + (1 - c2[3]) * 0.85 };
+    local function colx(px)                                          -- the fill's colour at px: the flowing colours, lighter towards the end
+        local f = (px - x) / w;
+        local u = 0.5 + 0.5 * math.sin((f * 1.6 - ph) * math.pi * 2);
+        local c = { c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u };
+        local t = (L_ > 0) and 0.45 * math.max(0, math.min(1, (px - (x + fw - L_)) / math.max(1, L_ - r_))) or 0;
+        return u32({ c[1] + (lt_[1] - c[1]) * t, c[2] + (lt_[2] - c[2]) * t, c[3] + (lt_[3] - c[3]) * t, 1 });
+    end
+    dl:AddRectFilled({ x, y }, { x + math.min(fw, h), y + h }, colx(x), r_);
+    dl:AddRectFilled({ x + fw - math.min(fw, h), y }, { x + fw, y + h }, colx(x + fw), r_);
+    local cuts = {};                                                 -- (the strips: the colours' steps, and where the light starts)
+    for k = 0, segs do cuts[#cuts + 1] = x + w * k / segs; end
+    if L_ > 0 then cuts[#cuts + 1] = x + fw - L_; end
+    table.sort(cuts);
+    for k = 1, #cuts - 1 do
+        local x1, x2 = math.max(x + r_, cuts[k]), math.min(x + fw - r_, cuts[k + 1]);
         if x2 > x1 then
-            local a, b = col_at(f1), col_at(x2 == x + fw and (fw / w) or f2);
+            local a, b = colx(x1), colx(x2);
             dl:AddRectFilledMultiColor({ x1, y }, { x2, y + h }, a, b, b, a);
         end
     end
@@ -684,7 +699,7 @@ local function glow_bar(dl, x, y, w, h, v, lag, c1, c2, seed, fxo)
     local sp = frac(now * 0.32 + seed * 0.137);
     local hx, hw = x - 40 + sp * (fw + 80), 40;
     local function band(x1, x2, a1, a2)
-        local cx1, cx2 = math.max(x, x1), math.min(x + fw, x2);
+        local cx1, cx2 = math.max(x + math.min(h / 2, fw / 2), x1), math.min(x + fw - math.min(h / 2, fw / 2), x2);   -- (inside the round ends)
         if cx2 <= cx1 then return; end
         local f1, f2 = (cx1 - x1) / (x2 - x1), (cx2 - x1) / (x2 - x1);
         local b1, b2 = a1 + (a2 - a1) * f1, a1 + (a2 - a1) * f2;
@@ -719,17 +734,6 @@ local function glow_bar(dl, x, y, w, h, v, lag, c1, c2, seed, fxo)
         -- the whole fill brightens softly and back
         local b = 0.5 - 0.5 * math.cos(now * 2.2 + seed);
         dl:AddRectFilled({ x, y }, { x + fw, y + h }, u32({ 1, 1, 1, 0.22 * b }), h / 2);
-    end
-    if fw > 0.5 and v < 0.985 then                                   -- the end: a soft light in the bar's own colour, a fine bright edge (not on a full bar)
-        local e = c2 or { 1, 1, 1 };
-        local lt = { e[1] + (1 - e[1]) * 0.85, e[2] + (1 - e[2]) * 0.85, e[3] + (1 - e[3]) * 0.85 };
-        local L = math.min(fw, math.max(8, h * 2.6));
-        pcall(function()
-            dl:AddRectFilledMultiColor({ x + fw - L, y }, { x + fw, y + h }, u32({ lt[1], lt[2], lt[3], 0 }), u32({ lt[1], lt[2], lt[3], 0.50 }),
-                u32({ lt[1], lt[2], lt[3], 0.50 }), u32({ lt[1], lt[2], lt[3], 0 }));
-        end);
-        local cw_ = math.max(1.2, math.min(2, h * 0.25));
-        dl:AddRectFilled({ x + fw - cw_, y }, { x + fw, y + h }, u32({ 1, 1, 1, 0.95 }));
     end
 end
 
@@ -781,19 +785,20 @@ function C.dd2bar(dl, x, y, w, h, v, lag, seed)
     if lag and lag > v then dl:AddRectFilled({ x + fw - B, cy - B / 2 }, { x + w * lag, cy + B / 2 }, u32({ 1, 0.85, 1, 0.22 }), B / 2); end
     if fw < 1 then return; end
     local f = (math.floor(os.clock() * 24) + math.floor(seed * 7)) % 48;
-    local t = tex(string.format('dd2/%02d.png', f));
+    local t = (cfg.target_bar_anim == false) and tex('dd2/nocore.png') or tex(string.format('dd2/%02d.png', f));   -- (TARGET > Bar effect off: just the band, no white line)
     if t then
         local mw = math.max(1, fw - 4 * k);                          -- (up to where the tip's round end takes over)
         local u1 = math.min(1, mw / (1024 * k));                     -- (as much of the frame as the HP covers, at its own scale)
         pcall(function() dl:AddImage(t.ptr, { x, cy - Hd / 2 }, { x + mw, cy + Hd / 2 }, { 0, 0 }, { u1, 1 }, u32({ 1, 1, 1, 1 })); end);
     end
-    local tp = tex('dd2/tip.png');                                   -- the clean white tip, its round end on the HP's end
+    local tp = tex((cfg.target_bar_anim == false) and 'dd2/tip_nocore.png' or 'dd2/tip.png');   -- the clean white tip, its round end on the HP's end
     if tp then
         local tx = x + fw - 40 * k;                                  -- (the band's round end on the HP's end)
         pcall(function() dl:AddImage(tp.ptr, { tx, cy - Hd / 2 }, { tx + 44 * k, cy + Hd / 2 }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 })); end);
     end
 end
 -- the same for YunaEquip's own HP bar ('Separate bars'), which lives in equip.lua
+YUI_HIDE_STATBARS = function() return (cfg.head_bars or 'fixed') == 'head'; end   -- (equip.lua: BARS > Where = Over your head)
 YUI_BAR_OVERLAY = function(x, y, fw, h, seed) bar_overlay(x, y, fw, h, bar_fx_for('equip'), seed or 1, C.fxtint(cfg.my_hp_color or cfg.hp_color or 'pink')); end
 
 ----------------------------------------------------------------------------------------------------
@@ -1896,14 +1901,9 @@ function FIGHT.fxstate(idx, ent, fake)
     local F = FIGHT.fx;
     local now = os.clock();
     if kind == 'off' then F.idx = idx; return nil; end
-    if idx ~= F.idx then                                             -- a new target: the show starts (monsters only, unless set otherwise)
+    if idx ~= F.idx then                                             -- a new target: the show starts
         F.idx = idx;
-        local mob = true;
-        if not fake and cfg.target_fx_mobs ~= false then
-            local ok, fl = pcall(function() return ent:GetSpawnFlags(idx); end);
-            mob = ok and type(fl) == 'number' and bit.band(fl, 0x10) ~= 0;
-        end
-        if mob then F.t0 = now; end
+        F.t0 = now;
     end
     local e = (now - F.t0) / (FIGHT.FXDUR[kind] or 0.6);
     if e < 0 or e >= 1 then return nil; end
@@ -1953,33 +1953,17 @@ function C.tkind(idx, ent, fake)
     return 'npc';
 end
 C.TFRIEND = { pc = { 0.40, 0.95, 0.80 }, npc = { 1.0, 0.86, 0.50 } };   -- the Ally banner's colour: aqua for players, gold for NPCs
--- A friend in the target bar's place (TARGET > Friends look): 'card' = its party-list card, bigger (job tag, name, HP,
--- and for a party / alliance member its MP and TP); 'banner' = a slim frame with a cross, the name, HP and MP side by
--- side. Gives back the height it used.
-function C.tfriend(dl, x, y, w, sc, idx, ent, name, hpp, tk, tmi, look, dt)
+-- A friend (a player or NPC) in the target bar's place: the Ally banner - a slim frame with a cross, the name, HP and MP
+-- side by side. Gives back the height it used.
+function C.tfriend(dl, x, y, w, sc, idx, ent, name, hpp, tk, tmi, dt)
     local m = tmi and member(tmi) or nil;
     if m == nil then
         m = { name = name, hpp = hpp, mpp = 0, tp = 0, inzone = true };                                                       -- (no tag: only party / alliance members show their job)
         pcall(function() local d2 = ent:GetDistance(idx); if type(d2) == 'number' and d2 >= 0 then m.dist = math.sqrt(d2); end end);
     end
     m.far = nil;                                                     -- (never faded here)
-    local nohp = (tk == 'npc');                                      -- (NPCs and objects have no HP worth showing: the banner, no bars)
-    if nohp then look = 'banner'; end
-    if look == 'card' then
-        local k = 1.35;
-        local pushed = sized('chat', 17 * sc * k);
-        local fs = FS or 1;
-        imgui.SetWindowFontScale(fs * 0.66);
-        local lh = imgui.GetTextLineHeight();
-        local party = tmi ~= nil;
-        local ch = C.ALLY.ch(lh, sc * k, party);
-        local cw = math.min(w, 250 * sc * k);
-        C.ALLY.card(dl, m, 90 + (tmi or 0), x, x + cw, y + ch / 2, ch, lh, sc * k, 1, party, false);
-        imgui.SetWindowFontScale(fs);
-        unsized(pushed);
-        return ch;
-    end
-    local col = C.TFRIEND[tk] or C.TFRIEND.pc;                       -- 'banner'
+    local nohp = (tk == 'npc');                                      -- (NPCs and objects have no HP worth showing: no bars)
+    local col = C.TFRIEND[tk] or C.TFRIEND.pc;
     -- Laid out before anything is drawn, so nothing ever overlaps at any size or resolution: on one line when it fits
     -- (the bars may shrink a little first), else on two - the tag, name and distance on top, HP and MP under them.
     -- On either line the distance goes, then the name is shortened with "...", before anything could touch.
@@ -2104,10 +2088,9 @@ local function draw_target(dt)
         local x, y = imgui.GetCursorScreenPos();
         x, y = x + 6, y + 4;
         local tk, tmi = C.tkind(idx, ent, fake);                     -- TARGET > Friends look: a player / NPC never looks like a monster
-        local flook = cfg.target_friend_look or 'banner';
-        if tk ~= 'mob' and flook ~= 'off' then
+        if tk ~= 'mob' and not FIGHT.show then                      -- (a player or NPC: the Ally banner - not while previewing the fan and casts)
             local used = 0;
-            local okf, errf = pcall(function() used = C.tfriend(dl, x, y, w, sc, idx, ent, name, hpp, tk, tmi, flook, dt); end);
+            local okf, errf = pcall(function() used = C.tfriend(dl, x, y, w, sc, idx, ent, name, hpp, tk, tmi, dt); end);
             if not okf then pcall(YUI_ERRLOG, 'target friend', errf); end
             local bh2 = 0;
             if cfg.buffs then                                        -- its buffs, under it
@@ -4675,6 +4658,365 @@ function C.pop_rows(msg, maxw)
     end
     return rows;
 end
+-- BARS > YOUR BARS > Where: 'head' / 'both' - thin HP, MP and TP bars over your own head, no numbers. TP in three
+-- pieces (1000 each), dim while filling, gold when full (a gold piece = a weapon skill ready), a flash each time one
+-- fills. Low HP breathes. They follow you smoothly; hidden in cutscenes and under the big map.
+C.HB = { x = nil, y = nil, hp = nil, mp = nil, tp = nil, segs = 0, flash = -9 };
+function C.head_bars_on() local w = cfg.head_bars or 'fixed'; return w == 'head' or w == 'both'; end
+-- each race's height over the ground for the bars (yalms): Hume m/f, Elvaan m/f, Tarutaru m/f, Mithra, Galka
+C.HB_RACE = { [1] = 2.25, [2] = 2.15, [3] = 2.45, [4] = 2.35, [5] = 1.35, [6] = 1.35, [7] = 2.1, [8] = 2.5 };
+-- VanaCore's own setting [graphics] nameplates.hideown (/vana > Options > Nameplates > Hide own nameplate): on while the
+-- bars are over your head (your name and stars would sit on them), put back as it was when they're not. Only where
+-- VanaCore lets addons reach its settings (vana.config); otherwise BARS says where to turn it on by hand.
+function C.vana_cfg()
+    local v = rawget(_G, 'vana');
+    if type(v) == 'table' and type(v.config) == 'table' and type(v.config.set) == 'function' and type(v.config.get) == 'function' then return v.config; end
+    return nil;
+end
+-- On VanaCore (YunaUI loaded from Vanacore\addons\ashita\yunaui): its helper yunalink (vanacore\yunalink.lua here)
+-- copied to Vanacore\addons\vanacore\yunalink and loaded, once per start; YunaUI then asks it with /yunalink commands
+C.LINK = { root = nil, t = nil };
+function C.link_root()
+    if C.LINK.root == nil then
+        C.LINK.root = (addon.path:gsub('/', '\\'):match('^(.*)\\addons\\ashita\\[^\\]+\\?$')) or false;
+    end
+    return C.LINK.root or nil;
+end
+function C.link_ready()                                              -- (true once yunalink is in place and has had a moment to load)
+    local root = C.link_root();
+    if root == nil then return false; end
+    if C.LINK.t == nil then
+        C.LINK.t = os.clock();
+        pcall(function()
+            local src = io.open((addon.path:gsub('[\\/]+$', '')) .. '\\vanacore\\yunalink.lua', 'rb');
+            if src == nil then return; end
+            local body = src:read('*a'); src:close();
+            local dir = root .. '\\addons\\vanacore\\yunalink';
+            local dst = dir .. '\\yunalink.lua';
+            local old = io.open(dst, 'rb');
+            local cur = old and old:read('*a') or nil;
+            if old then old:close(); end
+            if cur ~= body then
+                local made = false;                                  -- (Ashita's own folder maker; the shell's only if it isn't there - it flashes a window)
+                pcall(function() if ashita.fs and ashita.fs.create_directory then ashita.fs.create_directory(dir); made = true; end end);
+                if not made then os.execute('mkdir "' .. dir .. '" 2>nul'); end
+                local f = io.open(dst, 'wb');
+                if f then f:write(body); f:close(); end
+            end
+            AshitaCore:GetChatManager():QueueCommand(-1, '/addon load yunalink');
+        end);
+    end
+    return os.clock() - C.LINK.t > 3;
+end
+function C.hideown_sync()
+    local on = C.head_bars_on();
+    if C.HB.own == on then return; end
+    if C.link_root() then                                            -- VanaCore: through yunalink
+        if not C.link_ready() then return; end
+        C.HB.own = on;
+        pcall(function() AshitaCore:GetChatManager():QueueCommand(-1, '/yunalink hideown ' .. (on and 'on' or 'off')); end);
+        return;
+    end
+    C.HB.own = on;
+    local vc = C.vana_cfg();
+    if vc == nil then return; end
+    pcall(function()
+        if on then
+            if cfg.hideown_prev == nil then cfg.hideown_prev = tostring(vc.get('graphics', 'nameplates.hideown') or '0'); end
+            vc.set('graphics', 'nameplates.hideown', '1');
+        elseif cfg.hideown_prev ~= nil then
+            vc.set('graphics', 'nameplates.hideown', (cfg.hideown_prev ~= '0' and cfg.hideown_prev ~= '') and cfg.hideown_prev or nil);
+            cfg.hideown_prev = nil;
+        end
+        pcall(save);
+    end);
+end
+function C.head_bars()
+    pcall(C.hideown_sync);                                           -- (your own name over your head: hidden while the bars are there)
+    if not C.head_bars_on() or YUI_MAPCOVER or (YMAP and YMAP.big) then C.HB.x = nil; return; end
+    local ds = imgui.GetIO().DisplaySize;
+    imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
+    imgui.SetNextWindowSize({ ds.x, ds.y }, ImGuiCond_Always);
+    local fl = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoMove, ImGuiWindowFlags_NoInputs,
+        ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing,
+        ImGuiWindowFlags_NoBringToFrontOnFocus, ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoScrollbar);
+    if imgui.Begin('##yui_headbars', { true }, fl) then
+        local ok, err = pcall(C.head_bars_);
+        if not ok and YUI_ERRLOG then YUI_ERRLOG('headbars', err); end
+    end
+    imgui.End();
+end
+function C.head_bars_()                                             -- (the bars themselves, inside that window)
+    local mm = AshitaCore:GetMemoryManager();
+    local party, ent = mm:GetParty(), mm:GetEntity();
+    local me = party:GetMemberTargetIndex(0) or 0;
+    if me == 0 or ent:GetRawEntity(me) == nil then C.HB.x = nil; return; end
+    local okst, st_ = pcall(function() return ent:GetStatus(me); end);
+    if okst and st_ == 4 then C.HB.x = nil; return; end               -- (in a cutscene)
+    local ap = ent:GetActorPointer(me);
+    if ap == nil or ap == 0 then return; end
+    local px, py, pz = ashita.memory.read_float(ap + 0x678), ashita.memory.read_float(ap + 0x680), ashita.memory.read_float(ap + 0x67C);
+    local race = 0;                                                  -- (how tall your character is: the bars just over its head, any race)
+    pcall(function() race = ent:GetRace(me) or 0; end);
+    if race == 0 then pcall(function() race = mm:GetPlayer():GetRace() or 0; end); end
+    local tall = C.HB_RACE[race] or 2.45;
+    local riding = okst and (st_ == 5 or st_ == 85);                 -- (on a chocobo or a mount: you sit about a yalm higher - eased, so it glides)
+    C.HB.ride = (C.HB.ride or 0) + (((riding and 1) or 0) - (C.HB.ride or 0)) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 6);
+    tall = tall + 1.05 * C.HB.ride;
+    local sx, sy = C.w2s(px, pz - tall, py);                         -- (a little over the head, not on it)
+    if sx == nil then C.HB.x = nil; return; end
+    local SW, SH = C.screen();
+    local sc = 0.85 * math.max(0.6, SH / 1080) * math.max(0.5, math.min(2.5, tonumber(cfg.head_bars_scale) or 1));   -- (0.85: a touch smaller at 1x)
+    sy = sy - 24 * sc + (tonumber(cfg.head_bars_y) or 0) * sc;      -- (BARS > Head bars height: up or down from there)
+    do                                                               -- (you target yourself: the game's arrow shows over your head - the bars
+        local self_ = (target_index() or 0) == me;                   --  glide up out of its way, and back down after)
+        local dt_ = imgui.GetIO().DeltaTime or 0.016;
+        C.HB.lift = (C.HB.lift or 0) + (((self_ and 1) or 0) - (C.HB.lift or 0)) * math.min(1, dt_ * 10);
+        sy = sy - C.HB.lift * 22 * sc;
+    end
+    local dt = imgui.GetIO().DeltaTime or 0.016;
+    local H = C.HB;
+    if H.x == nil and os.clock() - (H.seen or -99) > 1.5 then H.t0 = os.clock(); end   -- (back after a while: the entrance plays)
+    H.seen = os.clock();
+    if H.x == nil or math.abs(sx - H.x) > 120 or math.abs(sy - H.y) > 120 then H.x, H.y = sx, sy;   -- (a jump: straight there)
+    else local k = math.min(1, dt * 16); H.x, H.y = H.x + (sx - H.x) * k, H.y + (sy - H.y) * k; end
+    local hpp = (party:GetMemberHPPercent(0) or 0) / 100;
+    local mpp = (party:GetMemberMPPercent(0) or 0) / 100;
+    local tp = party:GetMemberTP(0) or 0;
+    local e = math.min(1, dt * 8);                                   -- (the bars ease to their values)
+    H.hp = H.hp and (H.hp + (hpp - H.hp) * e) or hpp;
+    H.mp = H.mp and (H.mp + (mpp - H.mp) * e) or mpp;
+    H.tp = H.tp and (H.tp + (tp - H.tp) * math.min(1, dt * 12)) or tp;
+    local segs = math.floor(tp / 1000);
+    local now = os.clock();
+    if segs > H.segs then H.flash = now; end                         -- (a piece just filled: a flash)
+    H.segs = segs;
+    -- two thin straight bars, HP over MP, and the TP as three dots under them (a little bigger than the bars are thick)
+    local dl = imgui.GetBackgroundDrawList();
+    local W = math.floor(110 * sc);
+    local x0, y0 = math.floor(H.x - W / 2 - (H.colw or 0) / 2), math.floor(H.y);   -- (bars and numbers together centred over the head:
+                                                                     --  the numbers' width from the frame before)
+    local function bar(y, h, v, c1, c2, bx, bw, al)                  -- (bx, bw, al: where and how wide it is now, how see-through - the entrance)
+        bx, bw, al = bx or x0, bw or W, al or 1;
+        dl:AddRectFilled({ bx - 1, y - 1 }, { bx + bw + 1, y + h + 1 }, u32({ 0, 0, 0, 0.55 * al }), (h + 2) / 2);   -- (a dark track)
+        local fw = bw * math.max(0, math.min(1, v));
+        if fw >= 1 then
+            local r = math.min(h / 2, fw / 2);
+            dl:AddRectFilled({ bx, y }, { bx + math.min(fw, h), y + h }, u32({ c1[1], c1[2], c1[3], al }), r);
+            dl:AddRectFilled({ bx + fw - math.min(fw, h), y }, { bx + fw, y + h }, u32({ c2[1], c2[2], c2[3], al }), r);
+            if fw > h then
+                pcall(function() dl:AddRectFilledMultiColor({ bx + r, y }, { bx + fw - r, y + h }, u32({ c1[1], c1[2], c1[3], al }), u32({ c2[1], c2[2], c2[3], al }),
+                    u32({ c2[1], c2[2], c2[3], al }), u32({ c1[1], c1[2], c1[3], al })); end);
+            end
+        end
+    end
+    local hc = (type(YUI_HP_COL) == 'table' and type(YUI_HP_COL[1]) == 'table') and YUI_HP_COL or { { 1.00, 0.36, 0.62 }, { 0.86, 0.24, 0.86 } };
+    local h1, h2 = hc[1], hc[2];
+    if hpp < 0.5 and hpp > 0 then                                    -- (low HP: it breathes, faster as it gets lower)
+        local bb = 0.5 + 0.5 * math.sin(now * (4 + (0.5 - hpp) * 10));
+        h1 = { h1[1] + (1 - h1[1]) * bb * 0.5, h1[2] + (1 - h1[2]) * bb * 0.5, h1[3] + (1 - h1[3]) * bb * 0.5 };
+    end
+    local hh, mh, g = math.max(4, math.floor(6 * sc + 0.5)), math.max(3, math.floor(5 * sc + 0.5)), math.max(3, math.floor(4 * sc + 0.5));
+    -- The entrance (about a second and a half): the pieces arrive one after the other - the HP bar slides in from the left
+    -- and settles, then the MP bar from the right, then the TP dots pop out, then HP, MP and TP attach beside them; a light
+    -- runs along each bar as it lands
+    local ae = now - (H.t0 or -99);
+    local intro = ae < 1.6;
+    local function clamp01(v) return math.max(0, math.min(1, v)); end
+    local function back(u) u = u - 1; return 1 + 2.70158 * u ^ 3 + 1.70158 * u ^ 2; end   -- (eases in, overshooting a touch)
+    local uh = intro and clamp01(ae / 0.28) or 1;
+    local um = intro and clamp01((ae - 0.3) / 0.28) or 1;
+    if uh > 0 then bar(y0, hh, H.hp, h1, h2, x0 - (1 - back(uh)) * 26 * sc, W, uh); end
+    if um > 0 then bar(y0 + hh + g, mh, H.mp, { 0.40, 0.55, 1.00 }, { 0.62, 0.40, 1.00 }, x0 + (1 - back(um)) * 26 * sc, W, um); end
+    local function sweep(y, h, t0, v)                                -- a light running along one bar once, inside its filled part only (clear of its round ends)
+        local q = (ae - t0) / 0.42;
+        if not intro or q <= 0 or q >= 1 then return; end
+        local bw = 18 * sc;
+        local bx = x0 - bw + q * (W + bw * 2);
+        local in0, in1 = x0 + h / 2, x0 + W * math.max(0, math.min(1, v)) - h / 2;
+        if math.min(in1, bx + bw) <= math.max(in0, bx - bw) then return; end
+        C.clip(dl, { in0, y }, { in1, y + h }, true);
+        pcall(function()
+            local c0, c1 = u32({ 1, 1, 1, 0 }), u32({ 1, 1, 1, 0.6 });
+            dl:AddRectFilledMultiColor({ bx - bw, y }, { bx, y + h }, c0, c1, c1, c0);
+            dl:AddRectFilledMultiColor({ bx, y }, { bx + bw, y + h }, c1, c0, c0, c1);
+        end);
+        dl:PopClipRect();
+    end
+    sweep(y0, hh, 0.28, H.hp);
+    sweep(y0 + hh + g, mh, 0.58, H.mp);
+    local na = 1;
+    do                                                               -- BARS > Head bars numbers: the HP / MP at the end of each bar - when they
+        local mode = cfg.head_nums or 'always';
+        if mode == 'off' then H.colw = 0; end                        -- (their room is kept while they're faded or still coming in, so the bars
+                                                                     --  never shift sideways when they show)                      --  change (shown 3 s, then they fade), always, or never
+        if mode ~= 'off' then
+            local hpv, mpv = party:GetMemberHP(0) or 0, party:GetMemberMP(0) or 0;
+            if H.hpv ~= hpv then H.hpv, H.ht = hpv, (H.hpv ~= nil) and now or -99; end
+            if H.mpv ~= mpv then H.mpv, H.mt = mpv, (H.mpv ~= nil) and now or -99; end
+            if H.tpv ~= tp then H.tpv, H.tt = tp, (H.tpv ~= nil) and now or -99; end
+            local function alpha(t) if mode == 'always' then return 1; end return math.max(0, math.min(1, 1 - (now - (t or -99) - 2.5) / 0.6)); end
+            local pushed = sized('chat', 11 * sc / 0.85);
+            local th_ = imgui.GetTextLineHeight();
+            local a = math.max(alpha(H.ht), alpha(H.mt), alpha(H.tt)) * na;            -- (right of the bars: "| HP  1306" over "| MP  745" - a little bar in each one's
+            do                                                       --  colour, the label, the number right-aligned; no box, a thin dark outline)
+                local hs, ms, ts = tostring(hpv), tostring(mpv), tostring(tp);
+                local lw = math.max(tonumber((imgui.CalcTextSize('HP'))) or 0, tonumber((imgui.CalcTextSize('MP'))) or 0, tonumber((imgui.CalcTextSize('TP'))) or 0);
+                local nw = math.max(tonumber((imgui.CalcTextSize(hs))) or 0, tonumber((imgui.CalcTextSize(ms))) or 0, tonumber((imgui.CalcTextSize(ts))) or 0, tonumber((imgui.CalcTextSize('0000'))) or 0);
+                local rowh = th_ * 1.1;
+                local pw = math.max(2, 2.2 * sc);                    -- (the little bar before each label)
+                local lg = math.max(3, 4 * sc);
+                local fx = math.floor(x0 + W + 8 * sc);
+                local fw_ = pw + lg + lw + 10 * sc + nw;
+                H.colw = 8 * sc + fw_;
+                local my = y0 + (hh + g + mh) / 2;
+                local function otext(px_, py_, col, str, oa)
+                    for _, o in ipairs(OUTLINE) do dl:AddText({ px_ + o[1], py_ + o[2] }, u32({ 0, 0, 0, 0.9 * (oa or a) }), str); end   -- (the chat's full outline)
+                    dl:AddText({ px_, py_ }, col, str);
+                end
+                local rowk = 0;
+                local function row(lbl, str, cy_, lc)
+                    local rk = rowk; rowk = rowk + 1;                -- (the entrance: each line slides in from the right after the one before and
+                    local ra = intro and clamp01((ae - (0.95 + 0.08 * rk)) / 0.22) or 1;   --  attaches, a flash on its little bar as it lands)
+                    if ra <= 0 then return; end
+                    local q = 1 - (1 - ra) ^ 3;
+                    local ra_ = a * q;
+                    local fx = fx + (1 - q) * 22 * sc;
+                    local mc = cy_ - th_ * 0.14;                     -- (the capitals sit a little above the line's middle: the bar lines up with them)
+                    dl:AddRectFilled({ fx - 1, mc - th_ * 0.34 - 1 }, { fx + pw + 1, mc + th_ * 0.34 + 1 }, u32({ 0, 0, 0, 0.7 * ra_ }), pw / 2 + 1);
+                    dl:AddRectFilled({ fx, mc - th_ * 0.34 }, { fx + pw, mc + th_ * 0.34 }, u32({ lc[1], lc[2], lc[3], ra_ }), pw / 2);
+                    local land = intro and clamp01(1 - (ae - (0.95 + 0.08 * rk + 0.22)) / 0.25) or 0;
+                    if ra >= 1 and land > 0 then dl:AddCircleFilled({ fx + pw / 2, mc }, (3 + 4 * (1 - land)) * sc, u32({ lc[1], lc[2], lc[3], 0.5 * land * a }), 14); end
+                    otext(fx + pw + lg, cy_ - th_ / 2, u32({ lc[1], lc[2], lc[3], ra_ }), lbl, ra_);
+                    local w_ = tonumber((imgui.CalcTextSize(str))) or 0;
+                    otext(fx + fw_ - w_, cy_ - th_ / 2, u32({ 0.95, 0.95, 0.97, ra_ }), str, ra_);   -- (the numbers right-aligned)
+                end
+                local tpy = y0 + hh + mh + g + 8 * sc + math.max(4, 5 * sc) + th_ * 0.14;   -- (TP on the dots' line; MP and HP evenly above it)
+                row('HP', hs, tpy - rowh * 2, { 0.95, 0.50, 0.76 });
+                row('MP', ms, tpy - rowh, { 0.62, 0.58, 1.00 });
+                if tp > 0 then row('TP', ts, tpy, { 1.0, 0.83, 0.42 }); end   -- (not while it's 0: the empty dots say so)
+            end
+            unsized(pushed);
+        end
+    end
+    -- TP: an outline while empty, a dim dot growing in it while it fills, gold when full (a weapon skill ready), a ring
+    -- of light opening from one as it fills
+    local fl = math.max(0, 1 - (now - H.flash) / 0.7);
+    local gold = { 1.0, 0.83, 0.42 };
+    local d = math.max(4, 5 * sc);
+    local dy = y0 + hh + mh + g + 8 * sc + d;
+    local cx = x0 + W / 2;                                           -- (under the bars' middle)
+    local dbase = d;
+    for k = 0, 2 do
+        local dx = math.floor(cx + (k - 1) * (dbase * 2 + 8 * sc) + 0.5);
+        local f = math.max(0, math.min(1, (H.tp - k * 1000) / 1000));
+        local pu_ = intro and clamp01((ae - (0.62 + 0.07 * k)) / 0.25) or 1;   -- (the entrance: each dot pops out after the one before)
+        local d = dbase * ((pu_ >= 1) and 1 or (1 + 2.70158 * (pu_ - 1) ^ 3 + 1.70158 * (pu_ - 1) ^ 2));
+        if pu_ > 0 then
+        if f >= 0.999 then
+            local pu = 0.5 + 0.5 * math.sin(now * 3.2 - k * 0.6);   -- (its glow breathes, each dot a little after the one before)
+            dl:AddCircleFilled({ dx, dy }, d * (1.2 + 0.3 * pu), u32({ gold[1], gold[2], gold[3], 0.06 + 0.18 * pu + 0.40 * fl }), 20);
+            dl:AddCircleFilled({ dx, dy }, d + 1, u32({ 0, 0, 0, 0.40 }), 16);
+            dl:AddCircleFilled({ dx, dy }, d, u32({ gold[1], gold[2], gold[3], 1 }), 16);
+            dl:AddCircleFilled({ dx - d * 0.25, dy - d * 0.25 }, d * 0.35, u32({ 1, 0.98, 0.88, 0.8 }), 10);   -- (a little shine)
+        else
+            dl:AddCircleFilled({ dx, dy }, d + 1, u32({ 0, 0, 0, 0.55 }), 20);
+            dl:AddCircle({ dx, dy }, d - 0.8, u32({ 0.80, 0.78, 0.86, 0.75 }), 20, 1.6);   -- (empty: a ring)
+            if f > 0 then dl:AddCircleFilled({ dx, dy }, math.max(1, (d - 2.6) * f), u32({ 0.88, 0.86, 0.94, 0.95 }), 16); end   -- (filling: a dot growing in it)
+        end
+        end
+    end
+    local d = dbase;
+    if fl > 0 then
+        local k = math.max(0, math.min(2, H.segs - 1));
+        local dx = math.floor(cx + (k - 1) * (d * 2 + 8 * sc) + 0.5);
+        dl:AddCircle({ dx, dy }, d * (1.4 + (1 - fl) * 3), u32({ 1, 0.92, 0.65, 0.8 * fl }), 24, 1.5);
+    end
+end
+-- TARGET > Floor aura: a ring of light on the ground under what you target (instead of the game's arrow over it, hidden by
+-- YunaUI's yunaui-ui DAT overlay): a soft fill, a bright edge, three short arcs turning round it, breathing a little.
+-- Pink for monsters, ice blue for players and NPCs. Its size from the target's own when the game gives it.
+C.TA = { idx = 0, t0 = 0 };
+function C.target_aura()
+    if cfg.target_aura == false or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
+    local idx = target_index() or 0;
+    if idx == 0 then C.TA.idx = 0; return; end
+    local ent = AshitaCore:GetMemoryManager():GetEntity();
+    if ent:GetRawEntity(idx) == nil then return; end
+    local okst, st_ = pcall(function() return ent:GetStatus(idx); end);
+    local me = AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0) or 0;
+    local okme, stme = pcall(function() return ent:GetStatus(me); end);
+    if okme and stme == 4 then return; end                           -- (you're in a cutscene)
+    local ap = ent:GetActorPointer(idx);
+    if ap == nil or ap == 0 then return; end
+    local px, py, pz = ashita.memory.read_float(ap + 0x678), ashita.memory.read_float(ap + 0x680), ashita.memory.read_float(ap + 0x67C);
+    local now = os.clock();
+    if C.TA.idx ~= idx then C.TA.idx, C.TA.t0 = idx, now; end         -- (a new target: the ring opens)
+    local open_ = math.min(1, (now - C.TA.t0) / 0.3);
+    open_ = 1 - (1 - open_) ^ 3;
+    local size = 0.75;
+    pcall(function() local m = ent:GetModelSize(idx); if m and m > 0.1 and m < 30 then size = math.max(0.55, m * 0.55); end end);
+    local R = size * (0.9 + 0.06 * math.sin(now * 2.4)) * (0.6 + 0.4 * open_);
+    local fl = 0;
+    pcall(function() fl = ent:GetSpawnFlags(idx) or 0; end);
+    -- its colours: pink to violet for monsters, green to teal for your party and alliance (you, their pets and trusts too),
+    -- blue to violet for anyone else
+    local mob = bit.band(fl, 0x10) ~= 0;
+    local ally = false;
+    if not mob then pcall(function() ally = (idx == me) or is_party_id(ent:GetServerId(idx)); end); end
+    local cA = mob and { 1.0, 0.42, 0.75 } or (ally and { 0.45, 1.0, 0.55 } or { 0.45, 0.72, 1.0 });
+    local cB = ally and { 0.30, 0.85, 0.80 } or { 0.72, 0.45, 1.0 };
+    local dl = imgui.GetBackgroundDrawList();
+    -- which way the camera looks at it (the picture's bottom toward you)
+    local face = 0;
+    pcall(function()
+        local ax0, ay0 = C.w2s(px, pz, py);
+        local ax1, ay1 = C.w2s(px + 1, pz, py);
+        local bx1, by1 = C.w2s(px, pz, py + 1);
+        local th = math.atan2(-(ax1 - ax0), (bx1 - ax0));           -- (the ground direction that shows straight down on screen)
+        if math.cos(th) * (ay1 - ay0) + math.sin(th) * (by1 - ay0) < 0 then th = th + math.pi; end
+        face = th - math.pi / 2;
+    end);
+    -- the picture laid on the ground round the target's feet: a 10 x 10 grid of pieces, each corner seen through the camera
+    -- (flat in perspective up close too), each piece in the colour of where it is round the ring
+    local function lay(t, Rw, rot, alpha, fixed)                     -- (fixed: one colour for it all, not the gradient)
+        local G = 10;
+        local E = Rw / 0.80;                                         -- (the pictures' main ring sits at 0.8 of their radius)
+        local cr, sr = math.cos(rot), math.sin(rot);
+        local P = {};
+        for i = 0, G do
+            P[i] = {};
+            for j = 0, G do
+                local u, v = (i / G) * 2 - 1, (j / G) * 2 - 1;
+                local sx, sy = C.w2s(px + (u * cr - v * sr) * E, pz, py + (u * sr + v * cr) * E);
+                if sx == nil then return; end
+                P[i][j] = { sx, sy };
+            end
+        end
+        for i = 0, G - 1 do
+            for j = 0, G - 1 do
+                local u = ((i + 0.5) / G) * 2 - 1;
+                local f = (u + 1) / 2;                               -- (left of the picture blue, right violet)
+                local cc = fixed and u32({ fixed[1], fixed[2], fixed[3], alpha })
+                    or u32({ cA[1] + (cB[1] - cA[1]) * f, cA[2] + (cB[2] - cA[2]) * f, cA[3] + (cB[3] - cA[3]) * f, alpha });
+                pcall(function()
+                    dl:AddImageQuad(t.ptr, P[i][j], P[i + 1][j], P[i + 1][j + 1], P[i][j + 1],
+                        { i / G, j / G }, { (i + 1) / G, j / G }, { (i + 1) / G, (j + 1) / G }, { i / G, (j + 1) / G }, cc);
+                end);
+            end
+        end
+    end
+    local t = tex('aura_dots.png');                                  -- (the "Dotted" look: a bright ring, its soft glow, a circle of
+    if t then                                                        --  little dots outside; nothing in the middle, so the target stays clear; it turns slowly and breathes)
+        local rot = face + now * 0.15;
+        local te = tex('aura_dots_edge.png');                        -- (a slim dark edge under it first: it still reads on snow or sand)
+        if te then lay(te, R, rot, 0.85 * open_, { 0, 0, 0 }); end
+        lay(t, R, rot, open_);
+        lay(t, R, rot, open_ * (0.55 + 0.25 * math.sin(now * 2.4)));    -- (twice: its colour strong on bright ground too; breathing)
+        local tc = tex('aura_dots_core.png');                        -- (a lighter line at its heart: it still shows when far and small)
+        if tc then lay(tc, R, rot, 0.7 * open_, { 1, 1, 1 }); end
+    end
+end
 -- Say and party lines: a bubble over the head of whoever said it, nearby, for a few seconds
 function C.bubble_draw()
     if next(C.BUBS) == nil then return; end
@@ -4981,7 +5323,10 @@ function C.feed_draw(dl, x, y, e, a, lh, measure)
     end
     return cx - x;
 end
-local function wrap(e, maxw, key)
+-- CHAT > LOOK > Look: 'clear' (a dark rounded panel, channel bars, the time small on the left) or 'classic' (the first
+-- look: a soft shade behind the lines, the time in brackets at the start of each message)
+function C.clear_on() return cfg.chat_look ~= 'classic'; end
+function C.wrapc(e, maxw, key)                                       -- (classic: the whole line, time and all, wrapped)
     if e.ww == maxw and e.wk == key and e.lines then return e.lines; end
     local out, cur = {}, '';
     for word in e.text:gmatch('%S+') do
@@ -4991,6 +5336,40 @@ local function wrap(e, maxw, key)
     if cur ~= '' then out[#out + 1] = cur; end
     e.lines, e.ww, e.wk = out, maxw, key;
     return out;
+end
+function C.soft_ground(dl, x, y, w, h, a, solid_l, solid_r)          -- (classic: a dark ground with soft edges all round; solid_l / _r: that side
+    if a <= 0.01 then return; end                                    --  doesn't fade - another chat touches it)
+    local e = math.min(28, w * 0.1);
+    local xs = { x, x + e, x + w - e, x + w };
+    local ys = { y, y + h * 0.45, y + h - 10, y + h };
+    local rowa = { 0, 0.50 * a, 0.88 * a, 0 };
+    local function c(i, j)
+        local edge = ((i == 1 and not solid_l) or (i == 4 and not solid_r)) and 0 or 1;
+        return u32({ 0.02, 0.02, 0.04, rowa[j] * edge });
+    end
+    for i = 1, 3 do
+        for j = 1, 3 do
+            dl:AddRectFilledMultiColor({ xs[i], ys[j] }, { xs[i + 1], ys[j + 1] }, c(i, j), c(i + 1, j), c(i + 1, j + 1), c(i, j + 1));
+        end
+    end
+end
+-- The chat's rows (clear look): the message without its time, wrapped narrower (the time and the channel bar sit on its left, so
+-- the rows after the first start under the message, not under the time). Gives the rows and the time ("12:39").
+function C.wrapb(e, maxw, key)
+    if e.btext == e.text and e.bw == maxw and e.bk == key and e.blines then return e.blines, e.bts; end
+    local tl = e.tslen or 0;
+    local ts = (tl > 0 and #e.text > tl) and e.text:sub(1, tl) or nil;
+    local body = ts and e.text:sub(tl + 1) or e.text;
+    local out, cur = {}, '';
+    for word in body:gmatch('%S+') do
+        local try = (cur == '') and word or (cur .. ' ' .. word);
+        if cur ~= '' and line_w(try) > maxw then out[#out + 1] = cur; cur = word; else cur = try; end
+    end
+    if cur ~= '' then out[#out + 1] = cur; end
+    if #out == 0 then out[1] = ''; end
+    e.blines, e.bw, e.bk, e.btext = out, maxw, key, e.text;
+    e.bts = ts and (ts:gsub('[%[%]]', ''):match('^%s*(.-)%s*$')) or nil;
+    return out, e.bts;
 end
 -- Keep the game's own chat log closed while YunaUI chat is on: every frame, set the "stay open"
 -- timer of both log windows to zero, so a new message never pops them open. The full log you open yourself still works.
@@ -5232,24 +5611,6 @@ local function pin_game_chat()
     end
 end
 
-
--- A dark ground with soft edges all round: see-through at the top, darkest near the bottom, fading out at the sides
-local function soft_ground(dl, x, y, w, h, a, solid_l, solid_r)      -- (solid_l / _r: that side doesn't fade - another chat touches it)
-    if a <= 0.01 then return; end
-    local e = math.min(28, w * 0.1);
-    local xs = { x, x + e, x + w - e, x + w };
-    local ys = { y, y + h * 0.45, y + h - 10, y + h };
-    local rowa = { 0, 0.50 * a, 0.88 * a, 0 };
-    local function c(i, j)
-        local edge = ((i == 1 and not solid_l) or (i == 4 and not solid_r)) and 0 or 1;
-        return u32({ 0.02, 0.02, 0.04, rowa[j] * edge });
-    end
-    for i = 1, 3 do
-        for j = 1, 3 do
-            dl:AddRectFilledMultiColor({ xs[i], ys[j] }, { xs[i + 1], ys[j + 1] }, c(i, j), c(i + 1, j), c(i + 1, j + 1), c(i, j + 1));
-        end
-    end
-end
 
 -- What you're typing in the game's input line: the text (auto-translate phrases as their icons), where the caret is,
 -- and the colour of the channel it will go to (from its /command)
@@ -5718,24 +6079,40 @@ local function draw_chat(n)
             local pulse = math.max(0, 1 - (now - last) / 2.5);
             st.pulse = pulse;
             local uh = st.used_h or 0;
-            if linked then                                           -- (anchored: both grounds the same height and strength, so where they meet
+            local oth = linked and (((other.used_h or 0) > 0) or (other.hv or 0) > 0.02);   -- (the linked one shows a panel too: they join; empty, this one stands alone)
+            if linked and cfg.chat_link_v and C.clear_on() then      -- (anchored one on top of the other: the top one's panel as tall as
+                local me_y = tonumber(cfg[(n == 1) and 'chat_y' or 'chat2_y']) or 0;   --  its own lines; the bottom one's whole height when the top
+                local ot_y = tonumber(cfg[(n == 1) and 'chat2_y' or 'chat_y']) or 0;   --  one has lines - so they always meet, no gap between them)
+                if ot_y < me_y and (other.used_h or 0) > 0 then uh = h; end
+                pulse = math.max(pulse, other.pulse or 0);
+            elseif linked and (not C.clear_on() or (oth and uh > 0)) then   -- (anchored, both with lines: the same height and strength, so where they meet
                 uh = math.max(uh, other.used_h or 0);                 --  there's no step and no seam)
                 pulse = math.max(pulse, other.pulse or 0);
             end
             local gh = math.min(h, uh + 26);
             local gy = y + (h - gh) * (1 - st.hv);
-            local base = C.amb_alpha(imgui.GetIO().DeltaTime);           -- (how dark, by how bright it is where you are)
-            if gh > 30 or st.hv > 0.02 then soft_ground(dl, x, gy, w, (y + h) - gy, math.min(1, base + 0.15 * pulse + 0.30 * st.hv), sl_, sr_); end
+            if C.clear_on() then                                     -- (clear: a dark rounded panel, so the words read on any ground)
+                local A = math.max(0, math.min(1, tonumber(cfg.chat_panel_a) or 0.72));
+                if (gh > 30 or st.hv > 0.02) and not big then        -- (the big chat has its own panel)
+                    local fl = C.rall;                               -- (round corners; linked side by side: only the outer ones, so the two read as one panel;
+                    if not oth then                                  --  the other one empty: all four)
+                    elseif sl_ then fl = ImDrawFlags_RoundCornersRight or ImDrawCornerFlags_Right or 10;
+                    elseif sr_ then fl = ImDrawFlags_RoundCornersLeft or ImDrawCornerFlags_Left or 5; end
+                    if linked and cfg.chat_link_v then               -- (linked one on top of the other: only the corners away from the other one)
+                        local me_y = tonumber(cfg[(n == 1) and 'chat_y' or 'chat2_y']) or 0;
+                        local ot_y = tonumber(cfg[(n == 1) and 'chat2_y' or 'chat_y']) or 0;
+                        if ot_y < me_y then fl = ((other.used_h or 0) > 0) and (ImDrawFlags_RoundCornersBottom or ImDrawCornerFlags_Bot or 12) or C.rall;   -- (the top one empty: all round)
+                        else fl = oth and (ImDrawFlags_RoundCornersTop or ImDrawCornerFlags_Top or 3) or C.rall; end
+                    end
+                    local rr = 10;
+                    dl:AddRectFilled({ x, gy }, { x + w, y + h }, u32({ 0.055, 0.045, 0.08, math.min(1, A * (0.92 + 0.08 * pulse + 0.10 * st.hv)) }), rr, fl);
+                end
+            elseif (gh > 30 or st.hv > 0.02) and not big then        -- (classic: the soft shade, darker where the game is bright)
+                C.soft_ground(dl, x, gy, w, (y + h) - gy, math.min(1, C.amb_alpha(imgui.GetIO().DeltaTime) + 0.15 * pulse + 0.30 * st.hv), sl_, sr_);
+            end
         end
         if big then                                                  -- the pad's big chat: a panel like the game's full log
-            local all = C.rall;
-            dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.035, 0.032, 0.050, 0.90 }), 6);
-            dl:AddRect({ x, y }, { x + w, y + h }, u32({ 0, 0, 0, 0.85 }), 6, all, 1.2);   -- (a black edge; the violet is only in YGO's bezels)
-            local lx, ly, t_ = math.min(150, w * 0.22), math.min(80, h * 0.18), 2;   -- YGO's frame: a neon corner on each corner
-            C.frame_corner(dl, x, y, 1, 1, lx, ly, t_);
-            C.frame_corner(dl, x + w, y, -1, 1, lx, ly, t_);
-            C.frame_corner(dl, x, y + h, 1, -1, lx, ly, t_);
-            C.frame_corner(dl, x + w, y + h, -1, -1, lx, ly, t_);
+            dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.055, 0.045, 0.08, 0.92 }), 10, C.rall);   -- (the chat's own panel, rounded; no edge, no corners)
             local tp = sized('chat', 17);
             local tname = legacy.pad.combat and 'Combat log' or (CHANNELS[tonumber(cfg.chat_tab) or 1] or { 'All' })[1];
             text(dl, x + 16, y + 10, 'CHAT LOG  ' .. string.upper(tname), { 0.97, 0.96, 0.99, 1 });
@@ -5772,6 +6149,17 @@ local function draw_chat(n)
                 tab = 1;
             elseif not cfg.chat_split then only = 'talk'; end
         end
+        local CL;                                                    -- (clear look: the time column, the indent, the space between messages)
+        if C.clear_on() then
+            CL = { gap = math.max(0, math.min(14, tonumber(cfg.chat_msg_gap) or 5)), extra = 0, tsk = 0.78 };
+            local fs = FS;
+            imgui.SetWindowFontScale(fs * CL.tsk);
+            local sample = cfg.chat_time and (C.ts_text(os.time()):gsub('[%[%]]', ''):match('^%s*(.-)%s*$')) or nil;
+            CL.tw = sample and ((tonumber((imgui.CalcTextSize(sample))) or 0) + 8) or 0;   -- (the time's column: as wide as the time)
+            CL.sh = imgui.GetTextLineHeight();
+            imgui.SetWindowFontScale(fs);
+            CL.ind = 3 + 7 + CL.tw;                                  -- (the bar, a little room, the time)
+        end
         local i = #log;
         local rown, vrows = 0, 0;                                    -- (vrows: the rows still showing at rest - the ground's height)                                              -- (rows drawn so far, from the bottom: at rest the newest 3 show, 2 more fade)
         while i >= 1 and ly > y - lh do
@@ -5784,7 +6172,11 @@ local function draw_chat(n)
             local life = lt;                                         --  clears when nobody writes); off, every line stays
             local vis = math.max(st.hv, life);
             if vis <= 0.01 and skip <= 0 then break; end            -- older lines are all faded out
-            local lines = e.feed and { e.text } or wrap(e, maxw, size);  -- (a combat-feed line: one row, drawn by C.feed_draw)
+            local lines, bts = nil, nil;
+            if e.feed then lines = { e.text };                       -- (a combat-feed line: one row, drawn by C.feed_draw)
+            elseif CL then lines, bts = C.wrapb(e, maxw - CL.ind, size);
+            else lines = C.wrapc(e, maxw, size); end
+            local drew = false;
             local age = (cfg.chat_anim ~= false) and (now - (e.t0 or -99)) or 99;   -- CHAT > Animated lines: slides in, then settles
             local slide, ain = 0, 1;
             if age < 0.35 then local q = 1 - (1 - age / 0.35) ^ 3; slide, ain = (1 - q) * 28, q; end
@@ -5807,16 +6199,30 @@ local function draw_chat(n)
                         end
                         local txt = lines[k];
                         local px = x + pad - slide;                  -- (where this row starts: sliding in when new)
+                        local cl_ = CL and not e.feed;
+                        if cl_ then                                  -- clear look: the channel's bar, the time on the first row, the words after them
+                            local th0 = lh - math.max(0, math.min(16, tonumber(cfg.chat_gap) or 6));
+                            local bc = chat_col(e.cat);
+                            if e.cat == 'system' or e.cat == 'other' or e.cat == 'combat' then bc = { 0.40, 0.38, 0.46 }; end
+                            dl:AddRectFilled({ px, ly - ((k < #lines) and 0 or 0) }, { px + 3, ly + ((k < #lines) and lh or th0) }, u32({ bc[1], bc[2], bc[3], 0.95 * a }), 1.5);
+                            if k == 1 and bts then
+                                local fs = FS;
+                                imgui.SetWindowFontScale(fs * CL.tsk);
+                                chat_line(dl, px + 10, ly + math.floor((th0 - CL.sh) / 2 + 1), bts, C.ts_col(), a * 0.75, lh);
+                                imgui.SetWindowFontScale(fs);
+                            end
+                            px = px + CL.ind;
+                        end
                         local tw_ = e.feed and C.feed_draw(dl, px, ly, e, a, lh, true) or line_w(txt);
                         local th = lh - math.max(0, math.min(16, tonumber(cfg.chat_gap) or 6));
                         if glow > 0.01 then                          -- (new, or a feed line that just grew: a soft glow in its colour)
                             dl:AddRectFilled({ px - 5, ly - 2 }, { px + tw_ + 5, ly + th + 1 }, u32({ c[1], c[2], c[3], 0.22 * glow * glow * a }), 4);
                         end
                         local fresh = (cfg.chat_anim ~= false) and math.max(0, math.min(1, 1 - ((now - (e.flash or e.t0 or -99)) - 1.5) / 1.5)) or 0;
-                        if fresh > 0.01 then                         -- (new, or a feed line that just grew: a short bar in its colour on the
+                        if fresh > 0.01 and not cl_ then             -- (the clear look has its bar all the time)                         -- (new, or a feed line that just grew: a short bar in its colour on the
                             dl:AddRectFilled({ px - 10, ly }, { px - 7, ly + th - 1 }, u32({ c[1], c[2], c[3], 0.9 * fresh * a }), 1.5);   --  left, for a moment)
                         end
-                        local ts = (not e.feed and k == 1 and (e.tslen or 0) > 0 and #txt > e.tslen) and txt:sub(1, e.tslen) or nil;
+                        local ts = (not cl_ and not e.feed and k == 1 and (e.tslen or 0) > 0 and #txt > e.tslen) and txt:sub(1, e.tslen) or nil;
                         if e.feed then
                             C.feed_draw(dl, px, ly, e, a, lh);
                         elseif ts then                               -- the time in its own colour (CHAT > Timestamps > Colour), so the words stand out
@@ -5848,15 +6254,20 @@ local function draw_chat(n)
                     end
                     ly = ly - lh;
                     rown = rown + 1;
+                    drew = true;
                     if ly <= y - lh then break; end
                 end
+            end
+            if CL and drew then                                      -- (clear look: a little room between messages)
+                ly = ly - CL.gap;
+                if lt > 0.05 then CL.extra = CL.extra + CL.gap; end
             end
             i = i - 1;
             end
             ::next_line::
         end
         st.vis = st.vis_n;
-        st.used_h = (vrows > 0) and (vrows * lh + bar + pad + type_h) or 0;   -- (how tall the resting ground is: the rows still showing - none, no ground)
+        st.used_h = (vrows > 0) and (vrows * lh + (CL and CL.extra or 0) + bar + pad + type_h) or 0;   -- (how tall the resting ground is: the rows still showing - none, no ground)
         imgui.PopClipRect();
         if itip then pcall(C.item_card, itip); end
         if typing then                                               -- the typing line: a dark strip, your text, a blinking caret
@@ -5965,19 +6376,13 @@ local function draw_chat(n)
             imgui.InvisibleButton('##yui_chat_size' .. n, { 24, 24 });
             local act = imgui.IsItemActive();
             if st.hv > 0.05 and gf > 0.02 then
-                -- the grip: a corner drawn like the bars - thin glowing magenta lines meeting at the corner
+                -- the grip: a small dot in the corner, a soft halo round it, a little bigger under the mouse
                 local on = act or imgui.IsItemHovered();
                 local k = st.hv * (on and 1 or 0.6) * gf;
-                local cx, cy, L = x + w - 6, y + 6, on and 16 or 13;
-                local pk = C.hp2;
-                for g = 3, 1, -1 do
-                    local col = u32({ pk[1], pk[2], pk[3], 0.10 * k });
-                    dl:AddLine({ cx - L, cy }, { cx, cy }, col, 1 + g * 2);
-                    dl:AddLine({ cx, cy }, { cx, cy + L }, col, 1 + g * 2);
-                end
-                local c0, c1 = u32({ C.hp[1], C.hp[2], C.hp[3], 0 }), u32({ 1, 0.78, 0.96, 0.95 * k });
-                dl:AddRectFilledMultiColor({ cx - L, cy - 1 }, { cx, cy + 1 }, c0, c1, c1, c0);
-                dl:AddRectFilledMultiColor({ cx - 1, cy }, { cx + 1, cy + L }, c1, c1, c0, c0);
+                local cx, cy = x + w - 9, y + 9;
+                local r = on and 3.6 or 3;
+                dl:AddCircleFilled({ cx, cy }, r + 3, u32({ C.hp2[1], C.hp2[2], C.hp2[3], 0.18 * k }), 20);
+                dl:AddCircleFilled({ cx, cy }, r, u32({ C.hp[1], C.hp[2], C.hp[3], 0.85 * k }), 16);
             end
             if act then
                 local dx, dy = imgui.GetMouseDragDelta(0);
@@ -6132,8 +6537,45 @@ function C.exp_ring(sc, v, job, label)
     imgui.Dummy({ (tx - x) + tw + 20, math.max(R * 2 + L * 2, lh * 2 + gap) + 20 });
     end_plain('exp_x', 'exp_y');
 end
+-- your jobs and experience (or limit points), for the map hub: nil when there's no character
+function C.expinfo()
+    local pl = AshitaCore:GetMemoryManager():GetPlayer();
+    if pl == nil or (pl:GetMainJob() or 0) == 0 then return nil; end
+    local mj, lvl, sub, sublvl = pl:GetMainJob(), pl:GetMainJobLevel() or 0, pl:GetSubJob() or 0, pl:GetSubJobLevel() or 0;
+    local cur, need = pl:GetExpCurrent() or 0, pl:GetExpNeeded() or 1;
+    local limit = (pl.GetIsLimitModeEnabled and pl:GetIsLimitModeEnabled()) and lvl >= 75;
+    local label, v;
+    if limit then
+        local lp, mp, mpx = pl:GetLimitPoints() or 0, pl:GetMeritPoints() or 0, pl:GetMeritPointsMax() or 0;
+        label, v = string.format('LIMIT %s / 10,000   MERITS %d/%d', commas(lp), mp, mpx), lp / 10000;
+    else
+        label, v = string.format('EXP %s / %s', commas(cur), commas(need)), (need > 0) and (cur / need) or 0;
+    end
+    local rest = tostring(lvl) .. ((JOBS[sub] and sublvl > 0) and ('  /  ' .. JOBS[sub] .. ' ' .. sublvl) or '');
+    local tc = ALLY.TAGCOL[ALLY.ROLE[mj] or 'dps'];                  -- (the job's tag in its role colour, as in the party list)
+    return { v = math.max(0, math.min(1, v)), label = label, tag = JOBS[mj] or '?', rest = rest, col = tc[1], ink = tc[2] };
+end
+function C.gil_read()
+    local gil = 0;
+    pcall(function() local it = AshitaCore:GetMemoryManager():GetInventory():GetContainerItem(0, 0); gil = (it and it.Count) or 0; end);
+    if gil_start == nil and gil > 0 then gil_start = gil; end
+    return gil;
+end
+function C.gil_diff(gil)                                             -- what just changed: changes close together add up (+500, +500 = +1,000);
+    local G = C.GIL or {};                                           --  shown 8 s, then it fades. Gives the change and its alpha.
+    C.GIL = G;
+    local now = os.clock();
+    if G.prev == nil and gil > 0 then G.prev, G.base, G.t = gil, gil, -99; end
+    if G.prev and gil ~= G.prev then
+        if now - G.t > 9.5 then G.base = G.prev; end                 -- (the last one had faded: a new count)
+        G.prev, G.t = gil, now;
+    end
+    local ga = math.max(0, math.min(1, 1 - (now - (G.t or -99) - 8) / 1.5));
+    return (ga > 0 and G.base) and (gil - G.base) or 0, ga;
+end
 local function draw_exp(dt)
     if not cfg.expbar then return; end
+    if YMAP and YMAP.hub_on and YMAP.hub_on() then return; end      -- (MINIMAP > EXP, gil and bag on the map: shown there)
     local pl = AshitaCore:GetMemoryManager():GetPlayer();
     if pl == nil or (pl:GetMainJob() or 0) == 0 then return; end
     local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.exp_scale) or 1);
@@ -6177,6 +6619,7 @@ end
 -- Gil: a little coin and the amount
 local function draw_gil()
     if not cfg.gil then return; end
+    if YMAP and YMAP.hub_on and YMAP.hub_on() then C.gil_diff(C.gil_read()); return; end   -- (shown on the map hub)
     local gil = 0;
     pcall(function() local it = AshitaCore:GetMemoryManager():GetInventory():GetContainerItem(0, 0); gil = (it and it.Count) or 0; end);
     if gil_start == nil and gil > 0 then gil_start = gil; end
@@ -6199,16 +6642,7 @@ local function draw_gil()
         local gw = imgui.CalcTextSize(gs);
         local h2 = lh;
         do                                                           -- what just changed, under it: green +, pink -; 8 s, then it fades
-            local G = C.GIL or {};                                   -- (changes close together add up: +500, +500 = +1,000)
-            C.GIL = G;
-            local now = os.clock();
-            if G.prev == nil and gil > 0 then G.prev, G.base, G.t = gil, gil, -99; end
-            if G.prev and gil ~= G.prev then
-                if now - G.t > 9.5 then G.base = G.prev; end         -- (the last one had faded: a new count)
-                G.prev, G.t = gil, now;
-            end
-            local ga = math.max(0, math.min(1, 1 - (now - (G.t or -99) - 8) / 1.5));
-            local diff = (ga > 0 and G.base) and (gil - G.base) or 0;
+            local diff, ga = C.gil_diff(gil);
             if diff ~= 0 then
                 local fs = FS;
                 imgui.SetWindowFontScale(fs * 0.8);
@@ -6228,6 +6662,7 @@ end
 -- pink when it's nearly full
 local function draw_bag()
     if not cfg.bag then return; end
+    if YMAP and YMAP.hub_on and YMAP.hub_on() then return; end      -- (shown on the map hub)
     local used, max = 0, 0;
     pcall(function() local inv = AshitaCore:GetMemoryManager():GetInventory(); used, max = inv:GetContainerCount(0) or 0, inv:GetContainerCountMax(0) or 0; end);
     if max <= 0 then return; end
@@ -7808,27 +8243,31 @@ local function draw_window()
             ------------------------------------------------------------------ TARGET
             section('TARGET BAR');
             row_switch('##yui_t', 'Show', 'target');
-            row_switch('##yui_tfi', 'Casts and skillchains', 'fight_info', 'Under the bar: what the monster is casting or readying. From the bar\'s start: a fan of your weapon skills that close the skillchain. Over the name: the Magic Burst window and its elements.');
             row_slider('##yui_s_t', 'Size', 'target_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_slider('##yui_tnsc', 'Target name size', 'target_name_scale', 0.5, 2.5, 0.05, '%.2fx');
-            row_pick('##yui_tfl', 'Friends look', 'target_friend_look', { { 'card', 'Party card' }, { 'banner', 'Ally banner' }, { 'off', 'Like monsters' } });
-            row_slider('##yui_fansc', 'Skillchain fan size', 'fan_scale', 0.4, 2.0, 0.05, '%.2fx');
-            row_slider('##yui_mbsc', 'Magic Burst size', 'mb_scale', 0.5, 2.5, 0.05, '%.2fx');
-            row_slider('##yui_ecsc', 'Enemy cast size', 'ecast_scale', 0.4, 2.0, 0.05, '%.2fx');
-            row_slider('##yui_ecft', 'Enemy cast text', 'ecast_font', 0.5, 2.5, 0.05, '%.2fx');
+            row_switch('##yui_tban', 'Bar effect', 'target_bar_anim', 'On: a crackling white line runs inside the bar. Off: no white line, just the plain coloured bar.');
             row_slider('##yui_tbs', 'Buffs / debuffs size', 'target_buff_scale', 0.6, 2.5, 0.05, '%.2fx');
-            hint('Move the name, the skillchain fan and the enemy cast in Edit Mode (GENERAL > LAYOUT).');
+            section('CASTS AND SKILLCHAINS');
+            row_switch('##yui_tfi', 'Show', 'fight_info', 'Under the bar: what the monster is casting or readying. From the bar\'s start: a fan of your weapon skills that close the skillchain. Over the name: the Magic Burst window and its elements.');
+            if cfg.fight_info ~= false then
+                row_slider('##yui_fansc', 'Skillchain fan size', 'fan_scale', 0.4, 2.0, 0.05, '%.2fx');
+                row_slider('##yui_mbsc', 'Magic Burst size', 'mb_scale', 0.5, 2.5, 0.05, '%.2fx');
+                row_slider('##yui_ecsc', 'Enemy cast size', 'ecast_scale', 0.4, 2.0, 0.05, '%.2fx');
+                row_slider('##yui_ecft', 'Enemy cast text', 'ecast_font', 0.5, 2.5, 0.05, '%.2fx');
+                do
+                    local sh = { show = FIGHT.show };
+                    row_switch('##yui_fshow', 'Preview them', 'show', 'On: the skillchain fan, the Magic Burst line and the enemy cast stay on screen (on a pretend target if you have none, or on whatever you target), so you can see them while you size and place them. Turn it off when you are done.',
+                        sh, function(k, v) FIGHT.show = v; end);
+                end
+                hint('To move the target name, the fan and the enemy cast on screen: GENERAL > LAYOUT > EDIT MODE.');
+            end
+            section('FLOOR AURA');
+            row_switch('##yui_taura', 'Show', 'target_aura', 'On: a ring of light on the ground under what you target - green for your party and alliance, pink for monsters, blue to violet for anyone else.');
             section('ENTRANCE');
             row_pick('##yui_tfx', 'When you target', 'target_fx', { { 'off', 'Off' }, { 'blade', 'Blade of light' } });
             if (cfg.target_fx or 'blade') ~= 'off' then
-                row_switch('##yui_tfxm', 'Only for monsters', 'target_fx_mobs', 'On: the entrance plays only when you target a monster (not players or NPCs).');
                 if accent_button('PLAY IT##yui_tfxp', { ROW_W, 0 }) then FIGHT.fx.t0 = os.clock(); end
-                hint('Target something (or turn on "Show them to place them") and press PLAY IT to see it again.');
-            end
-            do
-                local sh = { show = FIGHT.show };
-                row_switch('##yui_fshow', 'Show them to place them', 'show', 'On: the skillchain fan, the Magic Burst line and the enemy cast stay on screen (on a pretend target if you have none), so you can see where they go. Turn it off when you are done.',
-                    sh, function(k, v) FIGHT.show = v; end);
+                hint('Target something and press PLAY IT to see it again.');
             end
             section('TARGET OF TARGET');
             row_switch('##yui_st', 'Show', 'subtarget', 'Who your target is fighting or looking at (and your sub target while you pick one with <st>).');
@@ -7853,11 +8292,11 @@ local function draw_window()
             section('ALLIANCE');
             row_switch('##yui_a', 'Show', 'alliance');
             row_switch('##yui_ap', 'Pretend members (to place it)', 'alliance', 'Shows both alliance parties so you can place and size them when not in an alliance.', PREVIEW, function() end);
-            row_switch('##yui_aanc', 'Anchor to the party', 'ally_anchor', 'On: both alliance parties sit right under your party list, one under the other, at the party\'s size. They follow the party when you move it. Off: place and size each one as you like.');
-            hint('Click a member to target them. With Pretend members on, a click just marks one, to see how it looks.');
+            row_switch('##yui_aanc', 'Anchor to the party', 'ally_anchor', 'On: both alliance parties sit right next to your party list, one after the other, and follow it when you move it. Off: each one is its own window: drag it anywhere.');
             row_slider('##yui_s_a1', 'Alliance 1 size', 'ally1_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_slider('##yui_s_a2', 'Alliance 2 size', 'ally2_scale', 0.6, 2.0, 0.05, '%.2fx');
-            hint('Each alliance party is its own window: drag it anywhere.');
+            if not cfg.ally_anchor then hint('Each alliance party is its own window: drag it anywhere.'); end
+            hint('Click a member to target them. With Pretend members on, a click just marks one, to see how it looks.');
             section('CARDS');
             hint('Your party and the alliances: job tag, name, HP and MP for each member.');
             row_switch('##yui_clow', 'Low HP warning', 'card_low', 'Under 30% HP the card beats red.');
@@ -7874,7 +8313,18 @@ local function draw_window()
         elseif tab == 4 then
             ------------------------------------------------------------------ BARS
             section('YOUR BARS');                                    -- your own HP / MP / TP (equip.lua's settings)
-            if YUI_EQ_BARS then YUI_EQ_BARS(); end
+            row_pick('##yui_hbw', 'Where', 'head_bars', { { 'fixed', 'Fixed' }, { 'head', 'Over your head' }, { 'both', 'Both' } });
+            if C.head_bars_on() then
+                hint('Over your head: thin HP and MP bars, the TP as three dots (gold when full: a weapon skill is ready) and the numbers beside them.');
+                row_slider('##yui_hbs', 'Head bars size', 'head_bars_scale', 0.5, 2.5, 0.05, '%.2fx');
+                row_slider('##yui_hby', 'Head bars height', 'head_bars_y', -80, 80, 1, '%d');
+                row_pick('##yui_hbn', 'Head bars numbers', 'head_nums', { { 'always', 'Always' }, { 'change', 'When they change' }, { 'off', 'Off' } });
+                if C.vana_cfg() or C.link_root() then hint('Your own name and stars over your head are hidden while these bars are on (VanaCore\'s Hide own nameplate), and come back with Fixed.');
+                else hint('Tip: hide your own name and stars over your head in /vana > Options > Nameplates > Hide own nameplate.'); end
+            end
+            if (cfg.head_bars or 'fixed') ~= 'head' then              -- (the fixed bars' own settings: only while they show)
+                if YUI_EQ_BARS then YUI_EQ_BARS(); end
+            end
             section('EXP BAR');
             row_switch('##yui_e', 'Show', 'expbar', 'Experience, or limit points and merits when limit mode is on.');
             row_slider('##yui_s_e', 'Ring size', 'exp_scale', 0.5, 2.5, 0.05, '%.2fx');
@@ -7929,9 +8379,18 @@ local function draw_window()
             row_switch('##yui_cfo', "Other players' fights", 'chat_f_others', 'Off: everything players outside your party do is left out of the chat.');
             hint('Your own lines and the monsters\' always show.');
             section('LOOK');
-            row_switch('##yui_canim', 'Animated lines', 'chat_anim', 'On: new lines slide in with a soft glow, and a thin bar in their channel\'s colour on the left.');
+            row_pick('##yui_clook', 'Look', 'chat_look', { { 'clear', 'Clear' }, { 'classic', 'Classic' } });
+            if cfg.chat_look ~= 'classic' then
+                hint('Clear: a dark rounded panel, a thin bar in each channel\'s colour, the time small on the left, long messages kept in one block.');
+                row_slider('##yui_cpa', 'Panel darkness', 'chat_panel_a', 0.0, 1.0, 0.05, '%.2f');
+                row_slider('##yui_cmg', 'Space between messages', 'chat_msg_gap', 0, 14, 1, '%d px');
+                hint('Panel darkness: 0 is no panel at all. Space between messages: the room between one message and the next (TEXT > Line spacing is the room between the rows of the same message).');
+            else
+                hint('Classic: the first look - a soft shade behind the lines, the time in brackets at the start of each message.');
+            end
+            row_switch('##yui_canim', 'Animated lines', 'chat_anim', 'On: new lines slide in with a soft glow (Classic: also a short bar in their channel\'s colour for a moment).');
             row_switch('##yui_cfeed', 'Combat feed', 'chat_feed', 'On: a spell or ability is one line that grows as it happens (who > spell > target, then a tick, the damage, the HP healed or miss) instead of three or four lines. Only new lines.');
-            row_switch('##yui_cfade', 'Fade when idle', 'chat_fade_old', 'On: each line shows for a while, then fades away with its shade, so the chat clears when nobody writes (put the mouse over it to see everything). Off: every line stays visible all the time.');
+            row_switch('##yui_cfade', 'Fade when idle', 'chat_fade_old', 'On: each line shows for a while, then fades away, and the panel shrinks with it, so the chat clears when nobody writes (put the mouse over it to see everything). Off: every line stays visible all the time.');
             if cfg.chat_fade_old ~= false then row_slider('##yui_s_h', 'Lines stay for', 'chat_hold', 3, 60, 1, '%d s'); end
             row_switch('##yui_cbub', 'Speech bubbles', 'chat_bubbles', 'On: say and party lines also show as a bubble over the head of whoever said it (when they\'re near you).');
             section('HISTORY');
@@ -7944,8 +8403,10 @@ local function draw_window()
             section('TEXT');
             row_slider('##yui_s_c', 'Size', 'chat_size', 11, 34, 1, '%d px');
             row_slider('##yui_s_cg', 'Line spacing', 'chat_gap', 0, 16, 1, '%d px');
+            hint('Line spacing: the room between rows, also inside a long message.');
             hint('Font: ' .. (fonts.chat_name or 'AvantGarde not found - using a fallback'));
             section('COLOURS');
+            hint('Each channel\'s colour is used for its text and (Clear look) for the bar on the left of its messages.');
             for _, cc in ipairs(CHAT_COLS) do colour_row('col_' .. cc[1], cc[2], cc[3], true); end
         elseif tab == 6 then
             equip_tab();
@@ -7978,15 +8439,17 @@ local function draw_window()
             section('MINIMAP');
             if YMAP.have() then
             row_switch('##yui_mm', 'Show', 'minimap', 'The map around you, redrawn dark in YunaUI\'s look: you (the arrow), your party in their role colours, monsters and your target.');
+            row_slider('##yui_mms', 'Size', 'map_size', 120, 480, 5, '%d px');
+            row_slider('##yui_mmz', 'Zoom', 'map_zoom', 16, 256, 2, '%d');
+            hint('Zoom: how much of the map shows round you (smaller is closer). The mouse wheel over the minimap zooms too.');
             row_switch('##yui_mm3f', 'Turn with you', 'map3d_follow', 'The minimap turns as you do, looking the way you face. Off: north stays up.');
+            row_switch('##yui_mmm', 'Monsters', 'map_mobs', 'On: monsters near you show as red dots.');
             row_pick('##yui_mmc', 'Lines', 'map_color', { { 'white', 'White' }, { 'pink', 'Pink' }, { 'cyan', 'Cyan' } });
             row_pick('##yui_mma', 'Your arrow', 'map_arrow_color', { { 'lines', 'As the lines' }, { 'white', 'White' }, { 'pink', 'Pink' },
                 { 'violet', 'Violet' }, { 'cyan', 'Cyan' }, { 'gold', 'Gold' }, { 'green', 'Green' } });
-            if accent_button('PLAY IT##yui_mmt_play', { ROW_W, 0 }) then YMAP.tt = os.clock(); end
-            row_slider('##yui_mms', 'Size', 'map_size', 120, 480, 5, '%d px');
-            row_slider('##yui_mmz', 'Zoom', 'map_zoom', 16, 256, 2, '%d');
-            hint('Zoom: how much of the map shows round you (smaller is closer).');
-            row_switch('##yui_mmm', 'Monsters', 'map_mobs');
+            row_switch('##yui_mmhub', 'EXP, gil and bag on the map', 'map_hub', 'On: your jobs, EXP, gil and bag sit under the minimap, all in one piece (their own windows hide). BARS > EXP / Gil / Bag "Show" still turn each one off.');
+            if accent_button('PLAY THE ZONE NAME##yui_mmt_play', { ROW_W, 0 }) then YMAP.tt = os.clock(); end
+            hint('The zone\'s name over the minimap comes in with a little animation when you change zone: this plays it again.');
             else
                 hint('The minimap needs its map files (the mapsimg and maps3d folders in YunaUI\'s folder).');
             end
@@ -8429,7 +8892,7 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
                 local dim = (k >= netk) and 0.28 or 1;
                 local fh = math.abs((v[a * 3 - 1] + v[b * 3 - 1]) / 2 - th);   -- (other floors fade out: only yours shows, a little above
                 local hx, hy = (v[a * 3 - 2] + v[b * 3 - 2]) / 2 - tx, (v[a * 3] + v[b * 3]) / 2 - ty;   --  and below for steps and ramps -
-                local tol = 3.5 + 0.35 * math.sqrt(hx * hx + hy * hy);   --  more the further away, so slopes and hills stay; a floor
+                local tol = 3.5 + math.min(3, 0.08 * math.sqrt(hx * hx + hy * hy));   --  a little more further away (ramps); tunnels stacked
                 if fh > tol then dim = dim * math.max(0, 1 - (fh - tol) / 4.5); end   --  right above or under you still fades)
                 if soft or dim < 1 then                              -- (no edge at all: the lines fade out in a circle)
                     local ef = 1;
@@ -8719,6 +9182,95 @@ function YMAP.title(dl, x, y, M, sc)
     unsized(pushed);
     return H + math.floor(6 * sc);
 end
+-- MINIMAP > EXP, gil and bag on the map: under the minimap your jobs, the points, your gil and your bag - one piece
+-- instead of four floating ones.
+function YMAP.hub_on() return cfg.map_hub == true and cfg.minimap ~= false and YMAP.have(); end
+function YMAP.hub(dl, cx, cy, M)                                     -- the jobs, the points, gil and bag under the map; gives back its bottom
+    local s = math.max(0.55, M / 220);
+    local info = (cfg.expbar ~= false) and C.expinfo() or nil;
+    local y = cy + M / 2 + 6 * s;
+    if info then
+        local pushed = sized('chat', 14 * s);                        -- the job's tag, then the levels
+        local lh = imgui.GetTextLineHeight();
+        local tw = tonumber((imgui.CalcTextSize(info.tag))) or 0;
+        local rw = tonumber((imgui.CalcTextSize(info.rest))) or 0;
+        local px_ = math.floor(5 * s);
+        local th = lh + 2;
+        local sl = th * 0.30;                                        -- (the party tag's shape: square on the left, its right side slanted)
+        local gw = tw + px_ * 2 + sl;
+        local W = gw + 7 * s + rw;
+        local x0 = math.floor(cx - W / 2);
+        local tc, ink = info.col, info.ink;
+        ALLY.poly(dl, { { x0, y }, { x0 + gw, y }, { x0 + gw - sl, y + th }, { x0, y + th } }, u32({ tc[1], tc[2], tc[3], 1 }));
+        dl:AddText({ x0 + px_, y + 1 }, u32({ ink[1], ink[2], ink[3], 1 }), info.tag);
+        outlined(dl, x0 + gw + 7 * s, y + 1, info.rest, { 0.97, 0.96, 0.98, 1 });
+        y = y + lh + 6 * s;
+        unsized(pushed);
+        local p2 = sized('chat', 12 * s);                            -- the points under it, and the % in pink
+        local ps = string.format('   %d%%', math.floor(info.v * 100));
+        local lw = tonumber((imgui.CalcTextSize(info.label))) or 0;
+        local pw = tonumber((imgui.CalcTextSize(ps))) or 0;
+        local lx = math.floor(cx - (lw + pw) / 2);
+        outlined(dl, lx, y, info.label, { 0.80, 0.78, 0.86, 1 });
+        outlined(dl, lx + lw, y, ps, { 1.00, 0.62, 0.80, 1 });
+        y = y + imgui.GetTextLineHeight() + 7 * s;
+        unsized(p2);
+    end
+    -- under it: your gil (and what just changed, under it) and your bag (a thin bar along its bottom)
+    local pushed = sized('chat', 13 * s);
+    local lh = imgui.GetTextLineHeight();
+    local ch, pad, gap = lh + 8 * s, 9 * s, 8 * s;
+    local gil = (cfg.gil ~= false) and C.gil_read() or nil;
+    local used, max = 0, 0;
+    if cfg.bag ~= false then pcall(function() local inv = AshitaCore:GetMemoryManager():GetInventory(); used, max = inv:GetContainerCount(0) or 0, inv:GetContainerCountMax(0) or 0; end); end
+    local gs = gil and commas(gil) or nil;
+    local bs = (max > 0) and string.format('%d/%d', used, max) or nil;
+    local gw = gs and (pad * 2 + 14 * s + (tonumber((imgui.CalcTextSize(gs))) or 0)) or 0;
+    local bw = bs and (pad * 2 + 16 * s + (tonumber((imgui.CalcTextSize(bs))) or 0)) or 0;
+    local total = gw + bw + ((gs and bs) and gap or 0);
+    local x0 = math.floor(cx - total / 2);
+    local function chip(x1, w) end                                   -- (no box behind them: just the coin / bag, the text and the bag's bar)
+    local bottom = (gs or bs) and (y + ch) or y;
+    if gs then
+        chip(x0, gw);
+        local cr = 5 * s;
+        local ccx, ccy = x0 + pad + cr, y + ch / 2;
+        dl:AddCircleFilled({ ccx, ccy }, cr, u32({ 0.86, 0.66, 0.24, 1 }), 16);
+        dl:AddCircleFilled({ ccx, ccy }, cr * 0.66, u32({ 1, 0.88, 0.50, 1 }), 16);
+        outlined(dl, x0 + pad + 14 * s, math.floor(y + (ch - lh) / 2), gs, { GOLD[1], GOLD[2], GOLD[3], 1 });
+        local diff, ga = C.gil_diff(gil);
+        if diff ~= 0 then
+            local fs = FS;
+            imgui.SetWindowFontScale(fs * 0.85);
+            local ds = (diff > 0 and '+' or '') .. commas(diff);
+            local dw = tonumber((imgui.CalcTextSize(ds))) or 0;
+            outlined(dl, math.floor(x0 + gw / 2 - dw / 2), y + ch + 2 * s, ds, diff > 0 and { 0.55, 1, 0.65, ga } or { 1, 0.5, 0.65, ga });
+            bottom = math.max(bottom, y + ch + 2 * s + imgui.GetTextLineHeight());
+            imgui.SetWindowFontScale(fs);
+        end
+        x0 = x0 + gw + gap;
+    end
+    if bs then
+        chip(x0, bw);
+        local full = used >= max - 5;
+        local ic = math.floor(9 * s);
+        local ix, iy = x0 + pad, math.floor(y + ch / 2 - ic / 2 - 1 * s);
+        local vc = full and C.hp or C.mp2;
+        dl:AddRect({ ix, iy }, { ix + ic, iy + ic }, u32({ vc[1], vc[2], vc[3], 1 }), 2 * s, C.rall, 1.5);
+        dl:AddLine({ ix + ic * 0.3, iy }, { ix + ic * 0.3, iy - 2.5 * s }, u32({ vc[1], vc[2], vc[3], 1 }), 1.5);
+        dl:AddLine({ ix + ic * 0.7, iy }, { ix + ic * 0.7, iy - 2.5 * s }, u32({ vc[1], vc[2], vc[3], 1 }), 1.5);
+        outlined(dl, x0 + pad + 16 * s, math.floor(y + (ch - lh) / 2 - 1 * s), bs, full and { 1, 0.6, 0.78, 1 } or { 0.92, 0.92, 0.96, 1 });
+        local bx0, bx1, by_ = x0 + ch / 2, x0 + bw - ch / 2, math.floor(y + ch - 4 * s);
+        local f = math.max(0, math.min(1, used / max));
+        dl:AddRectFilled({ bx0, by_ }, { bx1, by_ + 2 * s }, u32({ 1, 1, 1, 0.10 }), s);
+        local a, b = full and C.hp or C.mp, full and C.hp2 or C.mp2;
+        if f > 0 then
+            pcall(function() dl:AddRectFilledMultiColor({ bx0, by_ }, { bx0 + (bx1 - bx0) * f, by_ + 2 * s }, u32({ a[1], a[2], a[3], 1 }), u32({ b[1], b[2], b[3], 1 }), u32({ b[1], b[2], b[3], 1 }), u32({ a[1], a[2], a[3], 1 })); end);
+        end
+    end
+    unsized(pushed);
+    return bottom;
+end
 function YMAP.mini(party, ent, zid, me, sc)                          -- the minimap: the map around you, no grid
     local M = math.floor((tonumber(cfg.map_size) or 220) * sc);
     first_place('map_x', 'map_y', 560, -560);
@@ -8726,6 +9278,7 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
     local dl = imgui.GetWindowDrawList();
     local x, y = imgui.GetCursorScreenPos();
     x, y = math.floor(x + 4), math.floor(y + 4);
+    local y0_ = y;
     local T = YMAP.title(dl, x, y, M, sc);                           -- the zone's name, above the map
     y = y + T;
     local cx, cy = x + M / 2, y + M / 2;
@@ -8804,7 +9357,9 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
         text(dl, x + (M - mw) / 2, y + M / 2 - 8 * sc, m_, { 0.7, 0.7, 0.75, 0.9 });
     end
     unsized(pushed);
-    imgui.Dummy({ M + 8, M + 8 + T });
+    local bottom = y + M;
+    if YMAP.hub_on() then bottom = YMAP.hub(dl, cx, cy, M) or bottom; end   -- (MINIMAP > EXP, gil and bag on the map)
+    imgui.Dummy({ M + 8, bottom - y0_ + 8 });
     end_plain('map_x', 'map_y');
 end
 function YMAP.bigmap(party, ent, zid, me, sc)                        -- the big map (/yui map): the whole map with YunaUI's grid,
@@ -9384,6 +9939,8 @@ ashita.events.register('d3d_present', 'yui_present', function()
         TIMERS.preview = (ui.open and ui.tab == 7) or EDIT.on;      -- the TIMERS tab (and Edit Mode) show a preview of it
         piece(TIMERS.draw);
         piece(C.bubble_draw);                                        -- (CHAT > Speech bubbles)
+        piece(C.target_aura);                                        -- (TARGET > Floor aura: under the bars and everything else)
+        piece(C.head_bars);                                          -- (BARS > YOUR BARS > Where: over your head)
         YUI_EQ_HIDE = true;                                          -- (the old gear wheel never shows)
         YUI_LOCKED = cfg.locked and true or false;                 -- the HP / MP / TP bars (equip.lua) follow this lock
         DOLL.preview = (ui.open and ui.tab == 6) or (EDIT.G.on and EDIT.G.STEPS[EDIT.G.i][1] == 'Gear');                     -- the EQUIP tab shows the strip at full brightness
