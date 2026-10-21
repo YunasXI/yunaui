@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.20';
+addon.version = '1.0.21';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -5779,13 +5779,9 @@ local function draw_chat(n)
             if tab ~= 1 and TAB_OF[e.mode or 0] ~= tab then i = i - 1; goto next_line; end
             if only and ((only == 'combat') ~= is_combat(e.mode or 0)) then i = i - 1; goto next_line; end
             do
-            local keep = cfg.chat_fade_old == false;                 -- CHAT > Fade when idle off: every line stays, the older ones too
-            local life = (keep or rown < 5) and 1 or 0;
-            local lt = 1;
-            if n == 2 and not keep then                              -- (the combat log: once the fighting stops its lines fade right away, so the
-                lt = math.max(0, math.min(1, 1 - ((now - (e.t or now)) - hold) / fade));   --  last hits don't sit there in town)
-                life = life * lt;
-            end
+            local keep = cfg.chat_fade_old == false;                 -- CHAT > Fade when idle: on, a line shows for 'Lines stay for' then fades
+            local lt = keep and 1 or math.max(0, math.min(1, 1 - ((now - (e.t or now)) - hold) / fade));   --  away, shade and all (the chat
+            local life = lt;                                         --  clears when nobody writes); off, every line stays
             local vis = math.max(st.hv, life);
             if vis <= 0.01 and skip <= 0 then break; end            -- older lines are all faded out
             local lines = e.feed and { e.text } or wrap(e, maxw, size);  -- (a combat-feed line: one row, drawn by C.feed_draw)
@@ -5796,7 +5792,7 @@ local function draw_chat(n)
             for k = #lines, 1, -1 do
                 if skip > 0 then skip = skip - 1;
                 else
-                    local rest = keep and 1 or math.max(0, math.min(1, 1 - (rown - 2) / 2.5));   -- (at rest: rows 1-3 full, 4-5 fading; all of them with Fade when idle off)
+                    local rest = 1;
                     local a = math.max(0, math.min(1, (ly - y) / (h * 0.25))) * math.max(st.hv, rest * lt) * ain;    -- fades toward the top
                     if rest * lt > 0.05 then vrows = vrows + 1; end
                     if a > 0.01 then
@@ -5860,7 +5856,7 @@ local function draw_chat(n)
             ::next_line::
         end
         st.vis = st.vis_n;
-        st.used_h = (vrows > 0) and (math.min(vrows, (cfg.chat_fade_old == false) and 999 or 5) * lh + bar + pad + type_h) or 0;   -- (how tall the resting ground is: the rows showing)
+        st.used_h = (vrows > 0) and (vrows * lh + bar + pad + type_h) or 0;   -- (how tall the resting ground is: the rows still showing - none, no ground)
         imgui.PopClipRect();
         if itip then pcall(C.item_card, itip); end
         if typing then                                               -- the typing line: a dark strip, your text, a blinking caret
@@ -7935,7 +7931,8 @@ local function draw_window()
             section('LOOK');
             row_switch('##yui_canim', 'Animated lines', 'chat_anim', 'On: new lines slide in with a soft glow, and a thin bar in their channel\'s colour on the left.');
             row_switch('##yui_cfeed', 'Combat feed', 'chat_feed', 'On: a spell or ability is one line that grows as it happens (who > spell > target, then a tick, the damage, the HP healed or miss) instead of three or four lines. Only new lines.');
-            row_switch('##yui_cfade', 'Fade when idle', 'chat_fade_old', 'On: at rest only the newest lines show, the older ones above them fade away until you put the mouse over the chat. Off: every line stays visible all the time.');
+            row_switch('##yui_cfade', 'Fade when idle', 'chat_fade_old', 'On: each line shows for a while, then fades away with its shade, so the chat clears when nobody writes (put the mouse over it to see everything). Off: every line stays visible all the time.');
+            if cfg.chat_fade_old ~= false then row_slider('##yui_s_h', 'Lines stay for', 'chat_hold', 3, 60, 1, '%d s'); end
             row_switch('##yui_cbub', 'Speech bubbles', 'chat_bubbles', 'On: say and party lines also show as a bubble over the head of whoever said it (when they\'re near you).');
             section('HISTORY');
             row_switch('##yui_csave', 'Save chat logs', 'chat_save', 'On: every chat line is also written to a text file, one per day: Ashita\\chatlogs\\<your name>_<date>.txt');
@@ -8431,7 +8428,9 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
                 local t = 1 - (da + db) / (2 * fade);
                 local dim = (k >= netk) and 0.28 or 1;
                 local fh = math.abs((v[a * 3 - 1] + v[b * 3 - 1]) / 2 - th);   -- (other floors fade out: only yours shows, a little above
-                if fh > 3.5 then dim = dim * math.max(0, 1 - (fh - 3.5) / 4.5); end   --  and below for steps and ramps)
+                local hx, hy = (v[a * 3 - 2] + v[b * 3 - 2]) / 2 - tx, (v[a * 3] + v[b * 3]) / 2 - ty;   --  and below for steps and ramps -
+                local tol = 3.5 + 0.35 * math.sqrt(hx * hx + hy * hy);   --  more the further away, so slopes and hills stay; a floor
+                if fh > tol then dim = dim * math.max(0, 1 - (fh - tol) / 4.5); end   --  right above or under you still fades)
                 if soft or dim < 1 then                              -- (no edge at all: the lines fade out in a circle)
                     local ef = 1;
                     if soft then
