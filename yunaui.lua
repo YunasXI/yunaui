@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.18';
+addon.version = '1.0.19';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -58,7 +58,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_friend_look = 'banner',  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_party = true, chat_f_trust = true, chat_f_others = true, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_friend_look = 'banner',  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -1141,7 +1141,17 @@ local function is_party_id(id)
         PIDS.ids = {};
         pcall(function()
             local p = AshitaCore:GetMemoryManager():GetParty();
-            for i = 0, 17 do if p:GetMemberIsActive(i) ~= 0 then PIDS.ids[p:GetMemberServerId(i)] = true; end end
+            local ent = AshitaCore:GetMemoryManager():GetEntity();
+            for i = 0, 17 do
+                if p:GetMemberIsActive(i) ~= 0 then
+                    PIDS.ids[p:GetMemberServerId(i)] = true;
+                    pcall(function()                                 -- (and their pet: automaton, avatar, wyvern...)
+                        local ti = p:GetMemberTargetIndex(i);
+                        local pi = (ti and ti > 0) and ent:GetPetTargetIndex(ti) or 0;
+                        if pi and pi > 0 then local ps = ent:GetServerId(pi); if ps and ps ~= 0 then PIDS.ids[ps] = true; end end
+                    end);
+                end
+            end
         end);
     end
     return PIDS.ids[id] == true;
@@ -4738,6 +4748,49 @@ function C.battle_spam(mode, line)
     for _, pat in ipairs(C.SPAM) do if sl:find(pat) then return true; end end
     return false;
 end
+-- CHAT > COMBAT FILTERS: battle lines left out by who did them - your party's / trusts' plain hits and misses, and
+-- everything players outside your party do. Your own lines and monsters' always stay.
+C.CF = { kinds = {}, at = 0 };
+function C.actor_kind(name)                                          -- 'me', 'party', 'trust', 'outsider' or 'other' (monsters...)
+    local K = C.CF;
+    if os.clock() - K.at > 2 then K.kinds, K.at = {}, os.clock(); end
+    if K.kinds[name] then return K.kinds[name]; end
+    local kind = 'other';
+    pcall(function()
+        local p = AshitaCore:GetMemoryManager():GetParty();
+        for i = 0, 17 do
+            if p:GetMemberIsActive(i) ~= 0 and p:GetMemberName(i) == name then
+                kind = (i == 0) and 'me' or (((p:GetMemberServerId(i) or 0) >= 0x01000000) and 'trust' or 'party');
+                return;
+            end
+        end
+        local ent = AshitaCore:GetMemoryManager():GetEntity();
+        for i = 0x400, 0x6FF do                                      -- (players' entities: someone outside the party)
+            if ent:GetRawEntity(i) ~= nil and ent:GetName(i) == name then
+                if bit.band(ent:GetSpawnFlags(i) or 0, 0x01) ~= 0 then kind = 'outsider'; end
+                return;
+            end
+        end
+    end);
+    K.kinds[name] = kind;
+    return kind;
+end
+function C.combat_skip(line)                                         -- (true: this battle line is filtered out)
+    local sl = line:gsub('[\1\2]', '');
+    local F = C.CF;
+    if F.skipnext and os.clock() - F.skipnext < 0.25 and sl:find('^.- takes %d+ points? of damage%.$') then F.skipnext = nil; return true; end
+    F.skipnext = nil;
+    local who = sl:match('^(.-) hits .- for %d+ points? of damage%.$') or sl:match('^(.-) misses .-%.$')
+             or sl:match('^(.-) scores a critical hit!$');
+    local melee = who ~= nil;
+    who = who or sl:match('^([%w%-]+)[ \']');                         -- (anything else: its first word, the one who did it)
+    if who == nil then return false; end
+    local kind = C.actor_kind(who);
+    local skip = (melee and kind == 'party' and cfg.chat_f_party == false) or (melee and kind == 'trust' and cfg.chat_f_trust == false)
+              or (kind == 'outsider' and cfg.chat_f_others == false);
+    if skip and sl:find('critical hit!$') then F.skipnext = os.clock(); end   -- (its damage comes on the next line)
+    return skip;
+end
 local function chat_add(mode, raw)
     local ok, s = pcall(function()
         local m = raw;
@@ -4760,6 +4813,9 @@ local function chat_add(mode, raw)
                 local oks, sp = pcall(C.battle_spam, mode, raw_line);
                 if oks and sp then n_, log_ = 2, logs[2]; end
             end
+            local cut_ = false;
+            if is_combat(mode) then local okc, r = pcall(C.combat_skip, raw_line); cut_ = okc and r; end   -- (CHAT > COMBAT FILTERS)
+            if cut_ then goto skip_line; end
             if is_combat(mode) then local okf, r = pcall(C.feed_take, log_, raw_line, mode); fd = okf and r or nil; end   -- (CHAT > Combat feed)
             if fd == nil then
                 if not is_combat(mode) then pcall(C.chat_pop, mode, raw_line); end   -- (CHAT > Speech bubbles)
@@ -4770,6 +4826,7 @@ local function chat_add(mode, raw)
             end
             if fd ~= 'merged' and cw[n_].scroll > 0 then cw[n_].scroll = cw[n_].scroll + 1; end
         end
+        ::skip_line::
     end
 end
 -- Break a line into pieces that fit the width (kept until the width or the text size changes)
@@ -7866,6 +7923,12 @@ local function draw_window()
                 if cfg.chat_time_12 then row_pick('##yui_ctc', 'AM/PM case', 'chat_time_case', { { 'lower', 'am / pm' }, { 'upper', 'AM / PM' } }); end
                 colour_row('chat_time_col', 'Colour', { 0.62, 0.60, 0.68 }, true);
             end
+            section('COMBAT FILTERS');
+            row_switch('##yui_cfp', "Party members' hits", 'chat_f_party', "Off: your party members' plain hits, misses and critical hits are left out of the chat (their weapon skills, spells and abilities stay).");
+            row_switch('##yui_cft', "Trusts' hits", 'chat_f_trust', "Off: your trusts' plain hits, misses and critical hits are left out of the chat (their weapon skills, spells and abilities stay).");
+            row_switch('##yui_cfo', "Other players' fights", 'chat_f_others', 'Off: everything players outside your party do is left out of the chat.');
+            hint('Your own lines and the monsters\' always show.');
+            section('LOOK');
             row_switch('##yui_canim', 'Animated lines', 'chat_anim', 'On: new lines slide in with a soft glow, and a thin bar in their channel\'s colour on the left.');
             row_switch('##yui_cfeed', 'Combat feed', 'chat_feed', 'On: a spell or ability is one line that grows as it happens (who > spell > target, then a tick, the damage, the HP healed or miss) instead of three or four lines. Only new lines.');
             row_switch('##yui_cfade', 'Fade when idle', 'chat_fade_old', 'On: at rest only the newest lines show, the older ones above them fade away until you put the mouse over the chat. Off: every line stays visible all the time.');
