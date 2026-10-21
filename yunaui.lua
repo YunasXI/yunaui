@@ -7724,6 +7724,18 @@ function LAYOUT.put(o, k, x, y)                                      -- (a piece
     LAYOUT.xy(o, k, x, y);
     LAYOUT.take(x, y, w, h);
 end
+function LAYOUT.put_free(o, k, x, y, dx, dy)
+    local w, h = LAYOUT.size(k);
+    for _ = 1, 20 do
+        local r = LAYOUT.hit(x, y, w, h);
+        if r == nil then break; end
+        if dx < 0 then x = r[1] - w - 16; elseif dx > 0 then x = r[1] + r[3] + 16; end
+        if dy < 0 then y = r[2] - h - 12; elseif dy > 0 then y = r[2] + r[4] + 12; end
+    end
+    x, y = math.max(0, math.min(LAYOUT.W - w, x)), math.max(0, math.min(LAYOUT.H - h, y));
+    LAYOUT.xy(o, k, x, y);
+    LAYOUT.take(x, y, w, h);
+end
 -- Pieces in a column from (x, y0) down to ybot, each under the one before (and under anything already there); one that
 -- doesn't fit starts the next column beside it, toward the middle. side 1: x is the left edge; -1: x is the right edge
 function LAYOUT.on(k)
@@ -7792,6 +7804,7 @@ function LAYOUT.build(name)
     LAYOUT.put(o, 'gil', W / 2 + ew / 2 + 24, H - gh - 6);
     LAYOUT.put(o, 'bag', W / 2 - ew / 2 - 24 - bw_, H - bh_ - 6);
     local floor_ = H - eh - 16;                                      -- (nothing reaches into the bottom row)
+    LAYOUT.cb = math.min(H - 46, floor_);                           -- (where the chats' foot is)
     -- the target at the top middle; its Magic Burst line just over it, its fan on its left; the sub-target under it
     local tw, th = LAYOUT.size('target');
     local tx = W / 2 - tw / 2;
@@ -7816,14 +7829,14 @@ function LAYOUT.build(name)
         local bx, by = W / 2 - gw / 2, floor_ - hh - 40;
         local x0 = m + math.floor(W * 0.13);
         if math.min(bx - 24 - x0, (W - m) - (bx + gw + 24)) < math.min(260, tonumber(cfg.chat_w) or 620) then
-            by = H - 46 - ch - 12 - hh - 8;
+            by = LAYOUT.cb - ch - 12 - hh - 8;
         end
         eq = { sb_anchor = 2, hpbar_x = math.floor(bx), hpbar_y = math.floor(by) };
         LAYOUT.take(bx, by, gw, hh);
         LAYOUT.put(o, 'cast', W / 2 - cw_ / 2, by - cth - 14);
         LAYOUT.put(o, 'pet', W / 2 - pw / 2, by - cth - 14 - peth - 12);
         LAYOUT.chats(o, bx, bx + gw, split);
-        local ctop = H - 46 - ch - 12;
+        local ctop = LAYOUT.cb - ch - 12;
         LAYOUT.column(o, { 'party', 'alliance', 'ally2', 'enemy', 'dps', 'doll' }, W - m, 40, split and ctop or floor_, -1);
         LAYOUT.column(o, { 'map', 'timer' }, m, 40, ctop, 1);
     elseif name == 'raid' then                                      -- party top left, bars stacked bottom middle, timers right
@@ -7832,33 +7845,34 @@ function LAYOUT.build(name)
         eq = { sb_anchor = 1, hpbar_x = math.floor(bx), hpbar_y = math.floor(by) };
         LAYOUT.take(bx, by, hw, stack);
         LAYOUT.put(o, 'cast', W / 2 - cw_ / 2, by - cth - 14);
-        LAYOUT.put(o, 'pet', bx - pw - 30, by + stack - peth);       -- (left of the bars, its foot on theirs)
+        LAYOUT.put_free(o, 'pet', bx - pw - 30, by + stack - peth, -1, 0);   -- (left of the bars, its foot on theirs)
         local cw = math.floor(math.max(260, math.min(tonumber(cfg.chat_w) or 620, W - m - (bx + hw) - 24)));   -- (the chats right
         cfg.chat_w, cfg.chat2_w, o.chat_w, o.chat2_w = cw, cw, cw, cw;                                          --  of the bars)
-        LAYOUT.put(o, 'chat', W - m - cw, H - 46 - ch);
-        local top = H - 46 - ch - 12;
+        LAYOUT.put(o, 'chat', W - m - cw, LAYOUT.cb - ch);
+        local top = LAYOUT.cb - ch - 12;
         if split then LAYOUT.put(o, 'chat2', W - m - cw, top - ch); top = top - ch - 12; end
         LAYOUT.column(o, { 'timer', 'enemy', 'map' }, W - m, 60, top, -1);
         LAYOUT.column(o, { 'party', 'alliance', 'ally2', 'doll', 'dps' }, m, 60, math.floor(H * 0.74), 1);   -- (clear of the game's
     else                                                             -- compact: gathered round the bars          menus, bottom left)
         local stack = LAYOUT.stack_h(hh);
         local bx = W / 2 - hw / 2;
-        local ctop = H - 46 - ch - 12;
+        local ctop = LAYOUT.cb - ch - 12;
         local by = math.min(math.floor(H * 0.58), ctop - stack);
         eq = { sb_anchor = 1, hpbar_x = math.floor(bx), hpbar_y = math.floor(by) };
         LAYOUT.take(bx, by, hw, stack);
         LAYOUT.put(o, 'cast', W / 2 - cw_ / 2, by - cth - 14);
-        LAYOUT.put(o, 'pet', W / 2 - pw / 2, math.min(by + stack + 12, floor_ - peth));
+        LAYOUT.put_free(o, 'pet', W / 2 - pw / 2, math.min(by + stack + 12, floor_ - peth), 0, 1);
         LAYOUT.chats(o, bx, bx + hw, split);
         local pw2, ph = LAYOUT.size('party');                        -- the party right of the bars, the timers left of them
         local px, py = bx + hw + 40, math.max(40 + th + 80, ctop - ph);
-        LAYOUT.put(o, 'party', px, py);
+        LAYOUT.put_free(o, 'party', px, py, 1, 0);
+        px = tonumber(o.party_x) or px;
         if anch then                                                 -- (anchored alliances go over a low party)
             local _, ah = LAYOUT.size('alliance');
             LAYOUT.take(px, py - ah * 2 - 24, pw2, ah * 2 + 24);
         end
         local tmw, tmh = LAYOUT.size('timer');
-        LAYOUT.put(o, 'timer', bx - tmw - 40, math.max(40 + th + 80, ctop - tmh));
+        LAYOUT.put_free(o, 'timer', bx - tmw - 40, math.max(40 + th + 80, ctop - tmh), -1, 0);
         LAYOUT.column(o, { 'enemy', 'dps' }, m, 40, ctop, 1);
         LAYOUT.column(o, anch and { 'doll', 'map' } or { 'doll', 'alliance', 'ally2', 'map' }, W - m, 40, ctop, -1);
     end
@@ -7877,8 +7891,8 @@ function LAYOUT.chats(o, lo, hi, split)
     local ch = tonumber(cfg.chat_h) or 260;
     cfg.chat_w, cfg.chat2_w, cfg.chat2_h = cw, cw, ch;
     o.chat_w, o.chat2_w, o.chat2_h = cw, cw, ch;
-    LAYOUT.put(o, 'chat', x0, H - 46 - ch);
-    if split then LAYOUT.put(o, 'chat2', W - m - cw, H - 46 - ch); else LAYOUT.xy(o, 'chat2', W - m - cw, H - 46 - ch); end
+    LAYOUT.put(o, 'chat', x0, LAYOUT.cb - ch);
+    if split then LAYOUT.put(o, 'chat2', W - m - cw, LAYOUT.cb - ch); else LAYOUT.xy(o, 'chat2', W - m - cw, LAYOUT.cb - ch); end
 end
 function LAYOUT.apply(o, eq, dps)
     for k, v in pairs(o) do cfg[k] = v; end
