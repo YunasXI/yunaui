@@ -5579,92 +5579,6 @@ function legacy.snapshot()
     if f then f:write(table.concat(out, '\n') .. '\n\n'); f:close(); end
     legacy.snapped, legacy.snap_at = (legacy.snapped or 0) + 1, now + 1.5;
 end
--- /yui menuwatch (a test, only READS): for 90 s, each time the focused game menu (not the typing bar) changes - a new
--- menu, or its cursor moved - its memory is written to menu_dump.txt, so the cursor's place in it can be found (for
--- YunaUI's own main menu). Nothing in the game is changed.
-C.MW = { until_ = 0, n = 0, last = nil };
-function C.menuwatch()
-    local W = C.MW;
-    if os.clock() > W.until_ or W.n >= 24 then return; end
-    local obj, head, name = legacy.menu_ptrs();
-    if obj == nil or name == nil or name:find('inline', 1, true) then return; end
-    local sig = {};                                                  -- (what changed: the object and its header, as numbers)
-    for off = 0, 0xFC, 4 do sig[#sig + 1] = ashita.memory.read_uint32(obj + off) or 0; end
-    for off = 0, 0x17C, 4 do sig[#sig + 1] = ashita.memory.read_uint32(head + off) or 0; end
-    local key = name .. ':' .. table.concat(sig, ',');
-    if key == W.last then return; end
-    W.last = key;
-    W.n = W.n + 1;
-    local out = { string.format('==== #%d  %.2f s  menu "%s"  obj %08X  head %08X', W.n, os.clock() - (W.t0 or 0), name, obj, head) };
-    local function dump(label, base, size)
-        out[#out + 1] = '-- ' .. label .. string.format(' @%08X', base);
-        for row = 0, size - 1, 16 do
-            local hex, sh = {}, {};
-            for k = 0, 15 do hex[#hex + 1] = string.format('%02X', ashita.memory.read_uint8(base + row + k) or 0); end
-            for k = 0, 14, 2 do sh[#sh + 1] = string.format('%6d', ashita.memory.read_int16(base + row + k) or 0); end
-            out[#out + 1] = string.format('+%03X  %s  | %s', row, table.concat(hex, ' '), table.concat(sh, ' '));
-        end
-    end
-    dump('menu object', obj, 0x100);
-    dump('menu header', head, 0x180);
-    for off = 0, 0x7C, 4 do                                          -- (and whatever the header points at)
-        local v = ashita.memory.read_uint32(head + off) or 0;
-        if v > 0x00400000 and v < 0x7FFF0000 then pcall(dump, string.format('header+%02X ->', off), v, 0x60); end
-    end
-    local f = io.open(addon.path .. '/menu_dump.txt', (W.n == 1) and 'w' or 'a');
-    if f then f:write(table.concat(out, '\n') .. '\n\n'); f:close(); end
-end
--- /yui menuprobe (a test: only READS, and draws outlines): while the game's main menu ("menuwind" / "socialme") is
--- open, draws where YunaUI thinks it is - green: anchored to the right edge, orange: as read - with its row lines,
--- and writes the numbers to menu_probe.txt, so YunaUI's own main menu can be lined up with the game's.
-C.MP = { on = false, last = nil };
-function C.menu_scale()                                              -- (the game's window and menu sizes, as libs/scaling reads them)
-    if C.MS then return C.MS; end
-    local p = ashita.memory.find('FFXiMain.dll', 0, 'A1????????85C05E74????80', 0x01, 0x00);
-    if p == nil or p == 0 then return nil; end
-    p = ashita.memory.read_uint32(p); if p == nil or p == 0 then return nil; end
-    p = ashita.memory.read_uint32(p); if p == nil or p == 0 then return nil; end
-    local s = { ww = ashita.memory.read_uint16(p + 0x10) or 0, wh = ashita.memory.read_uint16(p + 0x12) or 0,
-        mw = ashita.memory.read_uint16(p + 0x14) or 0, mh = ashita.memory.read_uint16(p + 0x16) or 0 };
-    if s.mw == 0 or s.mh == 0 then return nil; end
-    C.MS = s;
-    return s;
-end
-function C.menuprobe()
-    if not C.MP.on then return; end
-    local obj, head, name = legacy.menu_ptrs();
-    if obj == nil or not (name:find('menuwind', 1, true) or name:find('socialme', 1, true)) then return; end
-    local s = C.menu_scale();
-    if s == nil then return; end
-    local function r16(a) return ashita.memory.read_int16(a) or 0; end
-    local x1, y1, x2, y2 = r16(obj + 0x3A), r16(obj + 0x3C), r16(obj + 0x3E), r16(obj + 0x40);
-    local hx1, hy1, hx2, hy2, rh, rows = r16(head + 0x10), r16(head + 0x12), r16(head + 0x14), r16(head + 0x16), r16(head + 0x18), r16(head + 0x1A);
-    local cur = ashita.memory.read_uint8(obj + 0x4C) or 0;
-    local ds = imgui.GetIO().DisplaySize;
-    local kx, ky = ds.x / s.mw, ds.y / s.mh;
-    local fl;
-    pcall(function() fl = imgui.GetForegroundDrawList(); end);
-    if fl == nil then return; end
-    local lx1, lx2 = bit.band(x1, 0x7FF), bit.band(x2, 0x7FF);
-    local function box(ux1, ux2, col)
-        local a, b = { ux1 * kx, y1 * ky }, { ux2 * kx, y2 * ky };
-        fl:AddRect(a, b, u32(col), 0, 0, 2);
-        for k = 1, math.max(0, math.min(30, rows)) do                -- (row lines, counted up from the bottom)
-            local yy = (y2 - k * rh) * ky;
-            fl:AddLine({ a[1], yy }, { b[1], yy }, u32({ col[1], col[2], col[3], 0.5 }), 1);
-        end
-    end
-    box(s.mw - 512 + lx1, s.mw - 512 + lx2, { 0.2, 1, 0.3, 1 });
-    box(lx1, lx2, { 1, 0.6, 0.1, 1 });
-    fl:AddText({ (s.mw - 512 + lx1) * kx, y2 * ky + 4 }, u32({ 1, 1, 1, 1 }), string.format('%s  cursor %d  rows %d', name:sub(9), cur, rows));
-    local line = string.format('%s  cursor %d | obj x1 %d y1 %d x2 %d y2 %d | head %d %d %d %d rowh %d rows %d | window %dx%d menu %dx%d screen %dx%d',
-        name, cur, x1, y1, x2, y2, hx1, hy1, hx2, hy2, rh, rows, s.ww, s.wh, s.mw, s.mh, ds.x, ds.y);
-    if line ~= C.MP.last then
-        C.MP.last = line;
-        local f = io.open(addon.path .. '/menu_probe.txt', 'a');
-        if f then f:write(os.date('%H:%M:%S  ') .. line .. '\n'); f:close(); end
-    end
-end
 local function pin_game_chat()
     if legacy.draw == nil or legacy.draw == 0 then
         if legacy.tries > 5 then return; end
@@ -10026,8 +9940,6 @@ ashita.events.register('d3d_present', 'yui_present', function()
         TIMERS.preview = (ui.open and ui.tab == 7) or EDIT.on;      -- the TIMERS tab (and Edit Mode) show a preview of it
         piece(TIMERS.draw);
         piece(C.bubble_draw);                                        -- (CHAT > Speech bubbles)
-        piece(C.menuwatch);                                          -- (/yui menuwatch: a test, only while it runs)
-        piece(C.menuprobe);                                          -- (/yui menuprobe: a test, only while it's on)
         piece(C.target_aura);                                        -- (TARGET > Floor aura: under the bars and everything else)
         piece(C.head_bars);                                          -- (BARS > YOUR BARS > Where: over your head)
         YUI_EQ_HIDE = true;                                          -- (the old gear wheel never shows)
@@ -10183,13 +10095,6 @@ ashita.events.register('command', 'yui_command', function(e)
     local sub = (args[2] or ''):lower();
     if sub == '' then ui.open = not ui.open;
     elseif sub == 'edit' then EDIT.on = not EDIT.on; if EDIT.on then ui.open = false; end
-    elseif sub == 'menuprobe' then                                   -- (a test: see C.menuprobe)
-        C.MP.on, C.MP.last = not C.MP.on, nil;
-        if C.MP.on then local f = io.open(addon.path .. '/menu_probe.txt', 'w'); if f then f:close(); end end
-        msg('Menu probe ' .. (C.MP.on and 'on: open the main menu and take a screenshot of it (both pages). /yui menuprobe again turns it off.' or 'off.'));
-    elseif sub == 'menuwatch' then                                   -- (a test: see C.menuwatch)
-        C.MW.until_, C.MW.n, C.MW.last, C.MW.t0 = os.clock() + 90, 0, nil, os.clock();
-        msg('Menu watch on for 90 seconds: open the main menu, move the cursor down one row at a time, slowly, to the bottom, then close it.');
     elseif sub == 'welcome' then EDIT.welcome = true; EDIT.G.start();   -- (what a new player sees on the first launch; settings untouched)
     elseif sub == 'guide' or sub == 'tour' then EDIT.G.start();      -- the first-time guide again
     elseif sub == 'lock' or sub == 'unlock' then cfg.locked = (sub == 'lock'); save(); msg(cfg.locked and 'Locked.' or 'Unlocked.');
