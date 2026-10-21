@@ -3396,6 +3396,7 @@ YUI_EQ_SETTINGS = function()
 end
 -- Settings copied in from another character (YunaUI sees the file change): take them at once, move everything
 YUI_EQ_GET = function() return cfg; end
+YUI_EQ_SBSIZE = function(key) return JOBS.sb_size and JOBS.sb_size[key] or nil; end   -- (one bar's window, as measured: GENERAL > LAYOUT)
 YUI_EQ_RECT = function()                                             -- where your HP / MP / TP bars are, all together (YunaUI's guide)
     local x0, y0, x1, y1;
     for key, sz in pairs(JOBS.sb_size or {}) do

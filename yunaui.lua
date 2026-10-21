@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.27';
+addon.version = '1.0.28';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -332,7 +332,7 @@ local function push_theme()
     for _, v in ipairs(vars) do if v[1] ~= nil then imgui.PushStyleVar(v[1], v[2]); nv = nv + 1; end end
     return nc, nv;
 end
-local NEON = { 0.62, 0.30, 1.00 };
+local NEON = { 0.86, 0.24, 0.86 };                                   -- (the panel's colours: your own HP bar's, see C.apply_hp)
 -- fill a box with its four corners cut off (c), using straight bands only (no seams)
 local function fill_cut(dl, x, y, w, h, c, col)
     x, y, w, h, c = math.floor(x), math.floor(y), math.floor(w), math.floor(h), math.floor(c);
@@ -344,7 +344,7 @@ local function fill_cut(dl, x, y, w, h, c, col)
         dl:AddRectFilled({ x + inset, y + h - k - 2 }, { x + w - inset, y + h - k }, col);
     end
 end                                  -- the panel's violet (its edges, fills and marks)
-local NEON2 = { 0.80, 0.58, 1.00 };
+local NEON2 = { 1.00, 0.42, 0.72 };
 -- a small diamond (the panel's mark): an outline, and a filled one inside when it's lit
 local function diamond(dl, cx, cy, r, lit, alpha)
     alpha = alpha or 1;
@@ -380,7 +380,7 @@ local function switch(id, on)
     local hov = imgui.IsItemHovered();
     local dl = imgui.GetWindowDrawList();
     -- the panel's own dark colour: on = a white knob on the right and a light edge, off = a grey knob on the left
-    dl:AddRectFilled({ x, y }, { x + w, y + h }, u32(on and { 0.24, 0.22, 0.30, 1 } or (hov and { 0.14, 0.13, 0.18, 1 } or { 0.10, 0.095, 0.13, 1 })), h / 2);
+    dl:AddRectFilled({ x, y }, { x + w, y + h }, u32(on and { NEON[1] * 0.42, NEON[2] * 0.42, NEON[3] * 0.42, 1 } or (hov and { 0.14, 0.13, 0.18, 1 } or { 0.10, 0.095, 0.13, 1 })), h / 2);
     dl:AddCircleFilled({ on and (x + w - h / 2) or (x + h / 2), y + h / 2 }, h / 2 - 4 * C.ps, u32(on and { 1, 1, 1, 1 } or { 0.55, 0.53, 0.62, 1 }), 24);
     return clicked;
 end
@@ -431,7 +431,7 @@ local function row_slider(id, text, key, lo, hi, step, fmt, tbl, on_change)
     local th = math.max(4, math.floor(6 * ps));
     dl:AddRectFilled({ x, cy - th / 2 }, { x + w, cy + th / 2 }, u32({ 0.20, 0.19, 0.25, 1 }), th / 2);
     local ok_ = pcall(function()
-        dl:AddRectFilledMultiColor({ x, cy - th / 2 }, { x + w * f, cy + th / 2 }, u32({ 0.48, 0.20, 0.90, 1 }), u32(NEON2), u32(NEON2), u32({ 0.48, 0.20, 0.90, 1 }));
+        dl:AddRectFilledMultiColor({ x, cy - th / 2 }, { x + w * f, cy + th / 2 }, u32(NEON), u32(NEON2), u32(NEON2), u32(NEON));
     end);
     if not ok_ then dl:AddRectFilled({ x, cy - th / 2 }, { x + w * f, cy + th / 2 }, u32(NEON), th / 2); end
     dl:AddCircleFilled({ x + w * f, cy }, ((act or hov) and 13 or 11) * ps, u32({ NEON[1], NEON[2], NEON[3], 0.30 }), 24);
@@ -1255,6 +1255,9 @@ FIGHT.PROP = { 'Light', 'Darkness', 'Gravitation', 'Fragmentation', 'Distortion'
                'Induration', 'Reverberation', 'Transfixion', 'Scission', 'Detonation', 'Impaction', 'Radiance', 'Umbra' };
 FIGHT.MSG = { [2] = true, [110] = true, [185] = true, [187] = true, [317] = true, [802] = true };
 FIGHT.PETMSG = { [110] = true, [317] = true };
+FIGHT.SCMSG = {};                                                    -- the added-effect messages of a skillchain (damage, healing...)
+for _, id in ipairs({ 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 385, 386, 387, 388, 389, 390, 391,
+                      392, 393, 394, 395, 396, 397, 398, 399, 732, 767, 768, 769, 770 }) do FIGHT.SCMSG[id] = true; end
 FIGHT.CHAIN = {                                                     -- opened property -> { level, burst, [closing property] = result }
     Radiance = { 4, { 'Fire', 'Wind', 'Thunder', 'Light' } }, Umbra = { 4, { 'Earth', 'Ice', 'Water', 'Dark' } },
     Light = { 3, { 'Fire', 'Wind', 'Thunder', 'Light' }, Light = { 4, 'Light' } },
@@ -1803,10 +1806,10 @@ local function read_action(e)
             if is_first then first = p; cast_event(actor, kind, param, p); pcall(FIGHT.on_action, actor, kind, param, p, m, tid); end
             local fx_ap = nil;
             if bits(1) == 1 then                                    -- an added effect
-                bits(10);
+                local aa = bits(10);                                 -- (its animation: for a skillchain, which one, 1..16)
                 local ap, am = bits(17), bits(10);
                 if am == 160 or am == 164 then enemy_add(tid, ap); end
-                fx_ap = ap;
+                if FIGHT.SCMSG[am] then fx_ap = aa; end              -- (a skillchain's own message only; its param is the damage)
             end
             if is_first then pcall(FIGHT.on_skill, actor, kind, param, m, tid, fx_ap); end   -- skillchains (the Chains way)
             if bits(1) == 1 then bits(10); bits(14); bits(10); end  -- spikes
@@ -6286,7 +6289,7 @@ local function draw_chat(n)
             local tx0, ty0 = x + pad - 4, y + h - bar - type_h - 2;
             local tw0, th0 = maxw + 8, lh + 6;
             dl:AddRectFilled({ tx0, ty0 }, { tx0 + tw0, ty0 + th0 }, u32({ 0.03, 0.03, 0.05, 0.75 }), 6);
-            dl:AddRect({ tx0, ty0 }, { tx0 + tw0, ty0 + th0 }, u32({ 0.74, 0.66, 0.95, 0.35 }), 6, C.rall, 1);
+            dl:AddRect({ tx0, ty0 }, { tx0 + tw0, ty0 + th0 }, u32({ C.acc[1], C.acc[2], C.acc[3], 0.35 }), 6, C.rall, 1);
             local c = { 1, 1, 1 };                                -- (what you type: always white, whatever channel it goes to)
             local cx = line_w(typing.before);
             local shift = math.max(0, cx - (maxw - 14));               -- long text: keep the caret in view
@@ -7666,111 +7669,207 @@ local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 
 -- My layout 1 / 2: SAVE keeps where everything is now, LOAD puts it back.
 local LAYOUT = {
     KEYS = { 'target', 'sub', 'enemy', 'party', 'alliance', 'ally2', 'chat', 'chat2', 'exp', 'gil', 'bag', 'cast', 'timer', 'pet', 'doll', 'map', 'bigmap' },
-    GUESS = { target = { 540, 50 }, sub = { 320, 50 }, enemy = { 230, 220 }, party = { 340, 300 }, alliance = { 260, 265 },
-              ally2 = { 260, 265 }, exp = { 540, 34 }, gil = { 170, 26 }, bag = { 320, 26 }, cast = { 320, 44 },
-              timer = { 290, 220 }, pet = { 290, 90 }, doll = { 300, 420 } },
+    GUESS = { target = { 540, 60 }, sub = { 320, 50 }, enemy = { 230, 220 }, party = { 340, 300 }, alliance = { 260, 170 },
+              ally2 = { 260, 170 }, exp = { 540, 40 }, gil = { 170, 26 }, bag = { 320, 26 }, cast = { 320, 44 },
+              timer = { 290, 230 }, pet = { 290, 180 }, doll = { 300, 420 } },
+    FULL = { party = true, alliance = true, ally2 = true, enemy = true, timer = true, pet = true },   -- (lists that grow)
 };
 function LAYOUT.size(k)
     if k == 'chat' then return tonumber(cfg.chat_w) or 620, tonumber(cfg.chat_h) or 260; end
     if k == 'chat2' then return tonumber(cfg.chat2_w) or 520, tonumber(cfg.chat2_h) or 260; end
-    local m = WATCH.size and WATCH.size[k .. '_x'];
-    if m and m[1] > 4 and m[2] > 4 then return m[1], m[2]; end       -- (measured while it was on screen)
-    local g = LAYOUT.GUESS[k] or { 300, 100 };
+    if k == 'dps' then                                               -- the Damage Meter: its own window (dps.lua), at its size
+        local ds = YUI_DPS and YUI_DPS.get and YUI_DPS.get() or nil;
+        local z = ((ds and tonumber(ds.size)) or 100) / 100;
+        return math.floor(404 * z), math.floor(((ds and tonumber(ds.h)) or 300) * z);
+    end
+    if k == 'fan' then                                               -- the skillchain fan in a window of its own (TARGET > Anywhere)
+        local fsc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.target_scale) or 1) * FIGHT.fsc();
+        return FIGHT.fan_size(fsc);
+    end
     local sc = tonumber(cfg.scale) or 1;
-    return g[1] * sc, g[2] * sc;
+    local m = WATCH.size and WATCH.size[k .. '_x'];
+    if k == 'map' and not (m and m[1] > 4) then                      -- (not shown yet: the map's own size and its title)
+        local M = (tonumber(cfg.map_size) or 220) * sc;
+        return M + 8, M + 40;
+    end
+    local g = LAYOUT.GUESS[k] or { 300, 100 };
+    local gh = g[2] * sc * ((k == 'party') and (tonumber(cfg.party_scale) or 1) or 1);
+    if m and m[1] > 4 and m[2] > 4 then                              -- (measured while it was on screen)
+        if LAYOUT.FULL[k] then return m[1], math.max(m[2], gh); end  -- (a list measured short - solo, one enemy: room for a full one)
+        return m[1], m[2];
+    end
+    return g[1] * sc, gh;
 end
 -- Put piece k so its own (ax, ay) corner sits at the screen's (ax, ay) point, moved by (ox, oy)
 function LAYOUT.at(out, k, ax, ay, ox, oy)
     local W, H = LAYOUT.W, LAYOUT.H;
     local w, h = LAYOUT.size(k);
-    out[k .. '_x'] = math.floor(W * ax - w * ax + (ox or 0));
-    out[k .. '_y'] = math.floor(H * ay - h * ay + (oy or 0));
+    LAYOUT.xy(out, k, W * ax - w * ax + (ox or 0), H * ay - h * ay + (oy or 0));
 end
-function LAYOUT.xy(out, k, x, y) out[k .. '_x'], out[k .. '_y'] = math.floor(x), math.floor(y); end
+function LAYOUT.xy(out, k, x, y)
+    if k == 'dps' then out._dps = { math.floor(x), math.floor(y) }; return; end   -- (the meter is placed through dps.lua)
+    if LAYOUT.auto and LAYOUT.auto[k] then return; end               -- (alliances anchored to the party: they follow it)
+    out[k .. '_x'], out[k .. '_y'] = math.floor(x), math.floor(y);
+end
+-- The room already given out, so no two pieces ever sit on each other
+function LAYOUT.take(x, y, w, h) LAYOUT.taken[#LAYOUT.taken + 1] = { x, y, w, h }; end
+function LAYOUT.hit(x, y, w, h)
+    for _, r in ipairs(LAYOUT.taken) do
+        if x < r[1] + r[3] and x + w > r[1] and y < r[2] + r[4] and y + h > r[2] then return r; end
+    end
+    return nil;
+end
+function LAYOUT.put(o, k, x, y)                                      -- (a piece at a fixed place, its room taken)
+    local w, h = LAYOUT.size(k);
+    LAYOUT.xy(o, k, x, y);
+    LAYOUT.take(x, y, w, h);
+end
+-- Pieces in a column from (x, y0) down to ybot, each under the one before (and under anything already there); one that
+-- doesn't fit starts the next column beside it, toward the middle. side 1: x is the left edge; -1: x is the right edge
+function LAYOUT.on(k)
+    if k == 'doll' then return (cfg.equip_look or 'wheel') == 'doll'; end
+    if k == 'map' then return cfg.minimap ~= false; end
+    if k == 'timer' then return cfg.timers ~= false; end
+    if k == 'alliance' or k == 'ally2' then return cfg.alliance ~= false; end
+    if k == 'party' then return cfg.party ~= false; end
+    return true;
+end
+function LAYOUT.column(o, keys, x, y0, ybot, side)
+    local y, cw = y0, 0;
+    local W, H = LAYOUT.W, LAYOUT.H;
+    for _, k in ipairs(keys) do
+        if not LAYOUT.on(k) then goto next_piece; end
+        local w, h = LAYOUT.size(k);
+        local px = (side > 0) and x or (x - w);
+        for _ = 1, 40 do
+            if y > y0 and y + h > ybot then                          -- (no room left here: the next column)
+                x, y, cw = x + side * (cw + 24), y0, 0;
+                px = (side > 0) and x or (x - w);
+            end
+            local r = LAYOUT.hit(px, y, w, h);
+            if r == nil then break; end
+            y = r[2] + r[4] + 16;                                    -- (something there: just under it)
+        end
+        px, y = math.max(0, math.min(W - w, px)), math.max(0, math.min(H - h, y));   -- (a small screen: never off it)
+        LAYOUT.xy(o, k, px, y);
+        LAYOUT.take(px, y, w, h);
+        y, cw = y + h + 16, math.max(cw, w);
+        ::next_piece::
+    end
+end
 -- Your HP / MP / TP bars' windows (equip.lua): their width and height, from where the bars were last drawn
 function LAYOUT.bar_size(key)
+    local m = (type(YUI_EQ_SBSIZE) == 'function') and YUI_EQ_SBSIZE(key) or nil;   -- (its window as measured: the real size)
+    if type(m) == 'table' and (tonumber(m[1]) or 0) > 4 and (tonumber(m[2]) or 0) > 4 then return m[1], m[2]; end
     local bp = (type(YUI_EQ_BARPOS) == 'table') and YUI_EQ_BARPOS[key] or nil;
     local sc = bp and bp[5] or 1;
     if bp then return bp[3] + 16, math.floor(62 * sc); end
     return 276, 62;
 end
+-- How tall the three bars are stacked (MP and TP under HP, BARS > anchored): each one starts just under the one before
+function LAYOUT.stack_h(hh) return hh * 3 - 12; end
+-- Every built-in layout places every piece: target (with its name, Magic Burst line, skillchain fan and enemy cast back
+-- in their own places by the bar), sub-target, enemies, party, alliances, your bars, cast bar, pet, timers, equipment,
+-- minimap, chats, Damage Meter, exp, gil and bag - each in room nothing else has.
 function LAYOUT.build(name)
     local ds = imgui.GetIO().DisplaySize;
     LAYOUT.W, LAYOUT.H = (ds and ds.x) or 1920, (ds and ds.y) or 1080;
     local W, H, m = LAYOUT.W, LAYOUT.H, 24;
-    local o, eq, dps = {}, {}, nil;
+    local o, eq = {}, {};
+    LAYOUT.taken = {};
+    local anch = cfg.ally_anchor and cfg.party and true or false;
+    LAYOUT.auto = { alliance = anch, ally2 = anch };
+    local split = cfg.chat_split and true or false;                  -- (the combat log in a chat of its own: two chats)
     cfg.chat2_w, cfg.chat2_h = tonumber(cfg.chat_w) or 620, tonumber(cfg.chat_h) or 260;   -- (both chats the same size)
     o.chat2_w, o.chat2_h = cfg.chat2_w, cfg.chat2_h;
-    local hw, hh = LAYOUT.bar_size('hp');
-    local mw = LAYOUT.bar_size('mp');
-    local tw = LAYOUT.bar_size('tp');
-    local _, ph = LAYOUT.size('party');
-    local _, ah = LAYOUT.size('alliance');
-    local pw, peth = LAYOUT.size('pet');
-    if name == 'classic' then                                       -- bars bottom middle, party top right, timers left
-        local gw = hw + mw + tw + 12;                                -- (the three side by side)
-        local bx, by = W / 2 - gw / 2, H - hh - 90;
-        eq = { sb_anchor = 2, hpbar_x = math.floor(bx), hpbar_y = math.floor(by) };
-        LAYOUT.xy(o, 'cast', W / 2 - select(1, LAYOUT.size('cast')) / 2, by - 70);
-        LAYOUT.at(o, 'target', 0.5, 0, 0, 40);
-        LAYOUT.at(o, 'sub', 0.5, 0, 0, 110);
-        LAYOUT.at(o, 'party', 1, 0, -m, 40);
-        local pw_ = LAYOUT.size('party');                             -- the alliances beside the party, the enemies under it
-        LAYOUT.at(o, 'alliance', 1, 0, -m - pw_ - 20, 40);
-        LAYOUT.at(o, 'ally2', 1, 0, -m - pw_ - 20, 40 + ah + 12);
-        LAYOUT.at(o, 'enemy', 1, 0, -m, 40 + ph + 16);
-        LAYOUT.at(o, 'timer', 0, 0.30, m, 0);
-        LAYOUT.chats(o, bx, bx + gw);                               -- (clear of the game's menus and of your bars)
-        LAYOUT.xy(o, 'pet', W / 2 - pw / 2, by - 70 - peth - 12);   -- (above the cast bar, clear of both chats)
-        LAYOUT.at(o, 'doll', 0, 0.30, m + select(1, LAYOUT.size('timer')) + 30, 0);
-        dps = { W - 404 - m, H * 0.36 };
-    elseif name == 'raid' then                                      -- party top left, bars stacked bottom middle, timers right
-        local bx, by = W / 2 - hw / 2, H - hh * 3 - 70;
-        eq = { sb_anchor = 1, hpbar_x = math.floor(bx), hpbar_y = math.floor(by) };
-        LAYOUT.xy(o, 'cast', W / 2 - select(1, LAYOUT.size('cast')) / 2, by - 64);
-        LAYOUT.at(o, 'target', 0.5, 0, 0, 40);
-        LAYOUT.at(o, 'sub', 0.5, 0, 0, 110);
-        LAYOUT.at(o, 'party', 0, 0, m, 60);
-        LAYOUT.at(o, 'alliance', 0, 0, m, 60 + ph + 16);
-        LAYOUT.at(o, 'ally2', 0, 0, m, 60 + ph + 16 + ah + 12);
-        LAYOUT.at(o, 'timer', 1, 0, -m, 60);
-        LAYOUT.xy(o, 'enemy', W - m - select(1, LAYOUT.size('timer')) - 24 - select(1, LAYOUT.size('enemy')), 60);
-        LAYOUT.at(o, 'chat', 1, 1, -m, -46);
-        LAYOUT.at(o, 'chat2', 1, 1, -m, -46 - (tonumber(cfg.chat_h) or 260) - 12);
-        LAYOUT.xy(o, 'pet', bx - pw - 30, by);
-        LAYOUT.xy(o, 'doll', m + select(1, LAYOUT.size('party')) + 40, 160);
-        dps = { m, H * 0.62 };
-    else                                                             -- compact: gathered round the bars
-        local bx, by = W / 2 - hw / 2, H * 0.60;
-        eq = { sb_anchor = 1, hpbar_x = math.floor(bx), hpbar_y = math.floor(by) };
-        local tmw = LAYOUT.size('timer');
-        LAYOUT.xy(o, 'cast', W / 2 - select(1, LAYOUT.size('cast')) / 2, by - 60);
-        LAYOUT.at(o, 'target', 0.5, 0, 0, 40);
-        LAYOUT.at(o, 'sub', 0.5, 0, 0, 110);
-        local ctop = H - 46 - math.max(tonumber(cfg.chat_h) or 260, tonumber(cfg.chat2_h) or 260);   -- (above the chats)
-        local _, tmh = LAYOUT.size('timer');
-        LAYOUT.xy(o, 'party', bx + hw + 40, ctop - ph - 14);
-        LAYOUT.at(o, 'alliance', 1, 0, -m, 40);
-        LAYOUT.at(o, 'ally2', 1, 0, -m, 40 + ah + 12);
-        LAYOUT.xy(o, 'timer', bx - tmw - 40, ctop - tmh - 14);
-        LAYOUT.at(o, 'enemy', 0, 0, m, 40);
-        LAYOUT.chats(o, bx, bx + hw);
-        LAYOUT.xy(o, 'pet', bx, by + hh * 3 + 10);
-        LAYOUT.at(o, 'doll', 0, 0, m, 40 + select(2, LAYOUT.size('enemy')) + 20);
-        dps = { bx + hw + 60, by + ph + 220 };
-    end
+    local ch = tonumber(cfg.chat_h) or 260;
+    for _, p in ipairs({ 'tn', 'mb', 'fo', 'co' }) do o[p .. '_dx'], o[p .. '_dy'] = 0, 0; end   -- (name, Magic Burst, fan, cast: by the bar)
     -- the bottom row, in every layout: the exp bar right at the bottom of the screen, gil on its right, the bag on its left
     local ew, eh = LAYOUT.size('exp');
-    local gw, gh = LAYOUT.size('gil');
+    local gw_, gh = LAYOUT.size('gil');
     local bw_, bh_ = LAYOUT.size('bag');
-    LAYOUT.xy(o, 'exp', W / 2 - ew / 2, H - eh - 4);
-    LAYOUT.xy(o, 'gil', W / 2 + ew / 2 + 24, H - gh - 6);
-    LAYOUT.xy(o, 'bag', W / 2 - ew / 2 - 24 - bw_, H - bh_ - 6);
+    LAYOUT.put(o, 'exp', W / 2 - ew / 2, H - eh - 4);
+    LAYOUT.put(o, 'gil', W / 2 + ew / 2 + 24, H - gh - 6);
+    LAYOUT.put(o, 'bag', W / 2 - ew / 2 - 24 - bw_, H - bh_ - 6);
+    local floor_ = H - eh - 16;                                      -- (nothing reaches into the bottom row)
+    -- the target at the top middle; its Magic Burst line just over it, its fan on its left; the sub-target under it
+    local tw, th = LAYOUT.size('target');
+    local tx = W / 2 - tw / 2;
+    LAYOUT.xy(o, 'target', tx, 40);
+    local tsc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.target_scale) or 1);
+    LAYOUT.take(tx, 6, tw, th + 34);
+    if cfg.fight_info ~= false then
+        local fw, fh = LAYOUT.size('fan');
+        if (cfg.fan_place or 'bar') == 'free' then LAYOUT.put(o, 'fan', tx - fw - 20, 40);
+        else LAYOUT.take(tx - 18 * tsc - fw + 14 * tsc * FIGHT.fsc(), 40, fw + 4, fh + 40 * tsc); end
+    end
+    local sw_ = LAYOUT.size('sub');
+    LAYOUT.put(o, 'sub', W / 2 - sw_ / 2, 40 + th + 12);
+    local hw, hh = LAYOUT.bar_size('hp');
+    local mw = LAYOUT.bar_size('mp');
+    local tpw = LAYOUT.bar_size('tp');
+    local pw, peth = LAYOUT.size('pet');
+    local cw_, cth = LAYOUT.size('cast');
+    local dps;
+    if name == 'classic' then                                       -- bars bottom middle, party top right, timers left
+        local gw = hw + mw + tpw + 12;                               -- (the three side by side)
+        local bx, by = W / 2 - gw / 2, floor_ - hh - 40;
+        local x0 = m + math.floor(W * 0.13);
+        if math.min(bx - 24 - x0, (W - m) - (bx + gw + 24)) < math.min(260, tonumber(cfg.chat_w) or 620) then
+            by = H - 46 - ch - 12 - hh - 8;
+        end
+        eq = { sb_anchor = 2, hpbar_x = math.floor(bx), hpbar_y = math.floor(by) };
+        LAYOUT.take(bx, by, gw, hh);
+        LAYOUT.put(o, 'cast', W / 2 - cw_ / 2, by - cth - 14);
+        LAYOUT.put(o, 'pet', W / 2 - pw / 2, by - cth - 14 - peth - 12);
+        LAYOUT.chats(o, bx, bx + gw, split);
+        local ctop = H - 46 - ch - 12;
+        LAYOUT.column(o, { 'party', 'alliance', 'ally2', 'enemy', 'dps', 'doll' }, W - m, 40, split and ctop or floor_, -1);
+        LAYOUT.column(o, { 'map', 'timer' }, m, 40, ctop, 1);
+    elseif name == 'raid' then                                      -- party top left, bars stacked bottom middle, timers right
+        local stack = LAYOUT.stack_h(hh);
+        local bx, by = W / 2 - hw / 2, floor_ - stack - 20;
+        eq = { sb_anchor = 1, hpbar_x = math.floor(bx), hpbar_y = math.floor(by) };
+        LAYOUT.take(bx, by, hw, stack);
+        LAYOUT.put(o, 'cast', W / 2 - cw_ / 2, by - cth - 14);
+        LAYOUT.put(o, 'pet', bx - pw - 30, by + stack - peth);       -- (left of the bars, its foot on theirs)
+        local cw = math.floor(math.max(260, math.min(tonumber(cfg.chat_w) or 620, W - m - (bx + hw) - 24)));   -- (the chats right
+        cfg.chat_w, cfg.chat2_w, o.chat_w, o.chat2_w = cw, cw, cw, cw;                                          --  of the bars)
+        LAYOUT.put(o, 'chat', W - m - cw, H - 46 - ch);
+        local top = H - 46 - ch - 12;
+        if split then LAYOUT.put(o, 'chat2', W - m - cw, top - ch); top = top - ch - 12; end
+        LAYOUT.column(o, { 'timer', 'enemy', 'map' }, W - m, 60, top, -1);
+        LAYOUT.column(o, { 'party', 'alliance', 'ally2', 'doll', 'dps' }, m, 60, math.floor(H * 0.74), 1);   -- (clear of the game's
+    else                                                             -- compact: gathered round the bars          menus, bottom left)
+        local stack = LAYOUT.stack_h(hh);
+        local bx = W / 2 - hw / 2;
+        local ctop = H - 46 - ch - 12;
+        local by = math.min(math.floor(H * 0.58), ctop - stack);
+        eq = { sb_anchor = 1, hpbar_x = math.floor(bx), hpbar_y = math.floor(by) };
+        LAYOUT.take(bx, by, hw, stack);
+        LAYOUT.put(o, 'cast', W / 2 - cw_ / 2, by - cth - 14);
+        LAYOUT.put(o, 'pet', W / 2 - pw / 2, math.min(by + stack + 12, floor_ - peth));
+        LAYOUT.chats(o, bx, bx + hw, split);
+        local pw2, ph = LAYOUT.size('party');                        -- the party right of the bars, the timers left of them
+        local px, py = bx + hw + 40, math.max(40 + th + 80, ctop - ph);
+        LAYOUT.put(o, 'party', px, py);
+        if anch then                                                 -- (anchored alliances go over a low party)
+            local _, ah = LAYOUT.size('alliance');
+            LAYOUT.take(px, py - ah * 2 - 24, pw2, ah * 2 + 24);
+        end
+        local tmw, tmh = LAYOUT.size('timer');
+        LAYOUT.put(o, 'timer', bx - tmw - 40, math.max(40 + th + 80, ctop - tmh));
+        LAYOUT.column(o, { 'enemy', 'dps' }, m, 40, ctop, 1);
+        LAYOUT.column(o, anch and { 'doll', 'map' } or { 'doll', 'alliance', 'ally2', 'map' }, W - m, 40, ctop, -1);
+    end
+    dps = o._dps;
+    o._dps = nil;
     return o, eq, dps;
 end
 -- The two chats at the bottom corners, both the same size: the left one starts after the room the game's own menus
--- use (magic, items... open at the bottom left), and neither reaches the bars in the middle (lo .. hi)
-function LAYOUT.chats(o, lo, hi)
+-- use (magic, items... open at the bottom left), and neither reaches the bars in the middle (lo .. hi). The right one
+-- only when the combat log has a chat of its own (CHAT > Split combat log).
+function LAYOUT.chats(o, lo, hi, split)
     local W, H, m = LAYOUT.W, LAYOUT.H, 24;
     local x0 = m + math.floor(W * 0.13);
     local room = math.min(lo - 24 - x0, (W - m) - (hi + 24));
@@ -7778,8 +7877,8 @@ function LAYOUT.chats(o, lo, hi)
     local ch = tonumber(cfg.chat_h) or 260;
     cfg.chat_w, cfg.chat2_w, cfg.chat2_h = cw, cw, ch;
     o.chat_w, o.chat2_w, o.chat2_h = cw, cw, ch;
-    LAYOUT.xy(o, 'chat', x0, H - 46 - ch);
-    LAYOUT.xy(o, 'chat2', W - m - cw, H - 46 - ch);
+    LAYOUT.put(o, 'chat', x0, H - 46 - ch);
+    if split then LAYOUT.put(o, 'chat2', W - m - cw, H - 46 - ch); else LAYOUT.xy(o, 'chat2', W - m - cw, H - 46 - ch); end
 end
 function LAYOUT.apply(o, eq, dps)
     for k, v in pairs(o) do cfg[k] = v; end
@@ -8030,7 +8129,7 @@ function PANEL.buttons(dl, wx, wy, ww)                               -- size arr
         local clicked = imgui.InvisibleButton('##yui_sz' .. a[1], { bs, bs });
         local hov = imgui.IsItemHovered();
         if hov then
-            dl:AddRectFilled({ ax, by }, { ax + bs, by + bs }, u32({ 0.74, 0.66, 0.95, 0.22 }), bs / 2);
+            dl:AddRectFilled({ ax, by }, { ax + bs, by + bs }, u32({ C.acc[1], C.acc[2], C.acc[3], 0.22 }), bs / 2);
             YUI_TIP(a[3]);
         end
         local col = u32(hov and { 1, 1, 1, 1 } or { 0.80, 0.78, 0.90, 0.9 });
@@ -8122,7 +8221,7 @@ local function draw_window()
             local x1, y1, x2, y2 = q[1], q[2], q[1] + q[3], q[2] + q[4];
             local r = math.min(q[3], q[4]) * 0.10;
             if fill then fg:AddRectFilled({ x1, y1 }, { x2, y2 }, u32({ 0.035, 0.032, 0.050, fill }), r); end
-            fg:AddRect({ x1, y1 }, { x2, y2 }, u32({ 0.62, 0.30, 1.00, 0.25 * a }), r, C.rall, 6);
+            fg:AddRect({ x1, y1 }, { x2, y2 }, u32({ NEON[1], NEON[2], NEON[3], 0.25 * a }), r, C.rall, 6);
             fg:AddRect({ x1, y1 }, { x2, y2 }, u32({ 0.85, 0.65, 1.00, 0.9 * a }), r, C.rall, 1.5);
         end
         if e < 1 then pcall(function()
@@ -8147,7 +8246,7 @@ local function draw_window()
                 local tx, ty = (an.kind == 'min') and bx or ax, (an.kind == 'min') and by or ay;
                 local hx, hy = fx + (tx - fx) * h1, fy + (ty - fy) * h1;
                 local qx, qy = fx + (tx - fx) * h0, fy + (ty - fy) * h0;
-                fg:AddLine({ qx, qy }, { hx, hy }, u32({ 0.62, 0.30, 1.00, 0.35 }), 10);
+                fg:AddLine({ qx, qy }, { hx, hy }, u32({ NEON[1], NEON[2], NEON[3], 0.35 }), 10);
                 fg:AddLine({ qx, qy }, { hx, hy }, u32({ 0.92, 0.80, 1.00, 0.95 }), 2.5);
                 fg:AddCircleFilled({ hx, hy }, 6, u32({ 1, 0.95, 1, 0.9 }), 16);
                 if h1 > 0.7 then
@@ -8166,7 +8265,7 @@ local function draw_window()
                     local cx2, cy2 = IB[1] + IB[3] / 2, IB[2] + IB[4] / 2;
                     local cx, cy = cx1 + (cx2 - cx1) * f, cy1 + (cy2 - cy1) * f;
                     local hw = (PA[3] / 2) * (1 - f) + 4;
-                    fg:AddLine({ cx - hw, cy }, { cx + hw, cy }, u32({ 0.62, 0.30, 1.00, 0.35 }), 8);
+                    fg:AddLine({ cx - hw, cy }, { cx + hw, cy }, u32({ NEON[1], NEON[2], NEON[3], 0.35 }), 8);
                     fg:AddLine({ cx - hw, cy }, { cx + hw, cy }, u32({ 0.92, 0.82, 1.00, 0.95 }), 2);
                 end
             end
@@ -8606,6 +8705,10 @@ function C.apply_hp()
     local h = C.HPCOL[cfg.hp_color or 'pink'] or C.HPCOL.pink;
     C.hpb1, C.hpb2 = h[1], h[2];
     YUI_HP_COL = C.HPCOL[cfg.my_hp_color or cfg.hp_color or 'pink'] or h;   -- (equip.lua: your own HP bar)
+    for k = 1, 3 do                                                  -- the settings panel in your HP bar's colours
+        NEON[k], NEON2[k] = YUI_HP_COL[2][k], YUI_HP_COL[3][k];
+        C.acc[k] = YUI_HP_COL[3][k];
+    end
     local t = C.TGTCOL[cfg.target_hp_color or 'pink'] or C.TGTCOL.pink;
     C.tgt1, C.tgt2 = t[1], t[2] or C.hp2;
     YUI_HP_OUTLINE = cfg.hp_outline ~= false;                        -- (equip.lua: the thin black edge on your HP bar)
