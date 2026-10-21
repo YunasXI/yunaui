@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.23';
+addon.version = '1.0.24';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -4929,7 +4929,9 @@ function C.target_aura()
     local ent = AshitaCore:GetMemoryManager():GetEntity();
     if ent:GetRawEntity(idx) == nil then return; end
     local okty, ty = pcall(function() return ent:GetType(idx); end);   -- (the game's own kind: 0 players, 1 NPCs and monsters - characters;
-    if okty and type(ty) == 'number' and ty >= 2 then return; end    --  2 and up objects: counters, doors, tables... no aura on those)
+    local okfl, fl0 = pcall(function() return ent:GetSpawnFlags(idx); end);
+    local is_mob = okfl and type(fl0) == 'number' and bit.band(fl0, 0x10) ~= 0;   -- (monsters are type 2 too: keep theirs)
+    if okty and type(ty) == 'number' and ty >= 2 and not is_mob then return; end    --  2 and up objects: counters, doors, tables... no aura on those)
     local okst, st_ = pcall(function() return ent:GetStatus(idx); end);
     local me = AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0) or 0;
     local okme, stme = pcall(function() return ent:GetStatus(me); end);
