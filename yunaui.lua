@@ -1,8 +1,21 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.24';
+addon.version = '1.0.25';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
+
+-- YunaUI is a VanaCore addon: VanaCore\addons\vanacore\yunaui. Loaded any other way (as an Ashita addon, where `vana`
+-- isn't there) it says so and does nothing else. Its code uses Ashita's addon API names: native.lua sets them up first,
+-- from VanaCore's own Ashita layer.
+if rawget(_G, 'vana') == nil then
+    print('YunaUI is a VanaCore addon now: it goes in VanaCore\\addons\\vanacore\\yunaui (then /addon load yunaui).');
+    return;
+end
+if rawget(_G, 'AshitaCore') == nil then
+    local src = (debug.getinfo(1, 'S').source or ''):gsub('^@', '');
+    local dir = src:match('^(.*)[\\/][^\\/]+$') or (vana.paths.addons .. '\\vanacore\\yunaui');
+    assert(loadfile(dir .. '\\native.lua'))(dir);
+end
 
 require('common');
 local imgui    = require('imgui');
@@ -10,17 +23,6 @@ local settings = require('settings');
 local chat     = require('chat');
 local ffi      = require('ffi');
 local d3d      = require('d3d8');
-
--- YunaUI is for VanaCore only (the CatsEyeXI launcher's client). On plain Ashita it says so and does nothing else.
-do
-    local vana = false;
-    pcall(function() vana = AshitaCore:GetInstallPath():lower():find('vanacore', 1, true) ~= nil; end);
-    if not vana then pcall(function() vana = (addon.path or ''):lower():gsub('/', '\\'):find('\\addons\\ashita\\', 1, true) ~= nil; end); end
-    if not vana then
-        print(chat.header(addon.name):append(chat.error('YunaUI needs VanaCore (the CatsEyeXI launcher). It does not run on plain Ashita.')));
-        return;
-    end
-end
 
 -- Is this font able to be pushed at any size (VanaCore's ImGui)? Asked once per font, safely.
 YUI_FONTNEW = YUI_FONTNEW or setmetatable({}, { __mode = 'k' });
@@ -4658,54 +4660,18 @@ function C.vana_cfg()
     if type(v) == 'table' and type(v.config) == 'table' and type(v.config.set) == 'function' and type(v.config.get) == 'function' then return v.config; end
     return nil;
 end
--- On VanaCore (YunaUI loaded from Vanacore\addons\ashita\yunaui): its helper yunalink (vanacore\yunalink.lua here)
--- copied to Vanacore\addons\vanacore\yunalink and loaded, once per start; YunaUI then asks it with /yunalink commands
-C.LINK = { root = nil, t = nil };
-function C.link_root()
-    if C.LINK.root == nil then
-        C.LINK.root = (addon.path:gsub('/', '\\'):match('^(.*)\\addons\\ashita\\[^\\]+\\?$')) or false;
-    end
-    return C.LINK.root or nil;
-end
-function C.link_ready()                                              -- (true once yunalink is in place and has had a moment to load)
-    local root = C.link_root();
-    if root == nil then return false; end
-    if C.LINK.t == nil then
-        C.LINK.t = os.clock();
-        pcall(function()
-            local src = io.open((addon.path:gsub('[\\/]+$', '')) .. '\\vanacore\\yunalink.lua', 'rb');
-            if src == nil then return; end
-            local body = src:read('*a'); src:close();
-            local dir = root .. '\\addons\\vanacore\\yunalink';
-            local dst = dir .. '\\yunalink.lua';
-            local old = io.open(dst, 'rb');
-            local cur = old and old:read('*a') or nil;
-            if old then old:close(); end
-            if cur ~= body then
-                local made = false;                                  -- (Ashita's own folder maker; the shell's only if it isn't there - it flashes a window)
-                pcall(function() if ashita.fs and ashita.fs.create_directory then ashita.fs.create_directory(dir); made = true; end end);
-                if not made then os.execute('mkdir "' .. dir .. '" 2>nul'); end
-                local f = io.open(dst, 'wb');
-                if f then f:write(body); f:close(); end
-            end
-            AshitaCore:GetChatManager():QueueCommand(-1, '/addon load yunalink');
-        end);
-    end
-    return os.clock() - C.LINK.t > 3;
-end
 function C.hideown_sync()
     local on = C.head_bars_on();
     if C.HB.own == on then return; end
-    if C.link_root() then                                            -- VanaCore: through yunalink
-        if not C.link_ready() then return; end
-        C.HB.own = on;
-        pcall(function() AshitaCore:GetChatManager():QueueCommand(-1, '/yunalink hideown ' .. (on and 'on' or 'off')); end);
-        return;
-    end
     C.HB.own = on;
     local vc = C.vana_cfg();
     if vc == nil then return; end
     pcall(function()
+        local lp = vc.get('yunalink', 'hideown.prev');               -- (how it was, as the old helper yunalink kept it: taken over)
+        if lp ~= nil then
+            if cfg.hideown_prev == nil then cfg.hideown_prev = tostring(lp); end
+            vc.set('yunalink', 'hideown.prev', nil);
+        end
         if on then
             if cfg.hideown_prev == nil then cfg.hideown_prev = tostring(vc.get('graphics', 'nameplates.hideown') or '0'); end
             vc.set('graphics', 'nameplates.hideown', '1');
@@ -8322,7 +8288,7 @@ local function draw_window()
                 row_slider('##yui_hbs', 'Head bars size', 'head_bars_scale', 0.5, 2.5, 0.05, '%.2fx');
                 row_slider('##yui_hby', 'Head bars height', 'head_bars_y', -80, 80, 1, '%d');
                 row_pick('##yui_hbn', 'Head bars numbers', 'head_nums', { { 'always', 'Always' }, { 'change', 'When they change' }, { 'off', 'Off' } });
-                if C.vana_cfg() or C.link_root() then hint('Your own name and stars over your head are hidden while these bars are on (VanaCore\'s Hide own nameplate), and come back with Fixed.');
+                if C.vana_cfg() then hint('Your own name and stars over your head are hidden while these bars are on (VanaCore\'s Hide own nameplate), and come back with Fixed.');
                 else hint('Tip: hide your own name and stars over your head in /vana > Options > Nameplates > Hide own nameplate.'); end
             end
             if (cfg.head_bars or 'fixed') ~= 'head' then              -- (the fixed bars' own settings: only while they show)

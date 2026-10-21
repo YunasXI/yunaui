@@ -23,11 +23,15 @@ the AvantGarde-style font everywhere, and every piece placed where you like.
 
 ## Install
 
-YunaUI needs **VanaCore** (the client the CatsEyeXI launcher starts). It does not run on plain Ashita.
+YunaUI is a **VanaCore** addon (VanaCore is the client the CatsEyeXI launcher starts). It does not run on plain Ashita.
 
-1. Download the latest release zip and unzip it into `VanaCore\addons\ashita\` (so you have
-   `VanaCore\addons\ashita\yunaui\yunaui.lua`).
-2. In game: `/addon load yunaui`. Add that line to your startup script to load it every time.
+1. Download the latest release zip and unzip it into `VanaCore\addons\vanacore\` (so you have
+   `VanaCore\addons\vanacore\yunaui\yunaui.lua`).
+2. In game: `/addon load yunaui vanacore`. Add that line to your startup script to load it every time.
+
+**Updating from 1.0.24 or older?** Those went in `VanaCore\addons\ashita\yunaui`. Delete that folder (your settings
+are kept), unzip the new one as above, and change `/addon load yunaui` in your startup script to
+`/addon load yunaui vanacore`. The old `VanaCore\addons\vanacore\yunalink` helper isn't needed anymore: you can delete it too.
 3. The first time, a short guide shows what every piece does, then Edit Mode opens: place everything, then press **DONE**.
 
 ## Commands
@@ -44,7 +48,7 @@ YunaUI needs **VanaCore** (the client the CatsEyeXI launcher starts). It does no
 ## HD icons (optional)
 
 YunaUI uses the game's own item and buff icons. For sharper HD ones, install the separate pack
-[YunaUI Icons](https://github.com/YunasXI/yunaui-icons): extract its zip into your `addons` folder.
+[YunaUI Icons](https://github.com/YunasXI/yunaui-icons): extract its zip into `VanaCore\addons\vanacore\` (the folder that holds `yunaui`).
 
 ## Credits
 
