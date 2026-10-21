@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.15';
+addon.version = '1.0.16';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -58,7 +58,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, target_friend_look = 'banner',  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, target_friend_look = 'banner',  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -2332,11 +2332,11 @@ local function draw_enemies(dt)
             if cfg.buffs and e.idx > 0 then
                 local sid = ent:GetServerId(e.idx);
                 local d, now = enemies[sid], os.clock();
-                if d then
-                    local ids = {};
-                    for st, exp in pairs(d) do if exp > now then ids[#ids + 1] = st; end end
+                if d then                                            -- its debuffs, each with the time it has left under it (sleep, bind...)
+                    local ids, left = {}, {};
+                    for st, exp in pairs(d) do if exp > now then ids[#ids + 1] = st; left[st] = exp - now; end end
                     table.sort(ids);
-                    if #ids > 0 then draw_buffs(dl, x + w + 10 * sc, ry + (rowh - isz) / 2 - 3, ids, isz, 8, 1, 1); end
+                    if #ids > 0 then draw_buffs(dl, x + w + 10 * sc, ry + (rowh - isz) / 2 - 3 - isz * 0.28, ids, isz, 8, 1, 1, left); end
                 end
             end
             if e.idx > 0 then                                        -- click: target it
@@ -4296,7 +4296,17 @@ local function draw_party(dt)
     if not cfg.alliance then return; end
     local p = AshitaCore:GetMemoryManager():GetParty();
     -- each alliance party in a window of its own, with its own size and place (the party list's look)
-    for n, a in ipairs({ { 6, 'alliance_x', 'alliance_y', 'ally1_scale', 'ally1_cols' }, { 12, 'ally2_x', 'ally2_y', 'ally2_scale', 'ally2_cols' } }) do
+    local b1, b2 = 6, 12;                                            -- (which slots are the game's party 2 and 3: by their leaders, so the
+    pcall(function()                                                 --  windows follow the game's order - the one <stal> goes through)
+        local function has(first, sid)
+            if sid == nil or sid == 0 then return false; end
+            for i = first, first + 5 do if p:GetMemberIsActive(i) ~= 0 and p:GetMemberServerId(i) == sid then return true; end end
+            return false;
+        end
+        local l2, l3 = p:GetAlliancePartyLeaderServerId2(), p:GetAlliancePartyLeaderServerId3();
+        if has(12, l2) or has(6, l3) then b1, b2 = 12, 6; end
+    end);
+    for n, a in ipairs({ { b1, 'alliance_x', 'alliance_y', 'ally1_scale', 'ally1_cols' }, { b2, 'ally2_x', 'ally2_y', 'ally2_scale', 'ally2_cols' } }) do
         local any = PREVIEW.alliance;
         for i = a[1], a[1] + 5 do if p:GetMemberIsActive(i) ~= 0 then any = true; end end
         if any then
@@ -4679,6 +4689,25 @@ function C.bubble_draw_()
     end
     unsized(pushed);
 end
+-- With the combat log split off, the battle's aftermath goes there too (it isn't a battle message to the game, so it
+-- used to fill the All tab): experience, limit points, EXP chains, gil and items found or obtained, Records of
+-- Eminence progress, sparks / accolades, level-ups, "You cannot attack that target"...
+C.SPAM = { 'experience points', 'limit points', 'EXP chain', 'Obtained %d[%d,]* gil', 'Records of Eminence', '^Progress: %d+/%d+',
+           'You find .+ on the ', ' obtains? .+%.$', 'sparks of eminence', 'Unity accolades', 'attains level %d+',
+           'cannot attack that target', 'concealing a treasure', 'Venture mobs must', 'This objective may be repeated',
+           'You have completed the following Records', 'falls to the ground', 'too far away', 'out of range',
+           'cannot see ', 'Unable to see ', 'You must wait longer', 'lost the ', 'was defeated', 'defeats ',
+           'venture target', 'activity points', 'venture points', 'Linkshell Point Accumulation', 'Your venture begins',
+           'cleared to fulfill this objective' };
+function C.battle_spam(mode, line)
+    if is_combat(mode) then return false; end
+    local cat = cat_of(mode);
+    if cat ~= 'system' and cat ~= 'other' and cat ~= 'error' and cat ~= 'say' then return false; end
+    local sl = line:gsub('[\1\2]', '');
+    if cat == 'say' and sl:find(' : ', 1, true) then return false; end   -- (somebody really talking)
+    for _, pat in ipairs(C.SPAM) do if sl:find(pat) then return true; end end
+    return false;
+end
 local function chat_add(mode, raw)
     local ok, s = pcall(function()
         local m = raw;
@@ -4696,14 +4725,19 @@ local function chat_add(mode, raw)
         if line ~= '' then
             local raw_line = line;
             local fd = nil;
-            if is_combat(mode) then local okf, r = pcall(C.feed_take, log, raw_line, mode); fd = okf and r or nil; end   -- (CHAT > Combat feed)
-            if fd == nil then
-                if not is_combat(mode) then pcall(C.chat_pop, mode, raw_line); end   -- (CHAT > Tell pop-ups, Speech bubbles)
-                if cfg.chat_time then line = os.date('[%H:%M] ') .. line; end
-                CHATLOG.add(log, { text = line, raw = raw_line, cat = cat_of(mode), t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode });
-                if n == 1 then chat_seen_new(mode); end
+            local n_, log_ = n, log;
+            if n == 1 and cfg.chat_split then                        -- (the battle's aftermath: to the combat log)
+                local oks, sp = pcall(C.battle_spam, mode, raw_line);
+                if oks and sp then n_, log_ = 2, logs[2]; end
             end
-            if fd ~= 'merged' and cw[n].scroll > 0 then cw[n].scroll = cw[n].scroll + 1; end
+            if is_combat(mode) then local okf, r = pcall(C.feed_take, log_, raw_line, mode); fd = okf and r or nil; end   -- (CHAT > Combat feed)
+            if fd == nil then
+                if not is_combat(mode) then pcall(C.chat_pop, mode, raw_line); end   -- (CHAT > Speech bubbles)
+                if cfg.chat_time then line = os.date('[%H:%M] ') .. line; end
+                CHATLOG.add(log_, { text = line, raw = raw_line, cat = cat_of(mode), t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode });
+                if n_ == 1 then chat_seen_new(mode); end
+            end
+            if fd ~= 'merged' and cw[n_].scroll > 0 then cw[n_].scroll = cw[n_].scroll + 1; end
         end
     end
 end
@@ -4735,6 +4769,10 @@ local CHAT_EDGE = {
     soft   = { { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { 1, 1 } }, 0.75 },
     shadow = { { { 1, 1 }, { 2, 2 } }, 0.55 },
 };
+-- Words picked out in colour in the chat: how tough a monster is when you /check it (the game's own check colours)
+C.HL = { { 'too weak to be worthwhile', { 0.62, 0.62, 0.66 } }, { 'easy prey', { 0.55, 0.85, 1.0 } },
+         { 'decent challenge', { 0.40, 0.65, 1.0 } }, { 'even match', { 1, 1, 1 } }, { 'incredibly tough', { 1.0, 0.30, 0.30 } },
+         { 'very tough', { 1.0, 0.58, 0.25 } }, { 'tough', { 1.0, 0.90, 0.35 } }, { 'impossible to gauge', { 0.85, 0.45, 1.0 } } };
 local function chat_line(dl, x, y, s, c, a, lh)
     local edge = CHAT_EDGE.outline;                                  -- (always: a thin dark line round every letter)
     local OUTLINE = edge[1];
@@ -4742,7 +4780,20 @@ local function chat_line(dl, x, y, s, c, a, lh)
     local tc = u32({ c[1], c[2], c[3], a });
     local cx = x;
     local low = -math.floor(imgui.GetTextLineHeight() * 0.11 + 0.5);   -- (this font draws < and > low, centred on small letters: raised to sit centred on capitals and numbers, as in "<3")
-    local function put(str)                                          -- (a piece of text at cx, its < and > set down)
+    local put1;
+    local function put(str)                                          -- (a piece of text at cx: the C.HL words in their colour)
+        local low_ = str:lower();
+        local best, bs, be;
+        for _, h in ipairs(C.HL) do
+            local i = low_:find(h[1], 1, true);
+            if i and (bs == nil or i < bs) then best, bs, be = h, i, i + #h[1] - 1; end
+        end
+        if best == nil then put1(str, tc); return; end
+        if bs > 1 then put1(str:sub(1, bs - 1), tc); end
+        put1(str:sub(bs, be), u32({ best[2][1], best[2][2], best[2][3], a }));
+        if be < #str then put(str:sub(be + 1)); end
+    end
+    put1 = function(str, tc)                                         -- (its < and > set down)
         local p_ = 1;
         while p_ <= #str do
             local q = str:find('[<>]', p_);
@@ -6052,6 +6103,25 @@ local function draw_gil()
         outlined(dl, x + cr * 2 + 6 * sc, y, gs, { GOLD[1], GOLD[2], GOLD[3], 1 });
         local gw = imgui.CalcTextSize(gs);
         local h2 = lh;
+        do                                                           -- what just changed, under it: green +, pink -; 8 s, then it fades
+            local G = C.GIL or {};                                   -- (changes close together add up: +500, +500 = +1,000)
+            C.GIL = G;
+            local now = os.clock();
+            if G.prev == nil and gil > 0 then G.prev, G.base, G.t = gil, gil, -99; end
+            if G.prev and gil ~= G.prev then
+                if now - G.t > 9.5 then G.base = G.prev; end         -- (the last one had faded: a new count)
+                G.prev, G.t = gil, now;
+            end
+            local ga = math.max(0, math.min(1, 1 - (now - (G.t or -99) - 8) / 1.5));
+            local diff = (ga > 0 and G.base) and (gil - G.base) or 0;
+            if diff ~= 0 then
+                local fs = FS;
+                imgui.SetWindowFontScale(fs * 0.8);
+                outlined(dl, x + cr * 2 + 6 * sc, y + lh, (diff > 0 and '+' or '') .. commas(diff), diff > 0 and { 0.55, 1, 0.65, ga } or { 1, 0.5, 0.65, ga });
+                h2 = lh + imgui.GetTextLineHeight();
+                imgui.SetWindowFontScale(fs);
+            end
+        end
         unsized(pushed);
         imgui.Dummy({ cr * 2 + 6 * sc + gw + 16, h2 + 12 });
         end_plain('gil_x', 'gil_y');
@@ -7323,7 +7393,15 @@ function PANEL.frame(dl, x, y, w, h, SW)                         -- rounded, wit
     dl:AddLine({ tx, y + 24 * ps }, { mx2, my2 }, u32({ NEON[1], NEON[2], NEON[3], 0.25 }), 6 * ps);
     dl:AddLine({ tx, y + 24 * ps }, { mx2, my2 }, u32({ NEON2[1], NEON2[2], NEON2[3], 0.9 }), 1.6);
 end
-function PANEL.sidebar(dl, x0, y0, SW)
+-- The beta testers (bottom left of the panel) and the heart by YUNA UI: thanks, and a link to the author's Ko-fi
+PANEL.TESTERS = { 'rezzattack', 'Loudnoises', 'Chadbrowick', 'Rusbando' };
+PANEL.KOFI = 'https://ko-fi.com/yunasxi';
+function PANEL.heart(dl, cx, cy, r, col)                             -- (a small heart: two round tops and a point)
+    dl:AddCircleFilled({ cx - r * 0.5, cy - r * 0.15 }, r * 0.55, col, 16);
+    dl:AddCircleFilled({ cx + r * 0.5, cy - r * 0.15 }, r * 0.55, col, 16);
+    dl:AddTriangleFilled({ cx - r * 1.02, cy + r * 0.02 }, { cx + r * 1.02, cy + r * 0.02 }, { cx, cy + r * 1.05 }, col);
+end
+function PANEL.sidebar(dl, x0, y0, SW, bottom)
     local ps = C.ps;
     local y = y0 + 2 * ps;                                           -- YUNA UI at the top (no logo)
     local pushed = push_font(fonts.title, 24 * ps);                  -- YUNA UI, centred
@@ -7333,6 +7411,20 @@ function PANEL.sidebar(dl, x0, y0, SW)
     imgui.SetCursorScreenPos({ x0 + (SW - tw) / 2, y });
     title(dl, 'YUNA UI');
     local _, ty = imgui.GetCursorScreenPos();
+    do                                                               -- the heart, left of YUNA UI: a soft beat; over it, thanks; a click opens Ko-fi
+        local r = math.floor(7 * ps);
+        local hx, hy = x0 + (SW - tw) / 2 - r * 2 - 8 * ps, y + (ty - y) * 0.45;
+        local mx_, my_ = imgui.GetMousePos();
+        local over = mx_ >= hx - r * 1.6 and mx_ <= hx + r * 1.6 and my_ >= hy - r * 1.6 and my_ <= hy + r * 1.6;
+        local beat = 1 + 0.08 * math.max(0, math.sin(os.clock() * 3.2)) ^ 8;
+        if over then PANEL.heart(dl, hx, hy, r * 1.55 * beat, u32({ 1, 0.42, 0.72, 0.22 })); end
+        PANEL.heart(dl, hx, hy, (r + 1.5) * beat, u32({ 0, 0, 0, 0.8 }));
+        PANEL.heart(dl, hx, hy, r * beat, u32(over and { 1, 0.55, 0.80, 1 } or { 1, 0.42, 0.70, 0.95 }));
+        imgui.SetCursorScreenPos({ hx - r * 1.6, hy - r * 1.6 });
+        if imgui.InvisibleButton('##yui_kofi', { r * 3.2, r * 3.2 }) then pcall(function() ashita.misc.open_url(PANEL.KOFI); end); end
+        if over then YUI_TIP("Thank you for joining the YunaUI beta test!\nYunaUI is free. If you'd like to support the project,\nclick the heart to open my Ko-fi: ko-fi.com/yunasxi"); end
+        imgui.SetCursorScreenPos({ x0, ty });
+    end
     local vs = 'v' .. addon.version;
     local vw, vh = imgui.CalcTextSize(vs);
     dl:AddText({ x0 + (SW - vw) / 2, ty }, u32(C.muted), vs);
@@ -7364,6 +7456,20 @@ function PANEL.sidebar(dl, x0, y0, SW)
         imgui.SetCursorScreenPos({ x0, y });
         if imgui.InvisibleButton('##yui_side' .. k, { SW, ih }) then ui.tab = k; end
         y = y + ih + 8 * ps;
+    end
+    if bottom then                                                   -- BETA TESTERS at the bottom; the mouse over it shows their names
+        imgui.SetWindowFontScale(C.wfs * 0.82);
+        local lh = imgui.GetTextLineHeight();
+        local top = bottom - lh - 6 * ps;
+        if top > y + 10 * ps then
+            local bw = imgui.CalcTextSize('BETA TESTERS');
+            local mx_, my_ = imgui.GetMousePos();
+            local over = mx_ >= x0 + 20 * ps and mx_ <= x0 + 20 * ps + bw and my_ >= top and my_ <= top + lh;
+            dl:AddText({ x0 + 20 * ps, top }, u32({ C.hp2[1], C.hp2[2], C.hp2[3], over and 1 or 0.85 }), 'BETA TESTERS');
+            pcall(function() dl:AddRectFilledMultiColor({ x0 + 20 * ps, top + lh + 1 }, { x0 + 20 * ps + bw, top + lh + 2 }, u32(C.hp), u32({ C.mp2[1], C.mp2[2], C.mp2[3], 0 }), u32({ C.mp2[1], C.mp2[2], C.mp2[3], 0 }), u32(C.hp)); end);
+            if over then YUI_TIP('Thank you to our beta testers:\n' .. table.concat(PANEL.TESTERS, '\n')); end
+        end
+        imgui.SetWindowFontScale(C.wfs);
     end
     return y;
 end
@@ -7547,7 +7653,7 @@ local function draw_window()
         if pf == nil or not YUI_NEWFONT(pf) then C.wfs = C.ps; imgui.SetWindowFontScale(C.wfs); end
         local wx, wy = imgui.GetWindowPos();
         PANEL.frame(dl, wx, wy, WIN_W, WIN_H, SW);
-        PANEL.sidebar(dl, wx + 26 * ps, wy + 34 * ps, SW - 40 * ps);
+        PANEL.sidebar(dl, wx + 26 * ps, wy + 34 * ps, SW - 40 * ps, wy + WIN_H - 30 * ps);
         PANEL.buttons(dl, wx, wy + 6 * ps, WIN_W - 10 * ps);
         local tab = ui.tab or 1;
         -- the settings, in one column that scrolls (the sidebar stays put)
@@ -7766,6 +7872,8 @@ local function draw_window()
             row_switch('##yui_mm', 'Show', 'minimap', 'The map around you, redrawn dark in YunaUI\'s look: you (the arrow), your party in their role colours, monsters and your target.');
             row_switch('##yui_mm3f', 'Turn with you', 'map3d_follow', 'The minimap turns as you do, looking the way you face. Off: north stays up.');
             row_pick('##yui_mmc', 'Lines', 'map_color', { { 'white', 'White' }, { 'pink', 'Pink' }, { 'cyan', 'Cyan' } });
+            row_pick('##yui_mma', 'Your arrow', 'map_arrow_color', { { 'lines', 'As the lines' }, { 'white', 'White' }, { 'pink', 'Pink' },
+                { 'violet', 'Violet' }, { 'cyan', 'Cyan' }, { 'gold', 'Gold' }, { 'green', 'Green' } });
             if accent_button('PLAY IT##yui_mmt_play', { ROW_W, 0 }) then YMAP.tt = os.clock(); end
             row_slider('##yui_mms', 'Size', 'map_size', 120, 480, 5, '%d px');
             row_slider('##yui_mmz', 'Zoom', 'map_zoom', 16, 256, 2, '%d');
@@ -7939,6 +8047,12 @@ function YMAP.have()                                                 -- (the map
 end
 YMAP.COLS = { white = { 1.00, 1.00, 1.00 }, pink = { 1.00, 0.55, 0.78 },                                      -- BARS > MINIMAP > Lines
               cyan = { 0.55, 0.85, 1.00 } };                                                                       -- (cyan: the Target of Target's)
+YMAP.ACOLS = { white = { 1, 1, 1 }, pink = { 1.00, 0.55, 0.78 }, violet = { 0.70, 0.55, 1.00 }, cyan = { 0.55, 0.85, 1.00 },
+               gold = { 1.00, 0.84, 0.45 }, green = { 0.55, 1.00, 0.65 } };
+function YMAP.acol(al)                                               -- your arrow's colour (MINIMAP > Your arrow; 'lines' = as the lines)
+    local c = YMAP.ACOLS[cfg.map_arrow_color or 'lines'] or YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
+    return u32({ c[1], c[2], c[3], al or 1 });
+end
 function YMAP.lcol(dim)                                              -- (dim: the place names, softer than the lines)
     local c = YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
     local m = dim and 0.66 or 1;
@@ -8088,7 +8202,7 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside)
             local ok = pcall(function()
                 dl:AddImageQuad(t.ptr, { px + (fx - rx) * h, py + (fy - ry) * h }, { px + (fx + rx) * h, py + (fy + ry) * h },
                     { px + (-fx + rx) * h, py + (-fy + ry) * h }, { px + (-fx - rx) * h, py + (-fy - ry) * h },
-                    { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, YMAP.lcol());   -- (white, tinted like the map's lines)
+                    { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, YMAP.acol());   -- (white, tinted: MINIMAP > Your arrow)
             end);
             if ok then return; end
         end
@@ -8148,7 +8262,8 @@ end
 function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch, dist, soft, grid)
     local D = YMAP.d3;
     local X, Y, Z = ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0, ent:GetLocalPositionZ(me) or 0;
-    if D.hs == nil then D.hs = YMAP.d3height(m, X, Y, Z); end
+    D.hs = -1;                                                       -- (the mesh's height runs against the game's: checked on every zone with
+                                                                     --  known positions; guessing it from nearby points went wrong where few lines are)
     local hs = D.hs;
     local tx, th, ty = X, Z * hs, Y;
     local cy_, sy_ = math.cos(yaw), math.sin(yaw);
@@ -8203,6 +8318,8 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
             if not ((ax < x0 and bx_ < x0) or (ax > x1 and bx_ > x1) or (ay < y0 and by_ < y0) or (ay > y1 and by_ > y1)) then
                 local t = 1 - (da + db) / (2 * fade);
                 local dim = (k >= netk) and 0.28 or 1;
+                local fh = math.abs((v[a * 3 - 1] + v[b * 3 - 1]) / 2 - th);   -- (other floors fade out: only yours shows, a little above
+                if fh > 3.5 then dim = dim * math.max(0, 1 - (fh - 3.5) / 4.5); end   --  and below for steps and ramps)
                 if soft or dim < 1 then                              -- (no edge at all: the lines fade out in a circle)
                     local ef = 1;
                     if soft then
@@ -8313,8 +8430,8 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
         local rx_, ry_ = proj(X - fx * L_ * 0.7 + fy * L_ * 0.7, th, Y - fy * L_ * 0.7 - fx * L_ * 0.7);
         local cx_, cy2 = proj(X, th, Y);
         if ax and lx_ and rx_ and cx_ then
-            local wc = YMAP.lcol();
-            dl:AddCircleFilled({ cx_, cy2 }, 9 * sc, u32({ lc[1], lc[2], lc[3], 0.16 }), 20);
+            local wc = YMAP.acol();
+            dl:AddCircleFilled({ cx_, cy2 }, 9 * sc, YMAP.acol(0.16), 20);
             ALLY.poly(dl, { { ax, ay }, { rx_, ry_ }, { cx_, cy2 } }, wc);
             ALLY.poly(dl, { { ax, ay }, { cx_, cy2 }, { lx_, ly_ } }, wc);
         end
@@ -9249,13 +9366,14 @@ end);
 -- The game's own way works too: numpad + moves the game's focus (your buffs, the cursor, the chat); when it lands on
 -- the chat, the game's log is hidden (legacy.log_away) and YunaUI's chat lights up instead, and then Enter makes it big
 -- (not the game's full log), Escape goes back, Page Up / Down scroll - numpad + itself always stays the game's.
-legacy.kb = { held = {}, keys = { 0x21, 0x1C, 0x9C, 0x01, 0xC9, 0xD1 } };
+legacy.kb = { held = {}, keys = { 0x21, 0x1C, 0x9C, 0x01, 0xC9, 0xD1, 0x4E } };
 function legacy.kb_act(k)                                            -- (what a key does right now, or nil)
     if not (cfg.chat and cfg.hide_game_chat) then return nil; end
     local io = imgui.GetIO();
     if io.WantTextInput or io.KeyCtrl or io.KeyAlt or io.KeyShift then return nil; end
     if k == 0x21 then return (legacy.pad.menu == '' or legacy.pad.mine) and 'log' or nil; end
     if not legacy.pad.open then return nil; end                     -- (YunaUI's chat lit: opened with F, or the game's focus on its chat)
+    if k == 0x4E then return legacy.pad.big and 'log' or nil; end   -- (numpad +: in the big chat, the next tab - as F; else it stays the game's)
     if k == 0x1C or k == 0x9C then return 'big'; end
     if k == 0x01 then return (legacy.pad.mine or legacy.pad.big) and 'back' or nil; end   -- (else Escape is the game's: it leaves its chat)
     if k == 0xC9 then return 'up'; end
