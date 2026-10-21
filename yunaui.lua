@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.25';
+addon.version = '1.0.26';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -60,7 +60,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_party = true, chat_f_trust = true, chat_f_others = true, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_party = true, chat_f_trust = true, chat_f_others = true, chat_f_tspell = true, chat_f_debuff = true, chat_f_wear = true, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -5072,9 +5072,33 @@ function C.actor_kind(name)                                          -- 'me', 'p
     K.kinds[name] = kind;
     return kind;
 end
+C.CF.ACT = { ' casts ', ' uses ', ' readies ', ' starts casting ', ' hits ', ' misses ', 'critical hit', ' performs ' };
+function C.cf_starts(sl)                                             -- (true: this line starts someone's new action)
+    for _, w in ipairs(C.CF.ACT) do if sl:find(w, 1, true) then return true; end end
+    return false;
+end
+-- CHAT > COMBAT FILTERS > Buffs wearing off: "X's Haste effect wears off." / "X is no longer paralyzed." for anyone but you
+function C.wear_skip(line)
+    if cfg.chat_f_wear ~= false then return false; end
+    local sl = line:gsub('[\1\2]', '');
+    local w = sl:match("^(.-)'s? .- effect wears off%.$") or sl:match('^(.-) is no longer .-%.$');
+    return w ~= nil and C.actor_kind(w) ~= 'me';
+end
 function C.combat_skip(line)                                         -- (true: this battle line is filtered out)
     local sl = line:gsub('[\1\2]', '');
     local F = C.CF;
+    if F.tskip and os.clock() - F.tskip < 0.02 and not C.cf_starts(sl) then return true; end   -- (what a left-out trust action did)
+    F.tskip = nil;
+    if cfg.chat_f_debuff == false then                               -- (Area debuff lines: one spell on many monsters = its first line only)
+        local t, what = sl:match('^(.-) is (.-)%.$');
+        if t == nil then t, what = sl:match('^(.-) receives the effect of (.-)%.$'); end
+        if t == nil then t = sl:match('^(.-) resists the spell') or sl:match('^(.-) resists the effects of the spell'); what = 'resist'; end
+        if t ~= nil and what ~= nil and not what:find('^no longer') and C.actor_kind(t) == 'other' then
+            local now = os.clock();
+            if F.deb and F.deb.what == what and now - F.deb.t < 0.5 then F.deb.t = now; return true; end
+            F.deb = { what = what, t = now };
+        end
+    end
     if F.skipnext and os.clock() - F.skipnext < 0.25 and sl:find('^.- takes %d+ points? of damage%.$') then F.skipnext = nil; return true; end
     F.skipnext = nil;
     local who = sl:match('^(.-) hits .- for %d+ points? of damage%.$') or sl:match('^(.-) misses .-%.$')
@@ -5085,6 +5109,8 @@ function C.combat_skip(line)                                         -- (true: t
     local kind = C.actor_kind(who);
     local skip = (melee and kind == 'party' and cfg.chat_f_party == false) or (melee and kind == 'trust' and cfg.chat_f_trust == false)
               or (kind == 'outsider' and cfg.chat_f_others == false);
+    if not melee and kind == 'trust' and cfg.chat_f_tspell == false and not sl:find(' readies ', 1, true)
+        and not sl:find(' starts casting ', 1, true) then F.tskip = os.clock(); return true; end   -- (Trusts' spells and abilities)
     if skip and sl:find('critical hit!$') then F.skipnext = os.clock(); end   -- (its damage comes on the next line)
     return skip;
 end
@@ -5112,6 +5138,7 @@ local function chat_add(mode, raw)
             end
             local cut_ = false;
             if is_combat(mode) then local okc, r = pcall(C.combat_skip, raw_line); cut_ = okc and r; end   -- (CHAT > COMBAT FILTERS)
+            if not cut_ and mode >= 20 then local okw, r = pcall(C.wear_skip, raw_line); cut_ = okw and r; end
             if cut_ then goto skip_line; end
             if is_combat(mode) then local okf, r = pcall(C.feed_take, log_, raw_line, mode); fd = okf and r or nil; end   -- (CHAT > Combat feed)
             if fd == nil then
@@ -5220,7 +5247,7 @@ end
 -- One combat-feed line: who (bright), a small chevron, the spell (violet) or ability (gold), dots while it's being cast,
 -- the target, then a green tick when it lands, damage in orange, HP healed in green, "miss" in red. Returns its width;
 -- measure = true only measures.
-function C.feed_draw(dl, x, y, e, a, lh, measure)
+function C.feed_draw(dl, x, y, e, a, lh, measure, notime)
     local f = e.feed;
     local th = imgui.GetTextLineHeight();
     local cx = x;
@@ -5250,7 +5277,7 @@ function C.feed_draw(dl, x, y, e, a, lh, measure)
         cx = cx + w_;
     end
     local sp = imgui.CalcTextSize(' ');
-    if e.tpre then txt(e.tpre, C.ts_col(), 0.85); end
+    if e.tpre and not notime then txt(e.tpre, C.ts_col(), 0.85); end   -- (the clear look draws it itself, small, after the bar)
     txt(f.actor, { 0.97, 0.96, 1.0 });
     chev({ 0.70, 0.68, 0.80 });
     local kc = (f.kind == 'magic') and { 0.74, 0.64, 1.0 } or { 1.0, 0.82, 0.45 };
@@ -6142,7 +6169,9 @@ local function draw_chat(n)
             local vis = math.max(st.hv, life);
             if vis <= 0.01 and skip <= 0 then break; end            -- older lines are all faded out
             local lines, bts = nil, nil;
-            if e.feed then lines = { e.text };                       -- (a combat-feed line: one row, drawn by C.feed_draw)
+            if e.feed then                                           -- (a combat-feed line: one row, drawn by C.feed_draw)
+                lines = { e.text };
+                if CL and e.tpre then bts = (e.tpre:gsub('[%[%]]', ''):match('^%s*(.-)%s*$')); end
             elseif CL then lines, bts = C.wrapb(e, maxw - CL.ind, size);
             else lines = C.wrapc(e, maxw, size); end
             local drew = false;
@@ -6168,7 +6197,7 @@ local function draw_chat(n)
                         end
                         local txt = lines[k];
                         local px = x + pad - slide;                  -- (where this row starts: sliding in when new)
-                        local cl_ = CL and not e.feed;
+                        local cl_ = CL and true or false;
                         if cl_ then                                  -- clear look: the channel's bar, the time on the first row, the words after them
                             local th0 = lh - math.max(0, math.min(16, tonumber(cfg.chat_gap) or 6));
                             local bc = chat_col(e.cat);
@@ -6182,7 +6211,7 @@ local function draw_chat(n)
                             end
                             px = px + CL.ind;
                         end
-                        local tw_ = e.feed and C.feed_draw(dl, px, ly, e, a, lh, true) or line_w(txt);
+                        local tw_ = e.feed and C.feed_draw(dl, px, ly, e, a, lh, true, cl_) or line_w(txt);
                         local th = lh - math.max(0, math.min(16, tonumber(cfg.chat_gap) or 6));
                         if glow > 0.01 then                          -- (new, or a feed line that just grew: a soft glow in its colour)
                             dl:AddRectFilled({ px - 5, ly - 2 }, { px + tw_ + 5, ly + th + 1 }, u32({ c[1], c[2], c[3], 0.22 * glow * glow * a }), 4);
@@ -6193,7 +6222,7 @@ local function draw_chat(n)
                         end
                         local ts = (not cl_ and not e.feed and k == 1 and (e.tslen or 0) > 0 and #txt > e.tslen) and txt:sub(1, e.tslen) or nil;
                         if e.feed then
-                            C.feed_draw(dl, px, ly, e, a, lh);
+                            C.feed_draw(dl, px, ly, e, a, lh, false, cl_);
                         elseif ts then                               -- the time in its own colour (CHAT > Timestamps > Colour), so the words stand out
                             chat_line(dl, px, ly, ts, C.ts_col(), a * 0.85, lh);
                             chat_line(dl, px + line_w(ts), ly, txt:sub(#ts + 1), c, a, lh);
@@ -8346,7 +8375,10 @@ local function draw_window()
             row_switch('##yui_cfp', "Party members' hits", 'chat_f_party', "Off: your party members' plain hits, misses and critical hits are left out of the chat (their weapon skills, spells and abilities stay).");
             row_switch('##yui_cft', "Trusts' hits", 'chat_f_trust', "Off: your trusts' plain hits, misses and critical hits are left out of the chat (their weapon skills, spells and abilities stay).");
             row_switch('##yui_cfo', "Other players' fights", 'chat_f_others', 'Off: everything players outside your party do is left out of the chat.');
-            hint('Your own lines and the monsters\' always show.');
+            row_switch('##yui_cfs', "Trusts' spells and abilities", 'chat_f_tspell', "Off: your trusts' spells, abilities and weapon skills, and what they did, are left out of the chat (their \"readies\" and \"starts casting\" lines stay).");
+            row_switch('##yui_cfd', 'Area debuff lines', 'chat_f_debuff', 'Off: when one spell or ability puts the same debuff on several monsters (or several resist it), only the first line shows.');
+            row_switch('##yui_cfw', 'Buffs wearing off', 'chat_f_wear', 'Off: "... effect wears off" and "... is no longer ..." lines are left out, for everyone but you.');
+            hint('Your own actions and the monsters\' readies and casts always show.');
             section('LOOK');
             row_pick('##yui_clook', 'Look', 'chat_look', { { 'clear', 'Clear' }, { 'classic', 'Classic' } });
             if cfg.chat_look ~= 'classic' then
