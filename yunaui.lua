@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.19';
+addon.version = '1.0.20';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -5782,6 +5782,10 @@ local function draw_chat(n)
             local keep = cfg.chat_fade_old == false;                 -- CHAT > Fade when idle off: every line stays, the older ones too
             local life = (keep or rown < 5) and 1 or 0;
             local lt = 1;
+            if n == 2 and not keep then                              -- (the combat log: once the fighting stops its lines fade right away, so the
+                lt = math.max(0, math.min(1, 1 - ((now - (e.t or now)) - hold) / fade));   --  last hits don't sit there in town)
+                life = life * lt;
+            end
             local vis = math.max(st.hv, life);
             if vis <= 0.01 and skip <= 0 then break; end            -- older lines are all faded out
             local lines = e.feed and { e.text } or wrap(e, maxw, size);  -- (a combat-feed line: one row, drawn by C.feed_draw)
