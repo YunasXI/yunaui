@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.26';
+addon.version = '1.0.27';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1294,6 +1294,8 @@ function FIGHT.on_skill(actor, kind, param, m, tid, ap)
                           closed = (level == 4), chain = prop, elems = FIGHT.CHAIN[prop][2] };
     elseif FIGHT.MSG[m] and kind ~= 4 then                           -- the first step: it opens its own properties
         FIGHT.sc[tid] = { en = sk.en, property = sk.skillchain or {}, ts = now, dur = 7 + delay, wait = delay, step = 1 };
+    elseif m == 529 then                                             -- "... is chainbound" (SAM Konzen-ittai, DNC Wild Flourish): opens theirs
+        FIGHT.sc[tid] = { en = sk.en, property = sk.skillchain or {}, ts = now, dur = 9, wait = 2, step = 1 };
     end
 end
 -- Your weapon skills now (from the game: which ones you have), refreshed every few seconds
@@ -5114,6 +5116,15 @@ function C.combat_skip(line)                                         -- (true: t
     if skip and sl:find('critical hit!$') then F.skipnext = os.clock(); end   -- (its damage comes on the next line)
     return skip;
 end
+C.RL = { n = 0, t = {} };                                            -- (the lines of the last few seconds, by text)
+function C.seen_line(line, stamped)                                  -- (true: a time-stamped copy of a line YunaUI just had)
+    local R, now = C.RL, os.clock();
+    local dup = stamped and R.t[line] ~= nil and now - R.t[line] < 3;
+    if R.n > 400 then R.t, R.n = {}, 0; end
+    if R.t[line] == nil then R.n = R.n + 1; end
+    R.t[line] = now;
+    return dup;
+end
 local function chat_add(mode, raw)
     local ok, s = pcall(function()
         local m = raw;
@@ -5129,6 +5140,9 @@ local function chat_add(mode, raw)
     for line in (s .. '\n'):gmatch('([^\n\7]*)[\n\7]') do
         line = line:match('^%s*(.-)%s*$');
         if line ~= '' then
+            local stamped, l2 = false, line:gsub('^%[%d%d?:%d%d[^%]]-%]%s*', '');   -- (another chat addon's "[12:43:45]": YunaUI
+            if l2 ~= line and l2 ~= '' then stamped, line = true, l2; end            --  has its own times; its copy of a line
+            if C.seen_line(line, stamped) then goto skip_line; end                  --  YunaUI already has is left out)
             local raw_line = line;
             local fd = nil;
             local n_, log_ = n, log;
