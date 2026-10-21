@@ -189,7 +189,6 @@ local NAME_FONTS = {
 };
 local function load_fonts()
     fonts.yui = {};
-    if YUI_OLDIMGUI then return; end                                 -- (plain Ashita: no fonts of our own, see YUI_OLDIMGUI in yunaui.lua)
     local dir = (os.getenv('WINDIR') or 'C:\\Windows') .. '\\Fonts\\';
     local function add(name, size)
         local f = io.open(dir .. name, 'rb');
@@ -208,17 +207,17 @@ local function load_fonts()
     local yh = io.open(yf, 'rb');
     if yh then
         yh:close();
-        for _, px in ipairs(YUI_OLDIMGUI and { 18, 32 } or { 13, 18, 24, 32, 44 }) do
+        for _, px in ipairs({ 13, 18, 24, 32, 44 }) do
             local ok, ft = pcall(imgui.AddFontFromFileTTF, yf, px);
             if ok and ft then fonts.yui[#fonts.yui + 1] = { ft, px }; end
         end
     end
-    for _, sf in ipairs(SET_FONTS) do                                -- (plain Ashita: only the one in use, see YUI_OLDIMGUI)
-        if not YUI_OLDIMGUI or sf[1] == (cfg.set_font or 'bahn') then fonts.set[sf[1]] = add(sf[3], 26); end
+    for _, sf in ipairs(SET_FONTS) do
+        fonts.set[sf[1]] = add(sf[3], 26);
     end
     -- The state name's fonts: every one in NAME_FONTS that is there (missing ones are skipped)
     local mine = (YUI_EQ_PATH:gsub('[\\/]+$', '')) .. '\\fonts\\';
-    for _, nf in ipairs(YUI_OLDIMGUI and {} or NAME_FONTS) do
+    for _, nf in ipairs(NAME_FONTS) do
         local font = nil;
         if nf[2] then
             local f = io.open(mine .. nf[2], 'rb');
@@ -455,15 +454,7 @@ local function resample(px, w, h, S)
     return { tex = tex, ptr = tonumber(ffi.cast('uint32_t', tex)) };
 end
 -- The icon at exactly S px (nil until it's been made; the 32 px one is used meanwhile)
--- Plain Ashita runs DirectX 8: making new textures while playing can stall it, so there the game's own icons are
--- used as they are (no sharp enlarged copies). VanaCore (DirectX 12) gets them.
-local IS_DX8 = nil;
 local function item_big(id, ic, S)
-    if IS_DX8 == nil then
-        IS_DX8 = true;
-        pcall(function() IS_DX8 = not AshitaCore:GetInstallPath():lower():find('vanacore', 1, true); end);
-    end
-    if IS_DX8 then return nil; end
     if ic == nil or ic.px == nil or S == ic.w then return nil; end
     local key = id .. ':' .. S;
     local b = bigs[key];
@@ -2488,7 +2479,7 @@ end
 -- equipped ones and one every few frames, so whatever you swap into is sharp straight away. The list is
 -- refreshed every minute and whenever the icon size changes.
 function JOBS.prewarm()
-    if #big_queue > 0 or ye.big_S == nil or ye.big_S <= 34 or IS_DX8 ~= false then return; end   -- icons drawn at their own size need no copy
+    if #big_queue > 0 or ye.big_S == nil or ye.big_S <= 34 then return; end   -- icons drawn at their own size need no copy
     local now = os.clock();
     if ye.warm_list == nil or ye.warm_S ~= ye.big_S or now > ye.warm_rescan then
         local list, seen = {}, {};
@@ -3405,12 +3396,6 @@ YUI_EQ_SETTINGS = function()
 end
 -- Settings copied in from another character (YunaUI sees the file change): take them at once, move everything
 YUI_EQ_GET = function() return cfg; end
-YUI_EQ_SETFONTS = function(f)                                        -- (plain Ashita: YunaUI's few fonts, shared; see YUI_OLDIMGUI)
-    fonts.yui = (f.sized and f.sized.chat) or {};
-    fonts.main, fonts.semi, fonts.serif = f.main, f.main, f.main;
-    fonts.title = f.title or f.main;
-    fonts.set[cfg.set_font or 'bahn'] = fonts.title;
-end
 YUI_EQ_RECT = function()                                             -- where your HP / MP / TP bars are, all together (YunaUI's guide)
     local x0, y0, x1, y1;
     for key, sz in pairs(JOBS.sb_size or {}) do

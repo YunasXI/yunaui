@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.22';
+addon.version = '1.0.23';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -11,19 +11,19 @@ local chat     = require('chat');
 local ffi      = require('ffi');
 local d3d      = require('d3d8');
 
--- Is this font from the newer ImGui (VanaCore: any size when pushed) or the older one (plain Ashita: fixed size)?
--- Asked safely: on plain Ashita even asking a font for LegacySize is an error, which broke everything drawn with a font.
+-- YunaUI is for VanaCore only (the CatsEyeXI launcher's client). On plain Ashita it says so and does nothing else.
+do
+    local vana = false;
+    pcall(function() vana = AshitaCore:GetInstallPath():lower():find('vanacore', 1, true) ~= nil; end);
+    if not vana then pcall(function() vana = (addon.path or ''):lower():gsub('/', '\\'):find('\\addons\\ashita\\', 1, true) ~= nil; end); end
+    if not vana then
+        print(chat.header(addon.name):append(chat.error('YunaUI needs VanaCore (the CatsEyeXI launcher). It does not run on plain Ashita.')));
+        return;
+    end
+end
+
+-- Is this font able to be pushed at any size (VanaCore's ImGui)? Asked once per font, safely.
 YUI_FONTNEW = YUI_FONTNEW or setmetatable({}, { __mode = 'k' });
--- Plain Ashita (its older ImGui, DirectX 8): every addon's fonts go into one shared texture of at most 4096 x 4096. With
--- other addons' fonts it is already full, and one more leaves it unusable for everyone: shapes and letters go blank,
--- only pictures still show. So there YunaUI adds only its own font at three sizes and scales the rest. VanaCore keeps them all.
-YUI_OLDIMGUI = (function()
-    local ok, vana = pcall(function() return AshitaCore:GetInstallPath():lower():find('vanacore', 1, true) ~= nil; end);
-    if ok and vana then return false; end
-    local ok2, v = pcall(function() return AshitaCore:GetPluginManager():Get('addons'):GetInterfaceVersion(); end);
-    if ok2 and tonumber(v) and tonumber(v) >= 4.3 then return false; end
-    return true;
-end)();
 YUI_NEWFONT = function(f)
     if f == nil then return false; end
     local v = YUI_FONTNEW[f];
@@ -58,7 +58,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_party = true, chat_f_trust = true, chat_f_others = true, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_walls = true, chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_party = true, chat_f_trust = true, chat_f_others = true, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -203,28 +203,6 @@ local function esc(t) return (tostring(t):gsub('%%', '%%%%')); end
 
 local fonts = { main = nil, title = nil };
 local function load_fonts()
-    if YUI_OLDIMGUI then                                             -- (plain Ashita, see YUI_OLDIMGUI: just YunaUI's own font at three
-        fonts.sized = { main = {}, semi = {}, chat = {} };          --  sizes, for everything; the rest scaled down from them, so sharp)
-        local file = addon.path .. '/fonts/texgyreadventor-regular.otf';
-        local fh = io.open(file, 'rb');
-        if fh then
-            fh:close();
-            for _, px in ipairs({ 16, 26, 40 }) do
-                local ok, ft = pcall(imgui.AddFontFromFileTTF, file, px);
-                if ok and ft then
-                    local e = { ft, px };
-                    table.insert(fonts.sized.chat, e); table.insert(fonts.sized.main, e); table.insert(fonts.sized.semi, e);
-                end
-            end
-        end
-        local l = fonts.sized.chat;
-        fonts.main = l[1] and l[1][1] or nil;
-        fonts.semi, fonts.chat = fonts.main, fonts.main;
-        fonts.title = (l[2] and l[2][1]) or fonts.main;
-        YUI_FONTS = fonts;
-        if YUI_EQ_SETFONTS then pcall(YUI_EQ_SETFONTS, fonts); end   -- (the bars use the same ones)
-        return;
-    end
     local dir = (os.getenv('WINDIR') or 'C:\\Windows') .. '\\Fonts\\';
     local function add(name, size)
         local f = io.open(dir .. name, 'rb');
@@ -238,7 +216,7 @@ local function load_fonts()
     fonts.title = add('bahnschrift.ttf', 22);
     -- the same fonts made at a few sizes, so the size sliders stay sharp (the nearest bigger one is shrunk a little)
     fonts.sized = { main = {}, semi = {}, chat = {} };
-    for _, px in ipairs(YUI_OLDIMGUI and { 17 } or { 13, 17, 22, 28, 36 }) do
+    for _, px in ipairs({ 13, 17, 22, 28, 36 }) do
         local m = (px == 17) and fonts.main or (add('segoeui.ttf', px) or add('SegUIVar.ttf', px));
         local s = (px == 17) and fonts.semi or add('seguisb.ttf', px);
         if m then table.insert(fonts.sized.main, { m, px }); end
@@ -253,7 +231,7 @@ local function load_fonts()
         local f = io.open(fdir .. n, 'rb');
         if f then f:close(); file = fdir .. n; fonts.chat_name = n; break; end
     end
-    for _, px in ipairs(YUI_OLDIMGUI and { 16, 26 } or { 13, 16, 20, 26, 34 }) do
+    for _, px in ipairs({ 13, 16, 20, 26, 34 }) do
         local font = nil;
         if file then
             local ok, ff = pcall(imgui.AddFontFromFileTTF, file, px);
@@ -1124,6 +1102,9 @@ local function debuff_secs(kind, param, status)
     local d = (type(e) == 'table') and tonumber(e.duration) or nil;
     return d or DEBUFF_TIME[status] or 180;
 end
+-- the 2-hours a monster can use (as a job ability or a mob skill id): debuff_durations.lua's ja table gives their effect
+C.MOB2HR = { [16] = true, [17] = true, [19] = true, [20] = true, [21] = true, [22] = true, [23] = true, [688] = true, [690] = true,
+             [691] = true, [692] = true, [693] = true, [694] = true, [695] = true, [696] = true, [730] = true, [1933] = true };
 local function enemy_add(id, status, secs)
     if id == nil or id == 0 or status == nil or status <= 0 or status == 255 then return; end
     enemies[id] = enemies[id] or {};
@@ -1795,6 +1776,10 @@ local function read_action(e)
     local param;
     if kind == 8 or kind == 9 then param = bits(16); bits(16); else param = bits(32); end
     bits(32);
+    if (kind == 6 or kind == 11 or kind == 14 or kind == 15) and C.MOB2HR[param] and not is_party_id(actor) then
+        local e = DEBUFF_DB.ja and DEBUFF_DB.ja[param];              -- (a monster's 2-hour - "uses Mighty Strikes": the message names the move,
+        if e and e.buffId then enemy_add(actor, e.buffId, e.duration); end   --  not the effect, so it's put on the monster here, icon and timer)
+    end
     local mob_on_us, hit_noted = false, false;
     for _ = 1, ntargets do
         local tid = bits(32);
@@ -4943,6 +4928,8 @@ function C.target_aura()
     if idx == 0 then C.TA.idx = 0; return; end
     local ent = AshitaCore:GetMemoryManager():GetEntity();
     if ent:GetRawEntity(idx) == nil then return; end
+    local okty, ty = pcall(function() return ent:GetType(idx); end);   -- (the game's own kind: 0 players, 1 NPCs and monsters - characters;
+    if okty and type(ty) == 'number' and ty >= 2 then return; end    --  2 and up objects: counters, doors, tables... no aura on those)
     local okst, st_ = pcall(function() return ent:GetStatus(idx); end);
     local me = AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0) or 0;
     local okme, stme = pcall(function() return ent:GetStatus(me); end);
@@ -5592,6 +5579,92 @@ function legacy.snapshot()
     if f then f:write(table.concat(out, '\n') .. '\n\n'); f:close(); end
     legacy.snapped, legacy.snap_at = (legacy.snapped or 0) + 1, now + 1.5;
 end
+-- /yui menuwatch (a test, only READS): for 90 s, each time the focused game menu (not the typing bar) changes - a new
+-- menu, or its cursor moved - its memory is written to menu_dump.txt, so the cursor's place in it can be found (for
+-- YunaUI's own main menu). Nothing in the game is changed.
+C.MW = { until_ = 0, n = 0, last = nil };
+function C.menuwatch()
+    local W = C.MW;
+    if os.clock() > W.until_ or W.n >= 24 then return; end
+    local obj, head, name = legacy.menu_ptrs();
+    if obj == nil or name == nil or name:find('inline', 1, true) then return; end
+    local sig = {};                                                  -- (what changed: the object and its header, as numbers)
+    for off = 0, 0xFC, 4 do sig[#sig + 1] = ashita.memory.read_uint32(obj + off) or 0; end
+    for off = 0, 0x17C, 4 do sig[#sig + 1] = ashita.memory.read_uint32(head + off) or 0; end
+    local key = name .. ':' .. table.concat(sig, ',');
+    if key == W.last then return; end
+    W.last = key;
+    W.n = W.n + 1;
+    local out = { string.format('==== #%d  %.2f s  menu "%s"  obj %08X  head %08X', W.n, os.clock() - (W.t0 or 0), name, obj, head) };
+    local function dump(label, base, size)
+        out[#out + 1] = '-- ' .. label .. string.format(' @%08X', base);
+        for row = 0, size - 1, 16 do
+            local hex, sh = {}, {};
+            for k = 0, 15 do hex[#hex + 1] = string.format('%02X', ashita.memory.read_uint8(base + row + k) or 0); end
+            for k = 0, 14, 2 do sh[#sh + 1] = string.format('%6d', ashita.memory.read_int16(base + row + k) or 0); end
+            out[#out + 1] = string.format('+%03X  %s  | %s', row, table.concat(hex, ' '), table.concat(sh, ' '));
+        end
+    end
+    dump('menu object', obj, 0x100);
+    dump('menu header', head, 0x180);
+    for off = 0, 0x7C, 4 do                                          -- (and whatever the header points at)
+        local v = ashita.memory.read_uint32(head + off) or 0;
+        if v > 0x00400000 and v < 0x7FFF0000 then pcall(dump, string.format('header+%02X ->', off), v, 0x60); end
+    end
+    local f = io.open(addon.path .. '/menu_dump.txt', (W.n == 1) and 'w' or 'a');
+    if f then f:write(table.concat(out, '\n') .. '\n\n'); f:close(); end
+end
+-- /yui menuprobe (a test: only READS, and draws outlines): while the game's main menu ("menuwind" / "socialme") is
+-- open, draws where YunaUI thinks it is - green: anchored to the right edge, orange: as read - with its row lines,
+-- and writes the numbers to menu_probe.txt, so YunaUI's own main menu can be lined up with the game's.
+C.MP = { on = false, last = nil };
+function C.menu_scale()                                              -- (the game's window and menu sizes, as libs/scaling reads them)
+    if C.MS then return C.MS; end
+    local p = ashita.memory.find('FFXiMain.dll', 0, 'A1????????85C05E74????80', 0x01, 0x00);
+    if p == nil or p == 0 then return nil; end
+    p = ashita.memory.read_uint32(p); if p == nil or p == 0 then return nil; end
+    p = ashita.memory.read_uint32(p); if p == nil or p == 0 then return nil; end
+    local s = { ww = ashita.memory.read_uint16(p + 0x10) or 0, wh = ashita.memory.read_uint16(p + 0x12) or 0,
+        mw = ashita.memory.read_uint16(p + 0x14) or 0, mh = ashita.memory.read_uint16(p + 0x16) or 0 };
+    if s.mw == 0 or s.mh == 0 then return nil; end
+    C.MS = s;
+    return s;
+end
+function C.menuprobe()
+    if not C.MP.on then return; end
+    local obj, head, name = legacy.menu_ptrs();
+    if obj == nil or not (name:find('menuwind', 1, true) or name:find('socialme', 1, true)) then return; end
+    local s = C.menu_scale();
+    if s == nil then return; end
+    local function r16(a) return ashita.memory.read_int16(a) or 0; end
+    local x1, y1, x2, y2 = r16(obj + 0x3A), r16(obj + 0x3C), r16(obj + 0x3E), r16(obj + 0x40);
+    local hx1, hy1, hx2, hy2, rh, rows = r16(head + 0x10), r16(head + 0x12), r16(head + 0x14), r16(head + 0x16), r16(head + 0x18), r16(head + 0x1A);
+    local cur = ashita.memory.read_uint8(obj + 0x4C) or 0;
+    local ds = imgui.GetIO().DisplaySize;
+    local kx, ky = ds.x / s.mw, ds.y / s.mh;
+    local fl;
+    pcall(function() fl = imgui.GetForegroundDrawList(); end);
+    if fl == nil then return; end
+    local lx1, lx2 = bit.band(x1, 0x7FF), bit.band(x2, 0x7FF);
+    local function box(ux1, ux2, col)
+        local a, b = { ux1 * kx, y1 * ky }, { ux2 * kx, y2 * ky };
+        fl:AddRect(a, b, u32(col), 0, 0, 2);
+        for k = 1, math.max(0, math.min(30, rows)) do                -- (row lines, counted up from the bottom)
+            local yy = (y2 - k * rh) * ky;
+            fl:AddLine({ a[1], yy }, { b[1], yy }, u32({ col[1], col[2], col[3], 0.5 }), 1);
+        end
+    end
+    box(s.mw - 512 + lx1, s.mw - 512 + lx2, { 0.2, 1, 0.3, 1 });
+    box(lx1, lx2, { 1, 0.6, 0.1, 1 });
+    fl:AddText({ (s.mw - 512 + lx1) * kx, y2 * ky + 4 }, u32({ 1, 1, 1, 1 }), string.format('%s  cursor %d  rows %d', name:sub(9), cur, rows));
+    local line = string.format('%s  cursor %d | obj x1 %d y1 %d x2 %d y2 %d | head %d %d %d %d rowh %d rows %d | window %dx%d menu %dx%d screen %dx%d',
+        name, cur, x1, y1, x2, y2, hx1, hy1, hx2, hy2, rh, rows, s.ww, s.wh, s.mw, s.mh, ds.x, ds.y);
+    if line ~= C.MP.last then
+        C.MP.last = line;
+        local f = io.open(addon.path .. '/menu_probe.txt', 'a');
+        if f then f:write(os.date('%H:%M:%S  ') .. line .. '\n'); f:close(); end
+    end
+end
 local function pin_game_chat()
     if legacy.draw == nil or legacy.draw == 0 then
         if legacy.tries > 5 then return; end
@@ -5868,15 +5941,27 @@ function C.item_card(id)
     local layout, yy = {}, 0;                                         -- (each chip's place, from the stats' top)
     for gi, g in ipairs(groups) do
         if g.head then yy = yy + ((gi > 1) and 4 * sc or 0); layout[#layout + 1] = { head = g.head, y = yy }; yy = yy + clh + 3 * sc; end
-        local cx_ = 0;
+        local cx_, rowon = 0, false;
         for _, chip in ipairs(g.chips) do
             local parts, cw = parts_of(chip);
             local wbox = cw + cpx * 2;
-            if cx_ > 0 and cx_ + wbox > maxw then cx_ = 0; yy = yy + chh + gap; end
-            layout[#layout + 1] = { parts = parts, x = cx_, y = yy, w = math.min(wbox, maxw) };
-            cx_ = cx_ + wbox + gap;
+            if wbox > maxw then                                      -- (too long for a chip - a sentence, the item's story: plain text,
+                if rowon then cx_, rowon = 0, false; yy = yy + chh + gap; end   --  wrapped to the card's width)
+                local cur_ = '';
+                for word in chip:gsub('[\x80-\xFF]', ''):gmatch('%S+') do
+                    local try = (cur_ == '') and word or (cur_ .. ' ' .. word);
+                    if cur_ ~= '' and imgui.CalcTextSize(try) > maxw then layout[#layout + 1] = { text = cur_, y = yy }; yy = yy + clh; cur_ = word;
+                    else cur_ = try; end
+                end
+                if cur_ ~= '' then layout[#layout + 1] = { text = cur_, y = yy }; yy = yy + clh; end
+                yy = yy + gap;
+            else
+                if cx_ > 0 and cx_ + wbox > maxw then cx_ = 0; yy = yy + chh + gap; end
+                layout[#layout + 1] = { parts = parts, x = cx_, y = yy, w = wbox };
+                cx_, rowon = cx_ + wbox + gap, true;
+            end
         end
-        if #g.chips > 0 then yy = yy + chh + gap; end
+        if rowon then yy = yy + chh + gap; end
     end
     imgui.SetWindowFontScale(fs);
     local isl = math.floor(30 * sc);                                 -- (the icon's slot)
@@ -5956,6 +6041,8 @@ function C.item_card(id)
         for _, L_ in ipairs(layout) do
             if L_.head then
                 C.atext(fg, x + pad, sy0 + L_.y, L_.head, { 0.58, 0.54, 0.76, A });
+            elseif L_.text then                                      -- (a wrapped sentence)
+                C.atext(fg, x + pad, sy0 + L_.y, L_.text, { 0.82, 0.79, 0.92, A });
             else
                 local bx, by = x + pad + L_.x, sy0 + L_.y;
                 fg:AddRectFilled({ bx, by }, { bx + L_.w, by + chh }, u32({ 0.12, 0.11, 0.17, A }), 5);
@@ -7515,7 +7602,7 @@ function PET.draw(dt)
         return;
     end
     local fx = 'wipe';                                               -- (the pop-in: Wipe, the cleanest; the others are kept in the code)
-    if cfg.pet_anim == false or YUI_OLDIMGUI then fx = 'none'; end   -- (plain Ashita: no pop-in, its moving clip made the settings panel flicker)
+    if cfg.pet_anim == false then fx = 'none'; end
     local appear = (fx == 'none') and 1 or math.max(0, math.min(1, (now - (PET.born or 0)) / (PET.FX_DUR[fx] or 0.5)));
     local ease = 1 - (1 - appear) ^ 3;
     local out = PET.gone and math.max(0, 1 - (now - PET.gone) / 0.4) or 1;   -- fading away when it's dismissed
@@ -8444,6 +8531,7 @@ local function draw_window()
             hint('Zoom: how much of the map shows round you (smaller is closer). The mouse wheel over the minimap zooms too.');
             row_switch('##yui_mm3f', 'Turn with you', 'map3d_follow', 'The minimap turns as you do, looking the way you face. Off: north stays up.');
             row_switch('##yui_mmm', 'Monsters', 'map_mobs', 'On: monsters near you show as red dots.');
+            row_switch('##yui_mmw', '3D walls', 'map_walls', 'See-through walls rise from the lines, so the 3D minimap looks solid: low walls in caves and dungeons, buildings at their own height in Jeuno.');
             row_pick('##yui_mmc', 'Lines', 'map_color', { { 'white', 'White' }, { 'pink', 'Pink' }, { 'cyan', 'Cyan' } });
             row_pick('##yui_mma', 'Your arrow', 'map_arrow_color', { { 'lines', 'As the lines' }, { 'white', 'White' }, { 'pink', 'Pink' },
                 { 'violet', 'Violet' }, { 'cyan', 'Cyan' }, { 'gold', 'Gold' }, { 'green', 'Green' } });
@@ -8802,7 +8890,11 @@ function YMAP.d3load(zid)
     if f == nil then return nil; end
     f:close();
     local ok, m = pcall(dofile, path);
-    if ok and type(m) == 'table' and m.v and m.e then D.mesh = m; D.sx, D.sy, D.sd = {}, {}, {}; end
+    if ok and type(m) == 'table' and m.v and m.e then
+        D.mesh = m; D.sx, D.sy, D.sd, D.tx, D.ty = {}, {}, {}, {}, {};
+        local f2 = io.open(path, 'r');                               -- (drawn as floor outlines? those get walls raised)
+        if f2 then local l1 = f2:read('*l') or ''; m.outline = (l1:find('walkable', 1, true) ~= nil and not m.t); f2:close(); end
+    end
     return D.mesh;
 end
 function YMAP.d3height(m, X, Y, Z)                                   -- (which way up the game's height runs against the mesh: once a zone)
@@ -8853,6 +8945,9 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
     end
     local v, e = m.v, m.e;
     local SX, SY, SD = D.sx, D.sy, D.sd;
+    local TX, TY = D.tx, D.ty;                                       -- (the walls' tops, when they're raised)
+    local walls = (m.outline or m.t ~= nil) and cfg.map_walls ~= false;   -- (m.t: towns, each wall's own top height)
+    local WH = 2.6;                                                  -- (how tall the walls stand, in yalms)
     local n = #v / 3;
     for i = 1, n do
         local j = i * 3 - 2;
@@ -8864,6 +8959,14 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
             SD[i] = depth;
             SX[i] = cxs + f * rx / depth;
             SY[i] = cys - f * (dh * cp + rn * sp) / depth;
+            if walls then
+                local wh = m.t and (m.t[i] - v[j + 1]) or WH;
+                local d2 = depth - wh * sp;
+                if d2 < 1 then SD[i] = -1; else
+                    TX[i] = cxs + f * rx / d2;
+                    TY[i] = cys - f * ((dh + wh) * cp + rn * sp) / d2;
+                end
+            end
         end
     end
     C.clip(dl, { vx + 2, vy + 2 }, { vx + W - 2, vy + H - 2 }, true);
@@ -8880,6 +8983,47 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
     --  copy of the position grid)
     local netk = m.net or (#e + 1);
     local last = netk - 1;
+    -- the walls (zones drawn as floor outlines): a low see-through wall raised from each line, lit by the way it faces
+    if walls then
+        local wc = {};                                               -- (4 shades x 16 strengths, made once a frame)
+        for q = 0, 3 do
+            local sh = 0.45 + 0.55 * q / 3;
+            wc[q] = {};
+            for k = 0, 16 do wc[q][k] = u32({ lc[1] * sh, lc[2] * sh, lc[3] * sh, 0.30 * k / 16 }); end
+        end
+        local topc = {};
+        for k = 0, 16 do topc[k] = u32({ lc[1], lc[2], lc[3], 0.55 * k / 16 }); end
+        for k = 1, last, 2 do
+            local a, b = e[k], e[k + 1];
+            local da, db = SD[a], SD[b];
+            if da > 0 and db > 0 then
+                local ax, ay, bx_, by_ = SX[a], SY[a], SX[b], SY[b];
+                local atx, aty, btx, bty = TX[a], TY[a], TX[b], TY[b];
+                if not ((math.max(ax, bx_, atx, btx) < x0) or (math.min(ax, bx_, atx, btx) > x1) or (math.max(ay, by_, aty, bty) < y0) or (math.min(ay, by_, aty, bty) > y1)) then
+                    local t = 1 - (da + db) / (2 * fade);
+                    local fh = math.abs((v[a * 3 - 1] + v[b * 3 - 1]) / 2 - th);
+                    local hx, hy = (v[a * 3 - 2] + v[b * 3 - 2]) / 2 - tx, (v[a * 3] + v[b * 3]) / 2 - ty;
+                    local tol = 3.5 + math.min(3, 0.08 * math.sqrt(hx * hx + hy * hy));
+                    local dim = (fh > tol) and math.max(0, 1 - (fh - tol) / 4.5) or 1;
+                    local ef = 1;
+                    if soft then
+                        local ex, ey = ((ax + bx_) / 2 - cxs) / (W / 2), ((ay + by_) / 2 - cys) / (H / 2);
+                        ef = math.max(0, math.min(1, (1 - math.sqrt(ex * ex + ey * ey)) / 0.32));
+                    end
+                    local a_ = (0.18 + 0.82 * math.max(0, math.min(1, t))) * ef * dim;
+                    if a_ > 0.03 then
+                        local wx, wy = v[b * 3 - 2] - v[a * 3 - 2], v[b * 3] - v[a * 3];   -- (its face: lit from the north-west)
+                        local wl = math.sqrt(wx * wx + wy * wy);
+                        local lit = (wl > 0) and math.abs((-wy * 0.6 + wx * 0.8) / wl) or 0.5;
+                        local q = math.floor(lit * 3 + 0.5);
+                        local s16 = math.floor(a_ * 16 + 0.5);
+                        dl:AddQuadFilled({ ax, ay }, { bx_, by_ }, { btx, bty }, { atx, aty }, wc[q][s16]);
+                        dl:AddLine({ atx, aty }, { btx, bty }, topc[s16], 1);
+                    end
+                end
+            end
+        end
+    end
     -- (the minimap: a black outline under every line first, so they read over bright ground; then the lines)
     for pass = (soft and 1 or 2), 2 do
     for k = 1, last, 2 do
@@ -9939,6 +10083,8 @@ ashita.events.register('d3d_present', 'yui_present', function()
         TIMERS.preview = (ui.open and ui.tab == 7) or EDIT.on;      -- the TIMERS tab (and Edit Mode) show a preview of it
         piece(TIMERS.draw);
         piece(C.bubble_draw);                                        -- (CHAT > Speech bubbles)
+        piece(C.menuwatch);                                          -- (/yui menuwatch: a test, only while it runs)
+        piece(C.menuprobe);                                          -- (/yui menuprobe: a test, only while it's on)
         piece(C.target_aura);                                        -- (TARGET > Floor aura: under the bars and everything else)
         piece(C.head_bars);                                          -- (BARS > YOUR BARS > Where: over your head)
         YUI_EQ_HIDE = true;                                          -- (the old gear wheel never shows)
@@ -10094,6 +10240,13 @@ ashita.events.register('command', 'yui_command', function(e)
     local sub = (args[2] or ''):lower();
     if sub == '' then ui.open = not ui.open;
     elseif sub == 'edit' then EDIT.on = not EDIT.on; if EDIT.on then ui.open = false; end
+    elseif sub == 'menuprobe' then                                   -- (a test: see C.menuprobe)
+        C.MP.on, C.MP.last = not C.MP.on, nil;
+        if C.MP.on then local f = io.open(addon.path .. '/menu_probe.txt', 'w'); if f then f:close(); end end
+        msg('Menu probe ' .. (C.MP.on and 'on: open the main menu and take a screenshot of it (both pages). /yui menuprobe again turns it off.' or 'off.'));
+    elseif sub == 'menuwatch' then                                   -- (a test: see C.menuwatch)
+        C.MW.until_, C.MW.n, C.MW.last, C.MW.t0 = os.clock() + 90, 0, nil, os.clock();
+        msg('Menu watch on for 90 seconds: open the main menu, move the cursor down one row at a time, slowly, to the bottom, then close it.');
     elseif sub == 'welcome' then EDIT.welcome = true; EDIT.G.start();   -- (what a new player sees on the first launch; settings untouched)
     elseif sub == 'guide' or sub == 'tour' then EDIT.G.start();      -- the first-time guide again
     elseif sub == 'lock' or sub == 'unlock' then cfg.locked = (sub == 'lock'); save(); msg(cfg.locked and 'Locked.' or 'Unlocked.');

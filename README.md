@@ -1,6 +1,6 @@
 # YunaUI
 
-A complete, clean HUD for **CatsEyeXI** (Ashita v4 / VanaCore), made to look like one modern interface: thin glowing bars,
+A complete, clean HUD for **CatsEyeXI** (VanaCore, the CatsEyeXI launcher's client), made to look like one modern interface: thin glowing bars,
 the AvantGarde-style font everywhere, and every piece placed where you like.
 
 ## What's in it
@@ -23,8 +23,10 @@ the AvantGarde-style font everywhere, and every piece placed where you like.
 
 ## Install
 
-1. Download the latest release zip and unzip it into `Ashita\addons\` (so you have `Ashita\addons\yunaui\yunaui.lua`).
-   On VanaCore use `VanaCore\addons\ashita\` instead.
+YunaUI needs **VanaCore** (the client the CatsEyeXI launcher starts). It does not run on plain Ashita.
+
+1. Download the latest release zip and unzip it into `VanaCore\addons\ashita\` (so you have
+   `VanaCore\addons\ashita\yunaui\yunaui.lua`).
 2. In game: `/addon load yunaui`. Add that line to your startup script to load it every time.
 3. The first time, a short guide shows what every piece does, then Edit Mode opens: place everything, then press **DONE**.
 

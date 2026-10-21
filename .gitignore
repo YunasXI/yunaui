@@ -19,3 +19,6 @@ menus.txt
 party_dump.txt
 mapsimg_release.txt
 mapsimg_new_*.txt
+
+# /yui menuwatch test output
+menu_dump.txt
