@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.28';
+addon.version = '1.0.29';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -60,7 +60,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_party = true, chat_f_trust = true, chat_f_others = true, chat_f_tspell = true, chat_f_debuff = true, chat_f_wear = true, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_party = true, chat_f_trust = true, chat_f_others = true, chat_f_tspell = true, chat_f_debuff = true, chat_f_wear = true, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -2069,7 +2069,7 @@ local function draw_target(dt)
         idx, fake = 0, true;                                         -- (Edit Mode / preview: a pretend target to place)
     end
     local ent = AshitaCore:GetMemoryManager():GetEntity();
-    local name = fake and 'Target' or ent:GetName(idx);
+    local name = fake and 'Target' or C.mob_name(ent:GetName(idx));
     if name == nil or name == '' then return; end
     local hpp = fake and 0.65 or ((ent:GetHPPercent(idx) or 0) / 100);
     local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.target_scale) or 1);
@@ -2224,7 +2224,7 @@ local function draw_subtarget(dt)
     local name, hpp = 'Yunas', 0.7;
     if idx and idx ~= 0 then
         local ent = AshitaCore:GetMemoryManager():GetEntity();
-        name = ent:GetName(idx);
+        name = C.mob_name(ent:GetName(idx));
         if name == nil or name == '' then return; end
         hpp = (ent:GetHPPercent(idx) or 0) / 100;
     end
@@ -2269,7 +2269,7 @@ local function draw_enemies(dt)
             if idx >= 0x400 or is_party_id(ent:GetServerId(idx)) then return false; end   -- (trusts, pets, players: not enemies)
             local rf = ent:GetRenderFlags0(idx);
             local vis = bit.band(rf, 0x200) == 0x200 and bit.band(rf, 0x4000) == 0;
-            return vis and (ent:GetHPPercent(idx) or 0) > 0, ent:GetName(idx), ent:GetHPPercent(idx);
+            return vis and (ent:GetHPPercent(idx) or 0) > 0, C.mob_name(ent:GetName(idx)), ent:GetHPPercent(idx);
         end);
         if ok and valid and nm and nm ~= '' then list[#list + 1] = { idx = idx, name = nm, hp = (hp or 0) / 100 };
         else ENGAGED[idx] = nil; end
@@ -2634,7 +2634,8 @@ end
 EDIT.NAMES = { target_x = 'Target', sub_x = 'Sub-target', enemy_x = 'Enemies', party_x = 'Party', alliance_x = 'Alliance 1',
                ally2_x = 'Alliance 2', exp_x = 'Exp', gil_x = 'Gil', bag_x = 'Bag', cast_x = 'Cast bar', timer_x = 'Timers',
                pet_x = 'Pet', doll_x = 'Equipment', strip_x = 'Gear strip', logo_x = 'Logo', mini_x = 'Logo',
-               fan_x = 'Skillchain fan', ecast_x = 'Enemy cast', tn_x = 'Target name', mb_x = 'Magic Burst', fo_x = 'Skillchain', co_x = 'Enemy cast' };
+               fan_x = 'Skillchain fan', ecast_x = 'Enemy cast', tn_x = 'Target name', mb_x = 'Magic Burst', fo_x = 'Skillchain', co_x = 'Enemy cast',
+               loot_x = 'Treasure pool' };
 function EDIT.snap(kx, x, y, w, h)
     local ds = imgui.GetIO().DisplaySize;
     local W, H = (ds and ds.x) or 1920, (ds and ds.y) or 1080;
@@ -3430,12 +3431,27 @@ function ALLY.tag(dl, m, i, x, ny, ch, sc, v, live, mir)            -- (mir: x i
     local jx = x + (tw - s - jw) / 2 + 1 * sc;
     if mir then pts, jx = { { x + s, y0 }, { x + tw, y0 }, { x + tw, y0 + th }, { x, y0 + th } }, x + s + (tw - s - jw) / 2; end
     local f, ink = tc[1], tc[2];
-    if (cfg.tag_look or 'role') == 'black' then                     -- (PARTY > CARDS > Job tags: black, the job in white with a dark edge)
+    local ta = 1;                                                    -- (its writing: faded while the tag is turning)
+    local fl = C.lot_flip(m, i);                                     -- PARTY > TREASURE POOL: the tag turns over to show the lot
+    if fl then
+        local cx = x + tw / 2;
+        for _, p_ in ipairs(pts) do p_[1] = cx + (p_[1] - cx) * fl.w; end
+        ta = math.max(0, (fl.w - 0.35) / 0.65);
+        if fl.back then
+            job, f, ink = fl.text, fl.fill, fl.ink;
+            jw = imgui.CalcTextSize(job);
+            jx = (mir and (x + s) or x) + (tw - s - jw) / 2 + (mir and 0 or 1 * sc);
+        end
+    end
+    if fl and fl.back then                                           -- the back: the lot (gold for the highest, grey for a pass)
+        ALLY.poly(dl, pts, u32({ f[1], f[2], f[3], v }));
+        if ta > 0.01 then dl:AddText({ jx, y0 + (th - jh) / 2 }, u32({ ink[1], ink[2], ink[3], v * ta }), job); end
+    elseif (cfg.tag_look or 'role') == 'black' then                 -- (PARTY > CARDS > Job tags: black, the job in white with a dark edge)
         ALLY.poly(dl, pts, u32({ 0.035, 0.03, 0.045, 0.92 * v * dim }));
-        text(dl, jx, y0 + (th - jh) / 2, job, { 1, 1, 1, v * dim });
+        if ta > 0.01 then text(dl, jx, y0 + (th - jh) / 2, job, { 1, 1, 1, v * dim * ta }); end
     else
         ALLY.poly(dl, pts, u32({ f[1], f[2], f[3], v * dim }));      -- (one flat colour: no sheen, no outline)
-        dl:AddText({ jx, y0 + (th - jh) / 2 }, u32({ ink[1], ink[2], ink[3], v }), job);
+        if ta > 0.01 then dl:AddText({ jx, y0 + (th - jh) / 2 }, u32({ ink[1], ink[2], ink[3], v * ta }), job); end
     end
     imgui.SetWindowFontScale(fs0);
     if mir then return x, s; end
@@ -3552,6 +3568,7 @@ function ALLY.slim(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
         text(dl, tx, top - 1, nm, { nc[1], nc[2], nc[3], (m.inzone and 1 or 0.5) * v });
         text(dl, bx1 - pw, top - 1, pct, { nc[1], nc[2], nc[3], 0.92 * v });
     end
+    if not m.inzone then pcall(C.zone_line, dl, m, tx, top + lh + 1 * sc, bx1 - tx, sc, v); end   -- (in another zone: where)
     if not m.inzone or v < 0.5 or bx1 - tx < 10 then return; end
     local c1 = th.f1;
     local c2 = th.f2 or { c1[1] * 0.83, c1[2] * 0.83, c1[3] * 0.88 };
@@ -3648,6 +3665,7 @@ function ALLY.plate(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     end
     spaced(dl, tx, top - 1, nm, u32({ 1, 1, 1, v * dim }), sp);
     text(dl, rx - pw, top - 1, pct, { 1, 1, 1, 0.92 * v });
+    if not m.inzone then pcall(C.zone_line, dl, m, tx, top + lh + 1 * sc, rx - tx, sc, v); end   -- (in another zone: where)
     if not m.inzone or v < 0.5 then return; end
     local hy = top + lh + 1 * sc;
     local bx1 = tip - s * ((hy - y1) / ch) - 6 * sc;                 -- (the bar ends inside the slanted right side)
@@ -4039,6 +4057,7 @@ function ALLY.spine(dl, list, x, y, sc, dt, tidx, n, party)
             local tip = lx - 10 * sc + hk * (SW - x + 60 * sc);      -- (it fades in where it stays; slides off right when hidden)
             local x1 = tip - cw;
             ALLY.card(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, true);   -- (PARTY > CARDS: its shape, colours, effect)
+            pcall(C.lot_badge, dl, m, x1, tip, ny, ch, sc, v, party);   -- (PARTY > TREASURE POOL: its lot on the picked item)
             if trace then                                            -- the light reaching this card: out along the tick, then round it
                 local u = (ny - y0) / math.max(1, y1 - y0);
                 local tk = ts + u * tT;
@@ -4378,12 +4397,17 @@ end-- Combat-log lines: battle messages, "can't do that" (122), skill-ups (129),
 local function is_combat(m) return (m >= 20 and m <= 120) or m == 122 or m == 129 or m == 131; end
 local SJIS = { ['\129\168'] = '>', ['\129\169'] = '<', ['\129\170'] = '^', ['\129\171'] = 'v', ['\129\64'] = ' ',
                ['\129\154'] = '*', ['\129\153'] = '*', ['\129\69'] = '-', ['\129\124'] = '-', ['\129\117'] = '"', ['\129\118'] = '"' };
+function C.mob_name(s)                                               -- (a name without the marker symbol it may start with)
+    if type(s) ~= 'string' then return s; end
+    return (s:gsub('%?', ''):gsub('[\128-\255]', ''));
+end
 local function clean(s)
     s = s:gsub('\239\39', '{'):gsub('\239%(', '}');                 -- auto-translate brackets
     s = s:gsub('}%(', '}');                                         -- a stray "(" the game leaves after some phrases
     s = s:gsub('[\30\31\127].', '');                                -- colour / control codes (2 bytes each)
     s = s:gsub('[\129-\159\224-\252].', function(c) return SJIS[c] or ''; end);    -- Shift-JIS symbols
     s = s:gsub('[%z\1-\6\8\9\11-\31]', '');
+    s = ((' ' .. s):gsub('([%s>])%?(%u)', '%1%2')):sub(2);           -- (a monster's marker symbol, as "?": "The ?Banshee")
     -- auto-translate phrases: their brackets become marks (\1 open, \2 close) drawn as the game's green / red icons
     s = s:gsub('{([^{}\n]-)}', '\1%1\2');
     return s;
@@ -5089,6 +5113,24 @@ function C.wear_skip(line)
     local w = sl:match("^(.-)'s? .- effect wears off%.$") or sl:match('^(.-) is no longer .-%.$');
     return w ~= nil and C.actor_kind(w) ~= 'me';
 end
+function C.cf_sets()                                                 -- (players near you outside your party, and your party, by name)
+    local K = C.CF;
+    if K.sets_at and os.clock() - K.sets_at < 2 then return K.outs, K.ins; end
+    local outs, ins = {}, {};
+    pcall(function()
+        local p = AshitaCore:GetMemoryManager():GetParty();
+        for i = 0, 17 do if p:GetMemberIsActive(i) ~= 0 then ins[p:GetMemberName(i) or ''] = true; end end
+        local ent = AshitaCore:GetMemoryManager():GetEntity();
+        for i = 0x400, 0x6FF do
+            if ent:GetRawEntity(i) ~= nil then
+                local nm = ent:GetName(i);
+                if nm and nm ~= '' and not ins[nm] and bit.band(ent:GetSpawnFlags(i) or 0, 0x01) ~= 0 then outs[nm] = true; end
+            end
+        end
+    end);
+    K.outs, K.ins, K.sets_at = outs, ins, os.clock();
+    return outs, ins;
+end
 function C.combat_skip(line)                                         -- (true: this battle line is filtered out)
     local sl = line:gsub('[\1\2]', '');
     local F = C.CF;
@@ -5112,8 +5154,15 @@ function C.combat_skip(line)                                         -- (true: t
     who = who or sl:match('^([%w%-]+)[ \']');                         -- (anything else: its first word, the one who did it)
     if who == nil then return false; end
     local kind = C.actor_kind(who);
-    local skip = (melee and kind == 'party' and cfg.chat_f_party == false) or (melee and kind == 'trust' and cfg.chat_f_trust == false)
-              or (kind == 'outsider' and cfg.chat_f_others == false);
+    local skip = (melee and kind == 'party' and cfg.chat_f_party == false) or (melee and kind == 'trust' and cfg.chat_f_trust == false);
+    if not skip and cfg.chat_f_others == false then                  -- (a player outside your party in it - doing it or having it done - and
+        local outs, ins = C.cf_sets();                               --  none of yours: what they do to you or your party still shows)
+        local out_, in_ = kind == 'outsider', false;
+        for w in sl:gmatch('%u[%w]*') do
+            if ins[w] then in_ = true; elseif outs[w] then out_ = true; end
+        end
+        if out_ and not in_ then skip = true; end
+    end
     if not melee and kind == 'trust' and cfg.chat_f_tspell == false and not sl:find(' readies ', 1, true)
         and not sl:find(' starts casting ', 1, true) then F.tskip = os.clock(); return true; end   -- (Trusts' spells and abilities)
     if skip and sl:find('critical hit!$') then F.skipnext = os.clock(); end   -- (its damage comes on the next line)
@@ -6148,7 +6197,9 @@ local function draw_chat(n)
         local bar = math.floor(size * 1.5 + 6);                       -- room for the tabs (the combat window's label)
         local maxw = w - pad * 2;
         C.iclip({ x, y }, { x + w, y + h }, true);
-        local ly = y + h - pad - lh - bar;
+        local tk = 1 - (1 - math.max(0, math.min(1, st.hv))) ^ 3;    -- (the tabs' room opens only while it's lit - the mouse over it,
+        local barv = bar * tk;                                       --  typing - and the lines slide up; at rest they go to the bottom)
+        local ly = y + h - pad - lh - barv;
         local type_h = typing and (lh + 10) or 0;                     -- room for the typing line above the tabs
         ly = ly - type_h;
         local skip = st.scroll;
@@ -6282,11 +6333,11 @@ local function draw_chat(n)
             ::next_line::
         end
         st.vis = st.vis_n;
-        st.used_h = (vrows > 0) and (vrows * lh + (CL and CL.extra or 0) + bar + pad + type_h) or 0;   -- (how tall the resting ground is: the rows still showing - none, no ground)
+        st.used_h = (vrows > 0) and (vrows * lh + (CL and CL.extra or 0) + barv + pad + type_h) or 0;   -- (how tall the resting ground is: the rows still showing - none, no ground)
         imgui.PopClipRect();
         if itip then pcall(C.item_card, itip); end
         if typing then                                               -- the typing line: a dark strip, your text, a blinking caret
-            local tx0, ty0 = x + pad - 4, y + h - bar - type_h - 2;
+            local tx0, ty0 = x + pad - 4, y + h - barv - type_h - 2;
             local tw0, th0 = maxw + 8, lh + 6;
             dl:AddRectFilled({ tx0, ty0 }, { tx0 + tw0, ty0 + th0 }, u32({ 0.03, 0.03, 0.05, 0.75 }), 6);
             dl:AddRect({ tx0, ty0 }, { tx0 + tw0, ty0 + th0 }, u32({ C.acc[1], C.acc[2], C.acc[3], 0.35 }), 6, C.rall, 1);
@@ -6303,7 +6354,7 @@ local function draw_chat(n)
         end
         -- the channel buttons, only while the chat is lit up
         if n == 1 and st.hv > 0.05 then
-            local bx, by = x + pad, y + h - bar - 2;
+            local bx, by = x + pad, y + h - barv - 2;                -- (rising from the bottom as it lights up)
             local mx, my = imgui.GetMousePos();
             local tabs_ = CHANNELS;
             if big then                                              -- (the big chat: the Combat log tab at the end)
@@ -7514,7 +7565,7 @@ function PET.draw(dt)
             PET.tidx = PET.tidx or PET.index_of(PET.target);
             local ti = PET.tidx;
             if ti and ti ~= pi and ent:GetServerId(ti) == PET.target and (ent:GetHPPercent(ti) or 0) > 0 then
-                d.tname, d.thp = ent:GetName(ti), (ent:GetHPPercent(ti) or 0) / 100;
+                d.tname, d.thp = C.mob_name(ent:GetName(ti)), (ent:GetHPPercent(ti) or 0) / 100;
             else PET.target, PET.tidx = nil, nil; end                -- it died or went away
         end
     elseif PET.preview then                                          -- the BARS tab is open: a pretend Carbuncle
@@ -7662,14 +7713,558 @@ function PET.draw(dt)
     end
 end
 
-local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 'DAMAGE METER', 'MINIMAP' };
+local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 'DAMAGE METER', 'MINIMAP', 'TREASURE POOL' };
 -- Layouts (GENERAL > LAYOUT): one click puts every piece of the UI in its place for your screen size.
 -- Built-in: Classic (bars bottom middle, party top right, timers left), Raid (party top left, bars stacked bottom
 -- middle, timers right) and Compact (everything gathered round the bars, a little below the middle).
 -- My layout 1 / 2: SAVE keeps where everything is now, LOAD puts it back.
+-- PARTY > TREASURE POOL: what's in the pool (from the game's memory), everyone's lots and passes (from the game's 0x0D3
+-- messages), YunaUI's own pool window with Lot / Pass, and each member's lot on the party and alliance lists while an
+-- item is picked - in that window (mouse over it, or a click to keep it), or with the cursor on it in the game's own pool.
+C.LOOT = { pool = {}, lots = {}, first = {}, menus = {}, n = 0, t = -1, fly = {}, hold = {}, flash = {}, rowy = {}, seen = {} };
+C.LOOT.MENUS = { 'loot', 'pool', 'trea', 'lotw' };                   -- (the game's own pool window: its menu name has one of these)
+C.LOOT.LIFE = 300;                                                   -- (an item stays 5 minutes in the pool)
+C.LOOT.FAKE = { { 4096, 'Fire Crystal' }, { 13014, 'Leaping Boots' }, { 640, 'Copper Ore' } };   -- (the preview, to place it)
+function C.loot_name(id)
+    C.LOOT.names = C.LOOT.names or {};
+    local nm = C.LOOT.names[id];
+    if nm == nil then
+        nm = '';
+        pcall(function() local it = AshitaCore:GetResourceManager():GetItemById(id); nm = (it and it.Name and it.Name[1]) or ''; end);
+        C.LOOT.names[id] = nm;
+    end
+    return nm;
+end
+-- Your Lot / Pass, to the game
+function C.loot_act(slot, lot) C.loot_send(lot and 0x41 or 0x42, slot); end
+function C.loot_read()
+    local L = C.LOOT;
+    local pool, n = {}, 0;
+    pcall(function()
+        local inv = AshitaCore:GetMemoryManager():GetInventory();
+        for slot = 0, 9 do
+            local it = inv:GetTreasurePoolItem(slot);
+            local id = it and tonumber(it.ItemId) or 0;
+            if id > 0 and id ~= 65535 then
+                local key = slot .. ':' .. id .. ':' .. tostring(it.DropTime or 0);
+                L.first[key] = L.first[key] or os.time();            -- (when it was first seen: the 5 minutes count from there)
+                local mine = tonumber(it.Lot) or 0;
+                pool[slot] = { slot = slot, id = id, key = key, at = L.first[key], mine = (mine >= 65535) and -1 or ((mine > 0) and mine or nil),
+                               win = tonumber(it.WinningLot) or 0, winner = tostring(it.WinningEntityName or '') };
+                n = n + 1;
+            end
+        end
+    end);
+    for slot, t in pairs(L.lots) do                                  -- (a slot with another item now: its old lots go)
+        local p = pool[slot];
+        if p and t.key == nil then t.key = p.key; elseif p and t.key ~= p.key then L.lots[slot] = nil; end
+    end
+    if n == 0 then L.lots = {}; L.first = {}; end
+    L.pool, L.n = pool, n;
+    if L.pick and pool[L.pick] == nil then L.pick = nil; end
+end
+-- The game's own treasure pool window, when it's the one in use: which item its cursor is on (nil if it isn't open)
+function C.loot_menu()
+    local L = C.LOOT;
+    local obj, _, name = legacy.menu_ptrs();
+    if obj == nil or name == nil or name == '' then return nil; end
+    L.menus[name] = true;                                            -- (/yui lootmenu: the menus seen while something was in the pool)
+    local low = name:lower();
+    local hit = false;
+    for _, k in ipairs(L.MENUS) do if low:find(k, 1, true) then hit = true; break; end end
+    if not hit then return nil; end
+    local idx = (ashita.memory.read_uint8(obj + 0x4C) or 1) - 1;     -- (its cursor: the row, from 1)
+    pcall(function()                                                 -- (a list: its own count from the top, from 0)
+        local lp = ashita.memory.read_uint32(obj + 0x0C);
+        if lp and lp ~= 0 then idx = ashita.memory.read_uint16(lp + 0x30) or idx; end
+    end);
+    local k = 0;
+    for slot = 0, 9 do
+        if L.pool[slot] then
+            if k == idx then return slot; end
+            k = k + 1;
+        end
+    end
+    return nil;
+end
+function C.loot_tick()
+    local L = C.LOOT;
+    if os.clock() - L.t < 0.05 then return; end
+    L.t = os.clock();
+    C.loot_read();
+    local sel = nil;
+    if L.n > 0 then
+        if L.hov and L.pool[L.hov] then sel = L.hov; end
+        if sel == nil then local ok, s = pcall(C.loot_menu); if ok then sel = s; end end
+        if sel == nil and L.pick and L.pool[L.pick] then sel = L.pick; end
+    end
+    L.sel = sel;
+end
+-- 0x0D3: a member lotted or passed (or the item went to someone)
+function C.loot_packet(e)
+    local L = C.LOOT;
+    local d = e.data;
+    local wid = struct.unpack('I4', d, 0x04 + 1);
+    local eid = struct.unpack('I4', d, 0x08 + 1);
+    local wlot = struct.unpack('H', d, 0x0E + 1);
+    local flag = bit.band(bit.rshift(struct.unpack('H', d, 0x10 + 1), 15), 1);
+    local lot = struct.unpack('h', d, 0x12 + 1);
+    local slot = struct.unpack('B', d, 0x14 + 1);
+    local judge = struct.unpack('B', d, 0x15 + 1);
+    local wname = (d:sub(0x16 + 1, 0x16 + 16):match('^[^%z]*')) or '';
+    local ename = (d:sub(0x26 + 1, 0x26 + 16):match('^[^%z]*')) or '';
+    if slot == nil or slot > 9 then return; end
+    if (judge or 0) >= 1 then L.lots[slot] = nil; return; end         -- (it went to someone, or nobody wanted it)
+    local cur = L.pool[slot];
+    local t = L.lots[slot];
+    if t == nil or (cur and t.key and t.key ~= cur.key) then t = { key = cur and cur.key or nil, by = {} }; L.lots[slot] = t; end
+    if (eid or 0) > 0 and ename ~= '' then
+        if flag == 1 or (lot or 0) < 0 then t.by[ename] = -1; else t.by[ename] = lot; end
+    end
+    if (wid or 0) > 0 and (wlot or 0) > 0 then t.win, t.wlot = wname, wlot; end
+end
+-- A member's lot on the picked item: a number, -1 for a pass, nil for not yet
+function C.lot_of(name, slot)
+    local L = C.LOOT;
+    slot = slot or L.sel;
+    if slot == nil or name == nil then return nil; end
+    local t = L.lots[slot];
+    local v = t and t.by[name];
+    if v == nil then                                                 -- (yourself: the game keeps your own lot)
+        local me = '';
+        pcall(function() me = AshitaCore:GetMemoryManager():GetParty():GetMemberName(0) or ''; end);
+        if name == me and L.pool[slot] then v = L.pool[slot].mine; end
+    end
+    return v;
+end
+function C.loot_waiting(slot)
+    local out = {};
+    for i = 0, 17 do
+        local m = member(i);
+        if m and m.name and m.inzone ~= false and C.lot_of(m.name, slot) == nil then out[#out + 1] = m.name; end
+    end
+    return out;
+end
+function C.lot_winner(slot)
+    local L = C.LOOT;
+    local t, p = L.lots[slot], L.pool[slot];
+    if t and t.win and t.win ~= '' then return t.win, t.wlot; end
+    if p and p.winner ~= '' and (p.win or 0) > 0 and p.win < 65535 then return p.winner, p.win; end
+    return nil, nil;
+end
+-- The job tag turning over to its back (the lot) and back again: how far it has turned, eased; gives back nil when it
+-- shows the job and isn't moving. The lot stays on the back while it turns back, so it never shows an empty tag.
+function C.lot_flip(m, i)
+    if m == nil then return nil; end
+    local L = C.LOOT;
+    L.fk, L.fv = L.fk or {}, L.fv or {};
+    local key = m.name or ('m' .. i);
+    local lv = (L.sel ~= nil) and C.lot_of(m.name) or nil;
+    local wait = L.sel ~= nil and lv == nil and m.inzone ~= false;   -- (still to lot or pass: an amber "?")
+    if lv ~= nil then L.fv[key] = lv; elseif wait then L.fv[key] = 'wait'; end
+    local k = L.fk[key] or 0;
+    local want = (lv ~= nil or wait) and 1 or 0;
+    if k == 0 and want == 0 then return nil; end
+    local dt = imgui.GetIO().DeltaTime or 0.016;
+    k = (want > k) and math.min(1, k + dt * 3.0) or math.max(0, k - dt * 3.0);
+    L.fk[key] = k;
+    local e = (k < 0.5) and (2 * k * k) or (1 - ((2 - 2 * k) ^ 2) / 2);
+    local val = L.fv[key] or -1;
+    local back = e > 0.5;
+    if val == 'wait' then
+        local q = 0.80 + 0.20 * math.sin(os.clock() * 3 + i);
+        return { w = math.max(0.04, math.abs(math.cos(math.pi * e))), back = back, text = '?', fill = { 1.0 * q, 0.66 * q, 0.26 * q },
+                 ink = { 0.22, 0.12, 0.02 }, glow = 0 };
+    end
+    local wn = L.sel and C.lot_winner(L.sel) or nil;
+    local win = back and val >= 0 and wn ~= nil and wn == m.name;
+    return { w = math.max(0.04, math.abs(math.cos(math.pi * e))), back = back, text = (val < 0) and '--' or tostring(val),
+             fill = win and { 1.0, 0.80, 0.34 } or ((val < 0) and { 0.22, 0.21, 0.27 } or { 0.93, 0.91, 0.98 }),
+             ink = win and { 0.30, 0.18, 0.02 } or ((val < 0) and { 0.70, 0.68, 0.78 } or { 0.10, 0.09, 0.14 }),
+             glow = win and (0.5 + 0.5 * math.sin(os.clock() * 4)) or 0 };
+end
+-- On a member's card: its lot on the picked item, in a small dark pill at the card's right end (over the HP %);
+-- the highest in gold, a pass as "--"
+function C.lot_badge(dl, m, x1, tip, ny, ch, sc, v, party)
+    if C.LOOT.sel == nil or m == nil or (cfg.card_style or 'clean') == 'clean' then return; end
+    local lv = C.lot_of(m.name);
+    if lv == nil then return; end
+    local str = (lv < 0) and '--' or tostring(lv);
+    local wn = C.lot_winner(C.LOOT.sel);
+    local win = lv >= 0 and wn ~= nil and wn == m.name;
+    local fs = FS or 1;
+    imgui.SetWindowFontScale(fs * 0.80 * 0.86);
+    local tw_, th_ = imgui.CalcTextSize(str);
+    th_ = tonumber(th_) or 12;
+    local pw, ph = tw_ + 14 * sc, th_ + 4 * sc;
+    local rx = tip - ch * 0.30 * 0.5 - 6 * sc - (party and ALLY.tpw(sc) or 0);
+    local bx, by = rx - pw, ny - ph / 2;
+    dl:AddRectFilled({ bx, by }, { bx + pw, by + ph }, u32({ 0.045, 0.04, 0.065, 0.95 * v }), ph / 2);
+    local ec = win and { 1.0, 0.82, 0.42, 0.95 * v } or { NEON2[1], NEON2[2], NEON2[3], ((lv < 0) and 0.25 or 0.6) * v };
+    dl:AddRect({ bx, by }, { bx + pw, by + ph }, u32(ec), ph / 2, C.rall, 1.2);
+    local tc = win and { 1.0, 0.86, 0.48, v } or ((lv < 0) and { 0.62, 0.60, 0.70, v } or { 1, 1, 1, v });
+    text(dl, bx + (pw - tw_) / 2, by + (ph - th_) / 2, str, tc);
+    imgui.SetWindowFontScale(fs * 0.80);
+end
+-- Under a member's name, when they're in another zone: where they are (PARTY > Zone of members elsewhere)
+function C.zone_name(id)
+    C.ZN = C.ZN or {};
+    if C.ZN[id] == nil then
+        local nm = '';
+        pcall(function() nm = AshitaCore:GetResourceManager():GetString('zones.names', id) or ''; end);
+        C.ZN[id] = nm;
+    end
+    return C.ZN[id];
+end
+function C.zone_line(dl, m, x, y, w, sc, v)
+    if cfg.party_zone == false or m == nil or m.inzone or m.fake or (tonumber(m.zone) or 0) <= 0 or w < 20 then return; end
+    local zn = C.zone_name(m.zone);
+    if zn == nil or zn == '' then return; end
+    local fs = FS or 1;
+    imgui.SetWindowFontScale(fs * 0.80 * 0.70);
+    text(dl, x, y, ALLY.fit(zn, w), { 0.80, 0.74, 0.92, 0.85 * v });
+    imgui.SetWindowFontScale(fs * 0.80);
+end
+-- YunaUI's treasure pool, in the party list's look: each item a slanted card - its icon in a dark block, its name in
+-- spaced capitals, a thin glowing time bar, who is winning and the time left - with slanted LOT / PASS tags at its right.
+-- The cards slide in from the left; an item that drops pops out of the monster and glides in first.
+function C.lw_bez(P, t)
+    local u = 1 - t;
+    local a, b, c, d = u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t;
+    return a * P[1][1] + b * P[2][1] + c * P[3][1] + d * P[4][1], a * P[1][2] + b * P[2][2] + c * P[3][2] + d * P[4][2];
+end
+function C.loot_send(pid, slot)
+    pcall(function() AshitaCore:GetPacketManager():AddOutgoingPacket(pid, { pid, 0x04, 0x00, 0x00, slot, 0x00, 0x00, 0x00 }); end);
+end
+-- 0x0D2: an item fell in the pool - from which monster (0x12: its index; 0x08: its id) - so it can fly from where it died
+function C.loot_drop(e)
+    local d = e.data;
+    local sid = struct.unpack('I4', d, 0x08 + 1) or 0;
+    local id = struct.unpack('H', d, 0x10 + 1) or 0;
+    local idx = struct.unpack('H', d, 0x12 + 1) or 0;
+    local slot = struct.unpack('B', d, 0x14 + 1);
+    local old = struct.unpack('B', d, 0x15 + 1) or 0;                -- (already there when you came in: no flight)
+    if slot == nil or slot > 9 or id == 0 or old ~= 0 then return; end
+    if idx == 0 and sid > 0 then idx = bit.band(sid, 0xFFF); end
+    C.loot_fly(slot, id, idx);
+end
+function C.loot_fly(slot, id, idx)
+    local L = C.LOOT;
+    local w = nil;
+    pcall(function()
+        local ent = AshitaCore:GetMemoryManager():GetEntity();
+        local ap = (idx and idx > 0) and ent:GetActorPointer(idx) or nil;
+        local ahead = false;
+        if ap == nil or ap == 0 then                                 -- (no monster: from just in front of you)
+            ap = ent:GetActorPointer(AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0) or 0);
+            ahead = true;
+        end
+        if ap and ap ~= 0 then
+            w = { ashita.memory.read_float(ap + 0x678), ashita.memory.read_float(ap + 0x680), ashita.memory.read_float(ap + 0x67C) };
+            if ahead then w[1] = w[1] + 2.5; end
+        end
+    end);
+    local t0 = math.max(os.clock(), (L.fly_last or 0) + 0.22);       -- (several at once: one after another)
+    L.fly_last = t0;
+    L.fly[#L.fly + 1] = { t0 = t0, slot = slot, id = id, w = w };
+    L.hold[slot] = t0 + C.LOOT.FLY;
+end
+C.LOOT.FLY = 1.0;
+-- The flights: from the monster's place on screen, curving into the line on the pool's left side, the item's icon at its head
+function C.loot_flights(fg, sc)
+    local L = C.LOOT;
+    local now = os.clock();
+    local keep = {};
+    local W, H = C.screen();
+    for _, f in ipairs(L.fly) do
+        local t = (now - f.t0) / L.FLY;
+        if t < 1.05 then keep[#keep + 1] = f; end
+        if t >= 0 and t < 1.05 then
+            local sx, sy = nil, nil;
+            if f.w then pcall(function() sx, sy = C.w2s(f.w[1], f.w[3] - 1.0, f.w[2]); end); end
+            if sx == nil then sx, sy = W * 0.5, H * 0.62; end
+            local win = L.win or { tonumber(cfg.loot_x) or 100, tonumber(cfg.loot_y) or 100, 360 * sc, 200 * sc };
+            local tx, ty = win[1] + 2 * sc, L.rowy[f.slot] or (win[2] + win[4] * 0.5);
+            local P = { { sx, sy }, { sx + (tx - sx) * 0.25, sy - 140 * sc }, { tx - 160 * sc, ty - 30 * sc }, { tx + 30 * sc, ty } };
+            if t < 1 then
+                local pop = math.min(1, t / 0.18);                   -- (the pop: out of the monster, a touch past full size)
+                local grow = (pop < 1) and (1 - (1 - pop) ^ 3) * 1.15 or (1 + 0.15 * math.max(0, 1 - (t - 0.18) / 0.15));
+                local tt = math.max(0, (t - 0.12) / 0.88);           -- (the toss: up and over, into its place)
+                local e = tt * tt * (3 - 2 * tt);
+                local hx, hy = C.lw_bez(P, e);
+                local spin = math.cos(e * math.pi * 6);              -- (three turns: it narrows to its edge and opens again)
+                local wk = math.max(0.06, math.abs(spin));
+                local R = 17 * sc * grow * math.max(0.3, math.min(3, tonumber(cfg.loot_coin_scale) or 1));   -- (PARTY > TREASURE POOL > Drop coin size)
+                local ga = (t < 0.85) and 1 or math.max(0, 1 - (t - 0.85) / 0.15);
+                local function ell(cx_, cy_, rx, ry)                  -- (an ellipse, as points: a coin seen turning)
+                    local pts = {};
+                    for k = 0, 27 do local an = k / 28 * math.pi * 2; pts[#pts + 1] = { cx_ + math.cos(an) * rx, cy_ + math.sin(an) * ry }; end
+                    return pts;
+                end
+                fg:AddCircleFilled({ hx, hy }, R * 1.25, u32({ 1.0, 0.82, 0.40, 0.06 * ga }), 24);   -- (a faint warm halo, hugging it)
+                local side = (1 - wk) * 3.5 * sc * ((spin < 0) and -1 or 1);   -- (its thickness, showing as it turns)
+                ALLY.poly(fg, ell(hx + side, hy, R * wk, R), u32({ 0.66, 0.42, 0.10, ga }));
+                ALLY.poly(fg, ell(hx, hy, R * wk, R), u32({ 1.0, 0.84, 0.38, ga }));   -- its bright rim
+                ALLY.poly(fg, ell(hx, hy, R * 0.82 * wk, R * 0.82), u32({ 0.70, 0.46, 0.12, ga }));   -- its face, a deeper gold
+                local ic = YUI_EQ_ICON and YUI_EQ_ICON(f.id) or nil;  -- the item on its face (mirrored on the back)
+                if ic and wk > 0.22 then
+                    local iw, ih = R * 1.08 * wk / 2, R * 1.08 / 2;
+                    pcall(function() fg:AddImage(ic.ptr, { hx - iw, hy - ih }, { hx + iw, hy + ih }, { (spin < 0) and 1 or 0, 0 }, { (spin < 0) and 0 or 1, 1 }, u32({ 1, 1, 1, ga })); end);
+                end
+                fg:AddCircleFilled({ hx - R * 0.45 * wk, hy - R * 0.55 }, math.max(1, R * 0.10), u32({ 1, 1, 0.92, 0.75 * ga * wk }), 10);   -- (a glint on its rim)
+                local tw = 0.5 + 0.5 * math.sin(now * 14 + f.slot * 2.1);   -- a small sparkle by it, twinkling
+                local sx_, sy_ = hx + R * 0.95, hy - R * 0.95;
+                local sr = (3 + 4 * tw) * sc;
+                local sq = sr * 0.22;
+                ALLY.poly(fg, { { sx_, sy_ - sr }, { sx_ + sq, sy_ }, { sx_, sy_ + sr }, { sx_ - sq, sy_ } }, u32({ 1, 0.95, 0.75, ga }));
+                ALLY.poly(fg, { { sx_ - sr, sy_ }, { sx_, sy_ - sq }, { sx_ + sr, sy_ }, { sx_, sy_ + sq } }, u32({ 1, 0.95, 0.75, ga }));
+            elseif not f.done then
+                f.done = true;
+                L.flash[f.slot] = now;                               -- (it arrived: the line on the left lights up, the row slides out)
+            end
+        end
+    end
+    L.fly = keep;
+end
+-- Who is still to lot or pass on the item under the mouse: a small dark card by the pool - "WAITING ON" and how many in
+-- amber, then their names in columns, each with a dot in its role's colour
+function C.loot_wait_card(w, sc)
+    local fg = imgui.GetForegroundDrawList();
+    local fs = FS or 1;
+    local rows_ = {};
+    for _, nm in ipairs(w.wait) do
+        local col = { 0.75, 0.72, 0.85 };
+        for i = 0, 17 do local m = member(i); if m and m.name == nm then col = ALLY.role(m.job); break; end end
+        rows_[#rows_ + 1] = { nm, col };
+    end
+    local n = #rows_;
+    local cols = (n > 10) and 3 or ((n > 5) and 2 or 1);
+    local per = math.ceil(n / cols);
+    imgui.SetWindowFontScale(fs * 0.62);
+    local cw, lh = 0, 0;
+    for _, r in ipairs(rows_) do local tw_, th_ = imgui.CalcTextSize(r[1]); cw = math.max(cw, tw_); lh = math.max(lh, tonumber(th_) or 12); end
+    cw = cw + 18 * sc;
+    local pad = 10 * sc;
+    local head = lh + 10 * sc;
+    local htxt = 'WAITING ON ' .. n;                                 -- (its title: spaced letters, measured at the size they're drawn)
+    local hw = 0;
+    for i = 1, #htxt do hw = hw + imgui.CalcTextSize(htxt:sub(i, i)) + 1.6 * sc; end
+    local Wc = math.max(cols * cw + (cols - 1) * 8 * sc, hw + 14 * sc) + pad * 2;
+    local Hc = head + per * (lh + 3 * sc) + pad * 1.6;
+    local SW, SH = C.screen();
+    local x, y = w.x, w.y;
+    if x + Wc > SW - 4 then x = SW - 4 - Wc; end
+    if y + Hc > SH - 4 then y = SH - 4 - Hc; end
+    for k = 3, 1, -1 do fg:AddRectFilled({ x - k * 2, y - k * 2 + 3 }, { x + Wc + k * 2, y + Hc + k * 2 + 3 }, u32({ 0, 0, 0, 0.10 }), 10 * sc + k * 2); end
+    fg:AddRectFilled({ x, y }, { x + Wc, y + Hc }, u32({ 0.035, 0.03, 0.05, 0.95 }), 9 * sc);
+    fg:AddRect({ x, y }, { x + Wc, y + Hc }, u32({ 1.0, 0.66, 0.28, 0.35 }), 9 * sc, C.rall, 1);
+    fg:AddRectFilled({ x + 9 * sc, y }, { x + Wc - 9 * sc, y + 1.5 * sc }, u32({ 1.0, 0.70, 0.32, 0.85 }));   -- (a fine amber line along its top)
+    local q = 0.75 + 0.25 * math.sin(os.clock() * 3);
+    fg:AddCircleFilled({ x + pad + 3 * sc, y + pad + lh / 2 }, 2.6 * sc, u32({ 1.0, 0.66, 0.26, q }), 10);
+    local hx = x + pad + 12 * sc;
+    for i = 1, #htxt do
+        local ch = htxt:sub(i, i);
+        text(fg, hx, y + pad, ch, { 1.0, 0.74, 0.38, 1 });
+        hx = hx + imgui.CalcTextSize(ch) + 1.6 * sc;
+    end
+    fg:AddLine({ x + pad, y + pad + head - 4 * sc }, { x + Wc - pad, y + pad + head - 4 * sc }, u32({ 1, 1, 1, 0.08 }), 1);
+    for k, r in ipairs(rows_) do
+        local c_ = math.floor((k - 1) / per);
+        local r_ = (k - 1) % per;
+        local nx = x + pad + c_ * (cw + 8 * sc);
+        local ny = y + pad + head + r_ * (lh + 3 * sc);
+        fg:AddCircleFilled({ nx + 3 * sc, ny + lh / 2 }, 2.4 * sc, u32({ r[2][1], r[2][2], r[2][3], 1 }), 10);
+        text(fg, nx + 11 * sc, ny, r[1], { 0.93, 0.91, 0.97, 1 });
+    end
+    imgui.SetWindowFontScale(fs);
+end
+-- A slanted tag button, as the party list's job tags: LOT pink with dark letters, PASS lavender-grey with light ones;
+-- under the mouse (or lit) it brightens and lifts a little
+function C.loot_btn(dl, id, x, y, w, h, label, kind, on, lit)
+    imgui.SetCursorScreenPos({ x, y });
+    local hit = imgui.InvisibleButton(id, { w, h });
+    local hov = (imgui.IsItemHovered() and on) or lit;
+    local pink = kind == 'lot';
+    local s = h * 0.30;
+    local up = hov and 1.5 * C.ps or 0;
+    local f = pink and { 0.97, 0.76, 0.30 } or { 0.40, 0.38, 0.54 };   -- (LOT: gold - it's loot)
+    if hov then f = { math.min(1, f[1] + 0.06), math.min(1, f[2] + 0.10), math.min(1, f[3] + 0.08) }; end
+    local ink = pink and { 0.28, 0.16, 0.02 } or { 0.96, 0.95, 1.0 };
+    local a = on and 1 or 0.45;
+    local pts = { { x + s, y - up }, { x + w, y - up }, { x + w - s, y + h - up }, { x, y + h - up } };
+    ALLY.poly(dl, pts, u32({ f[1], f[2], f[3], a }));
+    local tw_, th_ = imgui.CalcTextSize(label);
+    dl:AddText({ x + (w - tw_) / 2, y - up + (h - (tonumber(th_) or h)) / 2 }, u32({ ink[1], ink[2], ink[3], a }), label);
+    return hit and on;
+end
+function C.loot_win()
+    C.loot_tick();
+    local L = C.LOOT;
+    local now = os.clock();
+    local fg = nil;
+    pcall(function() fg = imgui.GetForegroundDrawList(); end);
+    local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.loot_scale) or 1);
+    if fg and #L.fly > 0 then pcall(C.loot_flights, fg, sc); end
+    if cfg.loot_win == false then L.hov = nil; return; end
+    local fake = L.n == 0 and (EDIT.on or (ui.open and ui.tab == 10));   -- (its tab open, or Edit Mode: a preview to place it)
+    if L.n == 0 and not fake then L.hov = nil; return; end
+    local items = {};
+    if fake then
+        for k, f in ipairs(L.FAKE) do items[#items + 1] = { slot = k - 1, id = f[1], name = f[2], at = os.time() - k * 70, fake = true }; end
+    else
+        for slot = 0, 9 do
+            local p = L.pool[slot];
+            if p and not (L.hold[slot] and now < L.hold[slot]) then items[#items + 1] = p; end   -- (still flying in: not yet)
+        end
+    end
+    first_place('loot_x', 'loot_y', 320, -560);
+    if not plain_window('YunaUI Treasure##yui_loot', 'loot_x', 'loot_y') then imgui.End(); imgui.PopStyleVar(2); return; end
+    local dl = imgui.GetWindowDrawList();
+    pcall(function() C.fullclip(dl); end);
+    local x, y = imgui.GetCursorScreenPos();
+    local pushed = sized('chat', 17 * sc);
+    local fs = FS or 1;
+    local W = math.floor(350 * sc);
+    local rh = math.floor(46 * sc);
+    local gap = math.floor(6 * sc);
+    local th = math.floor(rh * 0.50);                                -- (the LOT / PASS tags' height)
+    local sl = rh * 0.30;                                            -- (the cards' lean, as the party's)
+    local all = (#items > 1 or fake);
+    local H = math.max(1, #items) * (rh + gap) + (all and (th + 12 * sc) or 0);
+    L.win = { x, y, W, H };
+    local ry = math.floor(y + 0.5);
+    local hov = nil;
+    L.wtip = nil;
+    local mx, my = imgui.GetMousePos();
+    L.rowy = L.rowy or {};
+    local function letters(px, py, str, col, sp)                     -- (spaced capitals, each letter with its dark edge)
+        for i = 1, #str do
+            local ch = str:sub(i, i);
+            text(dl, px, py, ch, col);
+            px = px + imgui.CalcTextSize(ch) + sp;
+        end
+        return px;
+    end
+    for r_, it in ipairs(items) do
+        local slot = it.slot;
+        local key = it.key or ('f' .. slot);
+        local seen = L.seen[key];
+        if seen == nil then seen = now + (r_ - 1) * 0.07; L.seen[key] = seen; end   -- (several at once: one after another)
+        local ik = math.max(0, math.min(1, (now - seen) / 0.35));    -- (it slides in from the left, fading in)
+        ik = 1 - (1 - ik) ^ 3;
+        local ox = -(1 - ik) * 30 * sc;
+        local cy = ry + rh / 2;
+        L.rowy[slot] = cy;
+        local over = mx >= x and mx <= x + W and my >= ry and my <= ry + rh;
+        if over then hov = slot; end
+        local picked = (not fake) and L.pick == slot;
+        imgui.PushStyleVar(ImGuiStyleVar_Alpha, math.max(0.01, ik));
+        local x0 = math.floor(x + ox + 0.5);                          -- (on whole pixels: crisp edges)
+        local bw0 = rh * 1.05;                                       -- the icon's block: dark, a bright stripe down its left side
+        local blk = { { x0 + sl, ry }, { x0 + sl + bw0, ry }, { x0 + bw0, ry + rh }, { x0, ry + rh } };
+        ALLY.poly(dl, blk, u32({ 0.07, 0.065, 0.10, 0.92 }));
+        local mine0 = (not fake) and it.mine or nil;                 -- (its colour: gold; brighter if it's going to you, grey once passed)
+        local wn0 = (not fake) and C.lot_winner(slot) or nil;
+        local me0 = '';
+        pcall(function() me0 = AshitaCore:GetMemoryManager():GetParty():GetMemberName(0) or ''; end);
+        local hc = (mine0 and mine0 >= 0 and wn0 == me0) and { 1.0, 0.93, 0.62 } or ((mine0 and mine0 < 0) and { 0.50, 0.48, 0.62 } or { 0.96, 0.74, 0.28 });
+        for k = 1, 4 do dl:AddLine(blk[k], blk[k % 4 + 1], u32({ 0.96, 0.76, 0.32, picked and 1 or 0.45 }), picked and 1.3 or 1); end
+        local sw1 = math.max(2, math.floor(2.5 * sc + 0.5));         -- (just the line, crisp, over the block's edge)
+        ALLY.poly(dl, { { x0 + sl, ry }, { x0 + sl + sw1, ry }, { x0 + sw1, ry + rh }, { x0, ry + rh } }, u32({ hc[1], hc[2], hc[3], 1 }));
+        local isz = rh - 12 * sc;
+        local ic = YUI_EQ_ICON and YUI_EQ_ICON(it.id) or nil;
+        local icx = x0 + (bw0 + sl) / 2 + 2 * sc;
+        if ic then pcall(function() dl:AddImage(ic.ptr, { icx - isz / 2, cy - isz / 2 }, { icx + isz / 2, cy + isz / 2 }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 })); end); end
+        local gp = 3 * sc;                                           -- the card: dark, a little see-through, a light along its top
+        local c0 = x0 + bw0 + gp;
+        local card = { { c0 + sl, ry }, { x0 + W, ry }, { x0 + W - sl, ry + rh }, { c0, ry + rh } };
+        ALLY.poly(dl, card, u32({ 0.085, 0.08, 0.115, (over or picked) and 0.90 or 0.82 }));
+        ALLY.grad(dl, { c0 + sl, ry }, { x0 + W - sl, ry + 1 }, { 1, 1, 1, 0.14 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0.14 });
+        local fl1 = L.flash[slot] and math.max(0, 1 - (now - L.flash[slot]) / 0.6) or 0;   -- (just landed: its gold edge flashes)
+        if fl1 > 0 then pcall(ALLY.glow_ring, dl, card, 3 * sc, u32({ 1.0, 0.85, 0.45, 0.30 * fl1 })); end
+        local ea = math.max(picked and 1 or 0.45, fl1);
+        for k = 1, 4 do dl:AddLine(card[k], card[k % 4 + 1], u32({ 0.96 + 0.04 * fl1, 0.76 + 0.14 * fl1, 0.32 + 0.30 * fl1, ea }), (picked and 1.3 or 1) + fl1); end   -- (a gold edge; bright on the picked one)
+        local bx_ = x0 + W - sl * 0.5 - 8 * sc;                      -- your LOT / PASS (or what you did), at its right end
+        local mine = (not fake) and it.mine or nil;
+        local bw_ = math.floor(46 * sc);
+        imgui.SetWindowFontScale(fs * 0.62);
+        local by_ = cy - th / 2;
+        if mine == nil then
+            if C.loot_btn(dl, '##yui_pass' .. slot, bx_ - bw_, by_, bw_, th, 'PASS', 'pass', not fake) then C.loot_act(slot, false); end
+            if C.loot_btn(dl, '##yui_lot' .. slot, bx_ - bw_ * 2 - 4 * sc, by_, bw_, th, 'LOT', 'lot', not fake, picked) then C.loot_act(slot, true); end
+            bx_ = bx_ - bw_ * 2 - 12 * sc;
+        else
+            if mine >= 0 then
+                if C.loot_btn(dl, '##yui_pass' .. slot, bx_ - bw_, by_, bw_, th, 'PASS', 'pass', true) then C.loot_act(slot, false); end
+                bx_ = bx_ - bw_ - 8 * sc;
+            end
+            local s_ = (mine < 0) and 'PASSED' or ('YOU ' .. mine);
+            local sw_ = 0;
+            for i = 1, #s_ do sw_ = sw_ + imgui.CalcTextSize(s_:sub(i, i)) + 1 * sc; end
+            letters(bx_ - sw_, cy - 7 * sc, s_, (mine < 0) and { 0.66, 0.64, 0.78, 1 } or { 1, 0.90, 0.96, 1 }, 1 * sc);
+            bx_ = bx_ - sw_ - 10 * sc;
+        end
+        local tx = c0 + sl * 0.6 + 6 * sc;                           -- its name in spaced capitals, the time bar, who is winning
+        local nm = it.name or C.loot_name(it.id);
+        nm = ((nm ~= '' and nm) or ('Item ' .. it.id)):upper();
+        imgui.SetWindowFontScale(fs * 0.72);
+        local _, nh = imgui.CalcTextSize('A');
+        nh = tonumber(nh) or 14;
+        local room = bx_ - tx;
+        if spaced_w(nm, 1 * sc) > room then
+            while #nm > 2 and spaced_w(nm .. '.', 1 * sc) > room do nm = nm:sub(1, -2); end
+            nm = nm .. '.';
+        end
+        local ny = ry + 5 * sc;
+        letters(tx, ny, nm, { 1, 1, 1, 1 }, 1 * sc);
+        local left = math.max(0, L.LIFE - (os.time() - (it.at or os.time())));
+        local f = left / L.LIFE;
+        local barw = math.max(10, bx_ - tx);
+        local hy = ny + nh + 2 * sc;
+        local bh2 = math.max(2, math.floor(3 * sc));
+        local c1 = (left < 60) and { 1.0, 0.36, 0.40 } or { 1.0, 0.86, 0.46 };
+        local c2 = (left < 60) and { 0.80, 0.10, 0.20 } or { 0.86, 0.56, 0.16 };
+        pcall(glow_bar, dl, tx, hy, barw, bh2, f, f, c1, c2, slot);
+        imgui.SetWindowFontScale(fs * 0.60);
+        local wn, wl = nil, nil;
+        if fake then wn, wl = (slot == 0) and 'Yunas' or nil, (slot == 0) and 742 or nil; else wn, wl = C.lot_winner(slot); end
+        local wait = fake and { 'Bardo', 'Corsi' } or C.loot_waiting(slot);
+        local ts = string.format('%d:%02d', math.floor(left / 60), left % 60);
+        local tsw = imgui.CalcTextSize(ts);
+        local sub = wn and (wn .. ' ' .. wl) or 'No lots yet';
+        local sy_ = hy + bh2 + 2 * sc;
+        text(dl, tx, sy_, ALLY.fit(sub, barw - tsw - 10 * sc), wn and { 1.0, 0.82, 0.42, 1 } or { 0.66, 0.70, 0.96, 1 });
+        local tq = (left < 60) and (0.70 + 0.30 * math.sin(now * 5)) or 1;
+        text(dl, tx + barw - tsw, sy_, ts, (left < 60) and { 1.0, 0.45, 0.48, tq } or { 0.80, 0.78, 0.90, 0.9 });
+        if over and #wait > 0 then L.wtip = { wait = wait, x = x + W + 10 * sc, y = ry }; end
+        imgui.SetWindowFontScale(fs);
+        if not fake and over and mx < bx_ and imgui.IsMouseClicked(0) then L.pick = (L.pick == slot) and nil or slot; end   -- (a click keeps it picked)
+        imgui.PopStyleVar(1);
+        ry = ry + rh + gap;
+    end
+    if all then                                                      -- LOT ALL / PASS ALL: two tags at its foot, on the right
+        imgui.SetWindowFontScale(fs * 0.60);
+        local bw2 = math.floor(76 * sc);
+        local fy = ry + 4 * sc;
+        local x2 = x + W - sl * 0.5 - 8 * sc - bw2 * 2 - 4 * sc;
+        if C.loot_btn(dl, '##yui_lotall', x2, fy, bw2, th, 'LOT ALL', 'lot', not fake, (not fake) and L.pick ~= nil) then
+            for _, it in ipairs(items) do if it.mine == nil then C.loot_act(it.slot, true); end end
+        end
+        if C.loot_btn(dl, '##yui_passall', x2 + bw2 + 4 * sc, fy, bw2, th, 'PASS ALL', 'pass', not fake) then
+            for _, it in ipairs(items) do if it.mine == nil then C.loot_act(it.slot, false); end end
+        end
+        imgui.SetWindowFontScale(fs);
+    end
+    L.hov = (not fake) and hov or nil;
+    if L.wtip then pcall(C.loot_wait_card, L.wtip, sc); end
+    unsized(pushed);
+    imgui.SetCursorScreenPos({ x, y });
+    imgui.Dummy({ W, H });
+    end_plain('loot_x', 'loot_y');
+end
 local LAYOUT = {
-    KEYS = { 'target', 'sub', 'enemy', 'party', 'alliance', 'ally2', 'chat', 'chat2', 'exp', 'gil', 'bag', 'cast', 'timer', 'pet', 'doll', 'map', 'bigmap' },
-    GUESS = { target = { 540, 60 }, sub = { 320, 50 }, enemy = { 230, 220 }, party = { 340, 300 }, alliance = { 260, 170 },
+    KEYS = { 'target', 'sub', 'enemy', 'party', 'alliance', 'ally2', 'chat', 'chat2', 'exp', 'gil', 'bag', 'cast', 'timer', 'pet', 'doll', 'map', 'bigmap', 'loot' },
+    GUESS = { loot = { 350, 270 }, target = { 540, 60 }, sub = { 320, 50 }, enemy = { 230, 220 }, party = { 340, 300 }, alliance = { 260, 170 },
               ally2 = { 260, 170 }, exp = { 540, 40 }, gil = { 170, 26 }, bag = { 320, 26 }, cast = { 320, 44 },
               timer = { 290, 230 }, pet = { 290, 180 }, doll = { 300, 420 } },
     FULL = { party = true, alliance = true, ally2 = true, enemy = true, timer = true, pet = true },   -- (lists that grow)
@@ -7688,6 +8283,11 @@ function LAYOUT.size(k)
     end
     local sc = tonumber(cfg.scale) or 1;
     local m = WATCH.size and WATCH.size[k .. '_x'];
+    if k == 'loot' then                                              -- (the pool: as it shows with four items)
+        local ls = sc * (tonumber(cfg.loot_scale) or 1);
+        if m and m[1] > 4 then return m[1], math.max(m[2], 270 * ls); end
+        return 350 * ls, 270 * ls;
+    end
     if k == 'map' and not (m and m[1] > 4) then                      -- (not shown yet: the map's own size and its title)
         local M = (tonumber(cfg.map_size) or 220) * sc;
         return M + 8, M + 40;
@@ -7741,6 +8341,7 @@ end
 function LAYOUT.on(k)
     if k == 'doll' then return (cfg.equip_look or 'wheel') == 'doll'; end
     if k == 'map' then return cfg.minimap ~= false; end
+    if k == 'loot' then return cfg.loot_win ~= false; end
     if k == 'timer' then return cfg.timers ~= false; end
     if k == 'alliance' or k == 'ally2' then return cfg.alliance ~= false; end
     if k == 'party' then return cfg.party ~= false; end
@@ -7838,7 +8439,7 @@ function LAYOUT.build(name)
         LAYOUT.chats(o, bx, bx + gw, split);
         local ctop = LAYOUT.cb - ch - 12;
         LAYOUT.column(o, { 'party', 'alliance', 'ally2', 'enemy', 'dps', 'doll' }, W - m, 40, split and ctop or floor_, -1);
-        LAYOUT.column(o, { 'map', 'timer' }, m, 40, ctop, 1);
+        LAYOUT.column(o, { 'map', 'timer', 'loot' }, m, 40, ctop, 1);
     elseif name == 'raid' then                                      -- party top left, bars stacked bottom middle, timers right
         local stack = LAYOUT.stack_h(hh);
         local bx, by = W / 2 - hw / 2, floor_ - stack - 20;
@@ -7851,7 +8452,7 @@ function LAYOUT.build(name)
         LAYOUT.put(o, 'chat', W - m - cw, LAYOUT.cb - ch);
         local top = LAYOUT.cb - ch - 12;
         if split then LAYOUT.put(o, 'chat2', W - m - cw, top - ch); top = top - ch - 12; end
-        LAYOUT.column(o, { 'timer', 'enemy', 'map' }, W - m, 60, top, -1);
+        LAYOUT.column(o, { 'timer', 'enemy', 'loot', 'map' }, W - m, 60, top, -1);
         LAYOUT.column(o, { 'party', 'alliance', 'ally2', 'doll', 'dps' }, m, 60, math.floor(H * 0.74), 1);   -- (clear of the game's
     else                                                             -- compact: gathered round the bars          menus, bottom left)
         local stack = LAYOUT.stack_h(hh);
@@ -7873,7 +8474,7 @@ function LAYOUT.build(name)
         end
         local tmw, tmh = LAYOUT.size('timer');
         LAYOUT.put_free(o, 'timer', bx - tmw - 40, math.max(40 + th + 80, ctop - tmh), -1, 0);
-        LAYOUT.column(o, { 'enemy', 'dps' }, m, 40, ctop, 1);
+        LAYOUT.column(o, { 'enemy', 'dps', 'loot' }, m, 40, ctop, 1);
         LAYOUT.column(o, anch and { 'doll', 'map' } or { 'doll', 'alliance', 'ally2', 'map' }, W - m, 40, ctop, -1);
     end
     dps = o._dps;
@@ -8414,6 +9015,7 @@ local function draw_window()
             if cfg.party_dim_far ~= false then row_slider('##yui_s_pfar', 'Far from', 'party_range', 10, 50, 0.5, '%.1f yalms'); end
             row_pick('##yui_pbside', 'Buffs side', 'party_buff_side', { { 'left', 'Left of the cards' }, { 'right', 'Right of the line' } });
             row_switch('##yui_pdist', 'Distance', 'party_dist', 'On: how far each member is (in yalms), small, after the name. Pink when out of range.');
+            row_switch('##yui_pzone', 'Zone of members elsewhere', 'party_zone', 'On: a member in another zone shows where they are, under their name (party and alliance).');
             section('ALLIANCE');
             row_switch('##yui_a', 'Show', 'alliance');
             row_switch('##yui_ap', 'Pretend members (to place it)', 'alliance', 'Shows both alliance parties so you can place and size them when not in an alliance.', PREVIEW, function() end);
@@ -8581,6 +9183,13 @@ local function draw_window()
             else
                 hint('The minimap needs its map files (the mapsimg and maps3d folders in YunaUI\'s folder).');
             end
+        elseif tab == 10 then
+            ------------------------------------------------------------------ TREASURE POOL
+            section('TREASURE POOL');
+            row_switch('##yui_lootw', 'Show the pool', 'loot_win', "On: when something drops, YunaUI's own treasure pool shows it: time left, who is winning, and Lot / Pass buttons. Click an item to keep it picked.");
+            row_slider('##yui_s_loot', 'Pool size', 'loot_scale', 0.6, 2.0, 0.05, '%.2fx');
+            row_slider('##yui_s_coin', 'Drop coin size', 'loot_coin_scale', 0.5, 2.5, 0.05, '%.2fx');
+            hint("With an item picked (the mouse over it or a click in the pool, or the cursor on it in the game's own pool), everyone's lot shows on their party card: a number, -- for a pass, ? for still to go, the highest in gold.");
         else
             ------------------------------------------------------------------ DAMAGE METER
             local D = YUI_DPS;
@@ -10070,6 +10679,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(YMAP.draw);                                            -- the minimap (BARS > MINIMAP)
         TIMERS.preview = (ui.open and ui.tab == 7) or EDIT.on;      -- the TIMERS tab (and Edit Mode) show a preview of it
         piece(TIMERS.draw);
+        piece(C.loot_win);                                           -- (TREASURE POOL)
         piece(C.bubble_draw);                                        -- (CHAT > Speech bubbles)
         piece(C.target_aura);                                        -- (TARGET > Floor aura: under the bars and everything else)
         piece(C.head_bars);                                          -- (BARS > YOUR BARS > Where: over your head)
@@ -10094,6 +10704,8 @@ ashita.events.register('packet_in', 'yui_packet', function(e)
     elseif e.id == 0x028 then pcall(read_action, e); pcall(PET.action, e);
     elseif e.id == 0x068 then pcall(PET.sync, e);
     elseif e.id == 0x029 then pcall(read_message, e);
+    elseif e.id == 0x0D3 then pcall(C.loot_packet, e);
+    elseif e.id == 0x0D2 then pcall(C.loot_drop, e);               -- (an item fell in the pool: it flies in from the monster)              -- (a lot or a pass on a treasure pool item)
     elseif e.id == 0x00E then pcall(read_claim, e);
     elseif e.id == 0x057 then pcall(C.weather_packet, e);
     elseif e.id == 0x00A then enemies = {}; ENGAGED = {}; LASTHIT = {}; FIGHT.casts = {}; FIGHT.sc = {}; FIGHT.mine_at = nil; pcall(C.weather_packet, e);
@@ -10226,6 +10838,10 @@ ashita.events.register('command', 'yui_command', function(e)
     local sub = (args[2] or ''):lower();
     if sub == '' then ui.open = not ui.open;
     elseif sub == 'edit' then EDIT.on = not EDIT.on; if EDIT.on then ui.open = false; end
+    elseif sub == 'lootmenu' then                                    -- (which game menus were open with something in the pool)
+        local t = {};
+        for k in pairs(C.LOOT.menus) do t[#t + 1] = k; end
+        msg('Menus seen with items in the pool: ' .. ((#t > 0) and table.concat(t, ', ') or 'none yet'));
     elseif sub == 'welcome' then EDIT.welcome = true; EDIT.G.start();   -- (what a new player sees on the first launch; settings untouched)
     elseif sub == 'guide' or sub == 'tour' then EDIT.G.start();      -- the first-time guide again
     elseif sub == 'lock' or sub == 'unlock' then cfg.locked = (sub == 'lock'); save(); msg(cfg.locked and 'Locked.' or 'Unlocked.');
