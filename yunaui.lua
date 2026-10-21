@@ -58,7 +58,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, target_friend_look = 'banner',  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', target_fx_mobs = true, minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_idle_fade = false, target_friend_look = 'banner',  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -5681,13 +5681,15 @@ local function draw_chat(n)
             elseif not cfg.chat_split then only = 'talk'; end
         end
         local i = #log;
-        local rown = 0;                                              -- (rows drawn so far, from the bottom: at rest the newest 3 show, 2 more fade)
+        local rown, vrows = 0, 0;                                    -- (vrows: the rows still showing at rest - the ground's height)                                              -- (rows drawn so far, from the bottom: at rest the newest 3 show, 2 more fade)
         while i >= 1 and ly > y - lh do
             local e = log[i];
             if tab ~= 1 and TAB_OF[e.mode or 0] ~= tab then i = i - 1; goto next_line; end
             if only and ((only == 'combat') ~= is_combat(e.mode or 0)) then i = i - 1; goto next_line; end
             do
             local life = (rown < 5) and 1 or 0;
+            local lt = 1;                                            -- CHAT > Fade when idle: on, even the newest lines fade away after a while
+            if cfg.chat_idle_fade then lt = math.max(0, math.min(1, 1 - ((now - (e.t or now)) - hold) / fade)); life = life * lt; end
             local vis = math.max(st.hv, life);
             if vis <= 0.01 and skip <= 0 then break; end            -- older lines are all faded out
             local lines = e.feed and { e.text } or wrap(e, maxw, size);  -- (a combat-feed line: one row, drawn by C.feed_draw)
@@ -5699,7 +5701,8 @@ local function draw_chat(n)
                 if skip > 0 then skip = skip - 1;
                 else
                     local rest = math.max(0, math.min(1, 1 - (rown - 2) / 2.5));   -- (at rest: rows 1-3 full, 4-5 fading)
-                    local a = math.max(0, math.min(1, (ly - y) / (h * 0.25))) * math.max(st.hv, rest) * ain;    -- fades toward the top
+                    local a = math.max(0, math.min(1, (ly - y) / (h * 0.25))) * math.max(st.hv, rest * lt) * ain;    -- fades toward the top
+                    if rest * lt > 0.05 then vrows = vrows + 1; end
                     if a > 0.01 then
                         st.vis_n = math.max(st.vis_n or 0, vis);
                         -- readable on any ground (snow, sand, bright floors): a full dark outline round every letter
@@ -5761,7 +5764,7 @@ local function draw_chat(n)
             ::next_line::
         end
         st.vis = st.vis_n;
-        st.used_h = math.min(rown, 5) * lh + bar + pad + type_h;     -- (how tall the resting ground is: the newest rows)
+        st.used_h = (vrows > 0) and (math.min(vrows, 5) * lh + bar + pad + type_h) or 0;   -- (how tall the resting ground is: the rows showing)
         imgui.PopClipRect();
         if itip then pcall(C.item_card, itip); end
         if typing then                                               -- the typing line: a dark strip, your text, a blinking caret
@@ -7825,6 +7828,8 @@ local function draw_window()
             if cfg.chat_time then row_switch('##yui_ctd', 'Timestamps in grey', 'chat_time_dim', 'On: the time is grey, so the message itself stands out.'); end
             row_switch('##yui_canim', 'Animated lines', 'chat_anim', 'On: new lines slide in with a soft glow, and a thin bar in their channel\'s colour on the left.');
             row_switch('##yui_cfeed', 'Combat feed', 'chat_feed', 'On: a spell or ability is one line that grows as it happens (who > spell > target, then a tick, the damage, the HP healed or miss) instead of three or four lines. Only new lines.');
+            row_switch('##yui_cfade', 'Fade when idle', 'chat_idle_fade', 'On: when nobody writes for a while, even the newest lines fade away and the chat clears; put the mouse over it to see it all. Off: the newest lines always stay.');
+            if cfg.chat_idle_fade then row_slider('##yui_s_h', 'Lines stay for', 'chat_hold', 3, 60, 1, '%d s'); end
             row_switch('##yui_cbub', 'Speech bubbles', 'chat_bubbles', 'On: say and party lines also show as a bubble over the head of whoever said it (when they\'re near you).');
             section('HISTORY');
             row_switch('##yui_csave', 'Save chat logs', 'chat_save', 'On: every chat line is also written to a text file, one per day: Ashita\\chatlogs\\<your name>_<date>.txt');
