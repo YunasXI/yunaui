@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.33';
+addon.version = '1.0.34';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1880,6 +1880,9 @@ local function party_cursor()
         if ti and ti ~= 0 then return ti; end
         return -(slot + 1);                                          -- (someone in another zone: their slot, as -(slot + 1); Leader / Kick)
     end
+    -- <st> / <stpc> with a target already held (engaged: a Cure while you fight): the cursor is in the first slot and the
+    -- held monster in the second; with nothing held the cursor is in the second
+    if sub and sub ~= 0 and main ~= 0 then return main; end
     if sub and sub ~= 0 then return sub; end
     return main;
 end
