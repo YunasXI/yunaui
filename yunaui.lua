@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.39';
+addon.version = '1.0.40';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -9705,6 +9705,38 @@ function YMAP.floor_of(x, y, z)                                      -- the game
     end);
     return (ok and tonumber(f)) or 0;
 end
+function C.map_info()                                                -- /yui mapinfo: one line for a minimap report
+    local mm = AshitaCore:GetMemoryManager();
+    local zid, x, y, z = 0, 0, 0, 0;
+    pcall(function() zid = tonumber(mm:GetParty():GetMemberZone(0)) or 0; end);
+    pcall(function()
+        local ent, me = mm:GetEntity(), mm:GetParty():GetMemberTargetIndex(0) or 0;
+        x, y, z = tonumber(ent:GetLocalPositionX(me)) or 0, tonumber(ent:GetLocalPositionY(me)) or 0, tonumber(ent:GetLocalPositionZ(me)) or 0;
+    end);
+    local okf, fl = pcall(YMAP.floor_of, x, y, z);
+    fl = okf and tonumber(fl) or -1;
+    local oke, e = pcall(YMAP.best_entry, zid, fl, x, y);
+    if not oke then e = nil; end
+    local fls = {};
+    local tp = 0;
+    pcall(function() tp = YMAP.table_ptr() or 0; end);
+    if tp ~= 0 then
+        pcall(function()
+            for i = 0, 1999 do
+                local b_ = tp + i * 0x0E;
+                local zz, dat = ashita.memory.read_uint16(b_), ashita.memory.read_uint16(b_ + 8);
+                if zz == 0 and dat == 0 and i > 10 then break; end
+                if zz == zid then fls[#fls + 1] = tostring(ashita.memory.read_uint8(b_ + 2)); end
+            end
+        end);
+    end
+    local zn = '';
+    pcall(function() zn = AshitaCore:GetResourceManager():GetString('zones.names', zid) or ''; end);
+    msg(string.format('Map info: zone %d%s, at %.1f / %.1f / %.1f, floor %d, map %s%s. Floors in the table: %s%s',
+        zid, (zn ~= '') and (' (' .. zn .. ')') or '', x, y, z, fl, e and tostring(e.floor) or 'none',
+        (e and e.picked) and ' (picked: the one that shows where you stand)' or ((e and not e.exact) and ' (no exact match: the first map of the zone shown)' or ''),
+        (#fls > 0) and table.concat(fls, ' ') or 'none', (tp == 0) and ' (map table not found)' or ''));
+end
 function YMAP.entry_of(zone, floor)                                  -- the map table's line for this zone and floor
     local tp = YMAP.table_ptr();
     if tp == 0 then return nil; end
@@ -9723,6 +9755,61 @@ function YMAP.entry_of(zone, floor)                                  -- the map 
         end
     end
     return first;
+end
+-- mapsimg\cover.lua: for each zone with several maps, which parts of each map have something drawn (64 x 64 squares of
+-- 8 map pixels). When the map the game's floor picks has nothing round where you stand (Arrapago Reef's eleven maps),
+-- the zone's map that does is shown instead.
+function YMAP.cover(zid)
+    if YMAP.COV == nil then
+        YMAP.COV = false;
+        pcall(function()
+            local t = dofile((addon.path:gsub('[\\/]+$', '')) .. '\\mapsimg\\cover.lua');
+            if type(t) == 'table' then YMAP.COV = t; end
+        end);
+    end
+    return YMAP.COV and YMAP.COV[zid] or nil;
+end
+function YMAP.covered(e, wx, wy)                                     -- (true: this map has lines within ~2 squares of the spot)
+    local cv = YMAP.cover(e.zone);
+    local h = cv and cv[e.floor];
+    if not h then return true; end                                   -- (nothing known: trusted)
+    local k = math.abs(e.scale) / 2560 * 512;
+    local mx, my = wx * k - e.ox, -wy * k - e.oy;
+    local cx, cy = math.floor(mx / 8), math.floor(my / 8);
+    for y_ = cy - 2, cy + 2 do
+        for x_ = cx - 2, cx + 2 do
+            if x_ >= 0 and x_ < 64 and y_ >= 0 and y_ < 64 then
+                local b = y_ * 64 + x_;
+                local nib = tonumber(h:sub(math.floor(b / 4) + 1, math.floor(b / 4) + 1), 16) or 0;
+                if bit.band(nib, bit.lshift(1, 3 - b % 4)) ~= 0 then return true; end
+            end
+        end
+    end
+    return false;
+end
+function YMAP.entries(zone)                                          -- every line of the map table for this zone
+    local tp, out = YMAP.table_ptr(), {};
+    if tp == 0 then return out; end
+    for i = 0, 1999 do
+        local b = tp + i * 0x0E;
+        local z = ashita.memory.read_uint16(b);
+        local dat = ashita.memory.read_uint16(b + 8);
+        if z == 0 and dat == 0 and i > 10 then break; end
+        if z == zone then
+            local sv = ashita.memory.read_uint8(b + 5);
+            out[#out + 1] = { zone = z, floor = ashita.memory.read_uint8(b + 2), scale = (sv >= 0x80) and (sv - 0x100) or sv,
+                              ox = ashita.memory.read_int16(b + 0x0A), oy = ashita.memory.read_int16(b + 0x0C) };
+        end
+    end
+    return out;
+end
+function YMAP.best_entry(zid, fl, wx, wy)                            -- the game's floor's map, or the zone's map that shows this spot
+    local e = YMAP.entry_of(zid, fl);
+    if e == nil or YMAP.cover(zid) == nil or YMAP.covered(e, wx, wy) then return e; end
+    for _, e2 in ipairs(YMAP.entries(zid)) do
+        if e2.floor ~= e.floor and YMAP.covered(e2, wx, wy) then e2.picked = true; return e2; end
+    end
+    return e;
 end
 function YMAP.load_tex(path)
     local t = nil;
@@ -9746,10 +9833,12 @@ function YMAP.update(ent, me, zid)                                   -- the righ
     YMAP.check_t = now;
     local x, y, z = ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0, ent:GetLocalPositionZ(me) or 0;
     local fl = YMAP.floor_of(x, y, z);
-    if zid == YMAP.zone and fl == YMAP.floor then return; end
+    if zid == YMAP.zone and fl == YMAP.floor and (YMAP.entry == nil or YMAP.covered(YMAP.entry, x, y)) then return; end
+    local e = YMAP.best_entry(zid, fl, x, y);                        -- (still the same map: nothing to load)
+    if zid == YMAP.zone and fl == YMAP.floor and e and YMAP.entry and e.floor == YMAP.entry.floor then return; end
     YMAP.zone, YMAP.floor = zid, fl;
     pcall(function() YMAP.name = AshitaCore:GetResourceManager():GetString('zones.names', zid) or ''; end);
-    YMAP.entry = YMAP.entry_of(zid, fl);
+    YMAP.entry = e;
     YMAP.tex, YMAP.ltex, YMAP.ntex, YMAP.mtex = nil, nil, nil, nil;
     if YMAP.entry then                                               -- (no map for this exact floor: the zone's first one still shows;
         local dir = (addon.path:gsub('[\\/]+$', '')) .. '\\mapsimg\\';  --  /yui mapinfo tells which is shown, for reports)
@@ -9773,7 +9862,7 @@ function YMAP.mobs_near(ent)                                         -- monsters
         pcall(function()
             local fl = ent:GetSpawnFlags(i);
             if fl and bit.band(fl, 0x10) ~= 0 and (ent:GetHPPercent(i) or 0) > 0 and (ent:GetRenderFlags0(i) or 0) ~= 0 then
-                out[#out + 1] = { ent:GetLocalPositionX(i), ent:GetLocalPositionY(i), i };
+                out[#out + 1] = { ent:GetLocalPositionX(i), ent:GetLocalPositionY(i), i, ent:GetLocalPositionZ(i) or 0 };
             end
         end);
     end
@@ -9790,8 +9879,12 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside)
         dl:AddCircleFilled({ sx, sy }, r, u32(col), 12);
         if ring then dl:AddCircle({ sx, sy }, r + 4 * sc, u32({ 1, 1, 1, 0.95 }), 16, 1.6); end
     end
-    if cfg.map_mobs ~= false then
-        for _, m in ipairs(YMAP.mobs_near(ent)) do dot(m[1], m[2], { 0.89, 0.35, 0.33, 0.9 }, 2.4 * sc, m[3] == tidx); end
+    if cfg.map_mobs ~= false then                                   -- (monsters on another floor - over 6 yalms up or down - fade, gone past 10)
+        local myz = ent:GetLocalPositionZ(me) or 0;
+        for _, m in ipairs(YMAP.mobs_near(ent)) do
+            local fa = 1 - math.max(0, math.min(1, (math.abs((m[4] or myz) - myz) - 6) / 4));
+            if fa > 0.05 or m[3] == tidx then dot(m[1], m[2], { 0.89, 0.35, 0.33, 0.9 * math.max(fa, 0.3) }, 2.4 * sc, m[3] == tidx); end
+        end
     end
     for i = 1, 17 do
         if party:GetMemberIsActive(i) ~= 0 and party:GetMemberZone(i) == zid then
@@ -9938,7 +10031,7 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
             if not ((ax < x0 and bx_ < x0) or (ax > x1 and bx_ > x1) or (ay < y0 and by_ < y0) or (ay > y1 and by_ > y1)) then
                 local t = 1 - (da + db) / (2 * fade);
                 local dim = (k >= netk) and 0.28 or 1;
-                local fh = math.abs((v[a * 3 - 1] + v[b * 3 - 1]) / 2 - th);   -- (other floors fade out: only yours shows, a little above
+                local fh = math.max(math.abs(v[a * 3 - 1] - th), math.abs(v[b * 3 - 1] - th));   -- (other floors fade out: only yours shows, a little above
                 local hx, hy = (v[a * 3 - 2] + v[b * 3 - 2]) / 2 - tx, (v[a * 3] + v[b * 3]) / 2 - ty;   --  and below for steps and ramps -
                 local tol = 3.5 + math.min(3, 0.08 * math.sqrt(hx * hx + hy * hy));   --  a little more further away (ramps); tunnels stacked
                 if fh > tol then dim = dim * math.max(0, 1 - (fh - tol) / 4.5); end   --  right above or under you still fades)
@@ -10029,7 +10122,9 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
     if cfg.map_mobs ~= false then
         for _, mo in ipairs(YMAP.mobs_near(ent)) do
             local ok, mz = pcall(function() return ent:GetLocalPositionZ(mo[3]); end);
-            dot(mo[1], mo[2], (ok and mz) or Z, { 0.89, 0.35, 0.33, 0.9 }, 2.6 * sc, mo[3] == tidx);
+            mz = (ok and mz) or Z;
+            local fa = 1 - math.max(0, math.min(1, (math.abs(mz - Z) - 6) / 4));   -- (another floor: faded, gone past 10 yalms)
+            if fa > 0.05 or mo[3] == tidx then dot(mo[1], mo[2], mz, { 0.89, 0.35, 0.33, 0.9 * math.max(fa, 0.3) }, 2.6 * sc, mo[3] == tidx); end
         end
     end
     for i = 1, 17 do
@@ -11150,26 +11245,8 @@ ashita.events.register('command', 'yui_command', function(e)
         for k in pairs(C.LOOT.menus) do t[#t + 1] = k; end
         msg('Menus seen with items in the pool: ' .. ((#t > 0) and table.concat(t, ', ') or 'none yet'));
     elseif sub == 'mapinfo' then                                     -- (for a minimap report: where you are, and which map is shown)
-        pcall(function()
-            local mm = AshitaCore:GetMemoryManager();
-            local ent = mm:GetEntity();
-            local me = mm:GetParty():GetMemberTargetIndex(0) or 0;
-            local x, y, z = ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0, ent:GetLocalPositionZ(me) or 0;
-            local zid = mm:GetParty():GetMemberZone(0) or 0;
-            local fl = YMAP.floor_of(x, y, z);
-            local e = YMAP.entry_of(zid, fl);
-            local fls = {};
-            local tp = YMAP.table_ptr();
-            for i = 0, 1999 do
-                local b = tp + i * 0x0E;
-                local zz, dat = ashita.memory.read_uint16(b), ashita.memory.read_uint16(b + 8);
-                if zz == 0 and dat == 0 and i > 10 then break; end
-                if zz == zid then fls[#fls + 1] = tostring(ashita.memory.read_uint8(b + 2)); end
-            end
-            msg(string.format('Map info: zone %d, at %.1f / %.1f / %.1f, floor %d, map %s%s (scale %s, offset %s / %s). Floors in the table: %s',
-                zid, x, y, z, fl, e and tostring(e.floor) or 'none', (e and not e.exact) and ' (no exact match: the first map of the zone shown)' or '',
-                e and tostring(e.scale) or '-', e and tostring(e.ox) or '-', e and tostring(e.oy) or '-', table.concat(fls, ' ')));
-        end);
+        local ok, err = pcall(C.map_info);                           -- (always says something: the line, or why it couldn't)
+        if not ok then msg('Map info failed: ' .. tostring(err)); end
     elseif sub == 'welcome' then EDIT.welcome = true; EDIT.G.start();   -- (what a new player sees on the first launch; settings untouched)
     elseif sub == 'guide' or sub == 'tour' then EDIT.G.start();      -- the first-time guide again
     elseif sub == 'lock' or sub == 'unlock' then cfg.locked = (sub == 'lock'); save(); msg(cfg.locked and 'Locked.' or 'Unlocked.');
