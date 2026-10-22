@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.34';
+addon.version = '1.0.35';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -5253,8 +5253,47 @@ function C.cf_who(name)                                              -- (who a n
     K.kinds[name] = kind;
     return kind;
 end
+-- simplelog's short lines ("[Actor] 57 hit > Target", "[Actor] 652 HP Cure V > Target", "[Actor] Meditate > Actor"): who,
+-- and what by the action's name (a spell, an ability or weapon skill, an item); nil when the line isn't one of them
+C.SLOG = { hit = 'melee', ['critical hit'] = 'melee', RA = 'ranged', ['critical RA'] = 'ranged', ['RA hit squarely'] = 'ranged',
+           ['RA struck true'] = 'ranged', Barrage = 'ranged', missed = 'misses', ['missed RA'] = 'misses', ['dodged by'] = 'dodges',
+           ['evaded by'] = 'dodges', ['anticipated by'] = 'dodges', ['absorbed by'] = 'dodges', ['parried by'] = 'parries',
+           ['intimidated by'] = 'dodges', ['is paralyzed'] = 'effects', AE = 'melee', counter = 'melee', ['from counter'] = 'melee',
+           ['missed counter'] = 'misses', retaliation = 'melee', ['from retaliation'] = 'melee' };
+for n in ('Light Darkness Gravitation Fragmentation Distortion Fusion Compression Liquefaction Induration Reverberation ' ..
+          'Transfixion Scission Detonation Impaction Radiance Umbra'):gmatch('%a+') do C.SLOG[n] = 'uses'; end   -- (skillchains)
+C.SLOG_N = {};                                                       -- (action name -> kind, looked up once)
+function C.cf_slog(sl)
+    sl = sl:gsub('^%[%d+%] ', '');                                   -- ("[2] [Actor] 540 hit": hits counted together)
+    local a, mid = sl:match('^%[(.-)%] (.-) > ');
+    if not a then a, mid = sl:match('^(%S+) (.-) > '); if a == 'AOE' then a = nil; end end
+    if not mid then return nil, nil; end
+    if a then a = a:gsub(' %(.*%)$', ''); end                         -- (a pet's line: "Carbuncle (Yunas)")
+    local heal = mid:match('^%d+ [HM]P ') ~= nil;
+    local nm = mid:gsub('^%d+ [HMT]P ', ''):gsub('^%d+ ', ''):gsub(' %(.*%)$', '');
+    if heal then return a, 'healing'; end
+    if C.SLOG[nm] then return a, C.SLOG[nm]; end
+    if nm:find('^Magic Burst! ') then return a, 'magic'; end
+    if nm:find('^AE: ') then return a, 'melee'; end                  -- (an added effect: TH, Death...)
+    nm = nm:gsub('^Bust! ', ''):gsub(' fails$', '');
+    if nm == '' or nm:match('^%d+$') then return a, nil; end
+    local k = C.SLOG_N[nm];
+    if k == nil then
+        k = false;
+        pcall(function()
+            local rm = AshitaCore:GetResourceManager();
+            if rm:GetSpellByName(nm, 0) then k = 'magic';
+            elseif rm:GetAbilityByName(nm, 0) then k = 'uses';
+            elseif rm:GetItemByName(nm, 0) then k = 'items'; end
+        end);
+        C.SLOG_N[nm] = k;
+    end
+    return a, k or nil;
+end
 function C.cf_sort(line)                                             -- (who did it, and what it is)
     local sl = line:gsub('[\1\2]', '');
+    local sa, st = C.cf_slog(sl);                                    -- (simplelog's way of writing them)
+    if sa or st then return sa and C.cf_who(sa) or nil, st; end
     local nm = sl:match("^%d+ of (.-)'s shadow") or sl:match('^(.-) hits ') or sl:match('^(.-) misses') or sl:match('^(.-) casts ')
             or sl:match('^(.-) uses ') or sl:match('^(.-) readies ') or sl:match('^(.-) starts casting ') or sl:match('^(.-) scores ')
             or sl:match('^(.-) recovers ') or sl:match('^(.-) takes ') or sl:match('^(.-) is ') or sl:match('^(.-) receives ')
@@ -5286,6 +5325,24 @@ function C.is_roe(line)
     for _, pat in ipairs(C.ROE) do if sl:find(pat) then return true; end end
     return false;
 end
+-- A trust's line, "(Koru-Moru) Hoo hoo...": as it comes it's said in the party's mode, as it leaves in another one; both
+-- go as party lines (one colour, the Party tab)
+C.TRN = {};                                                          -- (name -> is a trust, looked up once)
+function C.trust_line(s)
+    local nm = s:match('^%(([^%(%)]+)%) %S');
+    if not nm then return false; end
+    if C.TRN[nm] == nil then
+        C.TRN[nm] = false;
+        pcall(function()
+            local rm = AshitaCore:GetResourceManager();
+            for _, n in ipairs({ nm, nm .. ' (UC)', nm .. ' II' }) do
+                local sp = rm:GetSpellByName(n, 0);
+                if sp and (tonumber(sp.Type) == 8 or (tonumber(sp.Index) or 0) >= 896) then C.TRN[nm] = true; return; end
+            end
+        end);
+    end
+    return C.TRN[nm];
+end
 local function chat_add(mode, raw)
     local ok, s = pcall(function()
         local m = raw;
@@ -5296,6 +5353,10 @@ local function chat_add(mode, raw)
         return clean(m);
     end);
     if not ok or s == nil then return; end
+    if mode ~= 5 and mode ~= 13 then                                 -- (a trust's goodbye: a party line, like its hello)
+        local okt, tr = pcall(C.trust_line, s);
+        if okt and tr then mode = 5; end
+    end
     local n = (cfg.chat_split and is_combat(mode)) and 2 or 1;
     local log = logs[n];
     for line in (s .. '\n'):gmatch('([^\n\7]*)[\n\7]') do
