@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.29';
+addon.version = '1.0.30';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -60,7 +60,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_party = true, chat_f_trust = true, chat_f_others = true, chat_f_tspell = true, chat_f_debuff = true, chat_f_wear = true, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -919,6 +919,9 @@ local function member(i)
         local al = p:GetAllianceLeaderServerId();
         local others = (p:GetAlliancePartyLeaderServerId2() or 0) ~= 0 or (p:GetAlliancePartyLeaderServerId3() or 0) ~= 0;
         m.aleader = others and sid ~= 0 and sid == al;               -- (only in an alliance)
+        if i == 0 and (lead or 0) == 0 and (PREVIEW.party or PREVIEW.alliance) then   -- (alone, with pretend members: you lead them,
+            m.leader, m.aleader = true, PREVIEW.alliance and true or false;           --  so the marks show while you place the lists)
+        end
     end);
     return m;
 end
@@ -2747,6 +2750,13 @@ end
 --   smart:   one line of six dots coloured by HP; a member opens into a compact row only when it matters - low HP, your
 --            target, or the mouse over that alliance - and closes again (smoothly) when it doesn't
 local ALLY = { v = {}, hov = {} };
+function ALLY.lead(dl, m, x, cy, sc, a)                              -- (on a card: the leader's dots at x; gives back the room they take)
+    if not (m.leader or m.aleader) then return 0; end
+    local r = 4.5 * sc;
+    local mw = m.aleader and r * 2.6 or r * 2;
+    LEAD_MARK(dl, x + mw / 2, cy, r, m.aleader, a * (m.inzone and 1 or 0.5), 'dots');
+    return mw + 5 * sc;
+end
 C.ALLY = ALLY;                                                       -- (for the target bar, drawn earlier in the file: a member's job tag)
 function ALLY.fit(str, room)                                        -- a name cut short (with a dot) to fit room
     if imgui.CalcTextSize(str) <= room then return str; end
@@ -3526,7 +3536,8 @@ function ALLY.slim(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
         bx1 = cend - sl * 0.5 - 6 * sc - tpc;
         local sp = 1.0 * sc;
         local nm = (m.name or '?'):upper();
-        local room = bx1 - pw - tx - 8 * sc;
+        local lmw = ALLY.lead(dl, m, tx, top - 1 + lh * 0.5, sc, v);   -- (the leader's dots before the name)
+        local room = bx1 - pw - tx - lmw - 8 * sc;
         local dist = nil;                                            -- PARTY > Distance: how far they are, small, after the name
         if cfg.party_dist ~= false and i ~= 0 and m.inzone then
             dist = m.dist or (m.fake and (m.far and 32.4 or (3 + (i * 3.7) % 15))) or nil;
@@ -3543,7 +3554,7 @@ function ALLY.slim(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
             while #nm > 2 and spaced_w(nm .. '.', sp) > room do nm = nm:sub(1, -2); end
             nm = nm .. '.';
         end
-        local cx = tx;
+        local cx = tx + lmw;
         for k = 1, #nm do                                            -- (each letter with its dark edge)
             local chr = nm:sub(k, k);
             text(dl, cx, top - 1, chr, { nc[1], nc[2], nc[3], (m.inzone and 1 or 0.5) * v });
@@ -3564,8 +3575,9 @@ function ALLY.slim(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
         local fy = math.sin(os.clock() * 1.8 + i * 1.3) * 1.2 * sc;
         if live then ALLY.anim_icon(dl, m, i, ix, ny - ih / 2 + fy, ih, v); else ALLY.icon(dl, m, ix, ny - ih / 2 + fy, ih, v); end
         tx = ix + ih + 6 * sc;
-        local nm = ALLY.fit(m.name or '?', bx1 - pw - tx - 6 * sc);
-        text(dl, tx, top - 1, nm, { nc[1], nc[2], nc[3], (m.inzone and 1 or 0.5) * v });
+        local lmw = ALLY.lead(dl, m, tx, top - 1 + lh * 0.5, sc, v);
+        local nm = ALLY.fit(m.name or '?', bx1 - pw - tx - lmw - 6 * sc);
+        text(dl, tx + lmw, top - 1, nm, { nc[1], nc[2], nc[3], (m.inzone and 1 or 0.5) * v });
         text(dl, bx1 - pw, top - 1, pct, { nc[1], nc[2], nc[3], 0.92 * v });
     end
     if not m.inzone then pcall(C.zone_line, dl, m, tx, top + lh + 1 * sc, bx1 - tx, sc, v); end   -- (in another zone: where)
@@ -3658,12 +3670,13 @@ function ALLY.plate(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     local pw = imgui.CalcTextSize(pct);
     local sp = 1.5 * sc;
     local nm = (m.name or '?'):upper();
-    local room = rx - pw - tx - 8 * sc;
+    local lmw = ALLY.lead(dl, m, tx, top - 1 + lh * 0.5, sc, v);
+    local room = rx - pw - tx - lmw - 8 * sc;
     if spaced_w(nm, sp) > room then
         while #nm > 2 and spaced_w(nm .. '.', sp) > room do nm = nm:sub(1, -2); end
         nm = nm .. '.';
     end
-    spaced(dl, tx, top - 1, nm, u32({ 1, 1, 1, v * dim }), sp);
+    spaced(dl, tx + lmw, top - 1, nm, u32({ 1, 1, 1, v * dim }), sp);
     text(dl, rx - pw, top - 1, pct, { 1, 1, 1, 0.92 * v });
     if not m.inzone then pcall(C.zone_line, dl, m, tx, top + lh + 1 * sc, rx - tx, sc, v); end   -- (in another zone: where)
     if not m.inzone or v < 0.5 then return; end
@@ -4369,7 +4382,8 @@ local CHAT_COLS = {
     { 'ls2', 'Linkshell 2', { 0.62, 1, 0.55 } }, { 'shout', 'Shout', { 1, 0.45, 0.45 } }, { 'yell', 'Yell', { 1, 0.6, 0.45 } },
     { 'tell', 'Tell', { 0.86, 0.48, 1 } }, { 'emote', 'Emote', { 0.80, 0.65, 1 } }, { 'unity', 'Unity', { 0.95, 0.88, 0.55 } },
     { 'system', 'System / loot / exp', { 1, 0.95, 0.82 } }, { 'error', 'Errors', { 1, 0.35, 0.65 } },
-    { 'combat', 'Combat (combat log)', { 0.80, 0.86, 0.95 } }, { 'other', 'Everything else', { 0.92, 0.92, 0.94 } },
+    { 'combat', 'Combat (combat log)', { 0.80, 0.86, 0.95 } }, { 'roe', 'Records of Eminence', { 0.62, 0.92, 0.78 } },
+    { 'other', 'Everything else', { 0.92, 0.92, 0.94 } },
 };
 local CHAT_DEF = {};
 for _, c in ipairs(CHAT_COLS) do CHAT_DEF[c[1]] = c[3]; end
@@ -4423,6 +4437,7 @@ local CHANNELS = {
     { 'Shout', { 2, 10 },           { 1, 0.45, 0.45 } },
     { 'Yell',  { 3, 11 },           { 1, 0.6, 0.45 } },
     { 'Tell',  { 4, 12 },           { 0.86, 0.48, 1 } },
+    { 'RoE',   { 300 },             { 0.62, 0.92, 0.78 } },          -- (Records of Eminence: YunaUI's own mode 300, see C.is_roe)
 };
 local TAB_OF = {};                                                  -- chat mode -> tab number
 for ti, ch in ipairs(CHANNELS) do if ch[2] then for _, m in ipairs(ch[2]) do TAB_OF[m] = ti; end end end
@@ -5121,10 +5136,10 @@ function C.cf_sets()                                                 -- (players
         local p = AshitaCore:GetMemoryManager():GetParty();
         for i = 0, 17 do if p:GetMemberIsActive(i) ~= 0 then ins[p:GetMemberName(i) or ''] = true; end end
         local ent = AshitaCore:GetMemoryManager():GetEntity();
-        for i = 0x400, 0x6FF do
+        for i = 0x400, 0x8FF do                                      -- (players, and from 0x700 their pets)
             if ent:GetRawEntity(i) ~= nil then
                 local nm = ent:GetName(i);
-                if nm and nm ~= '' and not ins[nm] and bit.band(ent:GetSpawnFlags(i) or 0, 0x01) ~= 0 then outs[nm] = true; end
+                if nm and nm ~= '' and not ins[nm] and (i >= 0x700 or bit.band(ent:GetSpawnFlags(i) or 0, 0x01) ~= 0) then outs[nm] = true; end
             end
         end
     end);
@@ -5154,7 +5169,7 @@ function C.combat_skip(line)                                         -- (true: t
     who = who or sl:match('^([%w%-]+)[ \']');                         -- (anything else: its first word, the one who did it)
     if who == nil then return false; end
     local kind = C.actor_kind(who);
-    local skip = (melee and kind == 'party' and cfg.chat_f_party == false) or (melee and kind == 'trust' and cfg.chat_f_trust == false);
+    local skip = false;
     if not skip and cfg.chat_f_others == false then                  -- (a player outside your party in it - doing it or having it done - and
         local outs, ins = C.cf_sets();                               --  none of yours: what they do to you or your party still shows)
         local out_, in_ = kind == 'outsider', false;
@@ -5163,10 +5178,85 @@ function C.combat_skip(line)                                         -- (true: t
         end
         if out_ and not in_ then skip = true; end
     end
-    if not melee and kind == 'trust' and cfg.chat_f_tspell == false and not sl:find(' readies ', 1, true)
-        and not sl:find(' starts casting ', 1, true) then F.tskip = os.clock(); return true; end   -- (Trusts' spells and abilities)
     if skip and sl:find('critical hit!$') then F.skipnext = os.clock(); end   -- (its damage comes on the next line)
     return skip;
+end
+-- CHAT > COMBAT LOG - every battle line sorted by who did it (you, your party, alliance, your pet, trusts, others'
+-- pets, other players, NPCs, the monsters you're fighting, other monsters) and by what it is (melee, ranged, magic,
+-- damage, healing, misses, blocks, parries, dodges, guards, items, abilities, readies, casting, effects): each can be
+-- switched off, and each kind can have a colour of its own (CHAT > COMBAT LOG > Colour by kind)
+C.CF_WHO = { { 'me', 'You and your pet' }, { 'party', 'Your party and alliance' }, { 'trust', 'Trusts' },
+             { 'monster', 'Monsters' }, { 'npc', 'NPCs' } };          -- (other players: chat_f_others, the smart filter)
+C.CF_GROUP = { me = 'me', mypet = 'me', party = 'party', alliance = 'party', trust = 'trust', other = 'other', pet = 'other',
+               enemy = 'monster', monster = 'monster', npc = 'npc' };
+C.CF_WHAT = {
+    { 'melee', 'Melee hits', { 1.00, 0.86, 0.70 } }, { 'ranged', 'Ranged', { 0.86, 0.95, 0.66 } },
+    { 'magic', 'Magic', { 0.76, 0.70, 1.00 } }, { 'uses', 'Abilities and weapon skills', { 1.00, 0.76, 0.46 } },
+    { 'healing', 'Healing', { 0.56, 1.00, 0.70 } }, { 'defence', 'Misses and defences', { 0.70, 0.80, 0.95 } },
+    { 'effects', 'Buffs and debuffs', { 0.95, 0.86, 1.00 } }, { 'items', 'Items', { 1.00, 0.90, 0.55 } },
+};
+C.CF_KIND = { misses = 'defence', blocks = 'defence', parries = 'defence', dodges = 'defence', guards = 'defence' };   -- (into the eight)
+C.CF_TYPES = {                                                       -- (what a line is: the first of these it matches)
+    { 'readies', ' readies ' }, { 'casting', ' starts casting ' }, { 'items', ' uses an? ' }, { 'items', ' uses %d+ ' },
+    { 'ranged', 'ranged attack' }, { 'magic', ' casts ' }, { 'magic', 'Magic Burst' }, { 'magic', 'resists the spell' },
+    { 'uses', ' uses ' }, { 'guards', ' guards ' }, { 'blocks', ' blocks ' }, { 'parries', ' parries ' },
+    { 'dodges', ' evades' }, { 'dodges', 'shadow' }, { 'dodges', ' dodges' }, { 'dodges', ' anticipates' },
+    { 'misses', ' misses' }, { 'healing', ' recovers %d+ [HM]P' }, { 'healing', '[HM]P drained' },
+    { 'effects', 'effect of ' }, { 'effects', 'effect wears off' }, { 'effects', ' is no longer ' }, { 'effects', '^.- is %a+%.$' },
+    { 'melee', ' hits ' }, { 'melee', 'critical hit' }, { 'damage', 'points? of damage' },
+};
+function C.cf_type(sl)
+    for _, t in ipairs(C.CF_TYPES) do if sl:find(t[2]) then return t[1]; end end
+    return nil;
+end
+C.CW = { kinds = {}, at = 0 };
+function C.cf_who(name)                                              -- (who a name is: one of C.CF_WHO's keys)
+    local K = C.CW;
+    if os.clock() - K.at > 2 then K.kinds, K.at = {}, os.clock(); end
+    if K.kinds[name] then return K.kinds[name]; end
+    local kind = 'monster';
+    pcall(function()
+        local mm = AshitaCore:GetMemoryManager();
+        local p = mm:GetParty();
+        for i = 0, 17 do
+            if p:GetMemberIsActive(i) ~= 0 and p:GetMemberName(i) == name then
+                if i == 0 then kind = 'me'; elseif (p:GetMemberServerId(i) or 0) >= 0x01000000 then kind = 'trust';
+                elseif i < 6 then kind = 'party'; else kind = 'alliance'; end
+                return;
+            end
+        end
+        local ent = mm:GetEntity();
+        local me = p:GetMemberTargetIndex(0) or 0;
+        local pi = (me > 0) and ent:GetPetTargetIndex(me) or 0;
+        if pi and pi > 0 and ent:GetName(pi) == name then kind = 'mypet'; return; end
+        for i = 0, 0x8FF do
+            if ent:GetRawEntity(i) ~= nil and ent:GetName(i) == name then
+                if i >= 0x700 then kind = 'pet';
+                elseif i >= 0x400 then kind = 'other';
+                elseif bit.band(ent:GetSpawnFlags(i) or 0, 0x10) ~= 0 then kind = ENGAGED[i] and 'enemy' or 'monster';
+                else kind = 'npc'; end
+                return;
+            end
+        end
+    end);
+    K.kinds[name] = kind;
+    return kind;
+end
+function C.cf_sort(line)                                             -- (who did it, and what it is)
+    local sl = line:gsub('[\1\2]', '');
+    local nm = sl:match("^%d+ of (.-)'s shadow") or sl:match('^(.-) hits ') or sl:match('^(.-) misses') or sl:match('^(.-) casts ')
+            or sl:match('^(.-) uses ') or sl:match('^(.-) readies ') or sl:match('^(.-) starts casting ') or sl:match('^(.-) scores ')
+            or sl:match('^(.-) recovers ') or sl:match('^(.-) takes ') or sl:match('^(.-) is ') or sl:match('^(.-) receives ')
+            or sl:match('^(.-) gains ') or sl:match('^(.-) blocks ') or sl:match('^(.-) parries ') or sl:match('^(.-) guards ')
+            or sl:match('^(.-) evades') or sl:match('^(.-) dodges') or sl:match("^(.-)'s ") or sl:match('^([%w%-]+)');
+    if nm then nm = nm:gsub("'s .*$", ''):gsub("'s$", ''):gsub('^[Tt]he ', ''); end   -- ("Yunas's ranged attack" -> Yunas)
+    return nm and C.cf_who(nm) or nil, C.cf_type(sl);
+end
+function C.cf_col(t)                                                 -- (CHAT > COMBAT LOG > Colour by kind: this kind's colour)
+    local c = cfg['cf_col_' .. t];
+    if type(c) == 'table' and tonumber(c[1]) then return c; end
+    for _, w in ipairs(C.CF_WHAT) do if w[1] == t then return w[3]; end end
+    return nil;
 end
 C.RL = { n = 0, t = {} };                                            -- (the lines of the last few seconds, by text)
 function C.seen_line(line, stamped)                                  -- (true: a time-stamped copy of a line YunaUI just had)
@@ -5176,6 +5266,14 @@ function C.seen_line(line, stamped)                                  -- (true: a
     if R.t[line] == nil then R.n = R.n + 1; end
     R.t[line] = now;
     return dup;
+end
+C.ROE_MODE = 300;
+C.ROE = { 'Records of Eminence', '^Progress: %d+/%d+', 'sparks of eminence', 'Unity accolades', 'This objective may be repeated',
+          'You have completed the following Records', 'cleared to fulfill this objective' };
+function C.is_roe(line)
+    local sl = line:gsub('[\1\2]', '');
+    for _, pat in ipairs(C.ROE) do if sl:find(pat) then return true; end end
+    return false;
 end
 local function chat_add(mode, raw)
     local ok, s = pcall(function()
@@ -5196,6 +5294,13 @@ local function chat_add(mode, raw)
             if l2 ~= line and l2 ~= '' then stamped, line = true, l2; end            --  has its own times; its copy of a line
             if C.seen_line(line, stamped) then goto skip_line; end                  --  YunaUI already has is left out)
             local raw_line = line;
+            if C.is_roe(raw_line) then                               -- (Records of Eminence: to their own tab, RoE)
+                local pre_ = cfg.chat_time and C.ts_text(os.time()) or '';
+                CHATLOG.add(logs[1], { text = pre_ .. line, raw = raw_line, cat = 'roe', t = os.clock(), t0 = os.clock(), ts = os.time(), mode = C.ROE_MODE, tslen = #pre_ });
+                chat_seen_new(C.ROE_MODE);
+                if cw[1].scroll > 0 then cw[1].scroll = cw[1].scroll + 1; end
+                goto skip_line;
+            end
             local fd = nil;
             local n_, log_ = n, log;
             if n == 1 and cfg.chat_split then                        -- (the battle's aftermath: to the combat log)
@@ -5205,13 +5310,24 @@ local function chat_add(mode, raw)
             local cut_ = false;
             if is_combat(mode) then local okc, r = pcall(C.combat_skip, raw_line); cut_ = okc and r; end   -- (CHAT > COMBAT FILTERS)
             if not cut_ and mode >= 20 then local okw, r = pcall(C.wear_skip, raw_line); cut_ = okw and r; end
+            local ctype = nil;
+            if not cut_ and is_combat(mode) then                     -- (CHAT > COMBAT LOG)
+                local okk, who, what = pcall(C.cf_sort, raw_line);
+                if okk then
+                    who = who and C.CF_GROUP[who] or who;
+                    what = what and (C.CF_KIND[what] or what) or nil;
+                    if what == 'readies' or what == 'casting' or what == 'damage' then what = nil; end   -- (always shown)
+                    ctype = what;
+                    if (who and who ~= 'other' and cfg['cf_w_' .. who] == false) or (what and cfg['cf_t_' .. what] == false) then cut_ = true; end
+                end
+            end
             if cut_ then goto skip_line; end
             if is_combat(mode) then local okf, r = pcall(C.feed_take, log_, raw_line, mode); fd = okf and r or nil; end   -- (CHAT > Combat feed)
             if fd == nil then
                 if not is_combat(mode) then pcall(C.chat_pop, mode, raw_line); end   -- (CHAT > Speech bubbles)
                 local pre = cfg.chat_time and C.ts_text(os.time()) or '';
                 line = pre .. line;
-                CHATLOG.add(log_, { text = line, raw = raw_line, cat = cat_of(mode), t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode, tslen = #pre });
+                CHATLOG.add(log_, { text = line, raw = raw_line, cat = cat_of(mode), t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode, tslen = #pre, ctype = ctype });
                 if n_ == 1 then chat_seen_new(mode); end
             end
             if fd ~= 'merged' and cw[n_].scroll > 0 then cw[n_].scroll = cw[n_].scroll + 1; end
@@ -6229,6 +6345,7 @@ local function draw_chat(n)
         while i >= 1 and ly > y - lh do
             local e = log[i];
             if tab ~= 1 and TAB_OF[e.mode or 0] ~= tab then i = i - 1; goto next_line; end
+            if tab == 1 and e.mode == C.ROE_MODE then i = i - 1; goto next_line; end   -- (RoE: only in its own tab)
             if only and ((only == 'combat') ~= is_combat(e.mode or 0)) then i = i - 1; goto next_line; end
             do
             local keep = cfg.chat_fade_old == false;                 -- CHAT > Fade when idle: on, a line shows for 'Lines stay for' then fades
@@ -6256,7 +6373,7 @@ local function draw_chat(n)
                     if a > 0.01 then
                         st.vis_n = math.max(st.vis_n or 0, vis);
                         -- readable on any ground (snow, sand, bright floors): a full dark outline round every letter
-                        local c = chat_col(e.cat);
+                        local c = (cfg.cf_cols and e.ctype and C.cf_col(e.ctype)) or chat_col(e.cat);   -- (CHAT > COMBAT LOG > Colour by kind)
                         if bright >= 1 then                          -- brighter: toward white; dimmer: toward dark
                             local u = math.min(1, bright - 1);
                             c = { c[1] + (1 - c[1]) * u, c[2] + (1 - c[2]) * u, c[3] + (1 - c[3]) * u };
@@ -9100,14 +9217,23 @@ local function draw_window()
                 if cfg.chat_time_12 then row_pick('##yui_ctc', 'AM/PM case', 'chat_time_case', { { 'lower', 'am / pm' }, { 'upper', 'AM / PM' } }); end
                 colour_row('chat_time_col', 'Colour', { 0.62, 0.60, 0.68 }, true);
             end
-            section('COMBAT FILTERS');
-            row_switch('##yui_cfp', "Party members' hits", 'chat_f_party', "Off: your party members' plain hits, misses and critical hits are left out of the chat (their weapon skills, spells and abilities stay).");
-            row_switch('##yui_cft', "Trusts' hits", 'chat_f_trust', "Off: your trusts' plain hits, misses and critical hits are left out of the chat (their weapon skills, spells and abilities stay).");
-            row_switch('##yui_cfo', "Other players' fights", 'chat_f_others', 'Off: everything players outside your party do is left out of the chat.');
-            row_switch('##yui_cfs', "Trusts' spells and abilities", 'chat_f_tspell', "Off: your trusts' spells, abilities and weapon skills, and what they did, are left out of the chat (their \"readies\" and \"starts casting\" lines stay).");
+            section('COMBAT LOG');
+            hint('Who:');
+            for _, w in ipairs(C.CF_WHO) do
+                row_switch('##yui_cfwho_' .. w[1], w[2], 'cf_w_' .. w[1], 'Off: their battle lines are left out of the chat.');
+                if w[1] == 'trust' then
+                    row_switch('##yui_cfo', 'Other players', 'chat_f_others', 'Off: everything about players outside your party - what they do, and monsters hitting them - is left out. Anything that involves you or your party still shows.');
+                end
+            end
+            hint('What:');
+            for _, w in ipairs(C.CF_WHAT) do row_switch('##yui_cfwhat_' .. w[1], w[2], 'cf_t_' .. w[1], 'Off: these battle lines are left out of the chat, whoever did them.'); end
             row_switch('##yui_cfd', 'Area debuff lines', 'chat_f_debuff', 'Off: when one spell or ability puts the same debuff on several monsters (or several resist it), only the first line shows.');
             row_switch('##yui_cfw', 'Buffs wearing off', 'chat_f_wear', 'Off: "... effect wears off" and "... is no longer ..." lines are left out, for everyone but you.');
-            hint('Your own actions and the monsters\' readies and casts always show.');
+            hint('"Readies" and "starts casting" lines always show. A battle line shows when both who did it and what it is are on.');
+            row_switch('##yui_cfcols', 'Colour by kind', 'cf_cols', 'On: each kind of battle line in its own colour (set them below).');
+            if cfg.cf_cols then
+                for _, w in ipairs(C.CF_WHAT) do colour_row('cf_col_' .. w[1], w[2], w[3], true); end
+            end
             section('LOOK');
             row_pick('##yui_clook', 'Look', 'chat_look', { { 'clear', 'Clear' }, { 'classic', 'Classic' } });
             if cfg.chat_look ~= 'classic' then
@@ -9411,7 +9537,7 @@ function YMAP.entry_of(zone, floor)                                  -- the map 
             local s = ashita.memory.read_uint8(b + 5);
             local e = { zone = z, floor = ashita.memory.read_uint8(b + 2), scale = (s >= 0x80) and (s - 0x100) or s,
                         ox = ashita.memory.read_int16(b + 0x0A), oy = ashita.memory.read_int16(b + 0x0C) };
-            if e.floor == floor then return e; end
+            if e.floor == floor then e.exact = true; return e; end
             first = first or e;
         end
     end
@@ -9444,8 +9570,8 @@ function YMAP.update(ent, me, zid)                                   -- the righ
     pcall(function() YMAP.name = AshitaCore:GetResourceManager():GetString('zones.names', zid) or ''; end);
     YMAP.entry = YMAP.entry_of(zid, fl);
     YMAP.tex, YMAP.ltex, YMAP.ntex, YMAP.mtex = nil, nil, nil, nil;
-    if YMAP.entry then
-        local dir = (addon.path:gsub('[\\/]+$', '')) .. '\\mapsimg\\';
+    if YMAP.entry and YMAP.entry.exact then                           -- (no map for this exact floor: none, rather than another part of
+        local dir = (addon.path:gsub('[\\/]+$', '')) .. '\\mapsimg\\';  --  the zone that doesn't match where you are)
         YMAP.tex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '.png');        -- the floor and the icons
         YMAP.ltex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '_l.png');     -- the lines, white: tinted as drawn
         YMAP.ntex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '_n.png');     -- the place names (tinted, softer)
@@ -10842,6 +10968,27 @@ ashita.events.register('command', 'yui_command', function(e)
         local t = {};
         for k in pairs(C.LOOT.menus) do t[#t + 1] = k; end
         msg('Menus seen with items in the pool: ' .. ((#t > 0) and table.concat(t, ', ') or 'none yet'));
+    elseif sub == 'mapinfo' then                                     -- (for a minimap report: where you are, and which map is shown)
+        pcall(function()
+            local mm = AshitaCore:GetMemoryManager();
+            local ent = mm:GetEntity();
+            local me = mm:GetParty():GetMemberTargetIndex(0) or 0;
+            local x, y, z = ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0, ent:GetLocalPositionZ(me) or 0;
+            local zid = mm:GetParty():GetMemberZone(0) or 0;
+            local fl = YMAP.floor_of(x, y, z);
+            local e = YMAP.entry_of(zid, fl);
+            local fls = {};
+            local tp = YMAP.table_ptr();
+            for i = 0, 1999 do
+                local b = tp + i * 0x0E;
+                local zz, dat = ashita.memory.read_uint16(b), ashita.memory.read_uint16(b + 8);
+                if zz == 0 and dat == 0 and i > 10 then break; end
+                if zz == zid then fls[#fls + 1] = tostring(ashita.memory.read_uint8(b + 2)); end
+            end
+            msg(string.format('Map info: zone %d, at %.1f / %.1f / %.1f, floor %d, map %s%s (scale %s, offset %s / %s). Floors in the table: %s',
+                zid, x, y, z, fl, e and tostring(e.floor) or 'none', (e and not e.exact) and ' (no exact match: no map shown)' or '',
+                e and tostring(e.scale) or '-', e and tostring(e.ox) or '-', e and tostring(e.oy) or '-', table.concat(fls, ' ')));
+        end);
     elseif sub == 'welcome' then EDIT.welcome = true; EDIT.G.start();   -- (what a new player sees on the first launch; settings untouched)
     elseif sub == 'guide' or sub == 'tour' then EDIT.G.start();      -- the first-time guide again
     elseif sub == 'lock' or sub == 'unlock' then cfg.locked = (sub == 'lock'); save(); msg(cfg.locked and 'Locked.' or 'Unlocked.');

@@ -2786,7 +2786,7 @@ end
 -- Where MP / TP go while anchored (nil when free): under the bar before it, or to its right
 function JOBS.sb_anchor_pos(key)
     local mode = tonumber(cfg.sb_anchor) or 0;
-    if mode == 0 or key == 'hp' or YUI_LOCKED then return nil; end
+    if mode == 0 or key == 'hp' then return nil; end                 -- (locked or not: anchored bars always follow the HP bar)
     local prev = (key == 'mp' or cfg.sb_mp == false) and 'hp' or 'mp';   -- (no MP bar: TP follows the HP bar)
     local px, py = tonumber(cfg[prev .. 'bar_x']), tonumber(cfg[prev .. 'bar_y']);
     local sz = JOBS.sb_size[prev];
