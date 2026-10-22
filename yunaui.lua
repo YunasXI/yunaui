@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.37';
+addon.version = '1.0.38';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -5797,6 +5797,38 @@ function legacy.pad_btn(api, what)                                   -- (the lea
     if what == 'big' then return cfg.pad_big or ((api == 'd') and 'd49' or 'x12'); end
     return (api == 'd') and 'd50' or 'x13';                          -- back: Circle / B
 end
+-- The big chat's HELP, right-aligned at rx: a small "HELP" tag; the mouse on it opens the buttons guide under it
+function C.big_help(dl, rx, ty)
+    pcall(function() dl = imgui.GetForegroundDrawList() or dl; end);   -- (over the chat's lines, when it's full)
+    local tp = sized('chat', 15);
+    local lab = 'HELP';
+    local lw, lh = imgui.CalcTextSize(lab);
+    local x0, y0, x1, y1 = rx - lw - 18, ty, rx, ty + lh + 8;
+    local mx, my = imgui.GetMousePos();
+    local hov = mx >= x0 and mx <= x1 and my >= y0 and my <= y1;
+    dl:AddRectFilled({ x0, y0 }, { x1, y1 }, u32(hov and { 0.20, 0.10, 0.26, 0.96 } or { 0.10, 0.08, 0.14, 0.9 }), (y1 - y0) / 2);
+    text(dl, x0 + 9, y0 + 4, lab, hov and { 1.0, 0.80, 0.93, 1 } or { 0.80, 0.78, 0.88, 1 });
+    if hov then
+        local xb = legacy.pad.kind == 'x';
+        local rows = {
+            { legacy.pad_name(cfg.pad_log or (xb and 'x15' or 'd51')) .. ' / F / ' .. (xb and 'LB / RB' or 'L1 / R1'), 'change tab' },
+            { 'UP / DOWN / PAGE UP / DOWN', 'scroll' },
+            { legacy.pad_name(legacy.pad_btn(xb and 'x' or 'd', 'back')) .. ' / ESC', 'back' },
+        };
+        local kw, dw = 0, 0;
+        for _, r in ipairs(rows) do kw = math.max(kw, (imgui.CalcTextSize(r[1]))); dw = math.max(dw, (imgui.CalcTextSize(r[2]))); end
+        local cw, gap = kw + dw + 50, lh + 8;
+        local cx0, cy0 = rx - cw, y1 + 6;
+        dl:AddRectFilled({ cx0, cy0 }, { rx, cy0 + #rows * gap + 14 }, u32({ 0.07, 0.06, 0.10, 0.97 }), 8);
+        dl:AddRectFilled({ cx0, cy0 + 8 }, { cx0 + 3, cy0 + #rows * gap + 6 }, u32(C.hp), 2);   -- (the YunaUI line on its left)
+        for i, r in ipairs(rows) do
+            local yy = cy0 + 7 + (i - 1) * gap;
+            text(dl, cx0 + 16, yy, r[1], { 0.97, 0.96, 0.99, 1 });
+            text(dl, cx0 + 16 + kw + 22, yy, r[2], { 0.70, 0.68, 0.80, 1 });
+        end
+    end
+    unsized(tp);
+end
 function legacy.pad_tick()
     local ok, _, _, name = pcall(legacy.menu_ptrs);
     legacy.pad.menu = (ok and name) or '';
@@ -6447,16 +6479,7 @@ local function draw_chat(n)
         end
         if big then                                                  -- the pad's big chat: a panel like the game's full log
             dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.055, 0.045, 0.08, 0.92 }), 10, C.rall);   -- (the chat's own panel, rounded; no edge, no corners)
-            local tp = sized('chat', 17);
-            local tname = legacy.pad.combat and 'Combat log' or (CHANNELS[tonumber(cfg.chat_tab) or 1] or { 'All' })[1];
-            text(dl, x + 16, y + 10, 'CHAT LOG  ' .. string.upper(tname), { 0.97, 0.96, 0.99, 1 });
-            pcall(function() dl:AddRectFilledMultiColor({ x + 16, y + 34 }, { x + 76, y + 36 }, u32(C.hp), u32(C.mp2), u32(C.mp2), u32(C.hp)); end);
-            local xb = legacy.pad.kind == 'x';
-            local hint = legacy.pad_name(cfg.pad_log or (xb and 'x15' or 'd51')) .. ' / F / ' .. (xb and 'LB / RB' or 'L1 / R1') .. '  tab     UP / DOWN / PAGE UP / DOWN  scroll     '
-                .. legacy.pad_name(legacy.pad_btn(xb and 'x' or 'd', 'back')) .. ' / ESC  back';
-            local hw = imgui.CalcTextSize(hint);
-            text(dl, x + w - hw - 16, y + 10, hint, { 0.70, 0.68, 0.80, 1 });
-            unsized(tp);
+            pcall(C.big_help, dl, x + w - 12, y + 10);               -- (a small HELP at the top right: the buttons guide on hover)
         end
         st.vis_n = 0;
         pcall(C.items_index);                                         -- (the game's item names, read a little each frame until done)
