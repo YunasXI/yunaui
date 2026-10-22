@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.36';
+addon.version = '1.0.37';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -570,7 +570,7 @@ local function plain_window(name, kx, ky, force)
     end
     imgui.SetNextWindowPos({ px, py }, (WATCH.move > 0 or force or one) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
     local flags = NOFRAME;
-    if (cfg.locked and not EDIT.on) or force then flags = bit.bor(flags, ImGuiWindowFlags_NoMove); end
+    if (cfg.locked and not EDIT.on) or force or (EDIT.on and EDIT.rs_hot) then flags = bit.bor(flags, ImGuiWindowFlags_NoMove); end
     imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
     imgui.PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
     local open = imgui.Begin(name, { true }, flags);
@@ -1667,7 +1667,7 @@ function FIGHT.edit_pieces()
             imgui.SetNextWindowPos({ rx, ry }, down and ImGuiCond_FirstUseEver or ImGuiCond_Always);
             imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
             imgui.PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
-            if imgui.Begin('YunaUI ' .. pc[2] .. '##yui_ed_' .. p, { true }, NOFRAME) then
+            if imgui.Begin('YunaUI ' .. pc[2] .. '##yui_ed_' .. p, { true }, EDIT.rs_hot and bit.bor(NOFRAME, ImGuiWindowFlags_NoMove) or NOFRAME) then
                 imgui.Dummy({ a[3], a[4] });
             end
             end_plain(kx, ky);
@@ -2647,6 +2647,58 @@ EDIT.NAMES = { target_x = 'Target', sub_x = 'Sub-target', enemy_x = 'Enemies', p
                pet_x = 'Pet', doll_x = 'Equipment', strip_x = 'Gear strip', logo_x = 'Logo', mini_x = 'Logo',
                fan_x = 'Skillchain fan', ecast_x = 'Enemy cast', tn_x = 'Target name', mb_x = 'Magic Burst', fo_x = 'Skillchain', co_x = 'Enemy cast',
                loot_x = 'Treasure pool' };
+EDIT.SIZE = { target_x = { 'target_scale', 0.6, 2.0 }, sub_x = { 'sub_scale', 0.6, 2.0 }, enemy_x = { 'enemy_scale', 0.6, 2.0 },
+              party_x = { 'party_scale', 0.6, 2.0 }, alliance_x = { 'ally1_scale', 0.6, 2.0 }, ally2_x = { 'ally2_scale', 0.6, 2.0 },
+              exp_x = { 'exp_scale', 0.5, 2.5 }, gil_x = { 'gb_scale', 0.5, 2.5 }, bag_x = { 'gb_scale', 0.5, 2.5 },
+              cast_x = { 'cast_scale', 0.6, 2.0 }, timer_x = { 'timers_scale', 0.6, 2.0 }, pet_x = { 'pet_scale', 0.6, 2.0 },
+              loot_x = { 'loot_scale', 0.6, 2.0 }, fan_x = { 'fan_scale', 0.4, 2.0 }, fo_x = { 'fan_scale', 0.4, 2.0 },
+              ecast_x = { 'ecast_scale', 0.4, 2.0 }, co_x = { 'ecast_scale', 0.4, 2.0 }, mb_x = { 'mb_scale', 0.5, 2.5 },
+              tn_x = { 'target_name_scale', 0.5, 2.5 } };
+-- Edit Mode's resize grips: one at each piece's bottom-right corner; dragging it changes that piece's Size (grows to the
+-- right and down, its top-left corner stays). EDIT.rs = the one being dragged; EDIT.rs_hot = the mouse is on a grip
+-- (the pieces don't move then, so the drag is a resize)
+function EDIT.grips(fg, boxes)
+    local mx, my = imgui.GetMousePos();
+    local down, R = imgui.IsMouseDown(0), EDIT.rs;
+    if R and not down then save(); EDIT.rs, R = nil, nil; end           -- let go: kept
+    if R and boxes[R.k] == nil then EDIT.rs, R = nil, nil; end
+    local hot = nil;
+    for k, b in pairs(boxes) do
+        local sz = EDIT.SIZE[k];
+        if sz then
+            local g = 16;
+            local x1, y1 = b[1] + b[3], b[2] + b[4];
+            local over = mx >= x1 - g - 2 and mx <= x1 + 4 and my >= y1 - g - 2 and my <= y1 + 4;
+            if over and not R then hot = k; end
+            local on = (R and R.k == k) or (not R and over);
+            local a = on and 1 or 0.6;
+            for i = 1, 3 do                                          -- (three short diagonal lines, pink to violet)
+                local d = i * 4.5;
+                fg:AddLine({ x1 - d - 1, y1 - 3 }, { x1 - 3, y1 - d - 1 }, u32({ 0, 0, 0, 0.7 * a }), 3.5);
+                fg:AddLine({ x1 - d - 1, y1 - 3 }, { x1 - 3, y1 - d - 1 }, u32({ 1.0 - 0.3 * i / 3, 0.40 + 0.1 * i / 3, 0.62 + 0.38 * i / 3, a }), 1.6);
+            end
+        end
+    end
+    if hot and imgui.IsMouseClicked(0) then                          -- a grip taken: from this size, at this mouse
+        local b, sz = boxes[hot], EDIT.SIZE[hot];
+        EDIT.rs = { k = hot, mx = mx, my = my, w = math.max(20, b[3]), h = math.max(20, b[4]), s = tonumber(cfg[sz[1]]) or 1 };
+        R = EDIT.rs;
+    end
+    if R then
+        local sz = EDIT.SIZE[R.k];
+        local r = ((R.w + (mx - R.mx)) / R.w + (R.h + (my - R.my)) / R.h) / 2;
+        local v = math.max(sz[2], math.min(sz[3], math.floor(R.s * r * 20 + 0.5) / 20));
+        if v ~= tonumber(cfg[sz[1]]) then cfg[sz[1]] = v; end
+        local b = boxes[R.k];                                        -- (its size beside the grip)
+        local str = string.format('%.2fx', v);
+        local tw = imgui.CalcTextSize(str);
+        local tx, ty = b[1] + b[3] - tw - 26, b[2] + b[4] - 20;
+        fg:AddRectFilled({ tx - 6, ty - 1 }, { tx + tw + 6, ty + 17 }, u32({ 0.05, 0.045, 0.07, 0.92 }), 5);
+        fg:AddText({ tx, ty }, u32({ 1.0, 0.70, 0.88, 1 }), str);
+    end
+    EDIT.rs_hot = (hot ~= nil) or (R ~= nil);
+    return R and R.k or hot;
+end
 function EDIT.snap(kx, x, y, w, h)
     local ds = imgui.GetIO().DisplaySize;
     local W, H = (ds and ds.x) or 1920, (ds and ds.y) or 1080;
@@ -2697,18 +2749,48 @@ function EDIT.draw()
     if fg then
         local all = ImDrawFlags_RoundCornersAll or ImDrawCornerFlags_All or 15;
         local lf = push_font(fonts.chat, 15);                        -- (the labels in the UI's font)
+        local boxes, order = {}, {};
+        local mx, my = imgui.GetMousePos();
         for k, sz in pairs(WATCH.size or {}) do
             local ky = k:gsub('_x$', '_y');
             local ox, oy = tonumber(cfg[k]), tonumber(cfg[ky]);
-            local nm = EDIT.NAMES[k];
-            if ox and oy and nm and sz[1] > 4 then
-                local on = (EDIT.drag == k);
-                fg:AddRect({ ox, oy }, { ox + sz[1], oy + sz[2] }, u32({ 0.62, 0.40, 1.0, on and 0.95 or 0.55 }), 6, all, on and 2 or 1);
-                local tw = imgui.CalcTextSize(nm);
-                fg:AddRectFilled({ ox, oy - 18 }, { ox + tw + 12, oy - 2 }, u32({ 0.05, 0.045, 0.07, 0.9 }), 5);
-                fg:AddText({ ox + 6, oy - 18 }, u32({ 0.93, 0.92, 0.98, 1 }), nm);
+            if ox and oy and EDIT.NAMES[k] and sz[1] > 4 then
+                boxes[k] = { ox, oy, sz[1], sz[2] };
+                order[#order + 1] = k;
             end
         end
+        local focus = EDIT.drag or (EDIT.rs and EDIT.rs.k) or EDIT.last_hot;
+        if not focus then                                            -- (the smallest piece under the mouse)
+            local best = nil;
+            for k, b in pairs(boxes) do
+                if mx >= b[1] and mx <= b[1] + b[3] and my >= b[2] and my <= b[2] + b[4] and (best == nil or b[3] * b[4] < best[2]) then best = { k, b[3] * b[4] }; end
+            end
+            focus = best and best[1];
+        end
+        table.sort(order, function(a, b) return (boxes[a][2] < boxes[b][2]) or (boxes[a][2] == boxes[b][2] and a < b); end)
+        for _, k in ipairs(order) do
+            local b = boxes[k];
+            local on = (k == focus);
+            fg:AddRect({ b[1], b[2] }, { b[1] + b[3], b[2] + b[4] }, u32({ 0.62, 0.40, 1.0, on and 0.95 or 0.45 }), 6, all, on and 2 or 1);
+        end
+        local placed = {};
+        local function label(k)
+            local b, nm = boxes[k], EDIT.NAMES[k];
+            local tw = imgui.CalcTextSize(nm);
+            local r = { b[1], b[2] - 18, b[1] + tw + 12, b[2] - 2 };
+            if k ~= focus then
+                for _, q in ipairs(placed) do
+                    if r[1] < q[3] and r[3] > q[1] and r[2] < q[4] and r[4] > q[2] then return; end   -- (on top of another: left out)
+                end
+            end
+            placed[#placed + 1] = r;
+            local on = (k == focus);
+            fg:AddRectFilled({ r[1], r[2] }, { r[3], r[4] }, u32(on and { 0.20, 0.10, 0.26, 0.96 } or { 0.05, 0.045, 0.07, 0.9 }), 5);
+            fg:AddText({ b[1] + 6, b[2] - 18 }, u32(on and { 1.0, 0.80, 0.93, 1 } or { 0.93, 0.92, 0.98, 1 }), nm);
+        end
+        if focus and boxes[focus] then label(focus); end
+        for _, k in ipairs(order) do if k ~= focus then label(k); end end
+        EDIT.last_hot = EDIT.grips(fg, boxes);
         if lf then imgui.PopFont(); end
         for _, g in ipairs(EDIT.guides or {}) do                     -- the guides: pink-to-violet lines across the screen
             if g[1] == 'v' then
@@ -2740,6 +2822,8 @@ function EDIT.draw()
         imgui.TextColored({ 0.80, 0.78, 0.88, 1 }, 'Drag anything.');
         imgui.TextColored({ 0.80, 0.78, 0.88, 1 }, 'It snaps to the grid and');
         imgui.TextColored({ 0.80, 0.78, 0.88, 1 }, 'lines up with the others.');
+        imgui.Spacing();
+        imgui.TextColored({ 0.80, 0.78, 0.88, 1 }, 'Drag a corner grip to resize.');
         imgui.Spacing();
         if accent_button('DONE##yui_edit_done', { 190, 0 }) then
             EDIT.on, EDIT.drag, EDIT.guides, EDIT.welcome = false, nil, {}, nil; save();
