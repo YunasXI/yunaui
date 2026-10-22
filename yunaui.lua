@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.30';
+addon.version = '1.0.31';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -9570,8 +9570,8 @@ function YMAP.update(ent, me, zid)                                   -- the righ
     pcall(function() YMAP.name = AshitaCore:GetResourceManager():GetString('zones.names', zid) or ''; end);
     YMAP.entry = YMAP.entry_of(zid, fl);
     YMAP.tex, YMAP.ltex, YMAP.ntex, YMAP.mtex = nil, nil, nil, nil;
-    if YMAP.entry and YMAP.entry.exact then                           -- (no map for this exact floor: none, rather than another part of
-        local dir = (addon.path:gsub('[\\/]+$', '')) .. '\\mapsimg\\';  --  the zone that doesn't match where you are)
+    if YMAP.entry then                                               -- (no map for this exact floor: the zone's first one still shows;
+        local dir = (addon.path:gsub('[\\/]+$', '')) .. '\\mapsimg\\';  --  /yui mapinfo tells which is shown, for reports)
         YMAP.tex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '.png');        -- the floor and the icons
         YMAP.ltex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '_l.png');     -- the lines, white: tinted as drawn
         YMAP.ntex = YMAP.load_tex(dir .. zid .. '_' .. YMAP.entry.floor .. '_n.png');     -- the place names (tinted, softer)
@@ -10986,7 +10986,7 @@ ashita.events.register('command', 'yui_command', function(e)
                 if zz == zid then fls[#fls + 1] = tostring(ashita.memory.read_uint8(b + 2)); end
             end
             msg(string.format('Map info: zone %d, at %.1f / %.1f / %.1f, floor %d, map %s%s (scale %s, offset %s / %s). Floors in the table: %s',
-                zid, x, y, z, fl, e and tostring(e.floor) or 'none', (e and not e.exact) and ' (no exact match: no map shown)' or '',
+                zid, x, y, z, fl, e and tostring(e.floor) or 'none', (e and not e.exact) and ' (no exact match: the first map of the zone shown)' or '',
                 e and tostring(e.scale) or '-', e and tostring(e.ox) or '-', e and tostring(e.oy) or '-', table.concat(fls, ' ')));
         end);
     elseif sub == 'welcome' then EDIT.welcome = true; EDIT.G.start();   -- (what a new player sees on the first launch; settings untouched)
