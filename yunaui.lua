@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.31';
+addon.version = '1.0.32';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -941,7 +941,7 @@ local function read_party_buffs(e)
         if id > 0 then
             local list = {};
             for j = 0, 31 do
-                local hi = bit.lshift(ashita.bits.unpack_be(e.data_raw, off + 7, j * 2, 2), 8);
+                local hi = bit.lshift(ashita.bits.unpack_be(e.data, off + 7, j * 2, 2), 8);  -- (the packet's bytes, as the low part)
                 local b = hi + struct.unpack('B', e.data, off + 0x10 + j);
                 if b == 255 then break; end
                 list[#list + 1] = b;
@@ -954,8 +954,10 @@ end
 local function member_buffs(i)
     local out = {};
     if i == 0 then
-        local b = AshitaCore:GetMemoryManager():GetPlayer():GetBuffs();
-        if b then for k = 0, 32 do local v = b[k]; if v and v > 0 and v ~= 255 then out[#out + 1] = v; end end end
+        local pl = AshitaCore:GetMemoryManager():GetPlayer();         -- (the game's own icons, as its buff bar: a Cursna'd Curse
+        local ok, b = pcall(function() return pl:GetStatusIcons(); end);  --  leaves at once; else the buff list)
+        if not (ok and type(b) == 'table') then b = pl:GetBuffs(); end
+        if b then for k = 0, 32 do local v = tonumber(b[k]); if v and v > 0 and v ~= 255 then out[#out + 1] = v; end end end
     elseif i < 6 then
         local list = party_buffs[AshitaCore:GetMemoryManager():GetParty():GetMemberServerId(i)];
         if list then for _, v in ipairs(list) do if v > 0 and v ~= 255 then out[#out + 1] = v; end end end
@@ -1085,7 +1087,7 @@ for k, v in ('230=135,231=135,232=135,23=134,33=134,24=134,25=134,58=4,80=4,56=1
 end
 local function set_of(s) local t = {}; for n in s:gmatch('%d+') do t[tonumber(n)] = true; end return t; end
 local MSG_ON    = set_of('127,160,164,166,186,194,203,205,230,236,266,267,268,269,237,271,272,277,278,279,280,319,320,375,412,645,754,755,804');
-local MSG_OFF   = set_of('64,159,168,204,206,321,322,341,342,343,344,350,378,531,647,805,806');
+local MSG_OFF   = set_of('64,83,159,168,204,206,321,322,341,342,343,344,350,378,531,647,805,806');
 local MSG_DEATH = set_of('6,20,97,113,406,605,646');
 local MSG_SPELLDMG = set_of('2,252,264,265');
 local DEBUFF_TIME = { [2] = 60, [19] = 90, [193] = 60, [11] = 60, [10] = 5, [4] = 120, [13] = 180, [5] = 180, [6] = 120,
@@ -1118,6 +1120,8 @@ local function enemy_add(id, status, secs)
 end
 local function enemy_off(id, status)
     if enemies[id] then enemies[id][status] = nil; end
+    local pb = party_buffs[id];                                     -- (a party member's: off their card now, not at the next update)
+    if pb then for k = #pb, 1, -1 do if pb[k] == status then table.remove(pb, k); end end end
 end
 -- Enemy list (XIUI's way): a monster joins the list when it acts on you or a party member, or when its claim passes to
 -- one of you (packet 0x00E); it leaves when it dies, despawns or goes out of sight, and on zoning.
