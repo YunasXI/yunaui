@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.32';
+addon.version = '1.0.33';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1878,6 +1878,7 @@ local function party_cursor()
     if slot then
         local ti = AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(slot);
         if ti and ti ~= 0 then return ti; end
+        return -(slot + 1);                                          -- (someone in another zone: their slot, as -(slot + 1); Leader / Kick)
     end
     if sub and sub ~= 0 then return sub; end
     return main;
@@ -2838,7 +2839,10 @@ end
 -- so the selection can be seen without a real alliance. PARTY > Selected look: glow (violet) or chromatic (a rainbow
 -- light running round the bezel).
 ALLY.pick = nil;
-function ALLY.is_tgt(m, i, tidx) return (m.idx ~= 0 and m.idx == tidx) or (m.fake and ALLY.pick == i); end   -- (a pick marks only pretend members)
+function ALLY.is_tgt(m, i, tidx)
+    if tidx and tidx < 0 then return not m.fake and i == -tidx - 1; end   -- (the game's party cursor on someone not in your zone)
+    return (m.idx ~= 0 and m.idx == tidx) or (m.fake and ALLY.pick == i);   -- (a pick marks only pretend members)
+end   -- (a pick marks only pretend members)
 function ALLY.click(m, i, over)
     if not over or not imgui.IsMouseClicked(0) then return; end
     local r = ALLY.irect[i];                                         -- (a click on its hat folds the buffs instead)
