@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.40';
+addon.version = '1.0.41';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -60,7 +60,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, target_head = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -1896,11 +1896,11 @@ end
 -- plain Ashita): the bar's own size changes and the light is drawn on top.
 ----------------------------------------------------------------------------------------------------
 FIGHT.fx = { idx = nil, t0 = -10 };
-FIGHT.FXDUR = { blade = 0.6 };
+FIGHT.FXDUR = { blade = 0.6, link = 1.1 };
 function FIGHT.fx_cl(t) return math.max(0, math.min(1, t)); end
 function FIGHT.fx_eo(t) t = FIGHT.fx_cl(t); return 1 - (1 - t) ^ 3; end
 function FIGHT.fxstate(idx, ent, fake)
-    local kind = (cfg.target_fx == 'off') and 'off' or 'blade';
+    local kind = (cfg.target_fx == 'off' or cfg.target_fx == 'link') and cfg.target_fx or 'blade';
     local F = FIGHT.fx;
     local now = os.clock();
     if kind == 'off' then F.idx = idx; return nil; end
@@ -1912,6 +1912,13 @@ function FIGHT.fxstate(idx, ent, fake)
     if e < 0 or e >= 1 then return nil; end
     local cl, eo = FIGHT.fx_cl, FIGHT.fx_eo;
     local st = { kind = kind, e = e, fa = 1, nla = 1, bwk = 1, bal = 1, hk = 1, chars = nil, yoff = 0 };
+    if kind == 'link' then                                           -- (the hex link: the bar grows out of the hex once it locks)
+        local t = e * FIGHT.FXDUR.link;
+        st.left = true;
+        st.bwk = eo((t - 0.62) / 0.35);
+        st.nla = cl((t - 0.75) / 0.3);
+        return st;
+    end
     st.bwk = eo((e - 0.12) / 0.5);
     st.nla = cl((e - 0.45) / 0.4);
     return st;
@@ -1937,6 +1944,90 @@ function FIGHT.fxdraw(st, x, top, by, w, h, sc)
         end
         local fl = cl(1 - e / 0.25);                                 -- the flash where it starts
         if fl > 0.01 then fg:AddCircleFilled({ cx, cy }, (6 + 18 * (1 - fl)) * sc, u32({ 1, 1, 1, 0.55 * fl }), 24); end
+    end
+end
+-- TARGET > Entrance: Hex link - a thin chromatic line (a cyan core, its red and blue split either side) shoots out of the
+-- target's head to the start of the bar, a small hex spark riding its tip; there a hexagon spins in, slowing, a hex
+-- ripple running out, then it locks with a white flash and the bar grows out of it. While you keep the target the hex
+-- stays as its mark and the line stays, very faint. Red hex for monsters, cyan for anyone else. (ax, ay: the bar's start)
+-- TARGET > Entrance: Hex link > Bar over the target's head: where the target window goes - up and to the right of the
+-- head, so the hex sits there and the bar runs right from it; eased a little so it doesn't jitter. nil (its usual
+-- place) when the head isn't on the screen.
+function C.thead(idx, ent, sc)
+    local sx, sy = nil, nil;
+    pcall(function()
+        local ap = ent:GetActorPointer(idx);
+        if ap == nil or ap == 0 then return; end
+        local px, py, pz = ashita.memory.read_float(ap + 0x678), ashita.memory.read_float(ap + 0x680), ashita.memory.read_float(ap + 0x67C);
+        sx, sy = C.w2s(px, pz - 2.0, py);
+    end);
+    local W, H = C.screen();
+    if not sx or sx < -40 or sx > W + 40 or sy < -40 or sy > H + 40 then C.TH = nil; return nil; end
+    local R = math.max(5, 6.5 * sc);
+    local tx = sx + 38 * sc + R * 1.9 - 6;                            -- (the hex ~38 px right of the head...)
+    local ty = sy - 46 * sc - 10 - 24 * sc;                           -- (...and its bar ~46 px over it, under the name)
+    local T = C.TH;
+    if T and T.idx == idx then T.x, T.y = T.x + (tx - T.x) * 0.35, T.y + (ty - T.y) * 0.35;
+    else T = { idx = idx, x = tx, y = ty }; C.TH = T; end
+    return { math.floor(T.x + 0.5), math.floor(T.y + 0.5) };
+end
+function FIGHT.linkdraw(idx, ent, ax, ay, sc, tk)
+    local fg = nil;
+    pcall(function() fg = imgui.GetForegroundDrawList(); end);
+    if fg == nil then return; end
+    local t = os.clock() - (FIGHT.fx.t0 or 0);
+    local cl, eo = FIGHT.fx_cl, FIGHT.fx_eo;
+    local R = math.max(5, 6.5 * sc);
+    local hx, hy = ax - R * 1.9, ay;                                  -- (the hex: just left of where the bar starts)
+    local acc = (tk == 'mob') and { 1.0, 0.36, 0.45 } or { 0.45, 0.92, 1.0 };
+    local function pts(cx, cy, r, rot)
+        local p_ = {};
+        for k = 0, 5 do local a = rot + k * math.pi / 3 + math.pi / 6; p_[k + 1] = { cx + r * math.cos(a), cy + r * math.sin(a) }; end
+        return p_;
+    end
+    local function hline(cx, cy, r, rot, col, th)
+        local p_ = pts(cx, cy, r, rot);
+        for k = 1, 6 do fg:AddLine(p_[k], p_[k % 6 + 1], col, th); end
+    end
+    local function hfill(cx, cy, r, rot, col)
+        local p_ = pts(cx, cy, r, rot);
+        for k = 1, 6 do fg:AddTriangleFilled({ cx, cy }, p_[k], p_[k % 6 + 1], col); end
+    end
+    -- the head (a little over it), on the screen
+    local sx, sy = nil, nil;
+    pcall(function()
+        local ap = ent:GetActorPointer(idx);
+        if ap == nil or ap == 0 then return; end
+        local px, py, pz = ashita.memory.read_float(ap + 0x678), ashita.memory.read_float(ap + 0x680), ashita.memory.read_float(ap + 0x67C);
+        sx, sy = C.w2s(px, pz - 2.0, py);
+    end);
+    if sx then                                                        -- the line: grows to the hex, then fades to a faint thread
+        local la = (t < 0.8) and 1 or ((t < 1.1) and (1 - 0.88 * (t - 0.8) / 0.3) or 0.12);
+        local g = eo(t / 0.22);
+        local tx, ty = sx + (hx - R - sx) * g, sy + (hy - sy) * g;
+        local th = math.max(1, 1.1 * sc);
+        fg:AddLine({ sx - 1.3, sy }, { tx - 1.3, ty }, u32({ 1.0, 0.25, 0.45, 0.35 * la }), th);   -- (the chromatic split)
+        fg:AddLine({ sx + 1.3, sy }, { tx + 1.3, ty }, u32({ 0.30, 0.45, 1.0, 0.35 * la }), th);
+        fg:AddLine({ sx, sy }, { tx, ty }, u32({ 0.55, 0.96, 1.0, 0.95 * la }), th);
+        if t < 0.24 then hfill(tx, ty, R * 0.42, t * 9, u32({ 1, 1, 1, 0.95 })); end   -- (the spark on its tip)
+        if t < 0.35 then                                              -- (a small hex where it leaves the head)
+            local q = cl(t / 0.35);
+            hline(sx, sy, R * (0.5 + 0.9 * q), 0, u32({ 0.55, 0.96, 1.0, 0.7 * (1 - q) }), 1);
+        end
+    end
+    if t < 0.18 and sx then return; end                               -- (the hex comes in as the line arrives)
+    local inn = eo((t - 0.18) / 0.12);
+    local spin = (1 - eo((t - 0.18) / 0.44)) * math.pi * 1.6;
+    local r = R * (0.4 + 0.6 * inn);
+    local rp = cl((t - 0.22) / 0.5);                                  -- the ripple: a bigger hex running out, fading
+    if rp > 0 and rp < 1 then hline(hx, hy, R * (1 + 1.8 * rp), spin * 0.5, u32({ acc[1], acc[2], acc[3], 0.6 * (1 - rp) }), 1.2); end
+    hline(hx, hy, r + 1, spin, u32({ 0, 0, 0, 0.7 * inn }), 3.2);     -- (a dark edge first: readable on bright ground)
+    hline(hx, hy, r, spin, u32({ acc[1], acc[2], acc[3], inn }), 1.5);
+    hfill(hx, hy, r * 0.5, -spin, u32({ acc[1], acc[2], acc[3], 0.9 * inn }));
+    local lk = cl((t - 0.62) / 0.23);                                 -- the lock: a white flash round it
+    if lk > 0 and lk < 1 then
+        hline(hx, hy, r * (1 + 0.5 * lk), 0, u32({ 1, 1, 1, 0.9 * (1 - lk) }), 1.6);
+        hfill(hx, hy, r * 0.5, 0, u32({ 1, 1, 1, 0.6 * (1 - lk) }));
     end
 end
 -- TARGET > Friends look different: what the target is - 'mob', 'pc' (a player, or anyone in your party / alliance,
@@ -2086,7 +2177,16 @@ local function draw_target(dt)
     local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.target_scale) or 1);
     local w, h = (tonumber(cfg.target_w) or 520) * sc, math.max(1, math.floor((tonumber(cfg.target_bar_h) or 4) * sc + 0.5));   -- TARGET > Bar thickness
     local fxs = FIGHT.fxstate(idx, ent, fake);                       -- (TARGET > Entrance, while it plays)
-    if plain_window('YunaUI Target##yui_target', 'target_x', 'target_y') then
+    local tkx, tky = 'target_x', 'target_y';
+    local hp_ = nil;                                                  -- (Hex link > Bar over the target's head: follows it)
+    if cfg.target_fx == 'link' and cfg.target_head ~= false and not fake and not EDIT.on then
+        local okh, r_ = pcall(C.thead, idx, ent, sc);
+        hp_ = okh and r_ or nil;
+    end
+    if hp_ then cfg._tx, cfg._ty = hp_[1], hp_[2]; tkx, tky = '_tx', '_ty'; WATCH.move = WATCH.move + 1; end
+    local topen = plain_window('YunaUI Target##yui_target', tkx, tky);
+    if hp_ then WATCH.move = WATCH.move - 1; end
+    if topen then
         local dl = imgui.GetWindowDrawList();
         local x, y = imgui.GetCursorScreenPos();
         x, y = x + 6, y + 4;
@@ -2095,6 +2195,7 @@ local function draw_target(dt)
             local used = 0;
             local okf, errf = pcall(function() used = C.tfriend(dl, x, y, w, sc, idx, ent, name, hpp, tk, tmi, dt); end);
             if not okf then pcall(YUI_ERRLOG, 'target friend', errf); end
+            if cfg.target_fx == 'link' then pcall(FIGHT.linkdraw, idx, ent, x, y + math.max(10, used) * 0.5, sc, tk); end   -- (TARGET > Entrance: Hex link)
             local bh2 = 0;
             if cfg.buffs then                                        -- its buffs, under it
                 local blist, bleft = target_buffs(idx);
@@ -2103,7 +2204,8 @@ local function draw_target(dt)
                 bh2 = bu > 0 and (bu + 6 * sc) or 0;
             end
             imgui.Dummy({ w + 12, used + 10 + bh2 });
-            end_plain('target_x', 'target_y');
+            end_plain(tkx, tky);
+            cfg._tx, cfg._ty = nil, nil;
             return;
         end
         local fa_ = fxs and fxs.fa or 1;
@@ -2153,7 +2255,7 @@ local function draw_target(dt)
         do                                                           -- the bar (Entrance: opening from the middle, lighting up or filling up)
             local lg = lagged('target' .. idx, hpp, dt);
             local bwk, bal, hk = fxs and fxs.bwk or 1, fxs and fxs.bal or 1, fxs and fxs.hk or 1;
-            local bx, bw = x + w * (1 - bwk) / 2, w * bwk;
+            local bx, bw = (fxs and fxs.left) and x or (x + w * (1 - bwk) / 2), w * bwk;   -- (Hex link: out of the hex, from the left)
             local pa = bal < 1;
             if pa then imgui.PushStyleVar(ImGuiStyleVar_Alpha, math.max(0.01, bal * fa_)); end
             if bw >= 2 and bal > 0.01 then
@@ -2168,6 +2270,7 @@ local function draw_target(dt)
             if pa then imgui.PopStyleVar(1); end
         end
         if fxs then pcall(FIGHT.fxdraw, fxs, x, top_, by, w, h, sc); end
+        if cfg.target_fx == 'link' then pcall(FIGHT.linkdraw, idx, ent, x, by + h / 2, sc, 'mob'); end   -- (TARGET > Entrance: Hex link)
         if cfg.fight_info ~= false and (cfg.fan_place or 'bar') ~= 'free' then   -- the skillchain fan, to the left (its own size; movable in Edit Mode)
             local fdx, fdy = FIGHT.off('fo');
             local fsc = sc * FIGHT.fsc();
@@ -2196,9 +2299,11 @@ local function draw_target(dt)
         imgui.Dummy({ w + 12, nh + h + 18 + bh2 + ch });
         if fullclip then pcall(function() dl:PopClipRect(); end); end
         if fa_ < 1 then imgui.PopStyleVar(1); end
-        end_plain('target_x', 'target_y');
+        end_plain(tkx, tky);
+        cfg._tx, cfg._ty = nil, nil;
     else
         imgui.End(); imgui.PopStyleVar(2);
+        cfg._tx, cfg._ty = nil, nil;
     end
 end
 
@@ -4653,12 +4758,15 @@ function C.feed_text(e)                                              -- (its pla
     end
     return t;
 end
-function C.feed_take(log, line, mode)
+function C.feed_take(log, line, mode, only)
+    -- only: a line the COMBAT LOG filters hide - it may still finish a feed line already showing (its "casts", its
+    -- damage), never start one; a hidden spell's own results then don't land on the line before it
     if cfg.chat_feed == false then return nil; end
     local F = C.FEED;
     local now = os.clock();
     local sl = line:gsub('[\1\2]', '');
     local function new(actor, act, target, kind, state)
+        if only then F.last = nil; return nil; end
         local e = { raw = line, cat = cat_of(mode), t = now, t0 = now, flash = now, ts = os.time(), mode = mode,
             tpre = cfg.chat_time and C.ts_text(os.time()) or nil,
             feed = { actor = actor, act = act, target = target, kind = kind, state = state, res = {} } };
@@ -5477,7 +5585,10 @@ local function chat_add(mode, raw)
                     if (who and who ~= 'other' and cfg['cf_w_' .. who] == false) or (what and cfg['cf_t_' .. what] == false) then cut_ = true; end
                 end
             end
-            if cut_ then goto skip_line; end
+            if cut_ then                                             -- (hidden: still finishes a feed line already showing)
+                if is_combat(mode) then pcall(C.feed_take, log_, raw_line, mode, true); end
+                goto skip_line;
+            end
             if is_combat(mode) then local okf, r = pcall(C.feed_take, log_, raw_line, mode); fd = okf and r or nil; end   -- (CHAT > Combat feed)
             if fd == nil then
                 if not is_combat(mode) then pcall(C.chat_pop, mode, raw_line); end   -- (CHAT > Speech bubbles)
@@ -9288,7 +9399,10 @@ local function draw_window()
             section('FLOOR AURA');
             row_switch('##yui_taura', 'Show', 'target_aura', 'On: a ring of light on the ground under what you target - green for your party and alliance, pink for monsters, blue to violet for anyone else.');
             section('ENTRANCE');
-            row_pick('##yui_tfx', 'When you target', 'target_fx', { { 'off', 'Off' }, { 'blade', 'Blade of light' } });
+            row_pick('##yui_tfx', 'When you target', 'target_fx', { { 'off', 'Off' }, { 'blade', 'Blade of light' }, { 'link', 'Hex link' } });
+            if cfg.target_fx == 'link' then
+                row_switch('##yui_thead', "Bar over the target's head", 'target_head', 'On: the target bar sits up and to the right of its head and follows it (back in its own place when the head is off the screen). Off: the bar stays where you put it.');
+            end
             if (cfg.target_fx or 'blade') ~= 'off' then
                 if accent_button('PLAY IT##yui_tfxp', { ROW_W, 0 }) then FIGHT.fx.t0 = os.clock(); end
                 hint('Target something and press PLAY IT to see it again.');
