@@ -53,7 +53,7 @@ local defaults = T{
     stat_size = 1.0,   -- the size of the HP / MP / TP text
     stat_mode = 'wheel', -- HP / MP / TP: 'wheel' (round the wheel) or 'bars' (three bars of their own, each draggable)
     sb_scale = 1.0, sb_len = 1.0, sb_tp = true, sb_mp = true, sb_fx = 'same',
-    sb_thick = 1.0, sb_hp_size = 1.0, sb_mp_size = 1.0, sb_tp_size = 1.0, sb_hp_len = 1.0, sb_mp_len = 1.0, sb_tp_len = 1.0,
+    sb_thick = 1.0, sb_hp_num = 1.0, sb_mp_num = 1.0, sb_tp_num = 1.0, sb_hp_size = 1.0, sb_mp_size = 1.0, sb_tp_size = 1.0, sb_hp_len = 1.0, sb_mp_len = 1.0, sb_tp_len = 1.0,
     hpbar_x = -1, hpbar_y = -1, mpbar_x = -1, mpbar_y = -1, tpbar_x = -1, tpbar_y = -1,
     sb_anchor = 0,           -- the dots by your HP number: 0 = each bar free, 1 = MP and TP stacked under HP, 2 = side by side
     theme   = 'sumi',    -- the Orbit's look: 'classic' (bars on the bezel), 'sumi' (ink brush ring), 'neon' (glowing ring)
@@ -2816,6 +2816,13 @@ function JOBS.statbar(key, value, v, lag, pct)
     end
     local kx, ky = key .. 'bar_x', key .. 'bar_y';
     local sc = math.max(0.5, math.min(2.5, (tonumber(cfg.sb_scale) or 1) * (tonumber(cfg['sb_' .. key .. '_size']) or 1)));
+    if not cfg.sb_num_v1 then                                        -- (once: the text keeps the size it had with each bar's size)
+        for _, k_ in ipairs({ 'hp', 'mp', 'tp' }) do
+            cfg['sb_' .. k_ .. '_num'] = math.max(0.5, math.min(2.5, (tonumber(cfg['sb_' .. k_ .. '_size']) or 1) * (tonumber(cfg['sb_' .. k_ .. '_num']) or 1)));
+        end
+        cfg.sb_num_v1 = true;
+        save();
+    end
     if (tonumber(cfg[kx]) or -1) < 0 then                           -- first time: in a column near the middle of the screen
         local ds = imgui.GetIO().DisplaySize;
         local dw, dh = (ds and ds.x) or 1920, (ds and ds.y) or 1080;
@@ -2846,15 +2853,16 @@ function JOBS.statbar(key, value, v, lag, pct)
         if key ~= 'tp' and cfg.low_on ~= false and pct and pct < 50 and pct > 0 then
             warn = JOBS.low_beat(pct, now, d[5] * 0.37 + 0.2) * 1.6;      -- breathes faster as it gets lower
         end
-        -- the stat's name in its colour (small), the number in white beside it
-        local pushed, fsc = JOBS.yfont(13 * sc);
+        -- the stat's name in its colour (small), the number in white beside it (BARS > HP / MP / TP text size: these only, not the bar)
+        local ns = math.max(0.5, math.min(2.5, tonumber(cfg.sb_scale) or 1)) * math.max(0.5, math.min(2.5, tonumber(cfg['sb_' .. key .. '_num']) or 1));   -- (not the bar's size)
+        local pushed, fsc = JOBS.yfont(13 * ns);
         imgui.SetWindowFontScale(fsc);
         local lw, lh = imgui.CalcTextSize(d[1]);
         local lc = d[4];
         if warn > 0 then lc = { lc[1] + (1 - lc[1]) * warn * 0.5, lc[2] * (1 - warn * 0.3), lc[3] * (1 - warn * 0.3), 1 }; end
         imgui.SetWindowFontScale(1);
         if pushed then imgui.PopFont(); end
-        local pushed2, fsc2 = JOBS.yfont(22 * sc);
+        local pushed2, fsc2 = JOBS.yfont(22 * ns);
         imgui.SetWindowFontScale(fsc2);
         local vw, vh = imgui.CalcTextSize(value);
         local vy = y;
@@ -2863,17 +2871,17 @@ function JOBS.statbar(key, value, v, lag, pct)
             local br = 0.5 + 0.5 * math.sin(now * 4);
             vc = { 1, 0.9 + 0.1 * br, 0.5 + 0.35 * br, 1 };
         end
-        JOBS.otext(dl, x + lw + 8 * sc, vy, value, vc);
+        JOBS.otext(dl, x + lw + 8 * ns, vy, value, vc);
         imgui.SetWindowFontScale(1);
         if pushed2 then imgui.PopFont(); end
-        pushed, fsc = JOBS.yfont(13 * sc);
+        pushed, fsc = JOBS.yfont(13 * ns);
         imgui.SetWindowFontScale(fsc);
-        JOBS.otext(dl, x, vy + vh - lh - 2 * sc, d[1], { lc[1], lc[2], lc[3], 1 });
+        JOBS.otext(dl, x, vy + vh - lh - 2 * ns, d[1], { lc[1], lc[2], lc[3], 1 });
         imgui.SetWindowFontScale(1);
         if pushed then imgui.PopFont(); end
         if key == 'hp' then                                          -- the anchor dots, just right of the HP number
-            local ih = 13 * sc;
-            JOBS.sb_anchor_icon(dl, x + lw + 8 * sc + vw + 6 * sc, vy + vh - ih - 3 * sc, ih);
+            local ih = 13 * ns;
+            JOBS.sb_anchor_icon(dl, x + lw + 8 * ns + vw + 6 * ns, vy + vh - ih - 3 * ns, ih);
             imgui.SetCursorScreenPos({ x - 8, y - 6 });
         end
         -- the bar under them
@@ -3366,16 +3374,19 @@ local function draw_bars_settings()
             row_stepper('ye_sbth', 'HP bar thickness', 'sb_thick', 0.25, 0.5, 3.0);
             row_stepper('ye_sbhs', 'HP bar size', 'sb_hp_size', 0.1, 0.5, 2.5);
             row_stepper('ye_sbhl', 'HP bar length', 'sb_hp_len', 0.1, 0.3, 4.0);
+            row_stepper('ye_sbhn', 'HP text size', 'sb_hp_num', 0.1, 0.5, 2.5);   -- (the label and number only; the bar stays)
             row_switch('##ye_sbmp', 'MP bar', 'sb_mp', 'On: your MP bar shows. Off: it is hidden (an anchored TP bar moves up under HP).');
             if cfg.sb_mp ~= false then
                 row_stepper('ye_sbmth', 'MP bar thickness', 'sb_mp_thick', 0.25, 0.5, 3.0);
                 row_stepper('ye_sbms', 'MP bar size', 'sb_mp_size', 0.1, 0.5, 2.5);
                 row_stepper('ye_sbml', 'MP bar length', 'sb_mp_len', 0.1, 0.3, 4.0);
+                row_stepper('ye_sbmn', 'MP text size', 'sb_mp_num', 0.1, 0.5, 2.5);
             end
             row_switch('##ye_sbtp', 'TP bar', 'sb_tp', 'On: TP gets a bar of its own too.');
             if cfg.sb_tp ~= false then
                 row_stepper('ye_sbts', 'TP bar size', 'sb_tp_size', 0.1, 0.5, 2.5);
                 row_stepper('ye_sbtl', 'TP bar length', 'sb_tp_len', 0.1, 0.3, 4.0);
+                row_stepper('ye_sbtn', 'TP text size', 'sb_tp_num', 0.1, 0.5, 2.5);
             end
         end
         row_switch('##ye_lowfx', 'Low HP / MP glow', 'low_on', 'On: under 50% HP or MP, that bar breathes.');

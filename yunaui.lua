@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.38';
+addon.version = '1.0.39';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -5617,14 +5617,16 @@ function C.feed_draw(dl, x, y, e, a, lh, measure, notime)
     local sp = imgui.CalcTextSize(' ');
     if e.tpre and not notime then txt(e.tpre, C.ts_col(), 0.85); end   -- (the clear look draws it itself, small, after the bar)
     txt(f.actor, { 0.97, 0.96, 1.0 });
+    cx = cx + sp * 0.5;                                              -- (a space each side of the chevron)
     chev({ 0.70, 0.68, 0.80 });
+    cx = cx + sp * 0.5;
     local kc = (f.kind == 'magic') and { 0.74, 0.64, 1.0 } or { 1.0, 0.82, 0.45 };
     txt(f.act, kc);
     if f.state == 'cast' then                                        -- (being cast: three dots that pulse)
         local k = math.floor(os.clock() * 3) % 3;
         for d = 0, 2 do txt('.', kc, (d == k) and 1 or 0.35); end
     end
-    if f.target then cx = cx + sp * 0.3; chev({ 0.70, 0.68, 0.80 }); txt(f.target, { 0.88, 0.87, 0.94 }); end
+    if f.target then cx = cx + sp * 0.5; chev({ 0.70, 0.68, 0.80 }); cx = cx + sp * 0.5; txt(f.target, { 0.88, 0.87, 0.94 }); end
     for _, r in ipairs(f.res) do
         cx = cx + sp * 1.2;
         if r.dmg then
@@ -5638,7 +5640,7 @@ function C.feed_draw(dl, x, y, e, a, lh, measure, notime)
             txt('miss', { 1.0, 0.40, 0.45 });
         else
             tick();
-            if r.who ~= f.target then txt(r.who, { 0.88, 0.87, 0.94 }); end
+            if r.who ~= f.target then cx = cx + sp * 0.3; txt(r.who, { 0.88, 0.87, 0.94 }); end
         end
     end
     return cx - x;
