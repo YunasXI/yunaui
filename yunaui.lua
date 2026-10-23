@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.45';
+addon.version = '1.0.46';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -60,7 +60,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, show_fan = true, show_mb = true, target_head = true, chat_panel_a = 0.72, chat_msg_gap = 5, map_tilt = true,  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, show_fan = true, show_mb = true, target_head = true, chat_panel_a = 0.72, chat_msg_gap = 5, map_tilt = true, target_buff_tips = true, buff_timer_scale = 1.0,  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -1041,12 +1041,16 @@ function BUFFS.part(v, k, n)
     p = math.max(0, math.min(1, p));
     return p, 1 - (1 - p) ^ 3;
 end
-local function draw_buffs(dl, x, y, list, size, perrow, rows, dir, timers, fold)
+local function draw_buffs(dl, x, y, list, size, perrow, rows, dir, timers, fold, tips)   -- (tips: hovering an icon shows its name and time left)
     local mx, my = imgui.GetMousePos();
     local n = math.min(#list, perrow * rows);
     if fold and fold <= 0 then return 0, 0; end
     local th = 0;                                                   -- timers: a small line of seconds under each icon
-    if timers and next(timers) then imgui.SetWindowFontScale(0.72); th = imgui.GetTextLineHeight(); end
+    if timers and next(timers) then                                  -- (its size grows with the icons; TARGET > Debuff timer size on top)
+        local tk = math.max(0.5, math.min(2.5, tonumber(cfg.buff_timer_scale) or 1));
+        imgui.SetWindowFontScale(math.max(0.55, math.min(2.6, 0.72 * (size / 22) * tk)));
+        th = imgui.GetTextLineHeight();
+    end
     for k = 1, n do
         local id = list[k];
         local c, r = (k - 1) % perrow, math.floor((k - 1) / perrow);
@@ -1069,6 +1073,16 @@ local function draw_buffs(dl, x, y, list, size, perrow, rows, dir, timers, fold)
         end
         ix, iy = math.floor(ix + 0.5), math.floor(iy + 0.5);           -- (on whole pixels: the icon's pixels land on the screen's)
         image(dl, buff_icon(id, size), ix, iy, ix + size, iy + size);
+        if tips and mx >= ix and mx < ix + size and my >= iy and my < iy + size then   -- (TARGET > Debuff details on hover)
+            local secs_ = timers and timers[id];
+            local tl = nil;
+            if secs_ then
+                local sec = math.max(0, math.ceil(secs_));
+                tl = (sec >= 60) and string.format('%d:%02d left', math.floor(sec / 60), sec % 60) or string.format('%ds left', sec);
+            end
+            dl:AddRect({ ix - 1, iy - 1 }, { ix + size + 1, iy + size + 1 }, u32({ 1, 1, 1, 0.8 }), 2, C.rall, 1.2);
+            YUI_TIP(buff_name(id) .. (tl and ('\n' .. tl) or ''));
+        end
         local secs = timers and timers[id];
         if secs then
             local str = (secs >= 100) and string.format('%dm', math.floor(secs / 60 + 0.5)) or string.format('%d', math.ceil(secs));
@@ -2224,7 +2238,7 @@ local function draw_target(dt)
             if cfg.buffs then                                        -- its buffs, under it
                 local blist, bleft = target_buffs(idx);
                 local tbs = tonumber(cfg.target_buff_scale) or tonumber(cfg.buff_scale) or 1;
-                local _, bu = draw_buffs(dl, x, y + used + 6 * sc, blist, math.floor(22 * sc * tbs), 16, 2, 1, bleft);
+                local _, bu = draw_buffs(dl, x, y + used + 6 * sc, blist, math.floor(22 * sc * tbs), 16, 2, 1, bleft, nil, cfg.target_buff_tips ~= false);
                 bh2 = bu > 0 and (bu + 6 * sc) or 0;
             end
             imgui.Dummy({ w + 12, used + 10 + bh2 });
@@ -2317,7 +2331,7 @@ local function draw_target(dt)
         if cfg.buffs then                                            -- its buffs / debuffs, under the bar
             local blist, bleft = target_buffs(idx);                  -- a monster's debuffs come with their time left
             local tbs = tonumber(cfg.target_buff_scale) or tonumber(cfg.buff_scale) or 1;   -- (TARGET > Buffs / debuffs size: its own, not the party's)
-            local _, used = draw_buffs(dl, x, by + h + 8 * sc + ch, blist, math.floor(22 * sc * tbs), 16, 2, 1, bleft);
+            local _, used = draw_buffs(dl, x, by + h + 8 * sc + ch, blist, math.floor(22 * sc * tbs), 16, 2, 1, bleft, nil, cfg.target_buff_tips ~= false);
             bh2 = used > 0 and (used + 6 * sc) or 0;
         end
         imgui.Dummy({ w + 12, nh + h + 18 + bh2 + ch });
@@ -5309,7 +5323,7 @@ C.SPAM = { 'experience points', 'limit points', 'EXP chain', 'Obtained %d[%d,]* 
            'You have completed the following Records', 'falls to the ground', 'too far away', 'out of range',
            'cannot see ', 'Unable to see ', 'You must wait longer', 'lost the ', 'was defeated', 'defeats ',
            'venture target', 'activity points', 'venture points', 'Linkshell Point Accumulation', 'Your venture begins',
-           'cleared to fulfill this objective' };
+           'cleared to fulfill this objective', ' effect wears off', ' wears off%.$' };   -- (effects wearing off: battle lines too)
 function C.battle_spam(mode, line)
     if is_combat(mode) then return false; end
     local cat = cat_of(mode);
@@ -9456,6 +9470,8 @@ local function draw_window()
             row_slider('##yui_tnsc', 'Target name size', 'target_name_scale', 0.5, 2.5, 0.05, '%.2fx');
             row_switch('##yui_tban', 'Bar effect', 'target_bar_anim', 'On: a crackling white line runs inside the bar. Off: no white line, just the plain coloured bar.');
             row_slider('##yui_tbs', 'Buffs / debuffs size', 'target_buff_scale', 0.6, 2.5, 0.05, '%.2fx');
+            row_slider('##yui_tbts', 'Debuff timer size', 'buff_timer_scale', 0.6, 2.5, 0.05, '%.2fx');
+            row_switch('##yui_tbtip', 'Debuff details on hover', 'target_buff_tips', 'On: put the mouse over a buff or debuff under the target bar to see its name and the time it has left.');
             section('CASTS AND SKILLCHAINS');
             row_switch('##yui_tfi', 'Show', 'fight_info', 'Under the bar: what the monster is casting or readying. From the bar\'s start: a fan of your weapon skills that close the skillchain. Over the name: the Magic Burst window and its elements.');
             if cfg.fight_info ~= false then
