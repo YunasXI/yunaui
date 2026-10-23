@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.41';
+addon.version = '1.0.42';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -60,7 +60,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, target_head = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, show_fan = true, show_mb = true, target_head = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -1362,7 +1362,7 @@ function FIGHT.draw(dl, sid, x, y, w, sc)
     imgui.SetWindowFontScale(fs * 0.80 * k);
     local lh = imgui.GetTextLineHeight();
     local st = FIGHT.sc[sid];
-    if st and st.chain then
+    if st and st.chain and cfg.show_mb ~= false then                 -- (TARGET > Magic Burst: off - not drawn)
         local t = now - st.ts;
         if t < st.dur then
             local all = ImDrawFlags_RoundCornersAll or ImDrawCornerFlags_All or 15;
@@ -1427,6 +1427,7 @@ end
 -- top); a light runs along each spoke as it opens. The hub's ring runs down the window: rose while you wait, gold
 -- when you can close (then the best ones' edges breathe gold); a ripple marks the moment a chain opens.
 function FIGHT.draw_fan(dl, sid, hx, hy, sc)
+    if cfg.show_fan == false then return false; end                -- (TARGET > Skillchain fan: off)
     local st = FIGHT.sc[sid];
     if st == nil or st.closed then return false; end
     local now = os.clock();
@@ -5696,8 +5697,19 @@ end
 -- One combat-feed line: who (bright), a small chevron, the spell (violet) or ability (gold), dots while it's being cast,
 -- the target, then a green tick when it lands, damage in orange, HP healed in green, "miss" in red. Returns its width;
 -- measure = true only measures.
-function C.feed_draw(dl, x, y, e, a, lh, measure, notime)
+function C.feed_fit(dl, e, maxw, notime)                             -- (its row too wide for maxw? then it's split in two - kept until the width changes)
     local f = e.feed;
+    if f == nil then return; end
+    local sig = tostring(maxw) .. ':' .. tostring(#(f.res or {})) .. ':' .. tostring(f.state) .. ':' .. tostring(f.target);
+    if f.fit_sig == sig then return; end
+    f.split = nil;
+    local w_ = C.feed_draw(dl, 0, 0, e, 1, 0, true, notime) or 0;
+    f.split = (w_ > maxw) and f.target ~= nil or nil;
+    f.fit_sig = sig;
+end
+function C.feed_draw(dl, x, y, e, a, lh, measure, notime, row)
+    local f = e.feed;
+    local part = f.split and (((row or 1) == 1) and 'head' or 'tail') or nil;   -- (split: row 1 who > what, row 2 > target and the results)
     local th = imgui.GetTextLineHeight();
     local cx = x;
     local function txt(str, col, al)
@@ -5726,16 +5738,21 @@ function C.feed_draw(dl, x, y, e, a, lh, measure, notime)
         cx = cx + w_;
     end
     local sp = imgui.CalcTextSize(' ');
-    if e.tpre and not notime then txt(e.tpre, C.ts_col(), 0.85); end   -- (the clear look draws it itself, small, after the bar)
-    txt(f.actor, { 0.97, 0.96, 1.0 });
-    cx = cx + sp * 0.5;                                              -- (a space each side of the chevron)
-    chev({ 0.70, 0.68, 0.80 });
-    cx = cx + sp * 0.5;
-    local kc = (f.kind == 'magic') and { 0.74, 0.64, 1.0 } or { 1.0, 0.82, 0.45 };
-    txt(f.act, kc);
-    if f.state == 'cast' then                                        -- (being cast: three dots that pulse)
-        local k = math.floor(os.clock() * 3) % 3;
-        for d = 0, 2 do txt('.', kc, (d == k) and 1 or 0.35); end
+    if part ~= 'tail' then
+        if e.tpre and not notime then txt(e.tpre, C.ts_col(), 0.85); end   -- (the clear look draws it itself, small, after the bar)
+        txt(f.actor, { 0.97, 0.96, 1.0 });
+        cx = cx + sp * 0.5;                                          -- (a space each side of the chevron)
+        chev({ 0.70, 0.68, 0.80 });
+        cx = cx + sp * 0.5;
+        local kc = (f.kind == 'magic') and { 0.74, 0.64, 1.0 } or { 1.0, 0.82, 0.45 };
+        txt(f.act, kc);
+        if f.state == 'cast' then                                    -- (being cast: three dots that pulse)
+            local k = math.floor(os.clock() * 3) % 3;
+            for d = 0, 2 do txt('.', kc, (d == k) and 1 or 0.35); end
+        end
+        if part == 'head' then return cx - x; end
+    else
+        cx = cx + sp * 2;                                            -- (the second half, indented)
     end
     if f.target then cx = cx + sp * 0.5; chev({ 0.70, 0.68, 0.80 }); cx = cx + sp * 0.5; txt(f.target, { 0.88, 0.87, 0.94 }); end
     for _, r in ipairs(f.res) do
@@ -6646,8 +6663,9 @@ local function draw_chat(n)
             local vis = math.max(st.hv, life);
             if vis <= 0.01 and skip <= 0 then break; end            -- older lines are all faded out
             local lines, bts = nil, nil;
-            if e.feed then                                           -- (a combat-feed line: one row, drawn by C.feed_draw)
-                lines = { e.text };
+            if e.feed then                                           -- (a combat-feed line, drawn by C.feed_draw: one row, two when too wide)
+                pcall(C.feed_fit, dl, e, maxw - (CL and CL.ind or 0), CL and true or false);
+                lines = e.feed.split and { e.text, e.text } or { e.text };
                 if CL and e.tpre then bts = (e.tpre:gsub('[%[%]]', ''):match('^%s*(.-)%s*$')); end
             elseif CL then lines, bts = C.wrapb(e, maxw - CL.ind, size);
             else lines = C.wrapc(e, maxw, size); end
@@ -6666,6 +6684,8 @@ local function draw_chat(n)
                         st.vis_n = math.max(st.vis_n or 0, vis);
                         -- readable on any ground (snow, sand, bright floors): a full dark outline round every letter
                         local c = (cfg.cf_cols and e.ctype and C.cf_col(e.ctype)) or chat_col(e.cat);   -- (CHAT > COMBAT LOG > Colour by kind)
+                        local cg = math.max(0.6, math.min(2.0, tonumber(cfg.chat_bright) or 1));   -- CHAT > COLOURS > Brightness
+                        if cg ~= 1 then c = { math.min(1, c[1] * cg), math.min(1, c[2] * cg), math.min(1, c[3] * cg) }; end
                         if bright >= 1 then                          -- brighter: toward white; dimmer: toward dark
                             local u = math.min(1, bright - 1);
                             c = { c[1] + (1 - c[1]) * u, c[2] + (1 - c[2]) * u, c[3] + (1 - c[3]) * u };
@@ -6688,7 +6708,7 @@ local function draw_chat(n)
                             end
                             px = px + CL.ind;
                         end
-                        local tw_ = e.feed and C.feed_draw(dl, px, ly, e, a, lh, true, cl_) or line_w(txt);
+                        local tw_ = e.feed and C.feed_draw(dl, px, ly, e, a, lh, true, cl_, k) or line_w(txt);
                         local th = lh - math.max(0, math.min(16, tonumber(cfg.chat_gap) or 6));
                         if glow > 0.01 then                          -- (new, or a feed line that just grew: a soft glow in its colour)
                             dl:AddRectFilled({ px - 5, ly - 2 }, { px + tw_ + 5, ly + th + 1 }, u32({ c[1], c[2], c[3], 0.22 * glow * glow * a }), 4);
@@ -6699,7 +6719,7 @@ local function draw_chat(n)
                         end
                         local ts = (not cl_ and not e.feed and k == 1 and (e.tslen or 0) > 0 and #txt > e.tslen) and txt:sub(1, e.tslen) or nil;
                         if e.feed then
-                            C.feed_draw(dl, px, ly, e, a, lh, false, cl_);
+                            C.feed_draw(dl, px, ly, e, a, lh, false, cl_, k);
                         elseif ts then                               -- the time in its own colour (CHAT > Timestamps > Colour), so the words stand out
                             chat_line(dl, px, ly, ts, C.ts_col(), a * 0.85, lh);
                             chat_line(dl, px + line_w(ts), ly, txt:sub(#ts + 1), c, a, lh);
@@ -6820,7 +6840,7 @@ local function draw_chat(n)
         local nowc = os.clock();                                     -- (the corner icons fade 5 s after the mouse leaves; back when it's over)
         if hov or st.lastov == nil then st.lastov = nowc; end
         local gf = math.max(0, math.min(1, 1 - (nowc - st.lastov - 5) / 0.6));
-        if n == 1 and cfg.chat_split and gf > 0.02 and not big then  -- the anchor (bottom right of the chat, by the tabs): the combat log beside it
+        if n == 2 and gf > 0.02 and st.hv > 0.05 then                -- the anchor (the combat log's bottom right, while it's lit): beside the chat
             local bs = 22;
             local ax, ay = x + w - bs - 10, y + h - bar + (bar - bs) / 2 - 2;
             imgui.SetCursorScreenPos({ ax, ay });
@@ -9385,6 +9405,8 @@ local function draw_window()
             section('CASTS AND SKILLCHAINS');
             row_switch('##yui_tfi', 'Show', 'fight_info', 'Under the bar: what the monster is casting or readying. From the bar\'s start: a fan of your weapon skills that close the skillchain. Over the name: the Magic Burst window and its elements.');
             if cfg.fight_info ~= false then
+                row_switch('##yui_tfan', 'Skillchain fan', 'show_fan', 'On: when your party opens a skillchain, a fan of your weapon skills that close it.');
+                row_switch('##yui_tmb', 'Magic Burst', 'show_mb', 'On: after a skillchain, the Magic Burst window with its elements and the time left.');
                 row_slider('##yui_fansc', 'Skillchain fan size', 'fan_scale', 0.4, 2.0, 0.05, '%.2fx');
                 row_slider('##yui_mbsc', 'Magic Burst size', 'mb_scale', 0.5, 2.5, 0.05, '%.2fx');
                 row_slider('##yui_ecsc', 'Enemy cast size', 'ecast_scale', 0.4, 2.0, 0.05, '%.2fx');
@@ -9399,10 +9421,7 @@ local function draw_window()
             section('FLOOR AURA');
             row_switch('##yui_taura', 'Show', 'target_aura', 'On: a ring of light on the ground under what you target - green for your party and alliance, pink for monsters, blue to violet for anyone else.');
             section('ENTRANCE');
-            row_pick('##yui_tfx', 'When you target', 'target_fx', { { 'off', 'Off' }, { 'blade', 'Blade of light' }, { 'link', 'Hex link' } });
-            if cfg.target_fx == 'link' then
-                row_switch('##yui_thead', "Bar over the target's head", 'target_head', 'On: the target bar sits up and to the right of its head and follows it (back in its own place when the head is off the screen). Off: the bar stays where you put it.');
-            end
+            row_pick('##yui_tfx', 'When you target', 'target_fx', { { 'off', 'Off' }, { 'blade', 'Blade of light' } });
             if (cfg.target_fx or 'blade') ~= 'off' then
                 if accent_button('PLAY IT##yui_tfxp', { ROW_W, 0 }) then FIGHT.fx.t0 = os.clock(); end
                 hint('Target something and press PLAY IT to see it again.');
@@ -9558,6 +9577,8 @@ local function draw_window()
             hint('Font: ' .. (fonts.chat_name or 'AvantGarde not found - using a fallback'));
             section('COLOURS');
             hint('Each channel\'s colour is used for its text and (Clear look) for the bar on the left of its messages.');
+            row_slider('##yui_cbri', 'Brightness', 'chat_bright', 0.6, 2.0, 0.05, '%.2fx');
+            hint('Makes every chat colour brighter (or darker), for screens where the colours are hard to see.');
             for _, cc in ipairs(CHAT_COLS) do colour_row('col_' .. cc[1], cc[2], cc[3], true); end
         elseif tab == 6 then
             equip_tab();
@@ -11070,6 +11091,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         if not cfg.spine_v2 then EDIT.welcome = true; pcall(EDIT.G.start); end   -- (the guide first, then Edit Mode)
         pcall(save);
     end
+    if cfg.target_fx == 'link' then cfg.target_fx = 'blade'; pcall(save); end   -- (the Hex link entrance isn't in this version: Blade of light)
     if not cfg.slots_v1 then cfg.strip_cols, cfg.strip_icon, cfg.strip_fit, cfg.slots_v1 = 4, 32, false, true; pcall(save); end   -- (once: the gear as floating slots, 4 x 4)
     if not cfg.cards_v2 then cfg.card_style, cfg.tag_look, cfg.card_h, cfg.cards_v2 = 'clean', 'role', 1.0, true; pcall(save); end   -- (the look is fixed now: Clean)
     if not cfg.party_bl_v1 then                                      -- (once: the party box lost its buff room; keep the list where it was)
