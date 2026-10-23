@@ -1126,6 +1126,20 @@ local function enemy_add(id, status, secs)
     if status == 134 then enemies[id][135] = nil; elseif status == 135 then enemies[id][134] = nil; end   -- (Dia and Bio overwrite each other)
     enemies[id][status] = os.clock() + (secs or DEBUFF_TIME[status] or 180);
 end
+C.MSG_PHYS = set_of('103,110,185,187,238,242,317,802');              -- (a physical hit: melee, ability or weapon skill)
+C.MSG_JAONLY = set_of('110,317');                                    -- (only an ability says these)
+function C.ja_hit(tid, kind, param, m)                               -- an ability that hit: its hidden effect (a Bash's stun), on the monster
+    if not (kind == 3 or kind == 6 or kind == 14) or not C.MSG_PHYS[m] then return; end
+    local id = param % 65536;
+    local jid = (id >= 512 and id < 1024) and (id - 512) or id;
+    if kind == 3 and jid == id and not C.MSG_JAONLY[m] then return; end   -- (a weapon skill's id, not an ability's)
+    local e = DEBUFF_DB.jaPhysical and (DEBUFF_DB.jaPhysical[jid] or DEBUFF_DB.jaPhysical[id]);
+    if type(e) ~= 'table' or not e.buffId then return; end
+    local ids = e.buffIds or { e.buffId };
+    for _, b in ipairs(ids) do
+        enemy_add(tid, b, (e.buffDurations and e.buffDurations[b]) or e.duration);
+    end
+end
 local function enemy_off(id, status)
     if enemies[id] then enemies[id][status] = nil; end
     local pb = party_buffs[id];                                     -- (a party member's: off their card now, not at the next update)
@@ -1830,6 +1844,7 @@ local function read_action(e)
             if is_first then pcall(FIGHT.on_skill, actor, kind, param, m, tid, fx_ap); end   -- skillchains (the Chains way)
             if bits(1) == 1 then bits(10); bits(14); bits(10); end  -- spikes
             if max == 0 then return; end
+            if not is_party_id(tid) then pcall(C.ja_hit, tid, kind, param, m); end
             if MSG_ON[m] then enemy_add(tid, p, debuff_secs(kind, param, p));
             elseif MSG_OFF[m] then enemy_off(tid, p);
             elseif MSG_DEATH[m] then enemies[tid] = nil;
@@ -4648,6 +4663,9 @@ local CHANNELS = {
     { 'Tell',  { 4, 12 },           { 0.86, 0.48, 1 } },
     { 'RoE',   { 300 },             { 0.62, 0.92, 0.78 } },          -- (Records of Eminence: YunaUI's own mode 300, see C.is_roe)
 };
+C.CHAT_COMBAT = #CHANNELS + 1;                                       -- (the Combat tab: after the channels)
+-- CHAT > Tabs: which tabs show under the chat (cfg.chat_tabs_on[name] = false hides one; All always shows)
+function C.tab_on(name) return name == 'All' or type(cfg.chat_tabs_on) ~= 'table' or cfg.chat_tabs_on[name] ~= false; end
 local TAB_OF = {};                                                  -- chat mode -> tab number
 for ti, ch in ipairs(CHANNELS) do if ch[2] then for _, m in ipairs(ch[2]) do TAB_OF[m] = ti; end end end
 local unread = {};                                                  -- tab number -> true
@@ -6641,6 +6659,14 @@ local function draw_chat(n)
         local bright = 1.4;                                          -- (the chat's brightness: fixed, Yunas's own setting)
         local tab = (n == 1) and (tonumber(cfg.chat_tab) or 1) or 1;
         local only = nil;                                            -- (the big chat: 'combat' = only battle lines, 'talk' = none)
+        if n == 1 and not big then                                   -- (a hidden tab picked before: back to All)
+            local nm_ = (tab == C.CHAT_COMBAT) and 'Combat' or (CHANNELS[tab] and CHANNELS[tab][1]);
+            if not nm_ or not C.tab_on(nm_) then tab = 1; end
+            if tab == C.CHAT_COMBAT then                             -- (the Combat tab: the combat log - its own window's lines when split)
+                if cfg.chat_split then log = logs[2]; else only = 'combat'; end
+                tab = 1;
+            end
+        end
         if big then
             if legacy.pad.combat then
                 if cfg.chat_split then log = logs[2]; else only = 'combat'; end
@@ -6795,18 +6821,20 @@ local function draw_chat(n)
         if n == 1 and thv > 0.05 then
             local bx, by = x + pad, y + h - barv - 2;                -- (rising from the bottom as it lights up)
             local mx, my = imgui.GetMousePos();
-            local tabs_ = CHANNELS;
-            if big then                                              -- (the big chat: the Combat log tab at the end)
-                tabs_ = {};
-                for _, ch in ipairs(CHANNELS) do tabs_[#tabs_ + 1] = ch; end
-                tabs_[#tabs_ + 1] = { 'Combat' };
-            end
-            for ci, ch in ipairs(tabs_) do
+            local tabs_ = {};                                        -- (the Combat log tab at the end; CHAT > Tabs leaves some out)
+            for ci_, ch in ipairs(CHANNELS) do if big or C.tab_on(ch[1]) then tabs_[#tabs_ + 1] = { ch, ci_ }; end end
+            if big or C.tab_on('Combat') then tabs_[#tabs_ + 1] = { { 'Combat' }, C.CHAT_COMBAT }; end
+            local sel_ = tonumber(cfg.chat_tab) or 1;                -- (the tab shown: a hidden one counts as All)
+            if sel_ == C.CHAT_COMBAT then if not C.tab_on('Combat') then sel_ = 1; end
+            elseif not (CHANNELS[sel_] and C.tab_on(CHANNELS[sel_][1])) then sel_ = 1; end
+            for _, tci in ipairs(tabs_) do
+                local ch, ci = tci[1], tci[2];
                 local tw = imgui.CalcTextSize(ch[1]);
                 local bw2 = tw + 16;
                 local over = mx >= bx and mx < bx + bw2 and my >= by and my < by + bar - 4;
                 local cmb = big and ci == #CHANNELS + 1;
                 local on = (big and legacy.pad.combat) and cmb or (not cmb and tab == ci and not (big and legacy.pad.combat));
+                if not big then on = (sel_ == ci); end
                 local col = { 0.95, 0.95, 0.97 };                -- the tabs are plain white
                 -- just the words (no boxes): the chosen tab bright with a short line under it, the others dimmer
                 local ty_ = by + (bar - 4 - lh + 2) / 2;
@@ -9560,6 +9588,17 @@ local function draw_window()
             end
             section('LOOK');
             row_pick('##yui_clook', 'Look', 'chat_look', { { 'clear', 'Clear' }, { 'classic', 'Classic' } });
+            do                                                       -- CHAT > Tabs: which ones show (All always does)
+                if type(cfg.chat_tabs_on) ~= 'table' then cfg.chat_tabs_on = {}; end
+                local names = {};
+                for i_ = 2, #CHANNELS do names[#names + 1] = CHANNELS[i_][1]; end
+                names[#names + 1] = 'Combat';
+                hint('Tabs to show (All always shows):');
+                for _, nm in ipairs(names) do
+                    if cfg.chat_tabs_on[nm] == nil then cfg.chat_tabs_on[nm] = true; end
+                    row_switch('##yui_ctab_' .. nm, nm == 'Combat' and 'Combat (the combat log)' or nm, nm, nil, cfg.chat_tabs_on);
+                end
+            end
             row_switch('##yui_ctabs', 'Always show tabs', 'chat_tabs_always', 'On: the channel tabs (All, Say, Party...) stay at the bottom of the chat all the time. Off: they show while the mouse is over the chat or you type.');
             if cfg.chat_look ~= 'classic' then
                 hint('Clear: a dark rounded panel, a thin bar in each channel\'s colour, the time small on the left, long messages kept in one block.');
