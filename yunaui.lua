@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.43';
+addon.version = '1.0.44';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -902,6 +902,14 @@ local function member(i)
                 tp = p:GetMemberTP(i), hpp = p:GetMemberHPPercent(i) / 100, mpp = p:GetMemberMPPercent(i) / 100,
                 idx = p:GetMemberTargetIndex(i) };
     m.inzone = (m.zone == p:GetMemberZone(0));
+    if i == 0 and (m.job or 0) == 0 then                             -- (yourself, with the party list's job not filled in - solo, /anon: from
+        pcall(function()                                             --  your own character, as the game's own menu shows it)
+            local pl = AshitaCore:GetMemoryManager():GetPlayer();
+            m.job, m.lvl = pl:GetMainJob() or 0, pl:GetMainJobLevel() or 0;
+            m.sub, m.sublvl = pl:GetSubJob() or 0, pl:GetSubJobLevel() or 0;
+            if (m.mpp or 0) == 0 and (pl:GetMPMax() or 0) > 0 then m.mpp = (m.mp or 0) / pl:GetMPMax(); end
+        end);
+    end
     if i ~= 0 and m.inzone then                                      -- how far they are: beyond spell range (or too far to be seen) = far
         pcall(function()
             if (m.idx or 0) == 0 then m.far = true; return; end
