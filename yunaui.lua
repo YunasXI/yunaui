@@ -60,7 +60,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, show_fan = true, show_mb = true, target_head = true, chat_panel_a = 0.72, chat_msg_gap = 5,  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, show_fan = true, show_mb = true, target_head = true, chat_panel_a = 0.72, chat_msg_gap = 5, map_tilt = true,  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -9626,6 +9626,7 @@ local function draw_window()
             row_slider('##yui_mmz', 'Zoom', 'map_zoom', 16, 256, 2, '%d');
             hint('Zoom: how much of the map shows round you (smaller is closer). The mouse wheel over the minimap zooms too.');
             row_switch('##yui_mm3f', 'Turn with you', 'map3d_follow', 'The minimap turns as you do, looking the way you face. Off: north stays up.');
+            row_switch('##yui_mmtilt', 'Tilt the map', 'map_tilt', 'On: in zones with no 3D shape (most of the open country) the map lies on the ground under you, seen from behind you like the cities\' 3D look. Off: the flat map from above.');
             row_switch('##yui_mmm', 'Monsters', 'map_mobs', 'On: monsters near you show as red dots.');
             row_pick('##yui_mmc', 'Lines', 'map_color', { { 'white', 'White' }, { 'pink', 'Pink' }, { 'cyan', 'Cyan' } });
             row_pick('##yui_mma', 'Your arrow', 'map_arrow_color', { { 'lines', 'As the lines' }, { 'white', 'White' }, { 'pink', 'Pink' },
@@ -10016,7 +10017,7 @@ function YMAP.mobs_near(ent)                                         -- monsters
     return out;
 end
 -- What sits on the map: monsters, the party in their role colours, the target, and you (the glowing arrow)
-function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside)
+function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
     local tidx = target_index() or 0;
     local function dot(wx, wy, col, r, ring)
         local sx, sy = tomap(wx, wy);
@@ -10053,6 +10054,13 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside)
     local yaw = 0;
     pcall(function() yaw = ent:GetLocalPositionYaw(me) or 0; end);
     local fx, fy = math.cos(yaw), math.sin(yaw);
+    if tilted then                                                   -- (a tilted map: the way you face, as the view shows it - a step ahead, seen)
+        local wx, wy = ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0;
+        local ax, ay = tomap(wx + math.cos(yaw) * 2, wy - math.sin(yaw) * 2);
+        local dx, dy = ax - px, ay - py;
+        local L = math.sqrt(dx * dx + dy * dy);
+        if L > 1e-3 then fx, fy = dx / L, dy / L; end
+    end
     do                                                               -- you: the neon outline arrow (images/map_arrow.png), turned your way
         local h = 9.5 * sc;
         local t = C.tex_at('map_arrow.png', math.max(16, math.min(256, math.floor(h * 2 + 0.5)))) or tex('map_arrow.png');
@@ -10075,6 +10083,75 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside)
     ALLY.poly(dl, { tip, back, l }, u32({ 1.0, 0.36, 0.62, 1 }));
     local wc = u32({ 1, 1, 1, 1 });
     dl:AddLine(tip, l, wc, 1.2); dl:AddLine(l, back, wc, 1.2); dl:AddLine(back, r, wc, 1.2); dl:AddLine(r, tip, wc, 1.2);
+end
+-- MINIMAP > Tilt the map: in a zone with no 3D shape (most of the open country), its map is laid flat on the ground under
+-- you and seen by the 3D look's camera - behind you, tilted, turning with you - so every zone reads the same way.
+-- Drawn in tiles (each one placed by the camera, a little see-through toward the edge); you, your party and monsters
+-- sit on it.
+function YMAP.tilt2d(dl, ent, party, zid, me, sc, x, y, M)
+    local e = YMAP.entry;
+    local kk = math.abs(e.scale) / 2560 * 512;                       -- (map pixels a yalm)
+    local X, Y = ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0;
+    local yaw = (cfg.map3d_follow ~= false) and YMAP.d3facing(ent, me) or 0;
+    local R2 = math.max(8, tonumber(cfg.map_zoom) or 60);            -- (the zoom: map pixels to the edge, as the flat map has it)
+    local pitch, dist = 0.95, R2 / kk * 0.62;                        -- (the camera's distance in yalms: about as much ground as the flat map)
+    local cy_, sy_ = math.cos(yaw), math.sin(yaw);
+    local cp, sp = math.cos(pitch), math.sin(pitch);
+    local f = M * 1.1;
+    local cxs, cys = x + M / 2, y + M / 2;
+    local function proj(wx, wy)                                      -- (a spot on the ground at your height -> the screen)
+        local dx, dn = wx - X, wy - Y;
+        local rx = dx * cy_ - dn * sy_;
+        local rn = dx * sy_ + dn * cy_;
+        local depth = rn * cp + dist;
+        if depth < 1 then return nil; end
+        return cxs + f * rx / depth, cys - f * (rn * sp) / depth;
+    end
+    local pmx, pmy = YMAP.to_map(X, Y);
+    local Rm = R2 * 2.2;                                             -- (how much of the map round you: past the view's edge)
+    local N = 22;
+    local step = Rm * 2 / N;
+    C.clip(dl, { x + 2, y + 2 }, { x + M - 2, y + M - 2 }, true);
+    local layers = { { YMAP.tex, nil }, { YMAP.ltex, 'l' }, { YMAP.ntex, 'n' } };
+    for pass = 1, 3 do
+        local tx_ = layers[pass][1];
+        if tx_ then
+            for i = 0, N - 1 do
+                for j = 0, N - 1 do
+                    local m0x, m0y = pmx - Rm + i * step, pmy - Rm + j * step;
+                    local m1x, m1y = m0x + step, m0y + step;
+                    local a0, b0, a1, b1 = math.max(0, m0x), math.max(0, m0y), math.min(512, m1x), math.min(512, m1y);
+                    if a1 > a0 and b1 > b0 then
+                        local function w(mx_, my_) return (mx_ + e.ox) / kk, -(my_ + e.oy) / kk; end   -- (map pixels -> the world)
+                        local p1x, p1y = proj(w(a0, b0));
+                        local p2x, p2y = proj(w(a1, b0));
+                        local p3x, p3y = proj(w(a1, b1));
+                        local p4x, p4y = proj(w(a0, b1));
+                        if p1x and p2x and p3x and p4x then
+                            local al = 1;                            -- (solid: the minimap's soft dark ground under it does the fading)
+                            do
+                                local uv1, uv2, uv3, uv4 = { a0 / 512, b0 / 512 }, { a1 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, { a0 / 512, b1 / 512 };
+                                if pass == 2 then                    -- (the lines: a dark copy a pixel down first, readable over snow)
+                                    pcall(function() dl:AddImageQuad(tx_.ptr, { p1x + 1, p1y + 1 }, { p2x + 1, p2y + 1 }, { p3x + 1, p3y + 1 }, { p4x + 1, p4y + 1 }, uv1, uv2, uv3, uv4, u32({ 0, 0, 0, 0.30 * al })); end);   -- (lighter: a full dark copy made the lines look thick)
+                                end
+                                local c_ = (pass == 1) and { 1, 1, 1 } or (YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white);
+                                if pass == 2 then al = al * 0.72; end    -- (the lines a little softer: thinner-looking on the tilted map)
+                                if pass == 3 then c_ = { c_[1] * 0.66, c_[2] * 0.66, c_[3] * 0.66 }; end
+                                pcall(function() dl:AddImageQuad(tx_.ptr, { p1x, p1y }, { p2x, p2y }, { p3x, p3y }, { p4x, p4y }, uv1, uv2, uv3, uv4, u32({ c_[1], c_[2], c_[3], al })); end);
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    dl:PopClipRect();
+    local function tomap(wx, wy) local sx_, sy_ = proj(wx, wy); if not sx_ then return -9999, -9999; end return sx_, sy_; end
+    local function inside(sx_, sy_)
+        local qx, qy = sx_ - cxs, sy_ - cys;
+        return sx_ > x + 2 and sx_ < x + M - 2 and sy_ > y + 2 and sy_ < y + M - 2 and (qx * qx + qy * qy) < (M * 0.47) ^ 2;
+    end
+    YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, true);
 end
 -- The 3D map (/yui map3d, and the minimap's 3D look): the zone's own shape in 3D - the edges of its collision mesh
 -- (maps3d\<zone>.lua, made from LandSandBoat's xiNavmeshOBJs, GPL-3.0) in the map's line colour, round you. Drag the
@@ -10603,7 +10680,10 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
         end
     end
     local e = (not done3) and YMAP.entry or nil;
-    if e and YMAP.tex then
+    if e and YMAP.tex and cfg.map_tilt ~= false then                 -- (MINIMAP > Tilt the map: the 3D look's camera over the flat map)
+        local ok_, err_ = pcall(YMAP.tilt2d, dl, ent, party, zid, me, sc, x, y, M);
+        if not ok_ then YUI_ERRLOG('maptilt', err_); end
+    elseif e and YMAP.tex then
         local R = math.max(8, tonumber(cfg.map_zoom) or 60);           -- map pixels from the middle to the edge
         local k = (M / 2) / R;
         local pmx, pmy = YMAP.to_map(ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0);
