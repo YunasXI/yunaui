@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.46';
+addon.version = '1.0.47';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -60,7 +60,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, show_fan = true, show_mb = true, target_head = true, chat_panel_a = 0.72, chat_msg_gap = 5, map_tilt = true, target_buff_tips = true, buff_timer_scale = 1.0,  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, show_fan = true, show_mb = true, target_head = true, chat_panel_a = 0.72, chat_msg_gap = 5, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0,  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -3633,7 +3633,7 @@ function ALLY.ink(dl, x0, ty, str, fx, y1, y2, tip, v, th)
 end
 -- PARTY > CARDS > Style / Card height: how tall a card is. Slim: a dark card with a thin glowing HP line under the name
 -- (the look of your own HP bar: same colours, same Blue Inferno / Beam effect); Filled: the HP fills the card.
-function ALLY.sbh(sc) return math.max(2, math.floor(3 * sc + 0.5)); end
+function ALLY.sbh(sc) return math.max(1, math.floor(3 * sc * math.max(0.5, math.min(3, tonumber(cfg.party_hp_th) or 1)) + 0.5)); end   -- (PARTY > HP bar thickness)
 function ALLY.ch(lh, sc, party)
     local m = math.max(0.7, math.min(1.3, tonumber(cfg.card_h) or 1));
     if (cfg.card_style or 'plate') ~= 'filled' then
@@ -3648,8 +3648,25 @@ end
 ALLY.TAGCOL = {                                                      -- flat role colours, the job written in the darkest of each
     tank = { { 0.216, 0.541, 0.867 }, { 0.016, 0.173, 0.325 } }, heal = { { 0.365, 0.792, 0.647 }, { 0.016, 0.204, 0.173 } },
     sup  = { { 0.498, 0.467, 0.867 }, { 0.149, 0.129, 0.361 } }, dps  = { { 0.886, 0.294, 0.290 }, { 0.314, 0.075, 0.075 } } };
+-- PARTY > Job tag colours: each job its own colour (the tag, and the job written in a dark or light ink on it)
+ALLY.JOBCOL = { [1] = { 0.62, 0.42, 0.26 }, [2] = { 0.96, 0.80, 0.26 }, [3] = { 0.95, 0.95, 0.96 }, [4] = { 0.30, 0.26, 0.40 },
+                [5] = { 0.86, 0.22, 0.26 }, [6] = { 0.28, 0.56, 0.36 }, [7] = { 0.96, 0.76, 0.30 }, [8] = { 0.48, 0.14, 0.20 },
+                [9] = { 0.82, 0.52, 0.26 }, [10] = { 0.96, 0.56, 0.72 }, [11] = { 0.42, 0.66, 0.30 }, [12] = { 0.92, 0.42, 0.20 },
+                [13] = { 0.24, 0.30, 0.58 }, [14] = { 0.60, 0.40, 0.88 }, [15] = { 0.30, 0.76, 0.62 }, [16] = { 0.28, 0.55, 0.96 },
+                [17] = { 0.24, 0.74, 0.80 }, [18] = { 0.96, 0.62, 0.30 }, [19] = { 0.90, 0.40, 0.72 }, [20] = { 0.56, 0.70, 0.86 },
+                [21] = { 0.40, 0.86, 0.70 }, [22] = { 0.76, 0.50, 0.56 } };
+function ALLY.tagcol(job)                                            -- { fill, ink } for a job's tag
+    if cfg.party_tag_col ~= 'role' then
+        local c = ALLY.JOBCOL[job or 0];
+        if c then
+            local lum = 0.299 * c[1] + 0.587 * c[2] + 0.114 * c[3];
+            return { c, lum > 0.55 and { c[1] * 0.25, c[2] * 0.25, c[3] * 0.25 } or { 1, 1, 1 } };   -- (dark ink on a light tag, white on a dark one)
+        end
+    end
+    return ALLY.TAGCOL[ALLY.ROLE[job or 0] or 'dps'];
+end
 function ALLY.tag(dl, m, i, x, ny, ch, sc, v, live, mir)            -- (mir: x is its RIGHT edge, the slant on its left - the card mirrored)
-    local tc = ALLY.TAGCOL[ALLY.ROLE[m.job or 0] or 'dps'];
+    local tc = ALLY.tagcol(m.job);
     local dim = m.inzone and 1 or 0.45;
     local job = m.tagtext or JOBS[m.job or 0] or '?';
     local fs0 = (FS or 1) * 0.80;
@@ -3738,7 +3755,7 @@ function ALLY.slim(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
         for k = 1, #pts do dl:AddLine(pts[k], pts[k % #pts + 1], u32({ 1.0, 0.32, 0.36, (0.45 + 0.55 * beat) * v }), 1.3); end
     end
     local bh = ALLY.sbh(sc);
-    local mph = party and math.max(2, math.floor(2.2 * sc + 0.5)) or 0;
+    local mph = party and math.max(1, math.floor(2.2 * sc * math.max(0.5, math.min(3, tonumber(cfg.party_mp_th) or 1)) + 0.5)) or 0;   -- (PARTY > MP bar thickness)
     local block = lh + 1 * sc + bh + (party and (2 * sc + mph) or 0);
     local top = y1 + (ch - block) * 0.45;
     local tx;
@@ -3899,7 +3916,7 @@ function ALLY.plate(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     local icx = x1 + (bw - s * 0.5) / 2;
     if live then ALLY.anim_icon(dl, m, i, icx - ih / 2, ny - ih / 2, ih, v); else ALLY.icon(dl, m, icx - ih / 2, ny - ih / 2, ih, v); end
     local bh = ALLY.sbh(sc);
-    local mph = party and math.max(2, math.floor(2.2 * sc + 0.5)) or 0;
+    local mph = party and math.max(1, math.floor(2.2 * sc * math.max(0.5, math.min(3, tonumber(cfg.party_mp_th) or 1)) + 0.5)) or 0;   -- (PARTY > MP bar thickness)
     local block = lh + 1 * sc + bh + (party and (2 * sc + mph) or 0);
     local top = y1 + (ch - block) * 0.45;
     local tx = px0 + 3 * sc;
@@ -4344,8 +4361,16 @@ function ALLY.spine(dl, list, x, y, sc, dt, tidx, n, party)
                     pcall(function() draw_buffs(dl, math.max(lx, tip) + 6 * sc, ny - bs / 2, member_buffs(i), bs, 16, 1, 1, nil,
                         BUFFS.val(m.name or i)); end);
                 else
-                    pcall(function() draw_buffs(dl, x1 - 6 * sc - lp - ((tgt and ch * 0.72 + 4 * sc) or 0), ny - bs / 2, member_buffs(i), bs, 16, 1, -1, nil,
-                        BUFFS.val(m.name or i)); end);
+                    pcall(function()
+                        local bl_ = member_buffs(i);
+                        if cfg.party_buff_ffxi ~= false then             -- (PARTY > FFXI order: read left to right as the game shows them)
+                            local r_ = {};
+                            local n_ = math.min(#bl_, 16);
+                            for k_ = 1, n_ do r_[k_] = bl_[n_ - k_ + 1]; end
+                            bl_ = r_;
+                        end
+                        draw_buffs(dl, x1 - 6 * sc - lp - ((tgt and ch * 0.72 + 4 * sc) or 0), ny - bs / 2, bl_, bs, 16, 1, -1, nil, BUFFS.val(m.name or i));
+                    end);
                 end
             end
             imgui.SetWindowFontScale(fs);
@@ -7115,7 +7140,7 @@ function C.expinfo()
         label, v = string.format('EXP %s / %s', commas(cur), commas(need)), (need > 0) and (cur / need) or 0;
     end
     local rest = tostring(lvl) .. ((JOBS[sub] and sublvl > 0) and ('  /  ' .. JOBS[sub] .. ' ' .. sublvl) or '');
-    local tc = ALLY.TAGCOL[ALLY.ROLE[mj] or 'dps'];                  -- (the job's tag in its role colour, as in the party list)
+    local tc = ALLY.tagcol(mj);                                      -- (the job's tag in its colour, as in the party list)
     return { v = math.max(0, math.min(1, v)), label = label, tag = JOBS[mj] or '?', rest = rest, col = tc[1], ink = tc[2] };
 end
 function C.gil_read()
@@ -9515,6 +9540,10 @@ local function draw_window()
             row_switch('##yui_pfar', 'Fade far members', 'party_dim_far', 'On: a member farther than the distance below (out of range for spells like Cure) is shown faded, party and alliance. A pretend member shows it while you place the list.');
             if cfg.party_dim_far ~= false then row_slider('##yui_s_pfar', 'Far from', 'party_range', 10, 50, 0.5, '%.1f yalms'); end
             row_pick('##yui_pbside', 'Buffs side', 'party_buff_side', { { 'left', 'Left of the cards' }, { 'right', 'Right of the line' } });
+            row_switch('##yui_pbord', 'FFXI buff order', 'party_buff_ffxi', "On: each member's buffs read left to right in the game's own order. Off: the newest next to the card.");
+            row_pick('##yui_ptagc', 'Job tag colours', 'party_tag_col', { { 'job', 'Each job its colour' }, { 'role', 'By role' } });
+            row_slider('##yui_phth', 'HP bar thickness', 'party_hp_th', 0.5, 3.0, 0.05, '%.2fx');
+            row_slider('##yui_pmth', 'MP bar thickness', 'party_mp_th', 0.5, 3.0, 0.05, '%.2fx');
             row_switch('##yui_pdist', 'Distance', 'party_dist', 'On: how far each member is (in yalms), small, after the name. Pink when out of range.');
             row_switch('##yui_pzone', 'Zone of members elsewhere', 'party_zone', 'On: a member in another zone shows where they are, under their name (party and alliance).');
             section('ALLIANCE');
@@ -10108,7 +10137,7 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
         if party:GetMemberIsActive(i) ~= 0 and party:GetMemberZone(i) == zid then
             local idx = party:GetMemberTargetIndex(i) or 0;
             if idx ~= 0 then
-                local tc = ALLY.TAGCOL[ALLY.ROLE[party:GetMemberMainJob(i) or 0] or 'dps'][1];
+                local tc = ALLY.tagcol(party:GetMemberMainJob(i))[1];
                 local col = (i < 6) and { tc[1], tc[2], tc[3], 1 } or { 0.70, 0.69, 0.75, 0.9 };
                 dot(ent:GetLocalPositionX(idx) or 0, ent:GetLocalPositionY(idx) or 0, col, 3.2 * sc, idx == tidx);
             end
@@ -10425,7 +10454,7 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
         if party:GetMemberIsActive(i) ~= 0 and party:GetMemberZone(i) == zid then
             local idx = party:GetMemberTargetIndex(i) or 0;
             if idx ~= 0 then
-                local tc = ALLY.TAGCOL[ALLY.ROLE[party:GetMemberMainJob(i) or 0] or 'dps'][1];
+                local tc = ALLY.tagcol(party:GetMemberMainJob(i))[1];
                 local col = (i < 6) and { tc[1], tc[2], tc[3], 1 } or { 0.70, 0.69, 0.75, 0.9 };
                 dot(ent:GetLocalPositionX(idx) or 0, ent:GetLocalPositionY(idx) or 0, ent:GetLocalPositionZ(idx) or 0, col, 3.4 * sc, idx == tidx);
             end
@@ -11036,7 +11065,7 @@ function EDIT.G.stop(place)
     pcall(save);
 end
 -- The send-off: after the guide, when you press DONE in Edit Mode, a big line fills the screen for a few seconds
-EDIT.G.TITLE, EDIT.G.SUB = "VANA'DIEL IS YOURS", "Now go out there and wreck everything.";
+EDIT.G.TITLE, EDIT.G.SUB = "YUNA UI", "Built for me. Shared with you.";
 function EDIT.G.splash()
     local G = EDIT.G;
     if not G.splash_t then return; end
