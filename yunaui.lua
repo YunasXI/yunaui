@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.44';
+addon.version = '1.0.45';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -5536,6 +5536,21 @@ function C.seen_line(line, stamped)                                  -- (true: a
     R.t[line] = now;
     return dup;
 end
+-- NPC dialogue (a home point, a moogle, any menu NPC): the game sends the same line again each time its menu opens or
+-- redraws - its own log hides the copies, so the same line from an NPC within 15 s is left out here too (and any other
+-- system line, not talk or battle, sent twice within 3 s)
+C.NPCMODE = { [142] = true, [144] = true, [150] = true, [151] = true };
+C.NPCSEEN = { n = 0, t = {} };
+function C.npc_dup(mode, line, combat)
+    local win = C.NPCMODE[mode] and 15 or 3;
+    if combat or (mode >= 1 and mode <= 15) or mode == 213 or mode == 214 then return false; end   -- (talk and battle: never)
+    local R, now = C.NPCSEEN, os.clock();
+    local dup = R.t[line] ~= nil and now - R.t[line] < win;
+    if R.n > 200 then R.t, R.n = {}, 0; end
+    if R.t[line] == nil then R.n = R.n + 1; end
+    if not dup then R.t[line] = now; end
+    return dup;
+end
 C.ROE_MODE = 300;
 C.ROE = { 'Records of Eminence', '^Progress: %d+/%d+', 'sparks of eminence', 'Unity accolades', 'This objective may be repeated',
           'You have completed the following Records', 'cleared to fulfill this objective' };
@@ -5583,7 +5598,8 @@ local function chat_add(mode, raw)
         if line ~= '' then
             local stamped, l2 = false, line:gsub('^%[%d%d?:%d%d[^%]]-%]%s*', '');   -- (another chat addon's "[12:43:45]": YunaUI
             if l2 ~= line and l2 ~= '' then stamped, line = true, l2; end            --  has its own times; its copy of a line
-            if C.seen_line(line, stamped) then goto skip_line; end                  --  YunaUI already has is left out)
+            if C.seen_line(line, stamped) then goto skip_line; end
+            if C.npc_dup(mode, line, is_combat(mode)) then goto skip_line; end         -- (an NPC's line sent again by its menu)                  --  YunaUI already has is left out)
             local raw_line = line;
             if C.is_roe(raw_line) then                               -- (Records of Eminence: to their own tab, RoE)
                 local pre_ = cfg.chat_time and C.ts_text(os.time()) or '';
