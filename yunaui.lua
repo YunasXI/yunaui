@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.42';
+addon.version = '1.0.43';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -6622,7 +6622,8 @@ local function draw_chat(n)
         local bar = math.floor(size * 1.5 + 6);                       -- room for the tabs (the combat window's label)
         local maxw = w - pad * 2;
         C.iclip({ x, y }, { x + w, y + h }, true);
-        local tk = 1 - (1 - math.max(0, math.min(1, st.hv))) ^ 3;    -- (the tabs' room opens only while it's lit - the mouse over it,
+        local tk = 1 - (1 - math.max(0, math.min(1, st.hv))) ^ 3;
+        if cfg.chat_tabs_always and n == 1 and not big then tk = 1; end   -- (CHAT > Always show tabs: their room stays open)    -- (the tabs' room opens only while it's lit - the mouse over it,
         local barv = bar * tk;                                       --  typing - and the lines slide up; at rest they go to the bottom)
         local ly = y + h - pad - lh - barv;
         local type_h = typing and (lh + 10) or 0;                     -- room for the typing line above the tabs
@@ -6782,7 +6783,8 @@ local function draw_chat(n)
             imgui.PopClipRect();
         end
         -- the channel buttons, only while the chat is lit up
-        if n == 1 and st.hv > 0.05 then
+        local thv = (cfg.chat_tabs_always and not big) and 1 or st.hv;  -- (CHAT > Always show tabs: shown at rest too)
+        if n == 1 and thv > 0.05 then
             local bx, by = x + pad, y + h - barv - 2;                -- (rising from the bottom as it lights up)
             local mx, my = imgui.GetMousePos();
             local tabs_ = CHANNELS;
@@ -6800,15 +6802,15 @@ local function draw_chat(n)
                 local col = { 0.95, 0.95, 0.97 };                -- the tabs are plain white
                 -- just the words (no boxes): the chosen tab bright with a short line under it, the others dimmer
                 local ty_ = by + (bar - 4 - lh + 2) / 2;
-                local ta = (on and 1 or (over and 0.85 or 0.5)) * st.hv;
+                local ta = (on and 1 or (over and 0.85 or 0.5)) * thv;
                 dl:AddText({ bx + 9, ty_ + 1 }, u32({ 0, 0, 0, 0.8 * ta }), ch[1]);
                 dl:AddText({ bx + 8, ty_ }, u32({ col[1], col[2], col[3], ta }), ch[1]);
                 if on then
                     local tw_ = imgui.CalcTextSize(ch[1]);
-                    dl:AddLine({ bx + 8, ty_ + lh - 1 }, { bx + 8 + tw_, ty_ + lh - 1 }, u32({ col[1], col[2], col[3], 0.8 * st.hv }), 1);
+                    dl:AddLine({ bx + 8, ty_ + lh - 1 }, { bx + 8 + tw_, ty_ + lh - 1 }, u32({ col[1], col[2], col[3], 0.8 * thv }), 1);
                 end
                 if unread[ci] then                                   -- new messages on this tab
-                    dl:AddCircleFilled({ bx + bw2 - 3, by + 3 }, 3, u32({ col[1], col[2], col[3], st.hv }), 10);
+                    dl:AddCircleFilled({ bx + bw2 - 3, by + 3 }, 3, u32({ col[1], col[2], col[3], thv }), 10);
                 end
                 imgui.SetCursorScreenPos({ bx, by });
                 if imgui.InvisibleButton('##yui_ch' .. ci, { bw2, bar - 4 }) then
@@ -9550,6 +9552,7 @@ local function draw_window()
             end
             section('LOOK');
             row_pick('##yui_clook', 'Look', 'chat_look', { { 'clear', 'Clear' }, { 'classic', 'Classic' } });
+            row_switch('##yui_ctabs', 'Always show tabs', 'chat_tabs_always', 'On: the channel tabs (All, Say, Party...) stay at the bottom of the chat all the time. Off: they show while the mouse is over the chat or you type.');
             if cfg.chat_look ~= 'classic' then
                 hint('Clear: a dark rounded panel, a thin bar in each channel\'s colour, the time small on the left, long messages kept in one block.');
                 row_slider('##yui_cpa', 'Panel darkness', 'chat_panel_a', 0.0, 1.0, 0.05, '%.2f');
