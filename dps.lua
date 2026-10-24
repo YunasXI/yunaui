@@ -119,6 +119,25 @@ local function push_theme()
 end
 
 local function u32(c) return imgui.GetColorU32(c); end
+-- Frame cost (VanaCore's findings): no Lua table made per draw call. U4(r, g, b, a) is u32({ r, g, b, a }) through one
+-- scratch table; DL.L(dl, x, y, x2, y2, ...) is dl:AddLine({ x, y }, { x2, y2 }, ...) through scratch points (the binding
+-- reads them during the call and keeps nothing). The arguments are all worked out before a call fills its scratch.
+local U4, DL;
+do
+    local c4, P1, P2, P3, P4 = { 0, 0, 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 };
+    U4 = function(r, g, b, a) c4[1], c4[2], c4[3], c4[4] = r, g, b, a; return imgui.GetColorU32(c4); end
+    DL = {};
+    function DL.L(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddLine(P1, P2, ...); end
+    function DL.R(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRect(P1, P2, ...); end
+    function DL.RF(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRectFilled(P1, P2, ...); end
+    function DL.RFM(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRectFilledMultiColor(P1, P2, ...); end
+    function DL.C(d, a, b, ...) P1[1], P1[2] = a, b; return d:AddCircle(P1, ...); end
+    function DL.CF(d, a, b, ...) P1[1], P1[2] = a, b; return d:AddCircleFilled(P1, ...); end
+    function DL.T(d, a, b, ...) P1[1], P1[2] = a, b; return d:AddText(P1, ...); end
+    function DL.TF(d, a, b, c, e, f, g, ...) P1[1], P1[2], P2[1], P2[2], P3[1], P3[2] = a, b, c, e, f, g; return d:AddTriangleFilled(P1, P2, P3, ...); end
+    function DL.I(d, t, a, b, c, e, f, g, h, k, ...) P1[1], P1[2], P2[1], P2[2], P3[1], P3[2], P4[1], P4[2] = a, b, c, e, f, g, h, k; return d:AddImage(t, P1, P2, P3, P4, ...); end
+    function DL.I2(d, t, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddImage(t, P1, P2, ...); end
+end
 
 -- Text at a screen position, drawn as normal ImGui text so it always uses the window's own font and size
 -- (draw-list text came out tiny on some players' ImGui). The layout cursor is put back afterwards.
@@ -908,16 +927,16 @@ end
 
 function fx.glow(dl, cx, cy, r, col, a)
     for i = 4, 1, -1 do
-        dl:AddCircleFilled({ cx, cy }, r * i / 4, u32({ col[1], col[2], col[3], a * 0.32 }), 24);
+        DL.CF(dl, cx, cy, r * i / 4, U4(col[1], col[2], col[3], a * 0.32), 24);
     end
 end
 
 function fx.star(dl, cx, cy, sz, a)
-    local c, k = u32({ 1, 1, 0.92, a }), sz * 0.22;
-    dl:AddTriangleFilled({ cx - sz, cy }, { cx, cy - k }, { cx, cy + k }, c);
-    dl:AddTriangleFilled({ cx + sz, cy }, { cx, cy + k }, { cx, cy - k }, c);
-    dl:AddTriangleFilled({ cx, cy - sz }, { cx + k, cy }, { cx - k, cy }, c);
-    dl:AddTriangleFilled({ cx, cy + sz }, { cx - k, cy }, { cx + k, cy }, c);
+    local c, k = U4(1, 1, 0.92, a), sz * 0.22;
+    DL.TF(dl, cx - sz, cy, cx, cy - k, cx, cy + k, c);
+    DL.TF(dl, cx + sz, cy, cx, cy + k, cx, cy - k, c);
+    DL.TF(dl, cx, cy - sz, cx + k, cy, cx - k, cy, c);
+    DL.TF(dl, cx, cy + sz, cx - k, cy, cx + k, cy, c);
 end
 
 -- Behind the logo: a breathing glow, blue at rest, faster and warmer while a fight is on
@@ -938,7 +957,7 @@ function fx.front(dl, x, y, w, h, hov)
         local u = ph / 0.55;
         local gx, gy = at(0.27 + (0.95 - 0.27) * u, 0.38 + (0.90 - 0.38) * u);
         fx.glow(dl, gx, gy, w * 0.05, { 0.88, 0.75, 1.0 }, 0.55);
-        dl:AddCircleFilled({ gx, gy }, w * 0.012, u32({ 1, 1, 1, 0.9 }), 12);
+        DL.CF(dl, gx, gy, w * 0.012, U4(1, 1, 1, 0.9), 12);
     elseif ph < 0.95 then
         local a = 1 - (ph - 0.55) / 0.4;
         local tx, ty = at(0.95, 0.90);
@@ -950,11 +969,10 @@ end
 function fx.bar(dl, x, y, w, h, frac, a)
     local fw = math.max(Z(4), w * math.max(0, math.min(1, frac)));
     local ok = pcall(function()
-        dl:AddRectFilledMultiColor({ x, y }, { x + fw, y + h }, u32({ C.hp[1], C.hp[2], C.hp[3], a }), u32({ C.mp2[1], C.mp2[2], C.mp2[3], a }),
-            u32({ C.mp2[1], C.mp2[2], C.mp2[3], a }), u32({ C.hp[1], C.hp[2], C.hp[3], a }));
+        DL.RFM(dl, x, y, x + fw, y + h, U4(C.hp[1], C.hp[2], C.hp[3], a), U4(C.mp2[1], C.mp2[2], C.mp2[3], a), U4(C.mp2[1], C.mp2[2], C.mp2[3], a), U4(C.hp[1], C.hp[2], C.hp[3], a));
     end);
-    if not ok then dl:AddRectFilled({ x, y }, { x + fw, y + h }, u32({ C.mp2[1], C.mp2[2], C.mp2[3], a }), Z(6)); end
-    dl:AddRectFilled({ x + fw - 2, y + 2 }, { x + fw, y + h - 2 }, u32({ 1, 0.92, 1, 0.85 }));
+    if not ok then DL.RF(dl, x, y, x + fw, y + h, U4(C.mp2[1], C.mp2[2], C.mp2[3], a), Z(6)); end
+    DL.RF(dl, x + fw - 2, y + 2, x + fw, y + h - 2, U4(1, 0.92, 1, 0.85));
 end
 -- Draw the logo at the cursor, with its effects. Returns true while the mouse is on it.
 local function draw_logo(size, hov, fighting)
@@ -1129,7 +1147,7 @@ local function draw_header()
 
     imgui.SetCursorPos({ ox, oy + H });
     local x, y = imgui.GetCursorScreenPos();
-    dl:AddRectFilled({ x, y + 1 }, { x + W, y + 2 }, u32(C.line));
+    DL.RF(dl, x, y + 1, x + W, y + 2, u32(C.line));
     imgui.Dummy({ W, Z(6) });
 end
 
@@ -1208,7 +1226,7 @@ function fx.backdrop(dl, x, y, w, h, a)
         local ins = f * (k / n);
         local x1, y1, x2, y2 = x + ins, y + ins, x + w - ins, y + h - ins;
         if x2 > x1 and y2 > y1 and per > 0 then
-            bg:AddRectFilled({ x1, y1 }, { x2, y2 }, u32({ 0.02, 0.015, 0.03, per }), math.max(2, Z(12) - ins * 0.5));
+            DL.RF(bg, x1, y1, x2, y2, U4(0.02, 0.015, 0.03, per), math.max(2, Z(12) - ins * 0.5));
         end
     end
 end
@@ -1216,9 +1234,9 @@ end
 function fx.grip(x, y, w, h, hov)
     local fg = imgui.GetWindowDrawList();
     local cx, cy = x + w - Z(8), y + h - Z(8);
-    local col = u32({ 0.86, 0.80, 1.00, hov and 0.95 or 0.55 });
-    fg:AddLine({ cx - Z(10), cy }, { cx, cy - Z(10) }, col, 1.5);
-    fg:AddLine({ cx - Z(5), cy }, { cx, cy - Z(5) }, col, 1.5);
+    local col = U4(0.86, 0.80, 1.00, hov and 0.95 or 0.55);
+    DL.L(fg, cx - Z(10), cy, cx, cy - Z(10), col, 1.5);
+    DL.L(fg, cx - Z(5), cy, cx, cy - Z(5), col, 1.5);
 end
 function fx.lit(key, def, bkey)                                     -- a colour, then its brightness (s[bkey], 1 = as is)
     local c = fx.col(key, def);
@@ -1238,16 +1256,15 @@ function fx.thin_bar(dl, x, y, w, frac, bright, c1, c2)
     c1, c2 = c1 or fx.col('col_bar1', C.hp), c2 or fx.col('col_bar2', C.mp2);
     local h = math.max(2, math.floor(Z(3)));
     local fw = math.max(h, w * math.max(0, math.min(1, frac or 0)));
-    dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.05, 0.04, 0.07, 0.70 }), h / 2);
-    dl:AddRectFilled({ x, y - 2 }, { x + fw, y + h + 2 }, u32({ c2[1], c2[2], c2[3], 0.18 }), h);
+    DL.RF(dl, x, y, x + w, y + h, U4(0.05, 0.04, 0.07, 0.70), h / 2);
+    DL.RF(dl, x, y - 2, x + fw, y + h + 2, U4(c2[1], c2[2], c2[3], 0.18), h);
     local a = bright and 1 or 0.85;
     local ok = pcall(function()
-        dl:AddRectFilledMultiColor({ x, y }, { x + fw, y + h }, u32({ c1[1], c1[2], c1[3], a }), u32({ c2[1], c2[2], c2[3], a }),
-            u32({ c2[1], c2[2], c2[3], a }), u32({ c1[1], c1[2], c1[3], a }));
+        DL.RFM(dl, x, y, x + fw, y + h, U4(c1[1], c1[2], c1[3], a), U4(c2[1], c2[2], c2[3], a), U4(c2[1], c2[2], c2[3], a), U4(c1[1], c1[2], c1[3], a));
     end);
-    if not ok then dl:AddRectFilled({ x, y }, { x + fw, y + h }, u32({ c2[1], c2[2], c2[3], a }), h / 2); end
-    dl:AddCircleFilled({ x + fw, y + h / 2 }, Z(4.5), u32({ 1, 0.85, 1, 0.22 }), 12);
-    dl:AddCircleFilled({ x + fw, y + h / 2 }, Z(2.2), u32({ 1, 1, 1, 1 }), 10);
+    if not ok then DL.RF(dl, x, y, x + fw, y + h, U4(c2[1], c2[2], c2[3], a), h / 2); end
+    DL.CF(dl, x + fw, y + h / 2, Z(4.5), U4(1, 0.85, 1, 0.22), 12);
+    DL.CF(dl, x + fw, y + h / 2, Z(2.2), U4(1, 1, 1, 1), 10);
 end
 
 -- Enmity view: the monster's name, then one line per player by estimated enmity (CE + VE). Whoever it's attacking
@@ -1332,7 +1349,7 @@ local function draw_rows()
         if imgui.IsItemClicked() then ui.expanded[a.name] = not ui.expanded[a.name]; end
         if hov then
             imgui.SetTooltip(string.format('%s DPS\n%s', fmt(a.total / dur), ui.expanded[a.name] and 'Click to hide the details' or 'Click for the details'));
-            dl:AddRectFilled({ x - Z(4), y - Z(2) }, { x + W + Z(4), y + h - Z(2) }, u32({ 1, 1, 1, 0.05 }), Z(4));
+            DL.RF(dl, x - Z(4), y - Z(2), x + W + Z(4), y + h - Z(2), U4(1, 1, 1, 0.05), Z(4));
         end
         local left = string.format('%d. %s', i, a.name or '?');
         fx.otext(x, y, name_col, left);
@@ -1373,11 +1390,11 @@ function fx.frame(dl, x, y, w, h)
     local P = { { x + c, y }, { x + w - c, y }, { x + w, y + c }, { x + w, y + h - c }, { x + w - c, y + h }, { x + c, y + h }, { x, y + h - c }, { x, y + c } };
     local mx, my = x + w / 2, y + h / 2;
     for i = 1, #P do dl:AddTriangleFilled({ mx, my }, P[i], P[i % #P + 1], u32(C.bg)); end
-    for i = 1, #P do dl:AddLine(P[i], P[i % #P + 1], u32({ C.neon[1], C.neon[2], C.neon[3], 0.30 }), 1); end
+    for i = 1, #P do dl:AddLine(P[i], P[i % #P + 1], U4(C.neon[1], C.neon[2], C.neon[3], 0.30), 1); end
     local function neon(pts)
         for i = 1, #pts - 1 do
-            dl:AddLine(pts[i], pts[i + 1], u32({ C.neon[1], C.neon[2], C.neon[3], 0.22 }), Z(6));
-            dl:AddLine(pts[i], pts[i + 1], u32({ C.neon2[1], C.neon2[2], C.neon2[3], 0.95 }), 2);
+            dl:AddLine(pts[i], pts[i + 1], U4(C.neon[1], C.neon[2], C.neon[3], 0.22), Z(6));
+            dl:AddLine(pts[i], pts[i + 1], U4(C.neon2[1], C.neon2[2], C.neon2[3], 0.95), 2);
         end
     end
     local L = math.min(Z(110), w * 0.3);
@@ -1391,13 +1408,13 @@ function fx.icon_button(id, kind, size)
     local hov = imgui.IsItemHovered();
     local dl = imgui.GetWindowDrawList();
     local w, h = size[1], size[2];
-    if hov then dl:AddRectFilled({ x, y }, { x + w, y + h }, u32(kind == 'x' and { 1, 0.36, 0.62, 0.30 } or { 0.74, 0.66, 0.95, 0.22 }), h / 2); end
+    if hov then DL.RF(dl, x, y, x + w, y + h, u32(kind == 'x' and { 1, 0.36, 0.62, 0.30 } or { 0.74, 0.66, 0.95, 0.22 }), h / 2); end
     local col = u32(hov and { 1, 1, 1, 1 } or { 0.80, 0.78, 0.90, 0.9 });
     local cx, cy, r = x + w / 2, y + h / 2, math.min(w, h) * 0.22;
-    if kind == '-' then dl:AddLine({ cx - r, cy }, { cx + r, cy }, col, 1.6);
+    if kind == '-' then DL.L(dl, cx - r, cy, cx + r, cy, col, 1.6);
     else
-        dl:AddLine({ cx - r, cy - r }, { cx + r, cy + r }, col, 1.6);
-        dl:AddLine({ cx - r, cy + r }, { cx + r, cy - r }, col, 1.6);
+        DL.L(dl, cx - r, cy - r, cx + r, cy + r, col, 1.6);
+        DL.L(dl, cx - r, cy + r, cx + r, cy - r, col, 1.6);
     end
     return clicked;
 end
@@ -1420,8 +1437,8 @@ function fx.anchor_button(id, h)
         local c = { 1, 1, 1 };
         if on then c = (sx < 0) and C.hp or C.mp2; end               -- anchored: pink and violet
         if on and hov then c = { math.min(1, c[1] + 0.2), math.min(1, c[2] + 0.2), math.min(1, c[3] + 0.2) }; end
-        dl:AddCircleFilled({ px, cy }, r + Z(1.2), u32({ 0.15, 0.14, 0.18, 0.75 * math.max(a, 0.6) }), 20);   -- the dark rim
-        dl:AddCircleFilled({ px, cy }, r, u32({ c[1], c[2], c[3], a }), 20);
+        DL.CF(dl, px, cy, r + Z(1.2), U4(0.15, 0.14, 0.18, 0.75 * math.max(a, 0.6)), 20);   -- the dark rim
+        DL.CF(dl, px, cy, r, U4(c[1], c[2], c[3], a), 20);
     end
     if clicked then s.anchor, ui.anchor_t0, ui.place = not s.anchor, nil, true; settings.save('dps'); end
     return clicked;
@@ -1476,9 +1493,9 @@ function fx.anchor_effect()
         local u0, u1 = k / n, (k + 1) / n;
         local p0, p1 = { x, y0 + len * u0 }, { x, y0 + len * u1 };
         local c = { C.hp[1] + (C.mp2[1] - C.hp[1]) * u0, C.hp[2] + (C.mp2[2] - C.hp[2]) * u0, C.hp[3] + (C.mp2[3] - C.hp[3]) * u0 };
-        fg:AddLine(p0, p1, u32({ c[1], c[2], c[3], 0.60 * f }), Z(4.5));  -- a tight glow, close to the line
-        fg:AddLine(p0, p1, u32({ c[1], c[2], c[3], 1.0 * f }), Z(2.6));   -- the colour
-        fg:AddLine(p0, p1, u32({ 1, 0.92, 1, 0.95 * f }), Z(1.2));         -- the bright core
+        fg:AddLine(p0, p1, U4(c[1], c[2], c[3], 0.60 * f), Z(4.5));  -- a tight glow, close to the line
+        fg:AddLine(p0, p1, U4(c[1], c[2], c[3], 1.0 * f), Z(2.6));   -- the colour
+        fg:AddLine(p0, p1, U4(1, 0.92, 1, 0.95 * f), Z(1.2));         -- the bright core
     end
 end
 local function draw_meter()

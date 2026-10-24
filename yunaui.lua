@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.58';
+addon.version = '1.0.59';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -146,6 +146,25 @@ local C = {
     mp2      = { 0.62, 0.40, 1.00 },
 };
 local function u32(c) return imgui.GetColorU32(c); end
+-- Frame cost (VanaCore's findings): no Lua table made per draw call. U4(r, g, b, a) is u32({ r, g, b, a }) through one
+-- scratch table; DL.L(dl, x, y, x2, y2, ...) is dl:AddLine({ x, y }, { x2, y2 }, ...) through scratch points (the binding
+-- reads them during the call and keeps nothing). The arguments are all worked out before a call fills its scratch.
+local U4, DL;
+do
+    local c4, P1, P2, P3, P4 = { 0, 0, 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 };
+    U4 = function(r, g, b, a) c4[1], c4[2], c4[3], c4[4] = r, g, b, a; return imgui.GetColorU32(c4); end
+    DL = {};
+    function DL.L(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddLine(P1, P2, ...); end
+    function DL.R(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRect(P1, P2, ...); end
+    function DL.RF(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRectFilled(P1, P2, ...); end
+    function DL.RFM(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRectFilledMultiColor(P1, P2, ...); end
+    function DL.C(d, a, b, ...) P1[1], P1[2] = a, b; return d:AddCircle(P1, ...); end
+    function DL.CF(d, a, b, ...) P1[1], P1[2] = a, b; return d:AddCircleFilled(P1, ...); end
+    function DL.T(d, a, b, ...) P1[1], P1[2] = a, b; return d:AddText(P1, ...); end
+    function DL.TF(d, a, b, c, e, f, g, ...) P1[1], P1[2], P2[1], P2[2], P3[1], P3[2] = a, b, c, e, f, g; return d:AddTriangleFilled(P1, P2, P3, ...); end
+    function DL.I(d, t, a, b, c, e, f, g, h, k, ...) P1[1], P1[2], P2[1], P2[2], P3[1], P3[2], P4[1], P4[2] = a, b, c, e, f, g, h, k; return d:AddImage(t, P1, P2, P3, P4, ...); end
+    function DL.I2(d, t, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddImage(t, P1, P2, ...); end
+end
 -- Every clip area goes through here: inside the screen, on whole pixels and at least 1 px. Plain Ashita (DirectX 8)
 -- can't draw with one bigger than the screen (every window after it vanishes, the settings too), and one partly off the
 -- screen, on half pixels or with no size makes every addon's window shake (as equip.lua's JOBS.clip already knew).
@@ -193,7 +212,7 @@ function YUI_TIP(t)
             if type(wx) == 'table' then wx, wy = wx.x or wx[1], wx.y or wx[2]; end
             if type(ww) == 'table' then ww = ww.x or ww[1]; end
             local p1, p2 = imgui.GetColorU32({ 1.0, 0.36, 0.62, 0.9 }), imgui.GetColorU32({ 0.62, 0.40, 1.0, 0.9 });
-            dl:AddRectFilledMultiColor({ wx + 6, wy + 1 }, { wx + ww - 6, wy + 2 }, p1, p2, p2, p1);
+            DL.RFM(dl, wx + 6, wy + 1, wx + ww - 6, wy + 2, p1, p2, p2, p1);
         end);
         imgui.SetWindowFontScale(1);
         imgui.EndTooltip();
@@ -309,7 +328,7 @@ function C.tex_at(name, px)
 end
 local function image(dl, t, x1, y1, x2, y2, col)
     if t == nil then return; end
-    pcall(function() dl:AddImage(t.ptr, { x1, y1 }, { x2, y2 }, { 0, 0 }, { 1, 1 }, u32(col or { 1, 1, 1, 1 })); end);
+    pcall(function() DL.I(dl, t.ptr, x1, y1, x2, y2, 0, 0, 1, 1, u32(col or { 1, 1, 1, 1 })); end);
 end
 
 local function push_theme()
@@ -337,33 +356,33 @@ local NEON = { 0.86, 0.24, 0.86 };                                   -- (the pan
 local function fill_cut(dl, x, y, w, h, c, col)
     x, y, w, h, c = math.floor(x), math.floor(y), math.floor(w), math.floor(h), math.floor(c);
     if c * 2 >= h then c = math.floor(h / 2); end
-    dl:AddRectFilled({ x, y + c }, { x + w, y + h - c }, col);
+    DL.RF(dl, x, y + c, x + w, y + h - c, col);
     for k = 0, c - 1, 2 do
         local inset = c - k - 1;
-        dl:AddRectFilled({ x + inset, y + k }, { x + w - inset, y + k + 2 }, col);
-        dl:AddRectFilled({ x + inset, y + h - k - 2 }, { x + w - inset, y + h - k }, col);
+        DL.RF(dl, x + inset, y + k, x + w - inset, y + k + 2, col);
+        DL.RF(dl, x + inset, y + h - k - 2, x + w - inset, y + h - k, col);
     end
 end                                  -- the panel's violet (its edges, fills and marks)
 local NEON2 = { 1.00, 0.42, 0.72 };
 -- a small diamond (the panel's mark): an outline, and a filled one inside when it's lit
 local function diamond(dl, cx, cy, r, lit, alpha)
     alpha = alpha or 1;
-    local c = u32({ lit and NEON2[1] or 0.62, lit and NEON2[2] or 0.60, lit and NEON2[3] or 0.70, alpha });
-    dl:AddLine({ cx, cy - r }, { cx + r, cy }, c, 1.4);
-    dl:AddLine({ cx + r, cy }, { cx, cy + r }, c, 1.4);
-    dl:AddLine({ cx, cy + r }, { cx - r, cy }, c, 1.4);
-    dl:AddLine({ cx - r, cy }, { cx, cy - r }, c, 1.4);
+    local c = U4(lit and NEON2[1] or 0.62, lit and NEON2[2] or 0.60, lit and NEON2[3] or 0.70, alpha);
+    DL.L(dl, cx, cy - r, cx + r, cy, c, 1.4);
+    DL.L(dl, cx + r, cy, cx, cy + r, c, 1.4);
+    DL.L(dl, cx, cy + r, cx - r, cy, c, 1.4);
+    DL.L(dl, cx - r, cy, cx, cy - r, c, 1.4);
     local q = r * 0.45;
     local f = u32(lit and { 0.95, 0.85, 1, alpha } or { 0.55, 0.52, 0.65, alpha * 0.8 });
-    dl:AddTriangleFilled({ cx, cy - q }, { cx + q, cy }, { cx, cy + q }, f);
-    dl:AddTriangleFilled({ cx, cy + q }, { cx - q, cy }, { cx, cy - q }, f);
+    DL.TF(dl, cx, cy - q, cx + q, cy, cx, cy + q, f);
+    DL.TF(dl, cx, cy + q, cx - q, cy, cx, cy - q, f);
 end
 -- text with letter spacing (the section names, the buttons)
 local function spaced(dl, x, y, str, col, gap)
     local cx = x;
     for i = 1, #str do
         local ch = str:sub(i, i);
-        dl:AddText({ cx, y }, col, ch);
+        DL.T(dl, cx, y, col, ch);
         cx = cx + imgui.CalcTextSize(ch) + gap;
     end
     return cx - x - gap;
@@ -380,8 +399,8 @@ local function switch(id, on)
     local hov = imgui.IsItemHovered();
     local dl = imgui.GetWindowDrawList();
     -- the panel's own dark colour: on = a white knob on the right and a light edge, off = a grey knob on the left
-    dl:AddRectFilled({ x, y }, { x + w, y + h }, u32(on and { NEON[1] * 0.42, NEON[2] * 0.42, NEON[3] * 0.42, 1 } or (hov and { 0.14, 0.13, 0.18, 1 } or { 0.10, 0.095, 0.13, 1 })), h / 2);
-    dl:AddCircleFilled({ on and (x + w - h / 2) or (x + h / 2), y + h / 2 }, h / 2 - 4 * C.ps, u32(on and { 1, 1, 1, 1 } or { 0.55, 0.53, 0.62, 1 }), 24);
+    DL.RF(dl, x, y, x + w, y + h, u32(on and { NEON[1] * 0.42, NEON[2] * 0.42, NEON[3] * 0.42, 1 } or (hov and { 0.14, 0.13, 0.18, 1 } or { 0.10, 0.095, 0.13, 1 })), h / 2);
+    DL.CF(dl, on and (x + w - h / 2) or (x + h / 2), y + h / 2, h / 2 - 4 * C.ps, u32(on and { 1, 1, 1, 1 } or { 0.55, 0.53, 0.62, 1 }), 24);
     return clicked;
 end
 local ROW_W = 340;
@@ -429,13 +448,13 @@ local function row_slider(id, text, key, lo, hi, step, fmt, tbl, on_change)
     local f = math.max(0, math.min(1, (v - lo) / (hi - lo)));
     local cy = y + h / 2;
     local th = math.max(4, math.floor(6 * ps));
-    dl:AddRectFilled({ x, cy - th / 2 }, { x + w, cy + th / 2 }, u32({ 0.20, 0.19, 0.25, 1 }), th / 2);
+    DL.RF(dl, x, cy - th / 2, x + w, cy + th / 2, U4(0.20, 0.19, 0.25, 1), th / 2);
     local ok_ = pcall(function()
-        dl:AddRectFilledMultiColor({ x, cy - th / 2 }, { x + w * f, cy + th / 2 }, u32(NEON), u32(NEON2), u32(NEON2), u32(NEON));
+        DL.RFM(dl, x, cy - th / 2, x + w * f, cy + th / 2, u32(NEON), u32(NEON2), u32(NEON2), u32(NEON));
     end);
-    if not ok_ then dl:AddRectFilled({ x, cy - th / 2 }, { x + w * f, cy + th / 2 }, u32(NEON), th / 2); end
-    dl:AddCircleFilled({ x + w * f, cy }, ((act or hov) and 13 or 11) * ps, u32({ NEON[1], NEON[2], NEON[3], 0.30 }), 24);
-    dl:AddCircleFilled({ x + w * f, cy }, 8 * ps, u32({ 1, 1, 1, 1 }), 24);
+    if not ok_ then DL.RF(dl, x, cy - th / 2, x + w * f, cy + th / 2, u32(NEON), th / 2); end
+    DL.CF(dl, x + w * f, cy, ((act or hov) and 13 or 11) * ps, U4(NEON[1], NEON[2], NEON[3], 0.30), 24);
+    DL.CF(dl, x + w * f, cy, 8 * ps, U4(1, 1, 1, 1), 24);
     imgui.SameLine(x0 + ROW_W - vw);
     imgui.TextColored(C.text, label);
 end
@@ -448,9 +467,9 @@ local function section(text)
     local x0, y0 = imgui.GetCursorScreenPos();
     local pushed = push_font(fonts.semi, 17 * ps);
     local lh = imgui.GetTextLineHeight();
-    local tw = spaced(dl, x0, y0, text:upper(), u32({ 0.93, 0.90, 1.00, 1 }), 2.5 * ps);
+    local tw = spaced(dl, x0, y0, text:upper(), U4(0.93, 0.90, 1.00, 1), 2.5 * ps);
     if pushed then imgui.PopFont(); end
-    dl:AddLine({ x0 + tw + 18 * ps, y0 + lh / 2 }, { x0 + ROW_W, y0 + lh / 2 }, u32({ 1, 1, 1, 0.08 }), 1);
+    DL.L(dl, x0 + tw + 18 * ps, y0 + lh / 2, x0 + ROW_W, y0 + lh / 2, U4(1, 1, 1, 0.08), 1);
     imgui.Dummy({ ROW_W, lh + 2 * ps });
 end
 -- A rounded button: violet-edged (the main one) or dark (quiet = true), its name in spaced capitals
@@ -465,15 +484,15 @@ local function accent_button(label, size, quiet, small)
     local rr = math.min(h * 0.45, 14 * ps);
     local fill = { 0.10, 0.09, 0.13, 1 };                            -- the panel's dark colour inside (the violet edge stays)
     if hov or act then fill = act and { 0.18, 0.17, 0.23, 1 } or { 0.15, 0.14, 0.19, 1 }; end
-    dl:AddRectFilled({ x, y }, { x + w, y + h }, u32(fill), rr);
+    DL.RF(dl, x, y, x + w, y + h, u32(fill), rr);
     local ec = u32(quiet and { 1, 1, 1, hov and 0.25 or 0.14 } or { NEON2[1], NEON2[2], NEON2[3], hov and 1 or 0.8 });
-    dl:AddRect({ x, y }, { x + w, y + h }, ec, rr, C.rall, quiet and 1 or 1.6);
+    DL.R(dl, x, y, x + w, y + h, ec, rr, C.rall, quiet and 1 or 1.6);
     local name = label:gsub('##.*$', ''):upper();
     if small then imgui.SetWindowFontScale((C.wfs or 1) * 0.82); end -- (small: a smaller label, tighter letters)
     local sp = (small and 2 or 3) * ps;
     local lw = spaced_w(name, sp);
     local lh = imgui.GetTextLineHeight();
-    spaced(dl, x + (w - lw) / 2, y + (h - lh) / 2, name, u32({ 0.93, 0.91, 0.98, 1 }), sp);
+    spaced(dl, x + (w - lw) / 2, y + (h - lh) / 2, name, U4(0.93, 0.91, 0.98, 1), sp);
     if small then imgui.SetWindowFontScale(C.wfs or 1); end
     return clicked;
 end
@@ -493,15 +512,15 @@ local function row_pick(id, text, key, opts, tbl, on_change)
     local clicked = imgui.InvisibleButton(id, { bw, bh });
     local hov = imgui.IsItemHovered();
     local dl = imgui.GetWindowDrawList();
-    dl:AddRectFilled({ bx, by }, { bx + bw, by + bh }, u32(hov and { 0.15, 0.14, 0.19, 1 } or { 0.10, 0.09, 0.13, 1 }), bh / 2);
-    dl:AddRect({ bx, by }, { bx + bw, by + bh }, u32(hov and { NEON2[1], NEON2[2], NEON2[3], 0.45 } or { 1, 1, 1, 0.10 }), bh / 2, C.rall, 1);
+    DL.RF(dl, bx, by, bx + bw, by + bh, u32(hov and { 0.15, 0.14, 0.19, 1 } or { 0.10, 0.09, 0.13, 1 }), bh / 2);
+    DL.R(dl, bx, by, bx + bw, by + bh, u32(hov and { NEON2[1], NEON2[2], NEON2[3], 0.45 } or { 1, 1, 1, 0.10 }), bh / 2, C.rall, 1);
     local label = opts[cur][2];
     local lw, lh = imgui.CalcTextSize(label);
-    dl:AddText({ bx + (bw - lw) / 2, by + (bh - lh) / 2 }, u32({ 0.93, 0.92, 0.98, 1 }), label);
+    DL.T(dl, bx + (bw - lw) / 2, by + (bh - lh) / 2, U4(0.93, 0.92, 0.98, 1), label);
     local ax, ay, r = bx + bw - 22 * ps, by + bh / 2, 4.5 * ps;     -- the little down arrow
-    local ac = u32({ 0.85, 0.83, 0.95, hov and 1 or 0.75 });
-    dl:AddLine({ ax - r, ay - r * 0.5 }, { ax, ay + r * 0.5 }, ac, 1.5);
-    dl:AddLine({ ax, ay + r * 0.5 }, { ax + r, ay - r * 0.5 }, ac, 1.5);
+    local ac = U4(0.85, 0.83, 0.95, hov and 1 or 0.75);
+    DL.L(dl, ax - r, ay - r * 0.5, ax, ay + r * 0.5, ac, 1.5);
+    DL.L(dl, ax, ay + r * 0.5, ax + r, ay - r * 0.5, ac, 1.5);
     if clicked then imgui.OpenPopup(id .. '_list'); end
     -- the list of choices: some room inside (it was stuck to the edges), dark like the panel, a soft violet on the chosen
     local pv = 0;
@@ -542,7 +561,7 @@ local function title(dl, full)
                 local u = 0.5 + 0.5 * math.sin(t * 1.2 - i * 0.45);
                 col = { C.hp[1] + (C.mp2[1] - C.hp[1]) * u, C.hp[2] + (C.mp2[2] - C.hp[2]) * u, C.hp[3] + (C.mp2[3] - C.hp[3]) * u, 1 };
             end
-            dl:AddText({ cx, y0 }, u32(col), ch);
+            DL.T(dl, cx, y0, u32(col), ch);
         end
     end
     imgui.Dummy({ tw, lh });
@@ -622,8 +641,8 @@ end
 
 -- Text with a thin dark edge (readable on any ground)
 local function text(dl, x, y, str, col)
-    for _, o in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do dl:AddText({ x + o[1], y + o[2] }, u32({ 0, 0, 0, 0.8 }), str); end
-    dl:AddText({ x, y }, u32(col), str);
+    for _, o in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do DL.T(dl, x + o[1], y + o[2], U4(0, 0, 0, 0.8), str); end
+    DL.T(dl, x, y, u32(col), str);
 end
 
 -- A thin living bar: a glowing coloured edge, the colours flowing along inside it,
@@ -633,24 +652,24 @@ local function glow_bar(dl, x, y, w, h, v, lag, c1, c2, seed, fxo)
     v = math.max(0, math.min(1, v or 0));
     seed = seed or 0;
     local now = os.clock();
-    dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.05, 0.04, 0.07, 0.70 }), h / 2);
+    DL.RF(dl, x, y, x + w, y + h, U4(0.05, 0.04, 0.07, 0.70), h / 2);
     if lag and lag > v + 0.002 then
-        dl:AddRectFilled({ x + math.max(0, math.min(w * v, w * lag - h)), y }, { x + w * lag, y + h }, u32({ 1, 0.92, 0.95, 0.40 }), h / 2);   -- (what was just lost: never a sliver - that came out square, its corners poking out of the round edge)
+        DL.RF(dl, x + math.max(0, math.min(w * v, w * lag - h)), y, x + w * lag, y + h, U4(1, 0.92, 0.95, 0.40), h / 2);   -- (what was just lost: never a sliver - that came out square, its corners poking out of the round edge)
     end
     if v <= 0 then return; end
     local fw = w * v;
     local pulse = 0.5 + 0.5 * math.sin(now * 2.2 + seed);
     for k = 1, 4 do                                                  -- the coloured glow around it, breathing
-        dl:AddRectFilled({ x - k, y - k }, { x + fw + k, y + h + k }, u32({ c2[1], c2[2], c2[3], (0.11 - k * 0.022) * (0.75 + 0.5 * pulse) }), h / 2 + k);
+        DL.RF(dl, x - k, y - k, x + fw + k, y + h + k, U4(c2[1], c2[2], c2[3], (0.11 - k * 0.022) * (0.75 + 0.5 * pulse)), h / 2 + k);
     end
-    dl:AddRectFilled({ x - 1, y - 1 }, { x + fw + 1, y + h + 1 }, u32({ c2[1], c2[2], c2[3], 0.85 }), h / 2 + 1);   -- the edge
+    DL.RF(dl, x - 1, y - 1, x + fw + 1, y + h + 1, U4(c2[1], c2[2], c2[3], 0.85), h / 2 + 1);   -- the edge
     -- the fill: the two colours flow along the bar in slow waves
     local segs = math.max(4, math.floor(w / 40));
     local fx = fxo or cfg.bar_fx or 'flow';                          -- the bars' effect (a setting; fxo: this bar's own)
     local ph = (fx == 'flow') and (now * 0.35 + seed * 0.21) or 0.3;
     local function col_at(f)
         local u = 0.5 + 0.5 * math.sin((f * 1.6 - ph) * math.pi * 2);
-        return u32({ c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u, 1 });
+        return U4(c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u, 1);
     end
     local r_ = math.min(h / 2, fw / 2);                              -- (the fill's two ends are round, like its edge)
     local L_ = (v < 0.985) and math.min(fw, math.max(8, h * 2.6)) or 0;   -- (its end lights up in the bar's own colour: not on a full bar)
@@ -660,10 +679,10 @@ local function glow_bar(dl, x, y, w, h, v, lag, c1, c2, seed, fxo)
         local u = 0.5 + 0.5 * math.sin((f * 1.6 - ph) * math.pi * 2);
         local c = { c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u };
         local t = (L_ > 0) and 0.45 * math.max(0, math.min(1, (px - (x + fw - L_)) / math.max(1, L_ - r_))) or 0;
-        return u32({ c[1] + (lt_[1] - c[1]) * t, c[2] + (lt_[2] - c[2]) * t, c[3] + (lt_[3] - c[3]) * t, 1 });
+        return U4(c[1] + (lt_[1] - c[1]) * t, c[2] + (lt_[2] - c[2]) * t, c[3] + (lt_[3] - c[3]) * t, 1);
     end
-    dl:AddRectFilled({ x, y }, { x + math.min(fw, h), y + h }, colx(x), r_);
-    dl:AddRectFilled({ x + fw - math.min(fw, h), y }, { x + fw, y + h }, colx(x + fw), r_);
+    DL.RF(dl, x, y, x + math.min(fw, h), y + h, colx(x), r_);
+    DL.RF(dl, x + fw - math.min(fw, h), y, x + fw, y + h, colx(x + fw), r_);
     local cuts = {};                                                 -- (the strips: the colours' steps, and where the light starts)
     for k = 0, segs do cuts[#cuts + 1] = x + w * k / segs; end
     if L_ > 0 then cuts[#cuts + 1] = x + fw - L_; end
@@ -672,7 +691,7 @@ local function glow_bar(dl, x, y, w, h, v, lag, c1, c2, seed, fxo)
         local x1, x2 = math.max(x + r_, cuts[k]), math.min(x + fw - r_, cuts[k + 1]);
         if x2 > x1 then
             local a, b = colx(x1), colx(x2);
-            dl:AddRectFilledMultiColor({ x1, y }, { x2, y + h }, a, b, b, a);
+            DL.RFM(dl, x1, y, x2, y + h, a, b, b, a);
         end
     end
     -- the sheen: a soft band of light that runs along the bar every few seconds
@@ -683,7 +702,7 @@ local function glow_bar(dl, x, y, w, h, v, lag, c1, c2, seed, fxo)
         if cx2 <= cx1 then return; end
         local f1, f2 = (cx1 - x1) / (x2 - x1), (cx2 - x1) / (x2 - x1);
         local b1, b2 = a1 + (a2 - a1) * f1, a1 + (a2 - a1) * f2;
-        dl:AddRectFilledMultiColor({ cx1, y }, { cx2, y + h }, u32({ 1, 1, 1, b1 }), u32({ 1, 1, 1, b2 }), u32({ 1, 1, 1, b2 }), u32({ 1, 1, 1, b1 }));
+        DL.RFM(dl, cx1, y, cx2, y + h, U4(1, 1, 1, b1), U4(1, 1, 1, b2), U4(1, 1, 1, b2), U4(1, 1, 1, b1));
     end
     if fx == 'flow' then
         band(hx - hw, hx, 0, 0.55);
@@ -704,16 +723,16 @@ local function glow_bar(dl, x, y, w, h, v, lag, c1, c2, seed, fxo)
                 local r = frac(math.sin(tick * 31.7 + k * 12.9898 + seed * 7.1 + pass * 3.3) * 43758.5453);
                 local nx = math.min(x + fw, px + step * (0.6 + 0.8 * frac(r * 7.7)));
                 local ny = y + h * (0.12 + 0.76 * r);
-                dl:AddLine({ px, py }, { nx, ny }, u32({ 0.92, 0.97, 1, a * ((pass == 1) and 1 or 0.4) }), (pass == 1) and 1 or 1.6);
+                DL.L(dl, px, py, nx, ny, U4(0.92, 0.97, 1, a * ((pass == 1) and 1 or 0.4)), (pass == 1) and 1 or 1.6);
                 px, py = nx, ny;
             end
         end
-        dl:AddRectFilled({ x, y }, { x + fw, y + h }, u32({ 1, 1, 1, 0.10 * beat }));
+        DL.RF(dl, x, y, x + fw, y + h, U4(1, 1, 1, 0.10 * beat));
         dl:PopClipRect();
     elseif fx == 'pulse' then
         -- the whole fill brightens softly and back
         local b = 0.5 - 0.5 * math.cos(now * 2.2 + seed);
-        dl:AddRectFilled({ x, y }, { x + fw, y + h }, u32({ 1, 1, 1, 0.22 * b }), h / 2);
+        DL.RF(dl, x, y, x + fw, y + h, U4(1, 1, 1, 0.22 * b), h / 2);
     end
 end
 
@@ -746,8 +765,8 @@ local function bar_overlay(x, y, fw, h, fx, seed, tint)
     local c = tint or { 1, 1, 1 };
     local y0, y1 = y + h / 2 - hh / 2, y + h / 2 + hh / 2;
     pcall(function()                                                 -- (the frames are weak at their ends: their middle stretched over
-        fl:AddImage(t.ptr, { x, y0 }, { x + fw, y1 }, { 0.06, 0 }, { 0.95, 1 }, u32({ c[1], c[2], c[3], a }));   -- the bar, and a mirrored
-        fl:AddImage(t.ptr, { x, y0 }, { x + fw, y1 }, { 0.95, 0 }, { 0.06, 1 }, u32({ c[1], c[2], c[3], a * 0.55 }));   -- copy, so it fills it evenly)
+        DL.I(fl, t.ptr, x, y0, x + fw, y1, 0.06, 0, 0.95, 1, U4(c[1], c[2], c[3], a));   -- the bar, and a mirrored
+        DL.I(fl, t.ptr, x, y0, x + fw, y1, 0.95, 0, 0.06, 1, U4(c[1], c[2], c[3], a * 0.55));   -- copy, so it fills it evenly)
     end);
 end
 -- TARGET > Bar style (the glowing target bar): pre-rendered frames (images/dd2, 48 looping, 1024 x 48 each):
@@ -761,21 +780,21 @@ function C.dd2bar(dl, x, y, w, h, v, lag, seed)
     local Hd = math.max(18, h * 12);                                 -- (the frame's height on screen: its core ~ the bar's thickness)
     local k = Hd / 48;
     local B = 13 * k;                                                -- (its band's height)
-    dl:AddRectFilled({ x, cy - B / 2 }, { x + w, cy + B / 2 }, u32({ 0.05, 0.03, 0.07, 0.45 }), B / 2);   -- (the empty part: a dark band, round ends)
-    if lag and lag > v then dl:AddRectFilled({ math.max(x, x + fw - B), cy - B / 2 }, { x + w * lag, cy + B / 2 }, u32({ 1, 0.85, 1, 0.22 }), B / 2); end
+    DL.RF(dl, x, cy - B / 2, x + w, cy + B / 2, U4(0.05, 0.03, 0.07, 0.45), B / 2);   -- (the empty part: a dark band, round ends)
+    if lag and lag > v then DL.RF(dl, math.max(x, x + fw - B), cy - B / 2, x + w * lag, cy + B / 2, U4(1, 0.85, 1, 0.22), B / 2); end
     if fw < 1 then return; end
     local f = (math.floor(os.clock() * 24) + math.floor(seed * 7)) % 48;
     local t = (cfg.target_bar_anim == false) and tex('dd2/nocore.png') or tex(string.format('dd2/%02d.png', f));   -- (TARGET > Bar effect off: just the band, no white line)
     if t then
         local mw = math.max(1, fw - 4 * k);                          -- (up to where the tip's round end takes over)
         local u1 = math.min(1, mw / (1024 * k));                     -- (as much of the frame as the HP covers, at its own scale)
-        pcall(function() dl:AddImage(t.ptr, { x, cy - Hd / 2 }, { x + mw, cy + Hd / 2 }, { 0, 0 }, { u1, 1 }, u32({ 1, 1, 1, 1 })); end);
+        pcall(function() DL.I(dl, t.ptr, x, cy - Hd / 2, x + mw, cy + Hd / 2, 0, 0, u1, 1, U4(1, 1, 1, 1)); end);
     end
     local tp = tex((cfg.target_bar_anim == false) and 'dd2/tip_nocore.png' or 'dd2/tip.png');   -- the clean white tip, its round end on the HP's end
     if tp then
         local tw = math.min(44 * k, fw + 4 * k);                     -- (the band's round end on the HP's end; at low HP the whole tip narrows -
         local tx = x + fw + 4 * k - tw;                              --  a small pill, round both ends, never past the bar's left end)
-        pcall(function() dl:AddImage(tp.ptr, { tx, cy - Hd / 2 }, { tx + tw, cy + Hd / 2 }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 })); end);
+        pcall(function() DL.I(dl, tp.ptr, tx, cy - Hd / 2, tx + tw, cy + Hd / 2, 0, 0, 1, 1, U4(1, 1, 1, 1)); end);
     end
 end
 -- the same for YunaEquip's own HP bar ('Separate bars'), which lives in equip.lua
@@ -806,31 +825,31 @@ local DEMO = { 'Yunas', 'Slayern', 'Tankie', 'Ninjy', 'Bardo', 'Corsi' };
 LEAD_STYLES = { { 'crown', 'Crown' }, { 'dots', 'YunaUI dots' }, { 'bar', 'YunaUI bar' }, { 'gem', 'YunaUI gem' },
                 { 'halo', 'YunaUI halo' }, { 'name', 'Underlined name' }, { 'none', 'None' } };
 local function lead_mix(u, a)
-    return u32({ 1.0 + (0.62 - 1.0) * u, 0.36 + (0.40 - 0.36) * u, 0.62 + (1.0 - 0.62) * u, a });
+    return U4(1.0 + (0.62 - 1.0) * u, 0.36 + (0.40 - 0.36) * u, 0.62 + (1.0 - 0.62) * u, a);
 end
 function LEAD_MARK(dl, cx, cy, r, alliance, a, style)
     a = a or 1;
     style = style or 'dots';
-    local dark = u32({ 0, 0, 0, 0.7 * a });
+    local dark = U4(0, 0, 0, 0.7 * a);
     if style == 'dots' then
         local n = alliance and 3 or 2;
         local rr = r * 0.46;
         local x0 = cx - (n - 1) * rr * 0.92;
         for k = 1, n do
             local px = x0 + (k - 1) * rr * 1.84;
-            dl:AddCircleFilled({ px, cy }, rr + 1.2, dark, 16);
-            dl:AddCircleFilled({ px, cy }, rr, lead_mix((k - 1) / math.max(1, n - 1), a), 16);
+            DL.CF(dl, px, cy, rr + 1.2, dark, 16);
+            DL.CF(dl, px, cy, rr, lead_mix((k - 1) / math.max(1, n - 1), a), 16);
         end
     elseif style == 'bar' then
         local n = alliance and 2 or 1;
         for k = 1, n do
             local x = cx + (k - (n + 1) / 2) * r * 0.75;
             local y0, y1 = cy - r * 0.95, cy + r * 0.95;
-            dl:AddLine({ x, y0 }, { x, y1 }, dark, 4);
+            DL.L(dl, x, y0, x, y1, dark, 4);
             pcall(function()
-                dl:AddRectFilledMultiColor({ x - 1.2, y0 }, { x + 1.2, y1 }, lead_mix(0, a), lead_mix(0, a), lead_mix(1, a), lead_mix(1, a));
+                DL.RFM(dl, x - 1.2, y0, x + 1.2, y1, lead_mix(0, a), lead_mix(0, a), lead_mix(1, a), lead_mix(1, a));
             end);
-            dl:AddCircleFilled({ x, y0 + 0.5 }, 2.2, u32({ 1, 1, 1, a }), 10);   -- the bright tip, like the bars'
+            DL.CF(dl, x, y0 + 0.5, 2.2, U4(1, 1, 1, a), 10);   -- the bright tip, like the bars'
         end
     elseif style == 'gem' then
         local function diamond(rr, col, th)
@@ -838,50 +857,50 @@ function LEAD_MARK(dl, cx, cy, r, alliance, a, style)
             if th then for k = 1, 4 do dl:AddLine(p[k], p[k % 4 + 1], col, th); end
             else dl:AddTriangleFilled(p[1], p[2], p[3], col); dl:AddTriangleFilled(p[1], p[3], p[4], col); end
         end
-        if alliance then diamond(r * 1.25, u32({ 0.62, 0.40, 1.0, 0.75 * a }), 1.2); end
+        if alliance then diamond(r * 1.25, U4(0.62, 0.40, 1.0, 0.75 * a), 1.2); end
         diamond(r * 0.95, dark, 3);
-        diamond(r * 0.95, u32({ 0.62, 0.40, 1.0, a }));
-        diamond(r * 0.52, u32({ 1.0, 0.42, 0.68, a }));
-        dl:AddCircleFilled({ cx - r * 0.12, cy - r * 0.28 }, math.max(1, r * 0.12), u32({ 1, 1, 1, 0.95 * a }), 8);
+        diamond(r * 0.95, U4(0.62, 0.40, 1.0, a));
+        diamond(r * 0.52, U4(1.0, 0.42, 0.68, a));
+        DL.CF(dl, cx - r * 0.12, cy - r * 0.28, math.max(1, r * 0.12), U4(1, 1, 1, 0.95 * a), 8);
     elseif style == 'halo' then
         local function ring(rr, th)
             local n = 28;
             for k = 0, n - 1 do
                 local a0, a1 = k / n * math.pi * 2 - math.pi / 2, (k + 1) / n * math.pi * 2 - math.pi / 2;
                 local u = (k < n / 2) and (k / (n / 2)) or ((n - k) / (n / 2));
-                dl:AddLine({ cx + math.cos(a0) * rr, cy + math.sin(a0) * rr }, { cx + math.cos(a1) * rr, cy + math.sin(a1) * rr }, lead_mix(u, a), th);
+                DL.L(dl, cx + math.cos(a0) * rr, cy + math.sin(a0) * rr, cx + math.cos(a1) * rr, cy + math.sin(a1) * rr, lead_mix(u, a), th);
             end
         end
-        dl:AddCircle({ cx, cy }, r * 0.82, dark, 24, 3.4);
+        DL.C(dl, cx, cy, r * 0.82, dark, 24, 3.4);
         ring(r * 0.82, 1.8);
         if alliance then ring(r * 1.2, 1.1); end
-        dl:AddCircleFilled({ cx, cy }, r * 0.30, u32({ 1, 1, 1, a }), 12);
+        DL.CF(dl, cx, cy, r * 0.30, U4(1, 1, 1, a), 12);
     else                                                             -- crown
         local w, top, base = r * 1.15, cy - r * 0.62, cy + r * 0.55;
         local pts = { { cx - w, base }, { cx - w, top + r * 0.18 }, { cx - w * 0.48, cy - r * 0.02 }, { cx, top },
                       { cx + w * 0.48, cy - r * 0.02 }, { cx + w, top + r * 0.18 }, { cx + w, base } };
-        for k = 1, #pts do dl:AddLine(pts[k], pts[k % #pts + 1], u32({ 0, 0, 0, 0.75 * a }), 2.6); end
+        for k = 1, #pts do dl:AddLine(pts[k], pts[k % #pts + 1], U4(0, 0, 0, 0.75 * a), 2.6); end
         local mid = { cx, base };
-        local c1, c2 = u32({ 1.00, 0.86, 0.46, a }), u32({ 0.96, 0.70, 0.26, a });
+        local c1, c2 = U4(1.00, 0.86, 0.46, a), U4(0.96, 0.70, 0.26, a);
         for k = 2, #pts - 2 do dl:AddTriangleFilled(mid, pts[k], pts[k + 1], (k % 2 == 0) and c1 or c2); end
         dl:AddTriangleFilled(mid, pts[1], pts[2], c2);
         dl:AddTriangleFilled(mid, pts[#pts - 1], pts[#pts], c2);
-        dl:AddLine({ cx - w, base - r * 0.14 }, { cx + w, base - r * 0.14 }, u32({ 0.70, 0.46, 0.14, a }), 1);
-        for _, k in ipairs({ 2, 4, 6 }) do dl:AddCircleFilled(pts[k], math.max(1, r * 0.16), u32({ 1, 0.97, 0.85, a }), 8); end
+        DL.L(dl, cx - w, base - r * 0.14, cx + w, base - r * 0.14, U4(0.70, 0.46, 0.14, a), 1);
+        for _, k in ipairs({ 2, 4, 6 }) do dl:AddCircleFilled(pts[k], math.max(1, r * 0.16), U4(1, 0.97, 0.85, a), 8); end
         if alliance then
-            dl:AddCircleFilled({ cx, cy + r * 0.16 }, r * 0.24, u32({ 1.0, 0.36, 0.62, a }), 10);
-            dl:AddCircleFilled({ cx + r * 0.06, cy + r * 0.12 }, r * 0.12, u32({ 0.62, 0.40, 1.0, a }), 8);
+            DL.CF(dl, cx, cy + r * 0.16, r * 0.24, U4(1.0, 0.36, 0.62, a), 10);
+            DL.CF(dl, cx + r * 0.06, cy + r * 0.12, r * 0.12, U4(0.62, 0.40, 1.0, a), 8);
         end
     end
 end
 -- "name" style: a glowing pink-to-violet line under the leader's name, a bright dot at its end (two for the alliance leader)
 function LEAD_UNDERLINE(dl, x, y, w, alliance, a)
     pcall(function()
-        dl:AddRectFilledMultiColor({ x, y - 1 }, { x + w, y + 2 }, lead_mix(0, 0.25 * a), lead_mix(1, 0.25 * a), lead_mix(1, 0.25 * a), lead_mix(0, 0.25 * a));
-        dl:AddRectFilledMultiColor({ x, y }, { x + w, y + 1.4 }, lead_mix(0, a), lead_mix(1, a), lead_mix(1, a), lead_mix(0, a));
+        DL.RFM(dl, x, y - 1, x + w, y + 2, lead_mix(0, 0.25 * a), lead_mix(1, 0.25 * a), lead_mix(1, 0.25 * a), lead_mix(0, 0.25 * a));
+        DL.RFM(dl, x, y, x + w, y + 1.4, lead_mix(0, a), lead_mix(1, a), lead_mix(1, a), lead_mix(0, a));
     end);
-    dl:AddCircleFilled({ x + w, y + 0.7 }, 2.2, u32({ 1, 1, 1, a }), 10);
-    if alliance then dl:AddCircleFilled({ x, y + 0.7 }, 2.2, u32({ 1, 1, 1, a }), 10); end
+    DL.CF(dl, x + w, y + 0.7, 2.2, U4(1, 1, 1, a), 10);
+    if alliance then DL.CF(dl, x, y + 0.7, 2.2, U4(1, 1, 1, a), 10); end
 end
 local function member(i)
     local p = AshitaCore:GetMemoryManager():GetParty();
@@ -1066,8 +1085,8 @@ local function draw_buffs(dl, x, y, list, size, perrow, rows, dir, timers, fold,
             local cx, cy = fx + size / 2, iy + size / 2;
             if p < 1 then                                            -- a short pink-to-violet streak behind it as it moves
                 local tail = (dir == -1) and (cx + size * 0.9 * (1 - e)) or (cx - size * 0.9 * (1 - e));
-                dl:AddLine({ cx, cy }, { tail, cy }, u32({ 1.0, 0.36, 0.62, 0.35 * p * (1 - p) * 4 }), size * 0.35);
-                dl:AddLine({ cx, cy }, { tail, cy }, u32({ 0.85, 0.70, 1.0, 0.6 * p * (1 - p) * 4 }), 1.2);
+                DL.L(dl, cx, cy, tail, cy, U4(1.0, 0.36, 0.62, 0.35 * p * (1 - p) * 4), size * 0.35);
+                DL.L(dl, cx, cy, tail, cy, U4(0.85, 0.70, 1.0, 0.6 * p * (1 - p) * 4), 1.2);
             end
             image(dl, buff_icon(id), cx - size * k / 2, cy - size * k / 2, cx + size * k / 2, cy + size * k / 2, { 1, 1, 1, math.min(1, p * 1.6) });
             goto next_buff;
@@ -1081,7 +1100,7 @@ local function draw_buffs(dl, x, y, list, size, perrow, rows, dir, timers, fold,
                 local sec = math.max(0, math.ceil(secs_));
                 tl = (sec >= 60) and string.format('%d:%02d left', math.floor(sec / 60), sec % 60) or string.format('%ds left', sec);
             end
-            dl:AddRect({ ix - 1, iy - 1 }, { ix + size + 1, iy + size + 1 }, u32({ 1, 1, 1, 0.8 }), 2, C.rall, 1.2);
+            DL.R(dl, ix - 1, iy - 1, ix + size + 1, iy + size + 1, U4(1, 1, 1, 0.8), 2, C.rall, 1.2);
             YUI_TIP(buff_name(id) .. (tl and ('\n' .. tl) or ''));
         end
         local secs = timers and timers[id];
@@ -1435,17 +1454,17 @@ function FIGHT.draw(dl, sid, x, y, w, sc)
             local br = 0.5 + 0.5 * math.sin(now * 5);
             for g = 3, 1, -1 do                                      -- a soft glow in the chain's colour, breathing
                 local gp = g * 2;
-                dl:AddRect({ x0 - gp, y0 - gp }, { x1 + gp, y1 + gp }, u32({ pc[1], pc[2], pc[3], 0.06 * (4 - g) * al * (0.6 + 0.4 * br) }), rr + gp, all, 3);
+                DL.R(dl, x0 - gp, y0 - gp, x1 + gp, y1 + gp, U4(pc[1], pc[2], pc[3], 0.06 * (4 - g) * al * (0.6 + 0.4 * br)), rr + gp, all, 3);
             end
-            dl:AddRectFilled({ x0, y0 }, { x1, y1 }, u32({ 0.045, 0.040, 0.065, 0.88 * al }), rr);   -- the card (the fan's Tab look)
+            DL.RF(dl, x0, y0, x1, y1, U4(0.045, 0.040, 0.065, 0.88 * al), rr);   -- the card (the fan's Tab look)
             FIGHT.drawn.mb = { x0, y0, x1 - x0, y1 - y0, now };
             pcall(function()                                         -- (the chain's part a little lighter)
                 C.clip(dl, { sepx, y0 - 2 }, { x1 + 2, y1 + 2 }, true);
-                dl:AddRectFilled({ x0, y0 }, { x1, y1 }, u32({ 0.09, 0.08, 0.12, 0.88 * al }), rr);
+                DL.RF(dl, x0, y0, x1, y1, U4(0.09, 0.08, 0.12, 0.88 * al), rr);
                 dl:PopClipRect();
             end);
-            dl:AddRect({ x0, y0 }, { x1, y1 }, u32({ pc[1], pc[2], pc[3], 0.70 * al }), rr, all, 1);
-            dl:AddLine({ sepx, y0 + 3 }, { sepx, y1 - 3 }, u32({ 1, 1, 1, 0.14 * al }), 1);
+            DL.R(dl, x0, y0, x1, y1, U4(pc[1], pc[2], pc[3], 0.70 * al), rr, all, 1);
+            DL.L(dl, sepx, y0 + 3, sepx, y1 - 3, U4(1, 1, 1, 0.14 * al), 1);
             text(dl, x0 + padx, row, lab, { 0.86, 0.84, 0.94, al });
             local cx = sepx + 10 * s2;
             text(dl, cx, row, st.chain, { pc[1] * 0.4 + 0.6, pc[2] * 0.4 + 0.6, pc[3] * 0.4 + 0.6, al });
@@ -1453,17 +1472,16 @@ function FIGHT.draw(dl, sid, x, y, w, sc)
             for _, e in ipairs(st.elems or {}) do                    -- the elements to burst with
                 local ec = FIGHT.ELEM[e] or { 1, 1, 1 };
                 local rp = r * (1 + 0.5 * pop);
-                dl:AddCircleFilled({ cx + r, row + lh / 2 }, rp + 1, u32({ 0, 0, 0, 0.6 * al }), 12);
-                dl:AddCircleFilled({ cx + r, row + lh / 2 }, rp, u32({ ec[1], ec[2], ec[3], al }), 12);
+                DL.CF(dl, cx + r, row + lh / 2, rp + 1, U4(0, 0, 0, 0.6 * al), 12);
+                DL.CF(dl, cx + r, row + lh / 2, rp, U4(ec[1], ec[2], ec[3], al), 12);
                 cx = cx + r * 2 + 5 * s2;
             end
             local bx, by = cx + 6 * s2, row + lh / 2 - bh / 2;       -- the time left
-            dl:AddRectFilled({ bx, by }, { bx + bw, by + bh }, u32({ 0, 0, 0, 0.55 * al }), bh);
+            DL.RF(dl, bx, by, bx + bw, by + bh, U4(0, 0, 0, 0.55 * al), bh);
             pcall(function()
-                dl:AddRectFilledMultiColor({ bx, by }, { bx + bw * left, by + bh }, u32({ 0.68, 0.50, 1.0, al }), u32({ 0.55, 0.86, 1.0, al }),
-                    u32({ 0.55, 0.86, 1.0, al }), u32({ 0.68, 0.50, 1.0, al }));
+                DL.RFM(dl, bx, by, bx + bw * left, by + bh, U4(0.68, 0.50, 1.0, al), U4(0.55, 0.86, 1.0, al), U4(0.55, 0.86, 1.0, al), U4(0.68, 0.50, 1.0, al));
             end);
-            dl:AddRect({ bx - 1, by - 1 }, { bx + bw + 1, by + bh + 1 }, u32({ 0, 0, 0, 0.9 * al }), bh, all, 1.3);   -- (a black edge: seen on light ground)
+            DL.R(dl, bx - 1, by - 1, bx + bw + 1, by + bh + 1, U4(0, 0, 0, 0.9 * al), bh, all, 1.3);   -- (a black edge: seen on light ground)
         end
     end
     if st and now - st.ts > st.dur then FIGHT.sc[sid] = nil; end
@@ -1492,25 +1510,25 @@ function FIGHT.draw_fan(dl, sid, hx, hy, sc)
     -- the hub
     if t < 0.6 then                                                  -- a ripple as the chain opens
         local q = t / 0.6;
-        dl:AddCircle({ hx, hy }, r + 22 * sc * q, u32({ 1.0, 0.36, 0.62, 0.7 * (1 - q) }), 32, 2);
+        DL.C(dl, hx, hy, r + 22 * sc * q, U4(1.0, 0.36, 0.62, 0.7 * (1 - q)), 32, 2);
     end
-    dl:AddCircleFilled({ hx, hy }, r + 3, u32({ 0.03, 0.02, 0.05, 0.88 }), 24);
-    dl:AddCircle({ hx, hy }, r, u32({ 1, 1, 1, 0.10 }), 32, 2.2);
+    DL.CF(dl, hx, hy, r + 3, U4(0.03, 0.02, 0.05, 0.88), 24);
+    DL.C(dl, hx, hy, r, U4(1, 1, 1, 0.10), 32, 2.2);
     local f = go and (1 - (t - st.wait) / math.max(0.1, st.dur - st.wait)) or (t / math.max(0.1, st.wait));
     local col = go and { 1.0, 0.82, 0.42 } or { 1.0, 0.42, 0.62 };
     local beat = go and (0.65 + 0.35 * math.sin(now * 7)) or 0.75;
-    dl:AddCircleFilled({ hx, hy }, r - 1.5, u32({ col[1], col[2], col[3], 0.16 + 0.10 * beat }), 24);   -- the inside softly lit in the ring's colour (not a black gap)
+    DL.CF(dl, hx, hy, r - 1.5, U4(col[1], col[2], col[3], 0.16 + 0.10 * beat), 24);   -- the inside softly lit in the ring's colour (not a black gap)
     local seg = 64;                                                  -- the ring: smooth, a glow under it
     local fr = math.max(0, math.min(1, f));
     for pass = 1, 2 do
         local th, ca = (pass == 1) and 5 or 2.4, (pass == 1) and 0.22 or 1;
         for k = 0, math.floor(seg * fr) - 1 do
             local a0, a1 = -math.pi / 2 + k / seg * math.pi * 2, -math.pi / 2 + (k + 1.15) / seg * math.pi * 2;   -- (a little overlap: no seams)
-            dl:AddLine({ hx + math.cos(a0) * r, hy + math.sin(a0) * r }, { hx + math.cos(a1) * r, hy + math.sin(a1) * r }, u32({ col[1], col[2], col[3], ca }), th);
+            DL.L(dl, hx + math.cos(a0) * r, hy + math.sin(a0) * r, hx + math.cos(a1) * r, hy + math.sin(a1) * r, U4(col[1], col[2], col[3], ca), th);
         end
     end
-    dl:AddCircleFilled({ hx, hy }, r * 0.62, u32({ col[1], col[2], col[3], 0.25 * beat }), 18);   -- the heart: a soft glow and a bright dot
-    dl:AddCircleFilled({ hx, hy }, r * 0.42, u32({ col[1], col[2], col[3], beat }), 16);
+    DL.CF(dl, hx, hy, r * 0.62, U4(col[1], col[2], col[3], 0.25 * beat), 18);   -- the heart: a soft glow and a bright dot
+    DL.CF(dl, hx, hy, r * 0.42, U4(col[1], col[2], col[3], beat), 16);
     -- the cards: they open down and to the left on a slant, the best at the top; each is a dark banner with a tip
     -- pointing at the hub, a slash of its result's colour at the start, and the result in a lighter part after a slanted cut
     local n = math.min(#opts, 6);
@@ -1560,10 +1578,10 @@ function FIGHT.draw_fan(dl, sid, hx, hy, sc)
             local best = (o[3] >= 3);
             local sx, sy = hx + dirx * (r + 3), hy + diry * (r + 3);
             local dotx, doty = tipx + 6 * sc, tipy;
-            dl:AddLine({ sx, sy }, { dotx, doty }, u32({ pc[1], pc[2], pc[3], 0.55 * al }), best and 1.8 or 1.3);
-            dl:AddCircleFilled({ dotx, doty }, 3 * sc, u32({ pc[1], pc[2], pc[3], al }), 12);
+            DL.L(dl, sx, sy, dotx, doty, U4(pc[1], pc[2], pc[3], 0.55 * al), best and 1.8 or 1.3);
+            DL.CF(dl, dotx, doty, 3 * sc, U4(pc[1], pc[2], pc[3], al), 12);
             if u < 1 then                                            -- the light running out along the line
-                dl:AddCircleFilled({ sx + (dotx - sx) * u, sy + (doty - sy) * u }, 2.6 * sc, u32({ 1, 1, 1, 0.9 * (1 - u) }), 10);
+                DL.CF(dl, sx + (dotx - sx) * u, sy + (doty - sy) * u, 2.6 * sc, U4(1, 1, 1, 0.9 * (1 - u)), 10);
             end
             FIGHT.card(dl, o, tipx - 6 * sc, tipy, cw, ch, cut, wn, wa, lh, sc, al, pc, best, go, now, i);
         end
@@ -1607,13 +1625,12 @@ function FIGHT.card(dl, o, x2, ym, cw, ch, cut, wn, wa, lh, sc, al, pc, best, go
     if accent == 'glow' and shape ~= 'line' then                    -- a soft glow round it, in its result's colour
         for k = 3, 1, -1 do
             local gpad = k * 2;
-            dl:AddRect({ x1 - gpad, y1 - gpad }, { x2 + gpad, y2 + gpad }, u32({ pc[1], pc[2], pc[3], 0.06 * (4 - k) * al }),
-                (shape == 'pill') and (ch / 2 + gpad) or 8, all, 3);
+            DL.R(dl, x1 - gpad, y1 - gpad, x2 + gpad, y2 + gpad, U4(pc[1], pc[2], pc[3], 0.06 * (4 - k) * al), (shape == 'pill') and (ch / 2 + gpad) or 8, all, 3);
         end
     end
     if outline then
-        poly(outline, u32({ base[1], base[2], base[3], ea * al }));
-        poly(respart, u32({ light[1], light[2], light[3], ea * al }));
+        poly(outline, U4(base[1], base[2], base[3], ea * al));
+        poly(respart, U4(light[1], light[2], light[3], ea * al));
         for k = 1, #outline do
             local c = edge;
             if tint == 'yunaui' and not (go and best) then             -- the edge flowing pink to violet
@@ -1622,41 +1639,40 @@ function FIGHT.card(dl, o, x2, ym, cw, ch, cut, wn, wa, lh, sc, al, pc, best, go
             end
             dl:AddLine(outline[k], outline[k % #outline + 1], u32(c), 1);
         end
-        dl:AddLine(respart[1], respart[2], u32({ 1, 1, 1, 0.14 * al }), 1);
+        dl:AddLine(respart[1], respart[2], U4(1, 1, 1, 0.14 * al), 1);
     elseif shape == 'pill' or shape == 'tab' then
         local rr = (shape == 'pill') and ch / 2 or 6 * sc;
-        dl:AddRectFilled({ x1, y1 }, { x2, y2 }, u32({ base[1], base[2], base[3], ea * al }), rr);
+        DL.RF(dl, x1, y1, x2, y2, U4(base[1], base[2], base[3], ea * al), rr);
         pcall(function()                                             -- the result part, a little lighter
             C.clip(dl, { sepx, y1 - 2 }, { x2 + 2, y2 + 2 }, true);
-            dl:AddRectFilled({ x1, y1 }, { x2, y2 }, u32({ light[1], light[2], light[3], ea * al }), rr);
+            DL.RF(dl, x1, y1, x2, y2, U4(light[1], light[2], light[3], ea * al), rr);
             dl:PopClipRect();
         end);
         local c = edge;
         if tint == 'yunaui' and not (go and best) then c = { 0.80, 0.40, 0.82, 0.75 * al }; end
-        dl:AddRect({ x1, y1 }, { x2, y2 }, u32(c), rr, all, 1);
-        dl:AddLine({ sepx, y1 + 3 }, { sepx, y2 - 3 }, u32({ 1, 1, 1, 0.14 * al }), 1);
+        DL.R(dl, x1, y1, x2, y2, u32(c), rr, all, 1);
+        DL.L(dl, sepx, y1 + 3, sepx, y2 - 3, U4(1, 1, 1, 0.14 * al), 1);
     else                                                             -- line only: a glowing line under the words
         pcall(function()
-            dl:AddRectFilledMultiColor({ x1, y2 - 2 }, { x2, y2 }, u32({ pc[1], pc[2], pc[3], 0 }), u32({ pc[1], pc[2], pc[3], 0.95 * al }),
-                u32({ pc[1], pc[2], pc[3], 0.95 * al }), u32({ pc[1], pc[2], pc[3], 0 }));
+            DL.RFM(dl, x1, y2 - 2, x2, y2, U4(pc[1], pc[2], pc[3], 0), U4(pc[1], pc[2], pc[3], 0.95 * al), U4(pc[1], pc[2], pc[3], 0.95 * al), U4(pc[1], pc[2], pc[3], 0));
         end);
     end
     -- the accent at its start
     if accent == 'slash' and shape ~= 'line' then
         if slant then                                                -- a stripe along the slanted start, inside it
             local w_ = 4 * sc;
-            poly({ { x1 + 1, y2 - 1 }, { x1 + cut + 1, y1 + 1 }, { x1 + cut + 1 + w_, y1 + 1 }, { x1 + 1 + w_, y2 - 1 } }, u32({ pc[1], pc[2], pc[3], al }));
+            poly({ { x1 + 1, y2 - 1 }, { x1 + cut + 1, y1 + 1 }, { x1 + cut + 1 + w_, y1 + 1 }, { x1 + 1 + w_, y2 - 1 } }, U4(pc[1], pc[2], pc[3], al));
         else
             local sx0 = x1 + 7 * sc;
-            dl:AddLine({ sx0, y2 - 4 }, { sx0 + cut * 0.6, y1 + 4 }, u32({ pc[1], pc[2], pc[3], al }), 2.4 * sc);
+            DL.L(dl, sx0, y2 - 4, sx0 + cut * 0.6, y1 + 4, U4(pc[1], pc[2], pc[3], al), 2.4 * sc);
         end
     elseif accent == 'bar' and shape ~= 'line' then
         if slant then
             local w_ = 3 * sc;
-            poly({ { x1 + 1, y2 - 1 }, { x1 + cut + 1, y1 + 1 }, { x1 + cut + 1 + w_, y1 + 1 }, { x1 + 1 + w_, y2 - 1 } }, u32({ pc[1], pc[2], pc[3], al }));
+            poly({ { x1 + 1, y2 - 1 }, { x1 + cut + 1, y1 + 1 }, { x1 + cut + 1 + w_, y1 + 1 }, { x1 + 1 + w_, y2 - 1 } }, U4(pc[1], pc[2], pc[3], al));
         else
             local rr = (shape == 'pill') and 1.5 * sc or 0;
-            dl:AddRectFilled({ x1 + 4 * sc, y1 + 4 * sc }, { x1 + 7 * sc, y2 - 4 * sc }, u32({ pc[1], pc[2], pc[3], al }), rr);
+            DL.RF(dl, x1 + 4 * sc, y1 + 4 * sc, x1 + 7 * sc, y2 - 4 * sc, U4(pc[1], pc[2], pc[3], al), rr);
         end
     end
     -- the words
@@ -1677,7 +1693,7 @@ function C.vline(dl, lx, y0, y1, sc, a)
     local P, V = { 0.68, 0.50, 1.0 }, { 0.55, 0.86, 1.0 };
     local function c(y, al)
         local u = math.max(0, math.min(1, (y - y0) / (y1 - y0)));
-        return u32({ P[1] + (V[1] - P[1]) * u, P[2] + (V[2] - P[2]) * u, P[3] + (V[3] - P[3]) * u, al * a });
+        return U4(P[1] + (V[1] - P[1]) * u, P[2] + (V[2] - P[2]) * u, P[3] + (V[3] - P[3]) * u, al * a);
     end
     local f = math.min(30 * sc, (y1 - y0) * 0.20);
     local pieces = { { y0, y0 + f, 0, 1 }, { y0 + f, y1 - f, 1, 1 }, { y1 - f, y1, 1, 0 } };
@@ -1687,7 +1703,7 @@ function C.vline(dl, lx, y0, y1, sc, a)
             local function col(x0, x1, al)
                 pcall(function()
                     local ct, cb = c(ya, al * fa), c(yb, al * fb);
-                    dl:AddRectFilledMultiColor({ x0, ya }, { x1, yb }, ct, ct, cb, cb);
+                    DL.RFM(dl, x0, ya, x1, yb, ct, ct, cb, cb);
                 end);
             end
             col(X - 2, X - 1, 0.10); col(X + 3, X + 4, 0.10);        -- the faint outer pixels
@@ -1735,7 +1751,7 @@ function FIGHT.drop(dl, opts, n, hx, hy, r, t, cw, ch, cut, wn, wa, lh, sc, go, 
     local grow = math.min(1, t / 0.45);
     local len = total * (1 - (1 - grow) ^ 2);
     C.vline(dl, hx, y0, y0 + len, sc, 1);                            -- the line, violet at the top to ice blue at the bottom
-    if grow < 1 then dl:AddCircleFilled({ hx, y0 + len }, 3 * sc, u32({ 1, 1, 1, 0.95 }), 12); end   -- its head while it runs
+    if grow < 1 then DL.CF(dl, hx, y0 + len, 3 * sc, U4(1, 1, 1, 0.95), 12); end   -- its head while it runs
     for i = 1, n do
         local o = opts[i];
         local cy = y0 + 8 * sc + (i - 0.5) * gap;
@@ -1747,9 +1763,9 @@ function FIGHT.drop(dl, opts, n, hx, hy, r, t, cw, ch, cut, wn, wa, lh, sc, go, 
             local pc = FIGHT.PCOL[o[2]] or { 1, 1, 1 };
             local best = (o[3] >= 3);
             local tip = hx - 14 * sc + 34 * sc * (1 - e);            -- fades in while it slides out to the left
-            dl:AddLine({ hx, cy }, { tip + 2, cy }, u32({ pc[1], pc[2], pc[3], 0.7 * al }), 1.4 * sc);   -- the tick to the line
-            dl:AddCircleFilled({ hx, cy }, 3.2 * sc, u32({ 0, 0, 0, 0.6 * al }), 12);
-            dl:AddCircleFilled({ hx, cy }, 2.4 * sc, u32({ pc[1], pc[2], pc[3], al }), 12);
+            DL.L(dl, hx, cy, tip + 2, cy, U4(pc[1], pc[2], pc[3], 0.7 * al), 1.4 * sc);   -- the tick to the line
+            DL.CF(dl, hx, cy, 3.2 * sc, U4(0, 0, 0, 0.6 * al), 12);
+            DL.CF(dl, hx, cy, 2.4 * sc, U4(pc[1], pc[2], pc[3], al), 12);
             FIGHT.card(dl, o, tip, cy, cw, ch, cut, wn, wa, lh, sc, al, pc, best, go, now, i);
         end
     end
@@ -1806,19 +1822,18 @@ function FIGHT.draw_cast(dl, sid, x, y, w, sc, th, mid, fsc)
     end
     text(dl, tx, y, label, col);
     local bx, by = tx - 12 * sc - bw, y + lh / 2 - bh / 2;           -- its bar just before the text
-    dl:AddRectFilled({ bx, by }, { bx + bw, by + bh }, u32({ 0, 0, 0, 0.55 }), bh);
+    DL.RF(dl, bx, by, bx + bw, by + bh, U4(0, 0, 0, 0.55), bh);
     if c.broke then
-        dl:AddRectFilled({ bx, by }, { bx + bw * (c.at or f), by + bh }, u32({ 1, 1, 1, 0.3 + 0.7 * fl }));
+        DL.RF(dl, bx, by, bx + bw * (c.at or f), by + bh, U4(1, 1, 1, 0.3 + 0.7 * fl));
     else
         local c1 = tp and { 1.0, 0.36, 0.62 } or { 0.62, 0.40, 1.0 };
         local c2 = tp and { 1.0, 0.70, 0.40 } or { 0.85, 0.70, 1.0 };
         pcall(function()
-            dl:AddRectFilledMultiColor({ bx, by }, { bx + bw * f, by + bh }, u32({ c1[1], c1[2], c1[3], 1 }), u32({ c2[1], c2[2], c2[3], 1 }),
-                u32({ c2[1], c2[2], c2[3], 1 }), u32({ c1[1], c1[2], c1[3], 1 }));
+            DL.RFM(dl, bx, by, bx + bw * f, by + bh, U4(c1[1], c1[2], c1[3], 1), U4(c2[1], c2[2], c2[3], 1), U4(c2[1], c2[2], c2[3], 1), U4(c1[1], c1[2], c1[3], 1));
         end);
-        dl:AddRectFilled({ bx + bw * f - 1.5, by - 1 }, { bx + bw * f, by + bh + 1 }, u32({ 1, 1, 1, 0.95 }));
+        DL.RF(dl, bx + bw * f - 1.5, by - 1, bx + bw * f, by + bh + 1, U4(1, 1, 1, 0.95));
     end
-    dl:AddRect({ bx - 1, by - 1 }, { bx + bw + 1, by + bh + 1 }, u32({ 0, 0, 0, 0.9 }), bh, ImDrawFlags_RoundCornersAll or ImDrawCornerFlags_All or 15, 1.3);   -- (a black edge: seen on light ground)
+    DL.R(dl, bx - 1, by - 1, bx + bw + 1, by + bh + 1, U4(0, 0, 0, 0.9), bh, ImDrawFlags_RoundCornersAll or ImDrawCornerFlags_All or 15, 1.3);   -- (a black edge: seen on light ground)
     FIGHT.drawn.co = { bx - 2, y - 2, tx + lw - bx + 4, lh + 4, now };   -- (where it is, for the guide)
     FIGHT.unfont(fk);
     return lh + 4 * sc;
@@ -1984,16 +1999,16 @@ function FIGHT.fxdraw(st, x, top, by, w, h, sc)
         local L = (w / 2) * eo(e / 0.42);
         local la = (e < 0.45) and 1 or cl(1 - (e - 0.45) / 0.35);
         if la > 0.01 then
-            fg:AddLine({ cx - L, cy }, { cx + L, cy }, u32({ vi[1], vi[2], vi[3], 0.22 * la }), 9 * sc);
-            fg:AddLine({ cx - L, cy }, { cx + L, cy }, u32({ pk[1], pk[2], pk[3], 0.45 * la }), 4 * sc);
-            fg:AddLine({ cx - L, cy }, { cx + L, cy }, u32({ 1, 1, 1, 0.95 * la }), math.max(1.5, 1.6 * sc));
+            DL.L(fg, cx - L, cy, cx + L, cy, U4(vi[1], vi[2], vi[3], 0.22 * la), 9 * sc);
+            DL.L(fg, cx - L, cy, cx + L, cy, U4(pk[1], pk[2], pk[3], 0.45 * la), 4 * sc);
+            DL.L(fg, cx - L, cy, cx + L, cy, U4(1, 1, 1, 0.95 * la), math.max(1.5, 1.6 * sc));
             for _, ex in ipairs({ cx - L, cx + L }) do                -- bright sparks riding the two ends
-                fg:AddCircleFilled({ ex, cy }, 5 * sc, u32({ pk[1], pk[2], pk[3], 0.35 * la }), 14);
-                fg:AddCircleFilled({ ex, cy }, 2.2 * sc, u32({ 1, 1, 1, la }), 10);
+                DL.CF(fg, ex, cy, 5 * sc, U4(pk[1], pk[2], pk[3], 0.35 * la), 14);
+                DL.CF(fg, ex, cy, 2.2 * sc, U4(1, 1, 1, la), 10);
             end
         end
         local fl = cl(1 - e / 0.25);                                 -- the flash where it starts
-        if fl > 0.01 then fg:AddCircleFilled({ cx, cy }, (6 + 18 * (1 - fl)) * sc, u32({ 1, 1, 1, 0.55 * fl }), 24); end
+        if fl > 0.01 then DL.CF(fg, cx, cy, (6 + 18 * (1 - fl)) * sc, U4(1, 1, 1, 0.55 * fl), 24); end
     end
 end
 -- TARGET > Entrance: Hex link - a thin chromatic line (a cyan core, its red and blue split either side) shoots out of the
@@ -2056,13 +2071,13 @@ function FIGHT.linkdraw(idx, ent, ax, ay, sc, tk)
         local g = eo(t / 0.22);
         local tx, ty = sx + (hx - R - sx) * g, sy + (hy - sy) * g;
         local th = math.max(1, 1.1 * sc);
-        fg:AddLine({ sx - 1.3, sy }, { tx - 1.3, ty }, u32({ 1.0, 0.25, 0.45, 0.35 * la }), th);   -- (the chromatic split)
-        fg:AddLine({ sx + 1.3, sy }, { tx + 1.3, ty }, u32({ 0.30, 0.45, 1.0, 0.35 * la }), th);
-        fg:AddLine({ sx, sy }, { tx, ty }, u32({ 0.55, 0.96, 1.0, 0.95 * la }), th);
-        if t < 0.24 then hfill(tx, ty, R * 0.42, t * 9, u32({ 1, 1, 1, 0.95 })); end   -- (the spark on its tip)
+        DL.L(fg, sx - 1.3, sy, tx - 1.3, ty, U4(1.0, 0.25, 0.45, 0.35 * la), th);   -- (the chromatic split)
+        DL.L(fg, sx + 1.3, sy, tx + 1.3, ty, U4(0.30, 0.45, 1.0, 0.35 * la), th);
+        DL.L(fg, sx, sy, tx, ty, U4(0.55, 0.96, 1.0, 0.95 * la), th);
+        if t < 0.24 then hfill(tx, ty, R * 0.42, t * 9, U4(1, 1, 1, 0.95)); end   -- (the spark on its tip)
         if t < 0.35 then                                              -- (a small hex where it leaves the head)
             local q = cl(t / 0.35);
-            hline(sx, sy, R * (0.5 + 0.9 * q), 0, u32({ 0.55, 0.96, 1.0, 0.7 * (1 - q) }), 1);
+            hline(sx, sy, R * (0.5 + 0.9 * q), 0, U4(0.55, 0.96, 1.0, 0.7 * (1 - q)), 1);
         end
     end
     if t < 0.18 and sx then return; end                               -- (the hex comes in as the line arrives)
@@ -2070,14 +2085,14 @@ function FIGHT.linkdraw(idx, ent, ax, ay, sc, tk)
     local spin = (1 - eo((t - 0.18) / 0.44)) * math.pi * 1.6;
     local r = R * (0.4 + 0.6 * inn);
     local rp = cl((t - 0.22) / 0.5);                                  -- the ripple: a bigger hex running out, fading
-    if rp > 0 and rp < 1 then hline(hx, hy, R * (1 + 1.8 * rp), spin * 0.5, u32({ acc[1], acc[2], acc[3], 0.6 * (1 - rp) }), 1.2); end
-    hline(hx, hy, r + 1, spin, u32({ 0, 0, 0, 0.7 * inn }), 3.2);     -- (a dark edge first: readable on bright ground)
-    hline(hx, hy, r, spin, u32({ acc[1], acc[2], acc[3], inn }), 1.5);
-    hfill(hx, hy, r * 0.5, -spin, u32({ acc[1], acc[2], acc[3], 0.9 * inn }));
+    if rp > 0 and rp < 1 then hline(hx, hy, R * (1 + 1.8 * rp), spin * 0.5, U4(acc[1], acc[2], acc[3], 0.6 * (1 - rp)), 1.2); end
+    hline(hx, hy, r + 1, spin, U4(0, 0, 0, 0.7 * inn), 3.2);     -- (a dark edge first: readable on bright ground)
+    hline(hx, hy, r, spin, U4(acc[1], acc[2], acc[3], inn), 1.5);
+    hfill(hx, hy, r * 0.5, -spin, U4(acc[1], acc[2], acc[3], 0.9 * inn));
     local lk = cl((t - 0.62) / 0.23);                                 -- the lock: a white flash round it
     if lk > 0 and lk < 1 then
-        hline(hx, hy, r * (1 + 0.5 * lk), 0, u32({ 1, 1, 1, 0.9 * (1 - lk) }), 1.6);
-        hfill(hx, hy, r * 0.5, 0, u32({ 1, 1, 1, 0.6 * (1 - lk) }));
+        hline(hx, hy, r * (1 + 0.5 * lk), 0, U4(1, 1, 1, 0.9 * (1 - lk)), 1.6);
+        hfill(hx, hy, r * 0.5, 0, U4(1, 1, 1, 0.6 * (1 - lk)));
     end
 end
 -- TARGET > Friends look different: what the target is - 'mob', 'pc' (a player, or anyone in your party / alliance,
@@ -2167,17 +2182,17 @@ function C.tfriend(dl, x, y, w, sc, idx, ent, name, hpp, tk, tmi, dt)
     local by_ = two and (cy + lh * 0.5 + 4 * sc + sh / 2) or cy;     -- (the bars' line's middle)
     local obj = false;                                               -- (NPCs and objects alike: the gold banner, no tag, no HP - custom NPCs can't be told from doors)
     if not obj then pcall(function()                                 -- a dark band behind it (readable on any ground), fading at both ends
-        local d1, d0 = u32({ 0.02, 0.02, 0.04, 0.62 }), u32({ 0.02, 0.02, 0.04, 0 });
+        local d1, d0 = U4(0.02, 0.02, 0.04, 0.62), U4(0.02, 0.02, 0.04, 0);
         local e = math.min(80 * sc, w * 0.18);
-        dl:AddRectFilledMultiColor({ x, y }, { x + e, y + h }, d0, d1, d1, d0);
-        dl:AddRectFilled({ x + e, y }, { x + w - e, y + h }, d1);
-        dl:AddRectFilledMultiColor({ x + w - e, y }, { x + w, y + h }, d1, d0, d0, d1);
+        DL.RFM(dl, x, y, x + e, y + h, d0, d1, d1, d0);
+        DL.RF(dl, x + e, y, x + w - e, y + h, d1);
+        DL.RFM(dl, x + w - e, y, x + w, y + h, d1, d0, d0, d1);
     end); end
     local function line(ly)                                          -- (a thin line, brightest in the middle, fading at both ends)
-        local c1, c0 = u32({ col[1], col[2], col[3], 0.9 }), u32({ col[1], col[2], col[3], 0 });
+        local c1, c0 = U4(col[1], col[2], col[3], 0.9), U4(col[1], col[2], col[3], 0);
         pcall(function()
-            dl:AddRectFilledMultiColor({ x, ly }, { x + w / 2, ly + 1.2 * sc }, c0, c1, c1, c0);
-            dl:AddRectFilledMultiColor({ x + w / 2, ly }, { x + w, ly + 1.2 * sc }, c1, c0, c0, c1);
+            DL.RFM(dl, x, ly, x + w / 2, ly + 1.2 * sc, c0, c1, c1, c0);
+            DL.RFM(dl, x + w / 2, ly, x + w, ly + 1.2 * sc, c1, c0, c0, c1);
         end);
     end
     if not obj then line(y); line(y + h); end
@@ -2198,9 +2213,9 @@ function C.tfriend(dl, x, y, w, sc, idx, ent, name, hpp, tk, tmi, dt)
     local function bar(bx, label, lw, v, bw, c)                      -- a label, then its bar; gives back where it ends
         text(dl, bx, by_ - sh / 2, label, { 0.97, 0.96, 1, 1 });
         bx = bx + lw + g1;
-        dl:AddRectFilled({ bx - 1, by_ - bh / 2 - 1 }, { bx + bw + 1, by_ + bh / 2 + 1 }, u32({ 0, 0, 0, 0.9 }), 2);
-        dl:AddRectFilled({ bx, by_ - bh / 2 }, { bx + bw, by_ + bh / 2 }, u32({ 0.16, 0.15, 0.21, 1 }), 2);
-        dl:AddRectFilled({ bx, by_ - bh / 2 }, { bx + bw * math.max(0, math.min(1, v)), by_ + bh / 2 }, u32({ c[1], c[2], c[3], 1 }), 2);
+        DL.RF(dl, bx - 1, by_ - bh / 2 - 1, bx + bw + 1, by_ + bh / 2 + 1, U4(0, 0, 0, 0.9), 2);
+        DL.RF(dl, bx, by_ - bh / 2, bx + bw, by_ + bh / 2, U4(0.16, 0.15, 0.21, 1), 2);
+        DL.RF(dl, bx, by_ - bh / 2, bx + bw * math.max(0, math.min(1, v)), by_ + bh / 2, U4(c[1], c[2], c[3], 1), 2);
         return bx + bw;
     end
     if not nohp then
@@ -2468,8 +2483,8 @@ local function draw_enemies(dt)
             local e = list[k];
             local on = (e.idx == tidx);
             if on then                                               -- your target: a soft frame and a marker
-                dl:AddRectFilled({ x - 6, ry - 2 }, { x + w + 6, ry + rowh - 4 }, u32({ C.gold[1], C.gold[2], C.gold[3], 0.12 }), 5);
-                dl:AddTriangleFilled({ x - 12, ry + lh / 2 - 4 }, { x - 12, ry + lh / 2 + 4 }, { x - 7, ry + lh / 2 }, u32({ 1, 1, 1, 0.9 }));
+                DL.RF(dl, x - 6, ry - 2, x + w + 6, ry + rowh - 4, U4(C.gold[1], C.gold[2], C.gold[3], 0.12), 5);
+                DL.TF(dl, x - 12, ry + lh / 2 - 4, x - 12, ry + lh / 2 + 4, x - 7, ry + lh / 2, U4(1, 1, 1, 0.9));
             end
             local nm = e.name;
             local pct = string.format('%d%%', math.floor(e.hp * 100 + 0.5));
@@ -2526,7 +2541,7 @@ local function hat_anim(dl, jt, job, x, y, icon, sc, ia, i)
         local fy = math.sin(t * 1.3) * 1.6 * sc;
         local up = 0.5 - 0.5 * math.sin(t * 1.3);
         local sw = icon * (0.34 - 0.05 * up);
-        for k = 1, 3 do dl:AddCircleFilled({ x + icon / 2, y + icon * 0.96 }, sw * (1 - k * 0.2), u32({ 0, 0, 0, (0.10 - 0.03 * up) * ia }), 20); end
+        for k = 1, 3 do DL.CF(dl, x + icon / 2, y + icon * 0.96, sw * (1 - k * 0.2), U4(0, 0, 0, (0.10 - 0.03 * up) * ia), 20); end
         image(dl, jt, x, y + fy, x + icon, y + icon + fy, { 1, 1, 1, ia });
     elseif mode == 'sway' then                                       -- tilts a little side to side, from its base
         local ang = math.rad(math.sin(t * 1.1) * 5);
@@ -2537,7 +2552,7 @@ local function hat_anim(dl, jt, job, x, y, icon, sc, ia, i)
         end
         local ok = jt and pcall(function()
             dl:AddImageQuad(jt.ptr, rot(x, y), rot(x + icon, y), rot(x + icon, y + icon), rot(x, y + icon),
-                { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, u32({ 1, 1, 1, ia }));
+                { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, U4(1, 1, 1, ia));
         end);
         if not ok then image(dl, jt, x, y, x + icon, y + icon, { 1, 1, 1, ia }); end
     elseif mode == 'pulse' then                                      -- swells a touch and back, like breathing
@@ -2581,7 +2596,7 @@ local function target_arrow(dl, cx, y, sc)
         local s = math.max(0, 1 - math.abs(fa - sh) / 0.3) * 0.55;
         col = { col[1] + (1 - col[1]) * s, col[2] + (1 - col[2]) * s, col[3] + (1 - col[3]) * s, 1 };
         pcall(function()
-            dl:AddImage(t1.ptr, { x1, top + S * va }, { x1 + S, top + S * vb }, { 0, va }, { 1, vb }, u32(col));
+            DL.I(dl, t1.ptr, x1, top + S * va, x1 + S, top + S * vb, 0, va, 1, vb, u32(col));
         end);
     end
 end
@@ -2630,7 +2645,7 @@ local function glow_line(dl, cx, cy, w, h, sc, seed)
                 local f1, f2 = s / n, (s + 1) / n;
                 local a = alpha * (0.45 + 0.55 * (0.5 + 0.5 * math.sin((f1 * 2 - now * 0.9) * math.pi * 2)));
                 pcall(function()
-                    dl:AddImage(t.ptr, { x1 + w * f1, y1 }, { x1 + w * f2, y1 + h }, { f1, 0 }, { f2, 1 }, u32({ c[1], c[2], c[3], math.min(1, a) }));
+                    DL.I(dl, t.ptr, x1 + w * f1, y1, x1 + w * f2, y1 + h, f1, 0, f2, 1, U4(c[1], c[2], c[3], math.min(1, a)));
                 end);
             end
         else
@@ -2648,7 +2663,7 @@ local function glow_line(dl, cx, cy, w, h, sc, seed)
             local r = frac(math.sin(tick * 31.7 + kk * 12.9898 + seed * 3.3) * 43758.5453);
             local nx = math.min(x1 + w * 0.85, px + (4 + 8 * frac(r * 7.7)) * sc);
             local ny = cy + (r - 0.5) * h * 0.35;
-            dl:AddLine({ px, py }, { nx, ny }, u32({ 1, 1, 1, 0.55 * k }), 1);
+            DL.L(dl, px, py, nx, ny, U4(1, 1, 1, 0.55 * k), 1);
             px, py = nx, ny;
         end
     end
@@ -2833,8 +2848,8 @@ function EDIT.grips(fg, boxes)
             local a = on and 1 or 0.6;
             for i = 1, 3 do                                          -- (three short diagonal lines, pink to violet)
                 local d = i * 4.5;
-                fg:AddLine({ x1 - d - 1, y1 - 3 }, { x1 - 3, y1 - d - 1 }, u32({ 0, 0, 0, 0.7 * a }), 3.5);
-                fg:AddLine({ x1 - d - 1, y1 - 3 }, { x1 - 3, y1 - d - 1 }, u32({ 1.0 - 0.3 * i / 3, 0.40 + 0.1 * i / 3, 0.62 + 0.38 * i / 3, a }), 1.6);
+                DL.L(fg, x1 - d - 1, y1 - 3, x1 - 3, y1 - d - 1, U4(0, 0, 0, 0.7 * a), 3.5);
+                DL.L(fg, x1 - d - 1, y1 - 3, x1 - 3, y1 - d - 1, U4(1.0 - 0.3 * i / 3, 0.40 + 0.1 * i / 3, 0.62 + 0.38 * i / 3, a), 1.6);
             end
         end
     end
@@ -2852,8 +2867,8 @@ function EDIT.grips(fg, boxes)
         local str = string.format('%.2fx', v);
         local tw = imgui.CalcTextSize(str);
         local tx, ty = b[1] + b[3] - tw - 26, b[2] + b[4] - 20;
-        fg:AddRectFilled({ tx - 6, ty - 1 }, { tx + tw + 6, ty + 17 }, u32({ 0.05, 0.045, 0.07, 0.92 }), 5);
-        fg:AddText({ tx, ty }, u32({ 1.0, 0.70, 0.88, 1 }), str);
+        DL.RF(fg, tx - 6, ty - 1, tx + tw + 6, ty + 17, U4(0.05, 0.045, 0.07, 0.92), 5);
+        DL.T(fg, tx, ty, U4(1.0, 0.70, 0.88, 1), str);
     end
     EDIT.rs_hot = (hot ~= nil) or (R ~= nil);
     return R and R.k or hot;
@@ -2899,11 +2914,11 @@ function EDIT.draw()
     local fg = nil;
     pcall(function() fg = imgui.GetForegroundDrawList(); end);
     if dl then
-        dl:AddRectFilled({ 0, 0 }, { W, H }, u32({ 0.02, 0.01, 0.04, 0.35 }));
-        for gx = 0, W, 40 do dl:AddLine({ gx, 0 }, { gx, H }, u32({ 1, 1, 1, 0.045 }), 1); end
-        for gy = 0, H, 40 do dl:AddLine({ 0, gy }, { W, gy }, u32({ 1, 1, 1, 0.045 }), 1); end
-        dl:AddLine({ W / 2, 0 }, { W / 2, H }, u32({ 1.0, 0.36, 0.62, 0.30 }), 1);
-        dl:AddLine({ 0, H / 2 }, { W, H / 2 }, u32({ 0.62, 0.40, 1.0, 0.30 }), 1);
+        DL.RF(dl, 0, 0, W, H, U4(0.02, 0.01, 0.04, 0.35));
+        for gx = 0, W, 40 do DL.L(dl, gx, 0, gx, H, U4(1, 1, 1, 0.045), 1); end
+        for gy = 0, H, 40 do DL.L(dl, 0, gy, W, gy, U4(1, 1, 1, 0.045), 1); end
+        DL.L(dl, W / 2, 0, W / 2, H, U4(1.0, 0.36, 0.62, 0.30), 1);
+        DL.L(dl, 0, H / 2, W, H / 2, U4(0.62, 0.40, 1.0, 0.30), 1);
     end
     if fg then
         local all = ImDrawFlags_RoundCornersAll or ImDrawCornerFlags_All or 15;
@@ -2930,7 +2945,7 @@ function EDIT.draw()
         for _, k in ipairs(order) do
             local b = boxes[k];
             local on = (k == focus);
-            fg:AddRect({ b[1], b[2] }, { b[1] + b[3], b[2] + b[4] }, u32({ 0.62, 0.40, 1.0, on and 0.95 or 0.45 }), 6, all, on and 2 or 1);
+            DL.R(fg, b[1], b[2], b[1] + b[3], b[2] + b[4], U4(0.62, 0.40, 1.0, on and 0.95 or 0.45), 6, all, on and 2 or 1);
         end
         local placed = {};
         local function label(k)
@@ -2944,8 +2959,8 @@ function EDIT.draw()
             end
             placed[#placed + 1] = r;
             local on = (k == focus);
-            fg:AddRectFilled({ r[1], r[2] }, { r[3], r[4] }, u32(on and { 0.20, 0.10, 0.26, 0.96 } or { 0.05, 0.045, 0.07, 0.9 }), 5);
-            fg:AddText({ b[1] + 6, b[2] - 18 }, u32(on and { 1.0, 0.80, 0.93, 1 } or { 0.93, 0.92, 0.98, 1 }), nm);
+            DL.RF(fg, r[1], r[2], r[3], r[4], u32(on and { 0.20, 0.10, 0.26, 0.96 } or { 0.05, 0.045, 0.07, 0.9 }), 5);
+            DL.T(fg, b[1] + 6, b[2] - 18, u32(on and { 1.0, 0.80, 0.93, 1 } or { 0.93, 0.92, 0.98, 1 }), nm);
         end
         if focus and boxes[focus] then label(focus); end
         for _, k in ipairs(order) do if k ~= focus then label(k); end end
@@ -2953,11 +2968,11 @@ function EDIT.draw()
         if lf then imgui.PopFont(); end
         for _, g in ipairs(EDIT.guides or {}) do                     -- the guides: pink-to-violet lines across the screen
             if g[1] == 'v' then
-                fg:AddLine({ g[2], 0 }, { g[2], H }, u32({ 1.0, 0.36, 0.62, 0.25 }), 5);
-                fg:AddLine({ g[2], 0 }, { g[2], H }, u32({ 1.0, 0.70, 0.88, 0.95 }), 1.2);
+                DL.L(fg, g[2], 0, g[2], H, U4(1.0, 0.36, 0.62, 0.25), 5);
+                DL.L(fg, g[2], 0, g[2], H, U4(1.0, 0.70, 0.88, 0.95), 1.2);
             else
-                fg:AddLine({ 0, g[2] }, { W, g[2] }, u32({ 0.62, 0.40, 1.0, 0.25 }), 5);
-                fg:AddLine({ 0, g[2] }, { W, g[2] }, u32({ 0.85, 0.75, 1.0, 0.95 }), 1.2);
+                DL.L(fg, 0, g[2], W, g[2], U4(0.62, 0.40, 1.0, 0.25), 5);
+                DL.L(fg, 0, g[2], W, g[2], U4(0.85, 0.75, 1.0, 0.95), 1.2);
             end
         end
     end
@@ -3033,7 +3048,7 @@ function ALLY.row(dl, m, i, x, y, w, sc, dt, tidx)
     local bh = math.max(2, math.floor(2.5 * sc));
     local rh = lh + bh + 7 * sc;
     if m.idx ~= 0 and m.idx == tidx then                             -- your target: a soft violet behind the row
-        dl:AddRectFilled({ x - 3, y - 2 }, { x + w + 3, y + rh - 3 }, u32({ 0.62, 0.40, 1.0, 0.16 }), 5);
+        DL.RF(dl, x - 3, y - 2, x + w + 3, y + rh - 3, U4(0.62, 0.40, 1.0, 0.16), 5);
     end
     ALLY.icon(dl, m, x, y, ih, 1);
     local tx = x + ih + 6 * sc;
@@ -3053,18 +3068,17 @@ function ALLY.tile(dl, m, i, x, y, w, h, sc, tidx)
     local all = ImDrawFlags_RoundCornersAll or ImDrawCornerFlags_All or 15;
     local hp = m.inzone and math.max(0, math.min(1, m.hpp or 0)) or 0;
     local c1, c2 = C.hpb1 or C.hp, C.hpb2 or C.hp2;
-    dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.05, 0.045, 0.07, 0.82 }), 6);
+    DL.RF(dl, x, y, x + w, y + h, U4(0.05, 0.045, 0.07, 0.82), 6);
     if hp > 0 then
-        dl:AddRectFilled({ x, y }, { x + w * hp, y + h }, u32({ c1[1], c1[2], c1[3], 0.20 }), 6);
+        DL.RF(dl, x, y, x + w * hp, y + h, U4(c1[1], c1[2], c1[3], 0.20), 6);
         pcall(function()
-            dl:AddRectFilledMultiColor({ x + 3, y + h - 4 }, { x + 3 + (w - 6) * hp, y + h - 2 }, u32({ c1[1], c1[2], c1[3], 1 }), u32({ c2[1], c2[2], c2[3], 1 }),
-                u32({ c2[1], c2[2], c2[3], 1 }), u32({ c1[1], c1[2], c1[3], 1 }));
+            DL.RFM(dl, x + 3, y + h - 4, x + 3 + (w - 6) * hp, y + h - 2, U4(c1[1], c1[2], c1[3], 1), U4(c2[1], c2[2], c2[3], 1), U4(c2[1], c2[2], c2[3], 1), U4(c1[1], c1[2], c1[3], 1));
         end);
     end
     local edge = { 1, 1, 1, 0.10 };
     if m.idx ~= 0 and m.idx == tidx then edge = { 0.75, 0.55, 1.0, 0.95 };
     elseif m.inzone and hp < 0.5 then local b = 0.5 + 0.5 * math.sin(os.clock() * 6 + i); edge = { 1.0, 0.30, 0.35, 0.45 + 0.5 * b }; end
-    dl:AddRect({ x, y }, { x + w, y + h }, u32(edge), 6, all, 1.2);
+    DL.R(dl, x, y, x + w, y + h, u32(edge), 6, all, 1.2);
     local fs = FS or 1;
     imgui.SetWindowFontScale(fs * 0.76);
     local lh = imgui.GetTextLineHeight();
@@ -3105,7 +3119,7 @@ function ALLY.hue(h, a)                                              -- a colour
     local seg = math.floor(k);
     if seg == 0 then r, g, b = 1, f, 0; elseif seg == 1 then r, g, b = q, 1, 0; elseif seg == 2 then r, g, b = 0, 1, f;
     elseif seg == 3 then r, g, b = 0, q, 1; elseif seg == 4 then r, g, b = f, 0, 1; else r, g, b = 1, 0, q; end
-    return u32({ 0.35 + 0.65 * r, 0.35 + 0.65 * g, 0.35 + 0.65 * b, a });   -- (a little soft, not neon)
+    return U4(0.35 + 0.65 * r, 0.35 + 0.65 * g, 0.35 + 0.65 * b, a);   -- (a little soft, not neon)
 end
 function ALLY.chroma() return (cfg.ally_select_fx or 'chroma') == 'chroma'; end
 -- a chromatic outline along the points (closed), its colours running round over time
@@ -3209,7 +3223,7 @@ function ALLY.edge_under(dl, pts, v, sc)
     for k = 1, #sgn do local a, b = sgn[k], sgn[k % #sgn + 1]; area = area + (a[1] * b[2] - b[1] * a[2]); end
     local dir = (area > 0) and 1 or -1;
     for g = 4, 1, -1 do
-        ALLY.poly(dl, ALLY.grow(pts, dir * g * 1.6 * sc), u32({ c[1], c[2], c[3], 0.11 * v }));
+        ALLY.poly(dl, ALLY.grow(pts, dir * g * 1.6 * sc), U4(c[1], c[2], c[3], 0.11 * v));
     end
 end
 -- An outline th px wide with mitred corners (each side a filled piece meeting the next), so no corner is ever open
@@ -3273,10 +3287,10 @@ function ALLY.edge(dl, pts, v, sc, seed, g, th)
     seed = seed or 0;
     if anim == 'pulse' then                                          -- the halo first, under the line
         local b = 0.5 + 0.5 * math.sin(now * 2.2 + seed * 0.7);
-        for k = 1, n do dl:AddLine(pts[k], pts[k % n + 1], u32({ 0, 0, 0, (0.10 + 0.16 * b) * v }), 3.5 * sc); end
+        for k = 1, n do dl:AddLine(pts[k], pts[k % n + 1], U4(0, 0, 0, (0.10 + 0.16 * b) * v), 3.5 * sc); end
     end
     local ec = (th and th.edge) or { 0, 0, 0, 0.92 };
-    for k = 1, n do dl:AddLine(pts[k], pts[k % n + 1], u32({ ec[1], ec[2], ec[3], ec[4] * v }), 1.2); end   -- the line itself
+    for k = 1, n do dl:AddLine(pts[k], pts[k % n + 1], U4(ec[1], ec[2], ec[3], ec[4] * v), 1.2); end   -- the line itself
     if anim == 'shine' then                                          -- a light along the top side (points 2 -> 3), every ~5 s
         local ph = ((now + seed * 0.37) / 5) % 1;
         if ph < 0.30 then
@@ -3291,7 +3305,7 @@ function ALLY.edge(dl, pts, v, sc, seed, g, th)
                 local f = 1 - math.abs((u0 + u1) / 2);
                 local x0 = math.max(a[1], math.min(b[1], cx + u0 * half));
                 local x1 = math.max(a[1], math.min(b[1], cx + u1 * half));
-                if x1 > x0 then dl:AddLine({ x0, a[2] }, { x1, a[2] }, u32({ 1, 1, 1, 0.85 * f * strength * v }), 1.4); end
+                if x1 > x0 then DL.L(dl, x0, a[2], x1, a[2], U4(1, 1, 1, 0.85 * f * strength * v), 1.4); end
             end
         end
     elseif anim == 'trace' then                                      -- a small light running round, slowly
@@ -3300,7 +3314,7 @@ function ALLY.edge(dl, pts, v, sc, seed, g, th)
         local prev = nil;
         for t = 0, 10 do
             local px, py = ALLY.along(pts, head - t * 2.5 * sc);
-            if prev then dl:AddLine(prev, { px, py }, u32({ 1, 1, 1, 0.85 * (1 - t / 10) * v }), 1.3); end
+            if prev then dl:AddLine(prev, { px, py }, U4(1, 1, 1, 0.85 * (1 - t / 10) * v), 1.3); end
             prev = { px, py };
         end
     elseif anim == 'twinkle' then                                    -- a corner sparkles, one at a time
@@ -3311,9 +3325,9 @@ function ALLY.edge(dl, pts, v, sc, seed, g, th)
             local sp = (g and g.spark) or pts;
             local p = sp[(slot * 3 + seed) % #sp + 1];
             local r = 4.5 * sc * q;
-            dl:AddLine({ p[1] - r, p[2] }, { p[1] + r, p[2] }, u32({ 1, 1, 1, 0.9 * q * v }), 1.2);
-            dl:AddLine({ p[1], p[2] - r }, { p[1], p[2] + r }, u32({ 1, 1, 1, 0.9 * q * v }), 1.2);
-            dl:AddCircleFilled(p, 1.4 * sc, u32({ 1, 1, 1, q * v }), 8);
+            DL.L(dl, p[1] - r, p[2], p[1] + r, p[2], U4(1, 1, 1, 0.9 * q * v), 1.2);
+            DL.L(dl, p[1], p[2] - r, p[1], p[2] + r, U4(1, 1, 1, 0.9 * q * v), 1.2);
+            dl:AddCircleFilled(p, 1.4 * sc, U4(1, 1, 1, q * v), 8);
         end
     end
 end
@@ -3525,14 +3539,14 @@ end
 function ALLY.body(dl, pts, g, x1, tip, y1, y2, hp, v, sc, seed, th)
     local now = os.clock();
     local b = th.base;
-    ALLY.poly(dl, pts, u32({ b[1], b[2], b[3], b[4] * v }));
+    ALLY.poly(dl, pts, U4(b[1], b[2], b[3], b[4] * v));
     local fx = x1 + (tip - x1) * hp;
     if hp <= 0 then return fx; end
     local fill = ALLY.clip_x(pts, x1 - 1, fx);
     if #fill < 3 then return fx; end
     local f1, f2, fa = th.f1, th.f2 or th.f1, (th.fa or 1) * v;
     if f2 == f1 then
-        ALLY.poly(dl, fill, u32({ f1[1], f1[2], f1[3], fa }));
+        ALLY.poly(dl, fill, U4(f1[1], f1[2], f1[3], fa));
     else                                                             -- a gradient: its two ends cut from the shape, a smooth middle
         local function at(x)
             local u = math.max(0, math.min(1, (x - x1) / math.max(1, tip - x1)));
@@ -3560,7 +3574,7 @@ function ALLY.body(dl, pts, g, x1, tip, y1, y2, hp, v, sc, seed, th)
     if kind == 'gloss' and bx1 > bx0 then
         ALLY.grad(dl, { bx0, y1 + 1 }, { bx1, ny }, W(0.55), W(0.55), W(0.06), W(0.06));
         ALLY.grad(dl, { bx0, ny }, { bx1, y2 - 1 }, K(0), K(0), K(0.18), K(0.18));
-        dl:AddLine({ bx0 + 1, y1 + 2 }, { bx1 - 1, y1 + 2 }, u32(W(0.85)), 1);
+        DL.L(dl, bx0 + 1, y1 + 2, bx1 - 1, y1 + 2, u32(W(0.85)), 1);
     elseif kind == 'shimmer' then
         local ph = ((now + seed * 0.53) / 4.5) % 1;
         if ph < 0.4 then
@@ -3587,14 +3601,14 @@ function ALLY.body(dl, pts, g, x1, tip, y1, y2, hp, v, sc, seed, th)
                 local h2 = ((cyc * 41 + k * 59 + seed * 7) % 89) / 89;
                 local sx, sy = bx0 + 6 + (bx1 - bx0 - 12) * h1, y1 + 4 * sc + (y2 - y1 - 8 * sc) * h2;
                 local r = 5 * sc * q;
-                local c = u32({ sp[1], sp[2], sp[3], 0.95 * q * v });
-                dl:AddCircleFilled({ sx, sy }, 3.2 * sc * q, u32({ sp[1], sp[2], sp[3], 0.22 * q * v }), 12);   -- (a soft halo)
-                dl:AddLine({ sx - r, sy }, { sx + r, sy }, c, 1);
-                dl:AddLine({ sx, sy - r }, { sx, sy + r }, c, 1);
+                local c = U4(sp[1], sp[2], sp[3], 0.95 * q * v);
+                DL.CF(dl, sx, sy, 3.2 * sc * q, U4(sp[1], sp[2], sp[3], 0.22 * q * v), 12);   -- (a soft halo)
+                DL.L(dl, sx - r, sy, sx + r, sy, c, 1);
+                DL.L(dl, sx, sy - r, sx, sy + r, c, 1);
                 local d = r * 0.45;
-                dl:AddLine({ sx - d, sy - d }, { sx + d, sy + d }, u32({ sp[1], sp[2], sp[3], 0.55 * q * v }), 1);
-                dl:AddLine({ sx - d, sy + d }, { sx + d, sy - d }, u32({ sp[1], sp[2], sp[3], 0.55 * q * v }), 1);
-                dl:AddCircleFilled({ sx, sy }, 1.2 * sc, c, 8);
+                DL.L(dl, sx - d, sy - d, sx + d, sy + d, U4(sp[1], sp[2], sp[3], 0.55 * q * v), 1);
+                DL.L(dl, sx - d, sy + d, sx + d, sy - d, U4(sp[1], sp[2], sp[3], 0.55 * q * v), 1);
+                DL.CF(dl, sx, sy, 1.2 * sc, c, 8);
             end
         end
     elseif kind == 'breathe' then
@@ -3603,12 +3617,12 @@ function ALLY.body(dl, pts, g, x1, tip, y1, y2, hp, v, sc, seed, th)
     end
     if cfg.card_low ~= false and hp < 0.30 then                      -- low HP: the fill beats red
         local bq = 0.5 + 0.5 * math.sin(now * 6 + seed);
-        ALLY.poly(dl, fill, u32({ 1.0, 0.22, 0.28, (0.28 + 0.34 * bq) * v }));
+        ALLY.poly(dl, fill, U4(1.0, 0.22, 0.28, (0.28 + 0.34 * bq) * v));
     end
     if hp < 0.995 then                                               -- the line where it ends
         local e = th.endl or { 0, 0, 0 };
         local poly = ALLY.clip_x(pts, fx - 2 * sc, fx);
-        if #poly >= 3 then ALLY.poly(dl, poly, u32({ e[1], e[2], e[3], 0.95 * v })); end
+        if #poly >= 3 then ALLY.poly(dl, poly, U4(e[1], e[2], e[3], 0.95 * v)); end
     end
     return fx;
 end
@@ -3622,22 +3636,22 @@ function ALLY.mpbar(dl, m, g, x1, y2, sc, v)
     if mx1 <= mx0 then return; end
     if g.round then
         local r = bh / 2;
-        dl:AddRectFilled({ mx0 - 1, by - 1 }, { mx1 + 1, by + bh + 1 }, u32({ 0, 0, 0, 0.80 * v }), r + 1);
-        dl:AddRectFilled({ mx0, by }, { mx1, by + bh }, u32({ 0.09, 0.09, 0.13, 0.95 * v }), r);
+        DL.RF(dl, mx0 - 1, by - 1, mx1 + 1, by + bh + 1, U4(0, 0, 0, 0.80 * v), r + 1);
+        DL.RF(dl, mx0, by, mx1, by + bh, U4(0.09, 0.09, 0.13, 0.95 * v), r);
         if mpp > 0 then
             local fx = math.max(mx0 + bh, mx0 + (mx1 - mx0) * mpp);
-            dl:AddRectFilled({ mx0, by }, { fx, by + bh }, u32({ 0.22, 0.50, 1.0, v }), r);
-            if fx - r > mx0 + r then dl:AddLine({ mx0 + r, by + 0.5 }, { fx - r, by + 0.5 }, u32({ 0.70, 0.88, 1.0, 0.9 * v }), 1); end
+            DL.RF(dl, mx0, by, fx, by + bh, U4(0.22, 0.50, 1.0, v), r);
+            if fx - r > mx0 + r then DL.L(dl, mx0 + r, by + 0.5, fx - r, by + 0.5, U4(0.70, 0.88, 1.0, 0.9 * v), 1); end
         end
         return;
     end
-    ALLY.poly(dl, { { mx0 - 1, by + bh + 1 }, { mx0 + sl - 1, by - 1 }, { mx1 + sl + 1, by - 1 }, { mx1 + 1, by + bh + 1 } }, u32({ 0, 0, 0, 0.80 * v }));
-    ALLY.poly(dl, { { mx0, by + bh }, { mx0 + sl, by }, { mx1 + sl, by }, { mx1, by + bh } }, u32({ 0.09, 0.09, 0.13, 0.95 * v }));
+    ALLY.poly(dl, { { mx0 - 1, by + bh + 1 }, { mx0 + sl - 1, by - 1 }, { mx1 + sl + 1, by - 1 }, { mx1 + 1, by + bh + 1 } }, U4(0, 0, 0, 0.80 * v));
+    ALLY.poly(dl, { { mx0, by + bh }, { mx0 + sl, by }, { mx1 + sl, by }, { mx1, by + bh } }, U4(0.09, 0.09, 0.13, 0.95 * v));
     if mpp > 0 then
         local fx = mx0 + (mx1 - mx0) * mpp;
-        ALLY.poly(dl, { { mx0, by + bh }, { mx0 + sl, by }, { fx + sl, by }, { fx, by + bh } }, u32({ 0.22, 0.50, 1.0, v }));
-        dl:AddLine({ mx0 + sl, by + 0.5 }, { fx + sl, by + 0.5 }, u32({ 0.70, 0.88, 1.0, 0.9 * v }), 1);   -- a bright top edge
-        if mpp < 0.995 then dl:AddLine({ fx, by + bh }, { fx + sl, by }, u32({ 1, 1, 1, 0.9 * v }), 1); end   -- and its end
+        ALLY.poly(dl, { { mx0, by + bh }, { mx0 + sl, by }, { fx + sl, by }, { fx, by + bh } }, U4(0.22, 0.50, 1.0, v));
+        DL.L(dl, mx0 + sl, by + 0.5, fx + sl, by + 0.5, U4(0.70, 0.88, 1.0, 0.9 * v), 1);   -- a bright top edge
+        if mpp < 0.995 then DL.L(dl, fx, by + bh, fx + sl, by, U4(1, 1, 1, 0.9 * v), 1); end   -- and its end
     end
 end
 -- Text on a card, never cut in two: dark ink when the whole word sits on a light HP; white with its dark edge when it
@@ -3645,7 +3659,7 @@ end
 function ALLY.ink(dl, x0, ty, str, fx, y1, y2, tip, v, th)
     local tw = imgui.CalcTextSize(str);
     if th.ink == 'light' or fx < x0 + tw + 2 then text(dl, x0, ty, str, { 1, 1, 1, v }); return; end
-    dl:AddText({ x0, ty }, u32({ 0.10, 0.08, 0.14, v }), str);
+    DL.T(dl, x0, ty, U4(0.10, 0.08, 0.14, v), str);
 end
 -- PARTY > CARDS > Style / Card height: how tall a card is. Slim: a dark card with a thin glowing HP line under the name
 -- (the look of your own HP bar: same colours, same Blue Inferno / Beam effect); Filled: the HP fills the card.
@@ -3725,14 +3739,14 @@ function ALLY.tag(dl, m, i, x, ny, ch, sc, v, live, mir)            -- (mir: x i
         end
     end
     if fl and fl.back then                                           -- the back: the lot (gold for the highest, grey for a pass)
-        ALLY.poly(dl, pts, u32({ f[1], f[2], f[3], v }));
-        if ta > 0.01 then dl:AddText({ jx, y0 + (th - jh) / 2 }, u32({ ink[1], ink[2], ink[3], v * ta }), job); end
+        ALLY.poly(dl, pts, U4(f[1], f[2], f[3], v));
+        if ta > 0.01 then DL.T(dl, jx, y0 + (th - jh) / 2, U4(ink[1], ink[2], ink[3], v * ta), job); end
     elseif (cfg.tag_look or 'role') == 'black' then                 -- (PARTY > CARDS > Job tags: black, the job in white with a dark edge)
-        ALLY.poly(dl, pts, u32({ 0.035, 0.03, 0.045, 0.92 * v * dim }));
+        ALLY.poly(dl, pts, U4(0.035, 0.03, 0.045, 0.92 * v * dim));
         if ta > 0.01 then text(dl, jx, y0 + (th - jh) / 2, job, { 1, 1, 1, v * dim * ta }); end
     else
-        ALLY.poly(dl, pts, u32({ f[1], f[2], f[3], v * dim }));      -- (one flat colour: no sheen, no outline)
-        if ta > 0.01 then dl:AddText({ jx, y0 + (th - jh) / 2 }, u32({ ink[1], ink[2], ink[3], v * ta }), job); end
+        ALLY.poly(dl, pts, U4(f[1], f[2], f[3], v * dim));      -- (one flat colour: no sheen, no outline)
+        if ta > 0.01 then DL.T(dl, jx, y0 + (th - jh) / 2, U4(ink[1], ink[2], ink[3], v * ta), job); end
     end
     imgui.SetWindowFontScale(fs0);
     if mir then return x, s; end
@@ -3759,16 +3773,16 @@ function ALLY.slim(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
         local tt = os.clock() * 1.25 + i * 0.13;
         local f = tt - math.floor(tt);
         beat = math.min(1, math.max(0, math.sin(f * math.pi * 2)) ^ 6 + 0.6 * math.max(0, math.sin((f - 0.16) * math.pi * 2)) ^ 6);
-        if not bare then pcall(ALLY.glow_ring, dl, pts, (1.2 + 1.6 * beat) * sc, u32({ 1.0, 0.24, 0.30, (0.12 + 0.28 * beat) * v })); end
+        if not bare then pcall(ALLY.glow_ring, dl, pts, (1.2 + 1.6 * beat) * sc, U4(1.0, 0.24, 0.30, (0.12 + 0.28 * beat) * v)); end
     end
     if not bare then
-        ALLY.poly(dl, pts, u32({ b[1], b[2], b[3], math.min(b[4], 0.80) * v }));   -- the card: dark, a little see-through
+        ALLY.poly(dl, pts, U4(b[1], b[2], b[3], math.min(b[4], 0.80) * v));   -- the card: dark, a little see-through
         if g.mb > g.ma then ALLY.grad(dl, { g.ma, y1 + 1 }, { g.mb, ny }, { 1, 1, 1, 0.07 * v }, { 1, 1, 1, 0.07 * v }, { 1, 1, 1, 0 }, { 1, 1, 1, 0 }); end
         ALLY.edge(dl, pts, v, sc, i, g, th);
     end
     if low and not bare then                                         -- (tinted red, its edge red, both beating)
-        ALLY.poly(dl, pts, u32({ 1.0, 0.20, 0.26, (0.06 + 0.14 * beat) * v }));
-        for k = 1, #pts do dl:AddLine(pts[k], pts[k % #pts + 1], u32({ 1.0, 0.32, 0.36, (0.45 + 0.55 * beat) * v }), 1.3); end
+        ALLY.poly(dl, pts, U4(1.0, 0.20, 0.26, (0.06 + 0.14 * beat) * v));
+        for k = 1, #pts do dl:AddLine(pts[k], pts[k % #pts + 1], U4(1.0, 0.32, 0.36, (0.45 + 0.55 * beat) * v), 1.3); end
     end
     local bh = ALLY.sbh(sc);
     local mph = party and math.max(1, math.floor(2.2 * sc * math.max(0.5, math.min(3, tonumber(cfg.party_mp_th) or 1)) + 0.5)) or 0;   -- (PARTY > MP bar thickness)
@@ -3793,15 +3807,15 @@ function ALLY.slim(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
             tend = ALLY.tag(dl, m, i, x1 + 2 * sc, ny, ch, sc, v, live);
         end
         local card = { { tend + gp, y1 }, { cend, y1 }, { cend - sl, y2 }, { tend + gp - sl, y2 } };
-        if low then pcall(ALLY.glow_ring, dl, card, (1.2 + 1.6 * beat) * sc, u32({ 1.0, 0.24, 0.30, (0.12 + 0.28 * beat) * v })); end   -- (a thin glow, hugging the card)
-        ALLY.poly(dl, card, u32({ 0.085, 0.08, 0.115, 0.82 * v }));
+        if low then pcall(ALLY.glow_ring, dl, card, (1.2 + 1.6 * beat) * sc, U4(1.0, 0.24, 0.30, (0.12 + 0.28 * beat) * v)); end   -- (a thin glow, hugging the card)
+        ALLY.poly(dl, card, U4(0.085, 0.08, 0.115, 0.82 * v));
         ALLY.grad(dl, { tend + gp, y1 }, { cend - sl, y1 + 1 }, { 1, 1, 1, 0.14 * v }, { 1, 1, 1, 0 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0.14 * v });
         local tg = ALLY.is_tgt(m, i, ALLY.tidx_cur);
         if low then
-            ALLY.poly(dl, card, u32({ 1.0, 0.20, 0.26, (0.06 + 0.14 * beat) * v }));
-            for k = 1, 4 do dl:AddLine(card[k], card[k % 4 + 1], u32({ 1.0, 0.32, 0.36, (0.45 + 0.55 * beat) * v }), 1.3); end
+            ALLY.poly(dl, card, U4(1.0, 0.20, 0.26, (0.06 + 0.14 * beat) * v));
+            for k = 1, 4 do dl:AddLine(card[k], card[k % 4 + 1], U4(1.0, 0.32, 0.36, (0.45 + 0.55 * beat) * v), 1.3); end
         else
-            for k = 1, 4 do dl:AddLine(card[k], card[k % 4 + 1], tg and u32({ 1, 1, 1, 0.85 * v }) or u32({ 0, 0, 0, 0.85 * v }), tg and 1.2 or 1); end
+            for k = 1, 4 do dl:AddLine(card[k], card[k % 4 + 1], tg and U4(1, 1, 1, 0.85 * v) or U4(0, 0, 0, 0.85 * v), tg and 1.2 or 1); end
         end
         tx = tend + gp + 6 * sc;
         bx1 = cend - sl * 0.5 - 6 * sc - tpc;
@@ -3868,8 +3882,8 @@ function ALLY.slim(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     if party then                                                    -- the MP line
         local my = hy + bh + 2 * sc;
         local mpp = math.max(0, math.min(1, m.mpp or 0));
-        dl:AddRectFilled({ tx, my }, { tx + bw, my + mph }, u32({ 0, 0, 0, 0.45 * v }), mph / 2);
-        if mpp > 0 then dl:AddRectFilled({ tx, my }, { tx + math.max(mph, bw * mpp), my + mph }, u32({ 0.45, 0.62, 1.0, 0.95 * v }), mph / 2); end
+        DL.RF(dl, tx, my, tx + bw, my + mph, U4(0, 0, 0, 0.45 * v), mph / 2);
+        if mpp > 0 then DL.RF(dl, tx, my, tx + math.max(mph, bw * mpp), my + mph, U4(0.45, 0.62, 1.0, 0.95 * v), mph / 2); end
         local tp = tonumber(m.tp) or 0;                              -- the TP, in its column: a tiny "TP" over the number
         local cx = bx1 + 6 * sc + (tpc - 6 * sc) / 2;
         imgui.SetWindowFontScale((FS or 1) * 0.80 * 0.62);
@@ -3905,7 +3919,7 @@ function ALLY.plate(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     local tgt = ALLY.is_tgt(m, i, ALLY.tidx_cur);
     local function edge(pts, col, w) for k = 1, #pts do dl:AddLine(pts[k], pts[k % #pts + 1], col, w); end end
     local blk = { { x1, y1 }, { x1 + bw, y1 }, { x1 + bw - s, y2 }, { x1, y2 } };   -- the role block: dark, its colour rising from the foot
-    ALLY.poly(dl, blk, u32({ 0.07, 0.065, 0.10, 0.92 * v }));
+    ALLY.poly(dl, blk, U4(0.07, 0.065, 0.10, 0.92 * v));
     local fb = ALLY.clip_x(blk, x1, x1 + bw);
     if #fb >= 3 then                                                 -- (the colour: strong at the foot, gone at the top)
         local mid = (y1 + y2) / 2;
@@ -3917,16 +3931,16 @@ function ALLY.plate(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     end
     local px0 = x1 + bw + 2 * sc;                                    -- the plate
     local plate = { { px0, y1 }, { tip, y1 }, { tip - s, y2 }, { px0 - s, y2 } };
-    ALLY.poly(dl, plate, u32({ 0.09, 0.085, 0.12, 0.84 * v }));
+    ALLY.poly(dl, plate, U4(0.09, 0.085, 0.12, 0.84 * v));
     ALLY.grad(dl, { px0, y1 }, { tip - s, y1 + 1 }, { 1, 1, 1, 0.12 * v }, { 1, 1, 1, 0 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0.12 * v });
     ALLY.grad(dl, { px0 - s, y2 - 1 }, { tip - s, y2 }, { rc[1], rc[2], rc[3], 0.85 * v * dim }, { rc[1], rc[2], rc[3], 0 }, { rc[1], rc[2], rc[3], 0 }, { rc[1], rc[2], rc[3], 0.85 * v * dim });   -- (its role colour, a hairline at its foot)
-    dl:AddRectFilled({ x1, y1 }, { x1 + 2 * sc, y2 }, u32({ rc[1], rc[2], rc[3], 0.95 * v * dim }));   -- (and a stripe on the block's left)
-    edge(blk, u32({ 0, 0, 0, 0.85 * v }), 1);
+    DL.RF(dl, x1, y1, x1 + 2 * sc, y2, U4(rc[1], rc[2], rc[3], 0.95 * v * dim));   -- (and a stripe on the block's left)
+    edge(blk, U4(0, 0, 0, 0.85 * v), 1);
     if tgt then                                                      -- your target: a fine white edge, the plate a touch lighter
-        ALLY.poly(dl, plate, u32({ 1, 1, 1, 0.06 * v }));
-        edge(plate, u32({ 1, 1, 1, 0.85 * v }), 1.1);
+        ALLY.poly(dl, plate, U4(1, 1, 1, 0.06 * v));
+        edge(plate, U4(1, 1, 1, 0.85 * v), 1.1);
     else
-        edge(plate, u32({ 0, 0, 0, 0.85 * v }), 1);
+        edge(plate, U4(0, 0, 0, 0.85 * v), 1);
     end
     local ih = ch * 0.80;                                            -- the hat, in the block
     local icx = x1 + (bw - s * 0.5) / 2;
@@ -3947,7 +3961,7 @@ function ALLY.plate(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
         while #nm > 2 and spaced_w(nm .. '.', sp) > room do nm = nm:sub(1, -2); end
         nm = nm .. '.';
     end
-    spaced(dl, tx + lmw, top - 1, nm, u32({ 1, 1, 1, v * dim }), sp);
+    spaced(dl, tx + lmw, top - 1, nm, U4(1, 1, 1, v * dim), sp);
     text(dl, rx - pw, top - 1, pct, { 1, 1, 1, 0.92 * v });
     if not m.inzone then pcall(C.zone_line, dl, m, tx, top + lh + 1 * sc, rx - tx, sc, v); end   -- (in another zone: where)
     if not m.inzone or v < 0.5 then return; end
@@ -3968,8 +3982,8 @@ function ALLY.plate(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     if party then
         local my = hy + bh + 2 * sc;
         local mpp = math.max(0, math.min(1, m.mpp or 0));
-        dl:AddRectFilled({ tx, my }, { tx + bw2, my + mph }, u32({ 0, 0, 0, 0.45 * v }), mph / 2);
-        if mpp > 0 then dl:AddRectFilled({ tx, my }, { tx + math.max(mph, bw2 * mpp), my + mph }, u32({ 0.45, 0.62, 1.0, 0.95 * v }), mph / 2); end
+        DL.RF(dl, tx, my, tx + bw2, my + mph, U4(0, 0, 0, 0.45 * v), mph / 2);
+        if mpp > 0 then DL.RF(dl, tx, my, tx + math.max(mph, bw2 * mpp), my + mph, U4(0.45, 0.62, 1.0, 0.95 * v), mph / 2); end
     end
 end
 -- One whole card (centred on ny, from x1 to tip): the card, its edge, the MP bar (your party), the hat, the name and HP %.
@@ -4044,12 +4058,12 @@ function ALLY.trace(dl, pts, d0, per, p, r, g, b, a, sc)
         local px, py = ALLY.along(pts, d0);
         for k = 1, n do
             local nx, ny = ALLY.along(pts, d0 + dir * half * k / n);
-            dl:AddLine({ px, py }, { nx, ny }, u32({ r, g, b, a }), 1.2);
+            DL.L(dl, px, py, nx, ny, U4(r, g, b, a), 1.2);
             px, py = nx, ny;
         end
         if p < 1 then                                                -- its running head
-            dl:AddCircleFilled({ px, py }, 3.2 * sc, u32({ r, g, b, 0.30 * a }), 12);
-            dl:AddCircleFilled({ px, py }, 1.5 * sc, u32({ 1, 1, 1, math.min(1, a * 1.6) }), 10);   -- (the running head stays bright)
+            DL.CF(dl, px, py, 3.2 * sc, U4(r, g, b, 0.30 * a), 12);
+            DL.CF(dl, px, py, 1.5 * sc, U4(1, 1, 1, math.min(1, a * 1.6)), 10);   -- (the running head stays bright)
         end
     end
 end
@@ -4144,7 +4158,7 @@ function ALLY.preview()
     for k, m in ipairs(list) do
         local ny = y0 + gap / 2 + (k - 1) * gap;
         ALLY.card(dl, m, 900 + k, tip - cw, tip, ny, ch, lh, sc, 1, true, false);
-        if cfg.spine_line ~= false and (cfg.card_style or 'clean') ~= 'clean' then dl:AddLine({ tip, ny }, { lx, ny }, u32({ 1, 1, 1, 0.40 }), 1); end
+        if cfg.spine_line ~= false and (cfg.card_style or 'clean') ~= 'clean' then DL.L(dl, tip, ny, lx, ny, U4(1, 1, 1, 0.40), 1); end
     end
     if pushed then imgui.PopFont(); end
     FS = 1;
@@ -4176,32 +4190,32 @@ function ALLY.orbs(dl, list, x, y, sc, dt, tidx)
         ALLY.click(m, i, (imgui.GetMousePos() - cx) ^ 2 + (select(2, imgui.GetMousePos()) - cy) ^ 2 < (R + 4) ^ 2);
         if tgt then                                                  -- selected: a violet halo, or a chromatic ring running round
             if ALLY.chroma() then ALLY.chroma_path(dl, ALLY.circle_pts(cx, cy, R + 5, 36), 2, 1);
-            else for g = 3, 1, -1 do dl:AddCircle({ cx, cy }, R + 3 + g * 2, u32({ 0.62, 0.40, 1.0, 0.10 * (4 - g) }), 32, 3); end end
+            else for g = 3, 1, -1 do DL.C(dl, cx, cy, R + 3 + g * 2, U4(0.62, 0.40, 1.0, 0.10 * (4 - g)), 32, 3); end end
         end
         if low then                                                  -- low: a red beat round it
             local b = (now * 1.6 + i * 0.3) % 1;
-            dl:AddCircle({ cx, cy }, R + 4 + b * 10 * sc, u32({ 1.0, 0.30, 0.32, 0.6 * (1 - b) }), 32, 2);
+            DL.C(dl, cx, cy, R + 4 + b * 10 * sc, U4(1.0, 0.30, 0.32, 0.6 * (1 - b)), 32, 2);
         end
-        dl:AddCircleFilled({ cx, cy }, R + 3, u32({ 0.03, 0.025, 0.045, 0.90 * a }), 32);
-        dl:AddCircle({ cx, cy }, R, u32({ 1, 1, 1, 0.08 * a }), 40, 3.5);
+        DL.CF(dl, cx, cy, R + 3, U4(0.03, 0.025, 0.045, 0.90 * a), 32);
+        DL.C(dl, cx, cy, R, U4(1, 1, 1, 0.08 * a), 40, 3.5);
         local seg = 48;                                              -- the HP ring, from the top, clockwise
         local nseg = math.floor(seg * hp + 0.5);
         for s_ = 0, nseg - 1 do
             local u = s_ / seg;
             local a0, a1 = -math.pi / 2 + u * math.pi * 2, -math.pi / 2 + (s_ + 1) / seg * math.pi * 2;
             local col = low and { 1.0, 0.30, 0.32 } or { c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u };
-            dl:AddLine({ cx + math.cos(a0) * R, cy + math.sin(a0) * R }, { cx + math.cos(a1) * R, cy + math.sin(a1) * R }, u32({ col[1], col[2], col[3], a }), 3.2);
+            DL.L(dl, cx + math.cos(a0) * R, cy + math.sin(a0) * R, cx + math.cos(a1) * R, cy + math.sin(a1) * R, U4(col[1], col[2], col[3], a), 3.2);
         end
         if hp > 0 and hp < 1 then                                    -- its head: a small bright dot
             local ah = -math.pi / 2 + hp * math.pi * 2;
-            dl:AddCircleFilled({ cx + math.cos(ah) * R, cy + math.sin(ah) * R }, 2.4 * sc, u32({ 1, 1, 1, 0.95 * a }), 10);
+            DL.CF(dl, cx + math.cos(ah) * R, cy + math.sin(ah) * R, 2.4 * sc, U4(1, 1, 1, 0.95 * a), 10);
         end
         local gp = ((now / 3.2) + k * 0.13) % 1;                     -- a glint running round the bezel
         if gp < 0.35 then
             local q = gp / 0.35;
             for t_ = 0, 5 do
                 local ag = -math.pi / 2 + (q - t_ * 0.02) * math.pi * 2;
-                dl:AddCircleFilled({ cx + math.cos(ag) * (R + 3), cy + math.sin(ag) * (R + 3) }, (2 - t_ * 0.25) * sc, u32({ 1, 0.95, 1, (0.55 - t_ * 0.09) * a * math.sin(q * math.pi) }), 8);
+                DL.CF(dl, cx + math.cos(ag) * (R + 3), cy + math.sin(ag) * (R + 3), (2 - t_ * 0.25) * sc, U4(1, 0.95, 1, (0.55 - t_ * 0.09) * a * math.sin(q * math.pi)), 8);
             end
         end
         local ih = R * 1.25;                                         -- the hat
@@ -4231,17 +4245,17 @@ function ALLY.head_icons(dl, x, cy, sc)                              -- the arro
     local hv = ALLY.hbh.anchor;
     local c = on and { 0.86, 0.58, 1.0, hv and 1 or 0.9 } or { 0.62, 0.60, 0.70, hv and 1 or 0.7 };
     local cxa = ax + bs / 2;
-    if on then dl:AddLine({ cxa - 3.6 * sc, cy }, { cxa + 3.6 * sc, cy }, u32(c), 1.6 * sc); end
-    dl:AddCircleFilled({ cxa - 3.6 * sc, cy }, 2.4 * sc, u32(c), 10);
-    dl:AddCircleFilled({ cxa + 3.6 * sc, cy }, 2.4 * sc, u32(c), 10);
+    if on then DL.L(dl, cxa - 3.6 * sc, cy, cxa + 3.6 * sc, cy, u32(c), 1.6 * sc); end
+    DL.CF(dl, cxa - 3.6 * sc, cy, 2.4 * sc, u32(c), 10);
+    DL.CF(dl, cxa + 3.6 * sc, cy, 2.4 * sc, u32(c), 10);
     r.anchor = { ax, cy - bs / 2, bs, bs };
     local rx = ax - bs - 2 * sc;                                     -- the arrow: > slides them away, < brings them back
     local hidden = cfg.party_hidden == true;
-    local cc = u32({ 1, 1, 1, ALLY.hbh.arrow and 1 or 0.75 });
+    local cc = U4(1, 1, 1, ALLY.hbh.arrow and 1 or 0.75);
     local cxr = rx + bs / 2;
     local d = hidden and -1 or 1;
-    dl:AddLine({ cxr - 2.6 * sc * d, cy - 4.2 * sc }, { cxr + 2.6 * sc * d, cy }, cc, 1.6 * sc);
-    dl:AddLine({ cxr + 2.6 * sc * d, cy }, { cxr - 2.6 * sc * d, cy + 4.2 * sc }, cc, 1.6 * sc);
+    DL.L(dl, cxr - 2.6 * sc * d, cy - 4.2 * sc, cxr + 2.6 * sc * d, cy, cc, 1.6 * sc);
+    DL.L(dl, cxr + 2.6 * sc * d, cy, cxr - 2.6 * sc * d, cy + 4.2 * sc, cc, 1.6 * sc);
     r.arrow = { rx, cy - bs / 2, bs, bs };
     ALLY.hbtn = r;
 end
@@ -4296,10 +4310,10 @@ function ALLY.spine(dl, list, x, y, sc, dt, tidx, n, party)
         local r, g, b = ALLY.vcol((hy - y0) / math.max(1, y1 - y0));
         local X = math.floor(lx + 0.5) - 1;
         pcall(function()
-            dl:AddRectFilledMultiColor({ X, math.max(y0, hy - 22 * sc) }, { X + 2, hy }, u32({ 1, 1, 1, 0 }), u32({ 1, 1, 1, 0 }), u32({ 1, 1, 1, 0.9 }), u32({ 1, 1, 1, 0.9 }));
+            DL.RFM(dl, X, math.max(y0, hy - 22 * sc), X + 2, hy, U4(1, 1, 1, 0), U4(1, 1, 1, 0), U4(1, 1, 1, 0.9), U4(1, 1, 1, 0.9));
         end);
-        dl:AddCircleFilled({ X + 1, hy }, 4.5 * sc, u32({ r, g, b, 0.30 }), 14);
-        dl:AddCircleFilled({ X + 1, hy }, 2.0 * sc, u32({ 1, 1, 1, 1 }), 12);
+        DL.CF(dl, X + 1, hy, 4.5 * sc, U4(r, g, b, 0.30), 14);
+        DL.CF(dl, X + 1, hy, 2.0 * sc, U4(1, 1, 1, 1), 12);
     end
     local skey = tostring(n);
     local seen_now = {};
@@ -4350,10 +4364,10 @@ function ALLY.spine(dl, list, x, y, sc, dt, tidx, n, party)
                 local r, g, b = rc[1], rc[2], rc[3];
                 if sl and now >= tk and now < tk + 0.12 then
                     local q0 = (now - tk) / 0.12;
-                    dl:AddCircleFilled({ lx + (tip - lx) * q0, ny }, 1.8 * sc, u32({ 1, 1, 1, v }), 10);
+                    DL.CF(dl, lx + (tip - lx) * q0, ny, 1.8 * sc, U4(1, 1, 1, v), 10);
                 end
                 local q = math.max(0, math.min(1, (now - tk - 0.12) / 0.55));
-                if sl and now >= tk + 0.12 then dl:AddLine({ tip, ny }, { lx, ny }, u32({ r, g, b, 0.55 * v }), 1.2); end   -- (its tick, coloured too)
+                if sl and now >= tk + 0.12 then DL.L(dl, tip, ny, lx, ny, U4(r, g, b, 0.55 * v), 1.2); end   -- (its tick, coloured too)
                 if q > 0 then
                     local pts = ALLY.shape(x1, tip, ny - ch / 2, ny + ch / 2, sc);
                     local d0, per = ALLY.perim_at(pts, tip, ny);
@@ -4367,9 +4381,9 @@ function ALLY.spine(dl, list, x, y, sc, dt, tidx, n, party)
                 image(dl, tex('sel_arrow.png'), ax, ny - as / 2, ax + as, ny + as / 2, { 1, 1, 1, v });
             end
             if sl then
-                dl:AddLine({ tip, ny }, { lx, ny }, u32({ 1, 1, 1, 0.40 * v }), 1);   -- joined to the line
+                DL.L(dl, tip, ny, lx, ny, U4(1, 1, 1, 0.40 * v), 1);   -- joined to the line
                 if v < 0.98 then                                     -- as it opens, a light runs from the line out to it
-                    dl:AddCircleFilled({ lx + (tip - lx) * v, ny }, 2.2 * sc, u32({ 1, 1, 1, 0.9 * (1 - v) }), 10);
+                    DL.CF(dl, lx + (tip - lx) * v, ny, 2.2 * sc, U4(1, 1, 1, 0.9 * (1 - v)), 10);
                 end
             end
             if party and cfg.buffs then                               -- your party: its buffs left of the card, or right of the line (PARTY > Buffs side)
@@ -4439,7 +4453,7 @@ function ALLY.hex(dl, list, x, y, sc, dt, tidx)
         local tgt = ALLY.is_tgt(m, i, tidx);
         local p = corners(cx, cy, Rh);
         ALLY.click(m, i, (mx - cx) ^ 2 + (my - cy) ^ 2 < Rh * Rh);
-        fill(p, u32({ 0.03, 0.025, 0.045, 0.90 * a }));
+        fill(p, U4(0.03, 0.025, 0.045, 0.90 * a));
         -- the contour, glowing like YunaUI's panel: violet (red and beating when low, brighter on your target)
         local gc = { 0.62, 0.40, 1.0 };
         local ga, la = 0.55 + 0.20 * math.sin(now * 2 + k), 0.85;
@@ -4447,9 +4461,9 @@ function ALLY.hex(dl, list, x, y, sc, dt, tidx)
         if low then local b = 0.5 + 0.5 * math.sin(now * 7 + i); gc, ga = { 1.0, 0.30, 0.32 }, 0.6 + 0.4 * b; end
         for g = 3, 1, -1 do                                          -- the glow: wide faint strokes
             local pg = corners(cx, cy, Rh + g * 1.2);
-            for t_ = 1, 6 do dl:AddLine(pg[t_], pg[t_ % 6 + 1], u32({ gc[1], gc[2], gc[3], 0.09 * (4 - g) * ga * a }), 1.6 + g * 1.8); end
+            for t_ = 1, 6 do dl:AddLine(pg[t_], pg[t_ % 6 + 1], U4(gc[1], gc[2], gc[3], 0.09 * (4 - g) * ga * a), 1.6 + g * 1.8); end
         end
-        for t_ = 1, 6 do dl:AddLine(p[t_], p[t_ % 6 + 1], u32({ (gc[1] + 1) / 2, (gc[2] + 1) / 2, (gc[3] + 1) / 2, la * a }), 1.3); end
+        for t_ = 1, 6 do dl:AddLine(p[t_], p[t_ % 6 + 1], U4((gc[1] + 1) / 2, (gc[2] + 1) / 2, (gc[3] + 1) / 2, la * a), 1.3); end
         if tgt and ALLY.chroma() then ALLY.chroma_path(dl, corners(cx, cy, Rh + 1.5), 2, 1); end   -- selected: the contour turns chromatic
         if hp > 0 then                                               -- the HP: the living bar, inside the cell under the hat
             local bw, bh_ = hw * 0.66, math.max(3, math.floor(4 * sc));
@@ -4470,8 +4484,8 @@ function ALLY.hex(dl, list, x, y, sc, dt, tidx)
         local str = (m.name or '?') .. (m.inzone and string.format('  %d%%', math.floor((m.hpp or 0) * 100 + 0.5)) or '');
         local tw, th = imgui.CalcTextSize(str);
         local px, py = hover[2] - tw / 2 - 8, hover[3] - Rh - th - 12;
-        dl:AddRectFilled({ px, py }, { px + tw + 16, py + th + 6 }, u32({ 0.045, 0.04, 0.065, 0.95 }), (th + 6) / 2);
-        dl:AddRect({ px, py }, { px + tw + 16, py + th + 6 }, u32({ 0.62, 0.40, 1.0, 0.7 }), (th + 6) / 2, ImDrawFlags_RoundCornersAll or ImDrawCornerFlags_All or 15, 1);
+        DL.RF(dl, px, py, px + tw + 16, py + th + 6, U4(0.045, 0.04, 0.065, 0.95), (th + 6) / 2);
+        DL.R(dl, px, py, px + tw + 16, py + th + 6, U4(0.62, 0.40, 1.0, 0.7), (th + 6) / 2, ImDrawFlags_RoundCornersAll or ImDrawCornerFlags_All or 15, 1);
         text(dl, px + 8, py + 3, str, { 1, 1, 1, 1 });
         imgui.SetWindowFontScale(fs);
     end
@@ -4516,10 +4530,10 @@ function ALLY.draw(dl, x, y, first, style, sc, dt, tidx, n)
             elseif hp >= 0.5 then c = { 1.0, 0.36, 0.62, 1 };
             else local b = 0.5 + 0.5 * math.sin(os.clock() * 7); c = { 1.0, 0.28, 0.30, 0.6 + 0.4 * b }; end
             if c then
-                dl:AddCircleFilled({ px + r, cy }, r + 1, u32({ 0, 0, 0, 0.6 }), 14);
-                dl:AddCircleFilled({ px + r, cy }, r, u32(c), 14);
+                DL.CF(dl, px + r, cy, r + 1, U4(0, 0, 0, 0.6), 14);
+                DL.CF(dl, px + r, cy, r, u32(c), 14);
             else
-                dl:AddCircle({ px + r, cy }, r, u32({ 0.6, 0.58, 0.68, 0.6 }), 14, 1.2);   -- (not in the zone)
+                DL.C(dl, px + r, cy, r, U4(0.6, 0.58, 0.68, 0.6), 14, 1.2);   -- (not in the zone)
             end
             px = px + r * 2 + 5 * sc;
         end
@@ -4921,9 +4935,9 @@ function C.speaker(mode, line)
     return nil;
 end
 function C.atext(dl, x, y, str, col)                             -- (text with a dark edge that fades with it)
-    local oc = u32({ 0, 0, 0, 0.8 * (col[4] or 1) });
-    for _, o in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do dl:AddText({ x + o[1], y + o[2] }, oc, str); end
-    dl:AddText({ x, y }, u32(col), str);
+    local oc = U4(0, 0, 0, 0.8 * (col[4] or 1));
+    for _, o in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do DL.T(dl, x + o[1], y + o[2], oc, str); end
+    DL.T(dl, x, y, u32(col), str);
 end
 C.BUBS = {};
 function C.me()
@@ -5090,15 +5104,14 @@ function C.head_bars_()                                             -- (the bars
                                                                      --  the numbers' width from the frame before)
     local function bar(y, h, v, c1, c2, bx, bw, al)                  -- (bx, bw, al: where and how wide it is now, how see-through - the entrance)
         bx, bw, al = bx or x0, bw or W, al or 1;
-        dl:AddRectFilled({ bx - 1, y - 1 }, { bx + bw + 1, y + h + 1 }, u32({ 0, 0, 0, 0.55 * al }), (h + 2) / 2);   -- (a dark track)
+        DL.RF(dl, bx - 1, y - 1, bx + bw + 1, y + h + 1, U4(0, 0, 0, 0.55 * al), (h + 2) / 2);   -- (a dark track)
         local fw = bw * math.max(0, math.min(1, v));
         if fw >= 1 then
             local r = math.min(h / 2, fw / 2);
-            dl:AddRectFilled({ bx, y }, { bx + math.min(fw, h), y + h }, u32({ c1[1], c1[2], c1[3], al }), r);
-            dl:AddRectFilled({ bx + fw - math.min(fw, h), y }, { bx + fw, y + h }, u32({ c2[1], c2[2], c2[3], al }), r);
+            DL.RF(dl, bx, y, bx + math.min(fw, h), y + h, U4(c1[1], c1[2], c1[3], al), r);
+            DL.RF(dl, bx + fw - math.min(fw, h), y, bx + fw, y + h, U4(c2[1], c2[2], c2[3], al), r);
             if fw > h then
-                pcall(function() dl:AddRectFilledMultiColor({ bx + r, y }, { bx + fw - r, y + h }, u32({ c1[1], c1[2], c1[3], al }), u32({ c2[1], c2[2], c2[3], al }),
-                    u32({ c2[1], c2[2], c2[3], al }), u32({ c1[1], c1[2], c1[3], al })); end);
+                pcall(function() DL.RFM(dl, bx + r, y, bx + fw - r, y + h, U4(c1[1], c1[2], c1[3], al), U4(c2[1], c2[2], c2[3], al), U4(c2[1], c2[2], c2[3], al), U4(c1[1], c1[2], c1[3], al)); end);
             end
         end
     end
@@ -5129,9 +5142,9 @@ function C.head_bars_()                                             -- (the bars
         if math.min(in1, bx + bw) <= math.max(in0, bx - bw) then return; end
         C.clip(dl, { in0, y }, { in1, y + h }, true);
         pcall(function()
-            local c0, c1 = u32({ 1, 1, 1, 0 }), u32({ 1, 1, 1, 0.6 });
-            dl:AddRectFilledMultiColor({ bx - bw, y }, { bx, y + h }, c0, c1, c1, c0);
-            dl:AddRectFilledMultiColor({ bx, y }, { bx + bw, y + h }, c1, c0, c0, c1);
+            local c0, c1 = U4(1, 1, 1, 0), U4(1, 1, 1, 0.6);
+            DL.RFM(dl, bx - bw, y, bx, y + h, c0, c1, c1, c0);
+            DL.RFM(dl, bx, y, bx + bw, y + h, c1, c0, c0, c1);
         end);
         dl:PopClipRect();
     end
@@ -5163,8 +5176,8 @@ function C.head_bars_()                                             -- (the bars
                 H.colw = 8 * sc + fw_;
                 local my = y0 + (hh + g + mh) / 2;
                 local function otext(px_, py_, col, str, oa)
-                    for _, o in ipairs(OUTLINE) do dl:AddText({ px_ + o[1], py_ + o[2] }, u32({ 0, 0, 0, 0.9 * (oa or a) }), str); end   -- (the chat's full outline)
-                    dl:AddText({ px_, py_ }, col, str);
+                    for _, o in ipairs(OUTLINE) do DL.T(dl, px_ + o[1], py_ + o[2], U4(0, 0, 0, 0.9 * (oa or a)), str); end   -- (the chat's full outline)
+                    DL.T(dl, px_, py_, col, str);
                 end
                 local rowk = 0;
                 local function row(lbl, str, cy_, lc)
@@ -5175,13 +5188,13 @@ function C.head_bars_()                                             -- (the bars
                     local ra_ = a * q;
                     local fx = fx + (1 - q) * 22 * sc;
                     local mc = cy_ - th_ * 0.14;                     -- (the capitals sit a little above the line's middle: the bar lines up with them)
-                    dl:AddRectFilled({ fx - 1, mc - th_ * 0.34 - 1 }, { fx + pw + 1, mc + th_ * 0.34 + 1 }, u32({ 0, 0, 0, 0.7 * ra_ }), pw / 2 + 1);
-                    dl:AddRectFilled({ fx, mc - th_ * 0.34 }, { fx + pw, mc + th_ * 0.34 }, u32({ lc[1], lc[2], lc[3], ra_ }), pw / 2);
+                    DL.RF(dl, fx - 1, mc - th_ * 0.34 - 1, fx + pw + 1, mc + th_ * 0.34 + 1, U4(0, 0, 0, 0.7 * ra_), pw / 2 + 1);
+                    DL.RF(dl, fx, mc - th_ * 0.34, fx + pw, mc + th_ * 0.34, U4(lc[1], lc[2], lc[3], ra_), pw / 2);
                     local land = intro and clamp01(1 - (ae - (0.95 + 0.08 * rk + 0.22)) / 0.25) or 0;
-                    if ra >= 1 and land > 0 then dl:AddCircleFilled({ fx + pw / 2, mc }, (3 + 4 * (1 - land)) * sc, u32({ lc[1], lc[2], lc[3], 0.5 * land * a }), 14); end
-                    otext(fx + pw + lg, cy_ - th_ / 2, u32({ lc[1], lc[2], lc[3], ra_ }), lbl, ra_);
+                    if ra >= 1 and land > 0 then DL.CF(dl, fx + pw / 2, mc, (3 + 4 * (1 - land)) * sc, U4(lc[1], lc[2], lc[3], 0.5 * land * a), 14); end
+                    otext(fx + pw + lg, cy_ - th_ / 2, U4(lc[1], lc[2], lc[3], ra_), lbl, ra_);
                     local w_ = tonumber((imgui.CalcTextSize(str))) or 0;
-                    otext(fx + fw_ - w_, cy_ - th_ / 2, u32({ 0.95, 0.95, 0.97, ra_ }), str, ra_);   -- (the numbers right-aligned)
+                    otext(fx + fw_ - w_, cy_ - th_ / 2, U4(0.95, 0.95, 0.97, ra_), str, ra_);   -- (the numbers right-aligned)
                 end
                 local tpy = y0 + hh + mh + g + 8 * sc + math.max(4, 5 * sc) + th_ * 0.14;   -- (TP on the dots' line; MP and HP evenly above it)
                 row('HP', hs, tpy - rowh * 2, { 0.95, 0.50, 0.76 });
@@ -5207,14 +5220,14 @@ function C.head_bars_()                                             -- (the bars
         if pu_ > 0 then
         if f >= 0.999 then
             local pu = 0.5 + 0.5 * math.sin(now * 3.2 - k * 0.6);   -- (its glow breathes, each dot a little after the one before)
-            dl:AddCircleFilled({ dx, dy }, d * (1.2 + 0.3 * pu), u32({ gold[1], gold[2], gold[3], 0.06 + 0.18 * pu + 0.40 * fl }), 20);
-            dl:AddCircleFilled({ dx, dy }, d + 1, u32({ 0, 0, 0, 0.40 }), 16);
-            dl:AddCircleFilled({ dx, dy }, d, u32({ gold[1], gold[2], gold[3], 1 }), 16);
-            dl:AddCircleFilled({ dx - d * 0.25, dy - d * 0.25 }, d * 0.35, u32({ 1, 0.98, 0.88, 0.8 }), 10);   -- (a little shine)
+            DL.CF(dl, dx, dy, d * (1.2 + 0.3 * pu), U4(gold[1], gold[2], gold[3], 0.06 + 0.18 * pu + 0.40 * fl), 20);
+            DL.CF(dl, dx, dy, d + 1, U4(0, 0, 0, 0.40), 16);
+            DL.CF(dl, dx, dy, d, U4(gold[1], gold[2], gold[3], 1), 16);
+            DL.CF(dl, dx - d * 0.25, dy - d * 0.25, d * 0.35, U4(1, 0.98, 0.88, 0.8), 10);   -- (a little shine)
         else
-            dl:AddCircleFilled({ dx, dy }, d + 1, u32({ 0, 0, 0, 0.55 }), 20);
-            dl:AddCircle({ dx, dy }, d - 0.8, u32({ 0.80, 0.78, 0.86, 0.75 }), 20, 1.6);   -- (empty: a ring)
-            if f > 0 then dl:AddCircleFilled({ dx, dy }, math.max(1, (d - 2.6) * f), u32({ 0.88, 0.86, 0.94, 0.95 }), 16); end   -- (filling: a dot growing in it)
+            DL.CF(dl, dx, dy, d + 1, U4(0, 0, 0, 0.55), 20);
+            DL.C(dl, dx, dy, d - 0.8, U4(0.80, 0.78, 0.86, 0.75), 20, 1.6);   -- (empty: a ring)
+            if f > 0 then DL.CF(dl, dx, dy, math.max(1, (d - 2.6) * f), U4(0.88, 0.86, 0.94, 0.95), 16); end   -- (filling: a dot growing in it)
         end
         end
     end
@@ -5222,7 +5235,7 @@ function C.head_bars_()                                             -- (the bars
     if fl > 0 then
         local k = math.max(0, math.min(2, H.segs - 1));
         local dx = math.floor(cx + (k - 1) * (d * 2 + 8 * sc) + 0.5);
-        dl:AddCircle({ dx, dy }, d * (1.4 + (1 - fl) * 3), u32({ 1, 0.92, 0.65, 0.8 * fl }), 24, 1.5);
+        DL.C(dl, dx, dy, d * (1.4 + (1 - fl) * 3), U4(1, 0.92, 0.65, 0.8 * fl), 24, 1.5);
     end
 end
 -- Say and party lines: a bubble over the head of whoever said it, nearby, for a few seconds
@@ -5642,7 +5655,7 @@ local function at_icon(dl, x, y, lh, open, a)
     local x1, x2 = x + bw * 0.15, x + bw * 0.85;
     local p = open and { { x2, y + lh * 0.22 }, { x1, y + lh * 0.52 }, { x2, y + lh * 0.82 } }
                     or { { x1, y + lh * 0.22 }, { x2, y + lh * 0.52 }, { x1, y + lh * 0.82 } };
-    local oc = u32({ 0, 0, 0, 0.85 * a });
+    local oc = U4(0, 0, 0, 0.85 * a);
     dl:AddLine(p[1], p[2], oc, 4); dl:AddLine(p[2], p[3], oc, 4);
     dl:AddLine(p[1], p[2], u32(col), 2); dl:AddLine(p[2], p[3], u32(col), 2);
     return bw + 2;
@@ -5663,8 +5676,8 @@ C.HL = { { 'too weak to be worthwhile', { 0.62, 0.62, 0.66 } }, { 'easy prey', {
 local function chat_line(dl, x, y, s, c, a, lh)
     local edge = CHAT_EDGE.outline;                                  -- (always: a thin dark line round every letter)
     local OUTLINE = edge[1];
-    local oc = u32({ 0, 0, 0, edge[2] * a });
-    local tc = u32({ c[1], c[2], c[3], a });
+    local oc = U4(0, 0, 0, edge[2] * a);
+    local tc = U4(c[1], c[2], c[3], a);
     local cx = x;
     local low = -math.floor(imgui.GetTextLineHeight() * 0.11 + 0.5);   -- (this font draws < and > low, centred on small letters: raised to sit centred on capitals and numbers, as in "<3")
     local put1;
@@ -5677,7 +5690,7 @@ local function chat_line(dl, x, y, s, c, a, lh)
         end
         if best == nil then put1(str, tc); return; end
         if bs > 1 then put1(str:sub(1, bs - 1), tc); end
-        put1(str:sub(bs, be), u32({ best[2][1], best[2][2], best[2][3], a }));
+        put1(str:sub(bs, be), U4(best[2][1], best[2][2], best[2][3], a));
         if be < #str then put(str:sub(be + 1)); end
     end
     put1 = function(str, tc)                                         -- (its < and > set down)
@@ -5686,14 +5699,14 @@ local function chat_line(dl, x, y, s, c, a, lh)
             local q = str:find('[<>]', p_);
             local run = str:sub(p_, (q or (#str + 1)) - 1);
             if run ~= '' then
-                for _, o in ipairs(OUTLINE) do dl:AddText({ cx + o[1], y + o[2] }, oc, run); end
-                dl:AddText({ cx, y }, tc, run);
+                for _, o in ipairs(OUTLINE) do DL.T(dl, cx + o[1], y + o[2], oc, run); end
+                DL.T(dl, cx, y, tc, run);
                 cx = cx + imgui.CalcTextSize(run);
             end
             if q == nil then break; end
             local ch = str:sub(q, q);
-            for _, o in ipairs(OUTLINE) do dl:AddText({ cx + o[1], y + low + o[2] }, oc, ch); end
-            dl:AddText({ cx, y + low }, tc, ch);
+            for _, o in ipairs(OUTLINE) do DL.T(dl, cx + o[1], y + low + o[2], oc, ch); end
+            DL.T(dl, cx, y + low, tc, ch);
             cx = cx + imgui.CalcTextSize(ch);
             p_ = q + 1;
         end
@@ -5747,8 +5760,8 @@ function C.feed_draw(dl, x, y, e, a, lh, measure, notime, row)
         if not measure then
             local x0, x1, ym = cx + w_ * 0.3, cx + w_ * 0.75, y + th * 0.52;
             local p = { { x0, ym - th * 0.2 }, { x1, ym }, { x0, ym + th * 0.2 } };
-            dl:AddLine(p[1], p[2], u32({ 0, 0, 0, 0.8 * a }), 3.2); dl:AddLine(p[2], p[3], u32({ 0, 0, 0, 0.8 * a }), 3.2);
-            dl:AddLine(p[1], p[2], u32({ col[1], col[2], col[3], a }), 1.5); dl:AddLine(p[2], p[3], u32({ col[1], col[2], col[3], a }), 1.5);
+            dl:AddLine(p[1], p[2], U4(0, 0, 0, 0.8 * a), 3.2); dl:AddLine(p[2], p[3], U4(0, 0, 0, 0.8 * a), 3.2);
+            dl:AddLine(p[1], p[2], U4(col[1], col[2], col[3], a), 1.5); dl:AddLine(p[2], p[3], U4(col[1], col[2], col[3], a), 1.5);
         end
         cx = cx + w_;
     end
@@ -5757,8 +5770,8 @@ function C.feed_draw(dl, x, y, e, a, lh, measure, notime, row)
         if not measure then
             local x0, ym = cx + w_ * 0.12, y + th * 0.55;
             local p = { { x0, ym }, { x0 + w_ * 0.28, ym + th * 0.2 }, { x0 + w_ * 0.78, ym - th * 0.26 } };
-            dl:AddLine(p[1], p[2], u32({ 0, 0, 0, 0.8 * a }), 3.6); dl:AddLine(p[2], p[3], u32({ 0, 0, 0, 0.8 * a }), 3.6);
-            dl:AddLine(p[1], p[2], u32({ 0.45, 1.0, 0.55, a }), 1.8); dl:AddLine(p[2], p[3], u32({ 0.45, 1.0, 0.55, a }), 1.8);
+            dl:AddLine(p[1], p[2], U4(0, 0, 0, 0.8 * a), 3.6); dl:AddLine(p[2], p[3], U4(0, 0, 0, 0.8 * a), 3.6);
+            dl:AddLine(p[1], p[2], U4(0.45, 1.0, 0.55, a), 1.8); dl:AddLine(p[2], p[3], U4(0.45, 1.0, 0.55, a), 1.8);
         end
         cx = cx + w_;
     end
@@ -5820,11 +5833,11 @@ function C.soft_ground(dl, x, y, w, h, a, solid_l, solid_r)          -- (classic
     local rowa = { 0, 0.50 * a, 0.88 * a, 0 };
     local function c(i, j)
         local edge = ((i == 1 and not solid_l) or (i == 4 and not solid_r)) and 0 or 1;
-        return u32({ 0.02, 0.02, 0.04, rowa[j] * edge });
+        return U4(0.02, 0.02, 0.04, rowa[j] * edge);
     end
     for i = 1, 3 do
         for j = 1, 3 do
-            dl:AddRectFilledMultiColor({ xs[i], ys[j] }, { xs[i + 1], ys[j + 1] }, c(i, j), c(i + 1, j), c(i + 1, j + 1), c(i, j + 1));
+            DL.RFM(dl, xs[i], ys[j], xs[i + 1], ys[j + 1], c(i, j), c(i + 1, j), c(i + 1, j + 1), c(i, j + 1));
         end
     end
 end
@@ -5961,7 +5974,7 @@ function C.big_help(dl, rx, ty)
     local x0, y0, x1, y1 = rx - lw - 18, ty, rx, ty + lh + 8;
     local mx, my = imgui.GetMousePos();
     local hov = mx >= x0 and mx <= x1 and my >= y0 and my <= y1;
-    dl:AddRectFilled({ x0, y0 }, { x1, y1 }, u32(hov and { 0.20, 0.10, 0.26, 0.96 } or { 0.10, 0.08, 0.14, 0.9 }), (y1 - y0) / 2);
+    DL.RF(dl, x0, y0, x1, y1, u32(hov and { 0.20, 0.10, 0.26, 0.96 } or { 0.10, 0.08, 0.14, 0.9 }), (y1 - y0) / 2);
     text(dl, x0 + 9, y0 + 4, lab, hov and { 1.0, 0.80, 0.93, 1 } or { 0.80, 0.78, 0.88, 1 });
     if hov then
         local xb = legacy.pad.kind == 'x';
@@ -5974,8 +5987,8 @@ function C.big_help(dl, rx, ty)
         for _, r in ipairs(rows) do kw = math.max(kw, (imgui.CalcTextSize(r[1]))); dw = math.max(dw, (imgui.CalcTextSize(r[2]))); end
         local cw, gap = kw + dw + 50, lh + 8;
         local cx0, cy0 = rx - cw, y1 + 6;
-        dl:AddRectFilled({ cx0, cy0 }, { rx, cy0 + #rows * gap + 14 }, u32({ 0.07, 0.06, 0.10, 0.97 }), 8);
-        dl:AddRectFilled({ cx0, cy0 + 8 }, { cx0 + 3, cy0 + #rows * gap + 6 }, u32(C.hp), 2);   -- (the YunaUI line on its left)
+        DL.RF(dl, cx0, cy0, rx, cy0 + #rows * gap + 14, U4(0.07, 0.06, 0.10, 0.97), 8);
+        DL.RF(dl, cx0, cy0 + 8, cx0 + 3, cy0 + #rows * gap + 6, u32(C.hp), 2);   -- (the YunaUI line on its left)
         for i, r in ipairs(rows) do
             local yy = cy0 + 7 + (i - 1) * gap;
             text(dl, cx0 + 16, yy, r[1], { 0.97, 0.96, 0.99, 1 });
@@ -6147,14 +6160,14 @@ local CHATFLAGS = nil;
 -- (right side / top); o.k its size; o.bare: no faint backing.
 function C.neon_corner(dl, x, y, w, h, o)
     o = o or {};
-    local function col(r, g, b, al) return u32({ r, g, b, al }); end
+    local function col(r, g, b, al) return U4(r, g, b, al); end
     local function P(px, py) return o.fx and (2 * x + w - px) or px, o.fy and (2 * y + h - py) or py; end
     local function rect(ax, ay, bx, by, cul, cur, cbr, cbl)
         local x0, y0 = P(ax, ay);
         local x1, y1 = P(bx, by);
         if o.fx then x0, x1 = x1, x0; cul, cur = cur, cul; cbl, cbr = cbr, cbl; end
         if o.fy then y0, y1 = y1, y0; cul, cbl = cbl, cul; cur, cbr = cbr, cur; end
-        pcall(function() dl:AddRectFilledMultiColor({ x0, y0 }, { x1, y1 }, cul, cur, cbr, cbl); end);
+        pcall(function() DL.RFM(dl, x0, y0, x1, y1, cul, cur, cbr, cbl); end);
     end
     local k = o.k or h / 26;
     local bx0, bx1 = x - 1, x - 1 + math.max(3, math.floor(4 * k));
@@ -6181,7 +6194,7 @@ function C.neon_corner(dl, x, y, w, h, o)
         quad(foot, col(0.75, 0.45, 1, gp[2]), gp[1]);
     end
     local gx, gy = P(bx1 + 4 * k, ye - 2 * k);
-    dl:AddCircleFilled({ gx, gy }, 6 * k, col(0.75, 0.45, 1, 0.06));
+    DL.CF(dl, gx, gy, 6 * k, col(0.75, 0.45, 1, 0.06));
     rect(bx0, yt, bx1, yb, col(0.40, 0.18, 0.75, 0.0), col(0.40, 0.18, 0.75, 0.0),
         col(0.80, 0.52, 1.0, 1.0), col(0.70, 0.42, 1.0, 1.0));
     quad(foot, col(0.82, 0.56, 1.0, 1.0));
@@ -6189,14 +6202,14 @@ function C.neon_corner(dl, x, y, w, h, o)
         col(1, 0.92, 1, 0.9), col(1, 0.92, 1, 0.9));
     local l1, l2 = P(bx1 - 1, yb - 2.5 * k);
     local m1, m2 = P(bx1 + 8 * k, ye - 1.5);
-    dl:AddLine({ l1, l2 }, { m1, m2 }, col(1, 0.94, 1, 0.85), 1.2);
+    DL.L(dl, l1, l2, m1, m2, col(1, 0.94, 1, 0.85), 1.2);
     rect(bx1 + 8 * k, ye - 1, x + w, ye, col(0.75, 0.45, 1, 0.9), col(0.6, 0.3, 1, 0.0),
         col(0.6, 0.3, 1, 0.0), col(0.75, 0.45, 1, 0.9));
 end
 -- YunaGearOpt's window corner (its actions.frame_corner): (cx, cy) the corner, sx / sy = +1 or -1 pointing into the
 -- window; arms lx along the top / bottom and ly down the side, t thick; bright at the corner, fading along the arms
 function C.frame_corner(dl, cx, cy, sx, sy, lx, ly, t)
-    local function col(r, g, b, al) return u32({ r, g, b, al }); end
+    local function col(r, g, b, al) return U4(r, g, b, al); end
     local function arm(nx0, ny0, nx1, ny1, horiz, near, far)
         local x0, x1, y0, y1 = math.min(nx0, nx1), math.max(nx0, nx1), math.min(ny0, ny1), math.max(ny0, ny1);
         local ul, ur, br, bl;
@@ -6207,7 +6220,7 @@ function C.frame_corner(dl, cx, cy, sx, sy, lx, ly, t)
             local top_near = ny0 <= ny1;
             ul = top_near and near or far; ur = ul; bl = top_near and far or near; br = bl;
         end
-        pcall(function() dl:AddRectFilledMultiColor({ x0, y0 }, { x1, y1 }, ul, ur, br, bl); end);
+        pcall(function() DL.RFM(dl, x0, y0, x1, y1, ul, ur, br, bl); end);
     end
     local function shape(g, near, far)
         arm(cx, cy - sy * g, cx + sx * lx, cy + sy * (t + g), true, near, far);
@@ -6269,10 +6282,10 @@ C.ELEM = { [0x1F] = { 1.0, 0.36, 0.26 }, [0x20] = { 0.60, 0.88, 1.0 }, [0x01] = 
            [0x23] = { 0.78, 0.52, 1.0 }, [0x24] = { 0.32, 0.56, 1.0 }, [0x25] = { 1.0, 0.98, 0.82 }, [0x26] = { 0.42, 0.30, 0.62 } };
 function C.elem_gem(dl, x, cy, r, col, a)
     local pts = { { x + r, cy - r }, { x + 2 * r, cy }, { x + r, cy + r }, { x, cy } };
-    dl:AddQuadFilled(pts[1], pts[2], pts[3], pts[4], u32({ 0, 0, 0, 0.85 * a }));
+    dl:AddQuadFilled(pts[1], pts[2], pts[3], pts[4], U4(0, 0, 0, 0.85 * a));
     local k = r * 0.78;
-    dl:AddQuadFilled({ x + r, cy - k }, { x + r + k, cy }, { x + r, cy + k }, { x + r - k, cy }, u32({ col[1], col[2], col[3], a }));
-    dl:AddCircleFilled({ x + r - k * 0.3, cy - k * 0.35 }, math.max(1, k * 0.22), u32({ 1, 1, 1, 0.75 * a }), 8);
+    dl:AddQuadFilled({ x + r, cy - k }, { x + r + k, cy }, { x + r, cy + k }, { x + r - k, cy }, U4(col[1], col[2], col[3], a));
+    DL.CF(dl, x + r - k * 0.3, cy - k * 0.35, math.max(1, k * 0.22), U4(1, 1, 1, 0.75 * a), 8);
 end
 -- A black brush stroke behind a line of text (the Paint Stroke frames, tinted black), painted in when the card opens
 function C.brush(dl, x, cy, w, th, t, flip, a)
@@ -6283,7 +6296,7 @@ function C.brush(dl, x, cy, w, th, t, flip, a)
     local hh = th * 1.35;                                            -- (the stroke's band is ~40% of its picture: it covers the text)
     local x0, x1 = x - th * 0.9, x + w + th * 1.6;
     local u0, u1 = flip and 1 or 0, flip and 0 or 1;
-    pcall(function() dl:AddImage(tx.ptr, { x0, cy - hh }, { x1, cy + hh }, { u0, 0 }, { u1, 1 }, u32({ 0, 0, 0, a })); end);
+    pcall(function() DL.I(dl, tx.ptr, x0, cy - hh, x1, cy + hh, u0, 0, u1, 1, U4(0, 0, 0, a)); end);
 end
 function C.item_card(id)
     -- The item card: a solid dark card (nothing shows through it), above the mouse so it never covers the line you're
@@ -6433,22 +6446,22 @@ function C.item_card(id)
     -- the card: a thin dark line all round it (it stands out on any ground), then its colour as the left edge - the
     -- whole card filled in that colour, the dark face laid over it from 3 px in, so the edge follows the round corners
     -- exactly - then a fine light rim inside, brighter along the top
-    fg:AddRect({ x - 1, y - 1 }, { x + W + 1, y + H + 1 }, u32({ 0, 0, 0, 0.85 * A }), r + 1, C.rall, 1.5);
-    fg:AddRectFilled({ x, y }, { x + W, y + H }, u32({ acc[1], acc[2], acc[3], A }), r);
+    DL.R(fg, x - 1, y - 1, x + W + 1, y + H + 1, U4(0, 0, 0, 0.85 * A), r + 1, C.rall, 1.5);
+    DL.RF(fg, x, y, x + W, y + H, U4(acc[1], acc[2], acc[3], A), r);
     local ew = math.max(3, math.floor(3 * sc));
-    fg:AddRectFilled({ x + ew, y }, { x + W, y + H }, u32({ 0.050, 0.046, 0.075, A }), r, rgt);
-    fg:AddRect({ x + 0.5, y + 0.5 }, { x + W - 0.5, y + H - 0.5 }, u32({ 0.36, 0.33, 0.50, 0.55 * A }), r, C.rall, 1);
+    DL.RF(fg, x + ew, y, x + W, y + H, U4(0.050, 0.046, 0.075, A), r, rgt);
+    DL.R(fg, x + 0.5, y + 0.5, x + W - 0.5, y + H - 0.5, U4(0.36, 0.33, 0.50, 0.55 * A), r, C.rall, 1);
     pcall(function()                                                 -- (the top rim: a touch of light, fading toward the ends)
-        local c1, c0 = u32({ 1, 1, 1, 0.16 * A }), u32({ 1, 1, 1, 0 });
-        fg:AddRectFilledMultiColor({ x + r, y + 1 }, { x + W / 2, y + 2 }, c0, c1, c1, c0);
-        fg:AddRectFilledMultiColor({ x + W / 2, y + 1 }, { x + W - r, y + 2 }, c1, c0, c0, c1);
+        local c1, c0 = U4(1, 1, 1, 0.16 * A), U4(1, 1, 1, 0);
+        DL.RFM(fg, x + r, y + 1, x + W / 2, y + 2, c0, c1, c1, c0);
+        DL.RFM(fg, x + W / 2, y + 1, x + W - r, y + 2, c1, c0, c0, c1);
     end);
     local ix, iy = x + pad, y + pad;                                 -- the icon in its slot
-    fg:AddRectFilled({ ix, iy }, { ix + isl, iy + isl }, u32({ 0.10, 0.095, 0.15, A }), 6);
-    fg:AddRect({ ix, iy }, { ix + isl, iy + isl }, u32({ 0.30, 0.28, 0.42, A }), 6, C.rall, 1);
+    DL.RF(fg, ix, iy, ix + isl, iy + isl, U4(0.10, 0.095, 0.15, A), 6);
+    DL.R(fg, ix, iy, ix + isl, iy + isl, U4(0.30, 0.28, 0.42, A), 6, C.rall, 1);
     local t = YUI_EQ_ICON and YUI_EQ_ICON(id) or nil;
     local ip = math.floor(3 * sc);
-    if t then pcall(function() fg:AddImage(t.ptr, { ix + ip, iy + ip }, { ix + isl - ip, iy + isl - ip }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, A })); end); end
+    if t then pcall(function() DL.I(fg, t.ptr, ix + ip, iy + ip, ix + isl - ip, iy + isl - ip, 0, 0, 1, 1, U4(1, 1, 1, A)); end); end
     local tx = ix + isl + 9 * sc;
     local ty = iy + (headh - textblock) / 2;
     C.atext(fg, tx, ty, name, { 1, 1, 1, A });
@@ -6461,8 +6474,8 @@ function C.item_card(id)
         for _, pl in ipairs({ rare and { 'RARE', { 0.95, 0.76, 0.31 } } or nil, ex and { 'EX', { 0.76, 0.66, 1.0 } } or nil }) do
             if pl then
                 local pw = imgui.CalcTextSize(pl[1]) + 14 * sc;
-                fg:AddRectFilled({ px_, py_ }, { px_ + pw, py_ + plh + 2 * sc }, u32({ pl[2][1] * 0.28, pl[2][2] * 0.24, pl[2][3] * 0.30, A }), (plh + 2 * sc) / 2);
-                fg:AddText({ px_ + 7 * sc, py_ + 1 * sc }, u32({ pl[2][1], pl[2][2], pl[2][3], A }), pl[1]);
+                DL.RF(fg, px_, py_, px_ + pw, py_ + plh + 2 * sc, U4(pl[2][1] * 0.28, pl[2][2] * 0.24, pl[2][3] * 0.30, A), (plh + 2 * sc) / 2);
+                DL.T(fg, px_ + 7 * sc, py_ + 1 * sc, U4(pl[2][1], pl[2][2], pl[2][3], A), pl[1]);
                 px_ = px_ + pw + 6 * sc;
             end
         end
@@ -6470,7 +6483,7 @@ function C.item_card(id)
     end
     if yy > 0 then                                                   -- a thin line, then the stats
         local ly_ = y + pad + headh + pad * 0.8;
-        pcall(function() fg:AddRectFilledMultiColor({ x + pad, ly_ }, { x + W - pad, ly_ + 1 }, u32({ 0.40, 0.36, 0.60, A }), u32({ 0.40, 0.36, 0.60, 0 }), u32({ 0.40, 0.36, 0.60, 0 }), u32({ 0.40, 0.36, 0.60, A })); end);
+        pcall(function() DL.RFM(fg, x + pad, ly_, x + W - pad, ly_ + 1, U4(0.40, 0.36, 0.60, A), U4(0.40, 0.36, 0.60, 0), U4(0.40, 0.36, 0.60, 0), U4(0.40, 0.36, 0.60, A)); end);
         local sy0 = ly_ + 1 + pad * 0.8;
         for _, L_ in ipairs(layout) do
             if L_.head then
@@ -6479,11 +6492,11 @@ function C.item_card(id)
                 C.atext(fg, x + pad, sy0 + L_.y, L_.text, { 0.82, 0.79, 0.92, A });
             else
                 local bx, by = x + pad + L_.x, sy0 + L_.y;
-                fg:AddRectFilled({ bx, by }, { bx + L_.w, by + chh }, u32({ 0.12, 0.11, 0.17, A }), 5);
+                DL.RF(fg, bx, by, bx + L_.w, by + chh, U4(0.12, 0.11, 0.17, A), 5);
                 local cx2 = bx + cpx;
                 for _, pt in ipairs(L_.parts) do
                     if pt.gem then C.elem_gem(fg, cx2, by + chh / 2, isz / 2, pt.gem, A); cx2 = cx2 + isz + 3;
-                    else fg:AddText({ cx2, by + cpy }, u32({ 0.93, 0.92, 0.98, A }), pt.t); cx2 = cx2 + imgui.CalcTextSize(pt.t); end
+                    else DL.T(fg, cx2, by + cpy, U4(0.93, 0.92, 0.98, A), pt.t); cx2 = cx2 + imgui.CalcTextSize(pt.t); end
                 end
             end
         end
@@ -6633,14 +6646,14 @@ local function draw_chat(n)
                         else fl = oth and (ImDrawFlags_RoundCornersTop or ImDrawCornerFlags_Top or 3) or C.rall; end
                     end
                     local rr = 10;
-                    dl:AddRectFilled({ x, gy }, { x + w, y + h }, u32({ 0.055, 0.045, 0.08, math.min(1, A * (0.92 + 0.08 * pulse + 0.10 * st.hv)) }), rr, fl);
+                    DL.RF(dl, x, gy, x + w, y + h, U4(0.055, 0.045, 0.08, math.min(1, A * (0.92 + 0.08 * pulse + 0.10 * st.hv))), rr, fl);
                 end
             elseif (gh > 30 or st.hv > 0.02) and not big then        -- (classic: the soft shade, darker where the game is bright)
                 C.soft_ground(dl, x, gy, w, (y + h) - gy, math.min(1, C.amb_alpha(imgui.GetIO().DeltaTime) + 0.15 * pulse + 0.30 * st.hv), sl_, sr_);
             end
         end
         if big then                                                  -- the pad's big chat: a panel like the game's full log
-            dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.055, 0.045, 0.08, 0.92 }), 10, C.rall);   -- (the chat's own panel, rounded; no edge, no corners)
+            DL.RF(dl, x, y, x + w, y + h, U4(0.055, 0.045, 0.08, 0.92), 10, C.rall);   -- (the chat's own panel, rounded; no edge, no corners)
             pcall(C.big_help, dl, x + w - 12, y + 10);               -- (a small HELP at the top right: the buttons guide on hover)
         end
         st.vis_n = 0;
@@ -6740,7 +6753,7 @@ local function draw_chat(n)
                             local th0 = lh - math.max(0, math.min(16, tonumber(cfg.chat_gap) or 6));
                             local bc = chat_col(e.cat);
                             if e.cat == 'system' or e.cat == 'other' or e.cat == 'combat' then bc = { 0.40, 0.38, 0.46 }; end
-                            dl:AddRectFilled({ px, ly - ((k < #lines) and 0 or 0) }, { px + 3, ly + ((k < #lines) and lh or th0) }, u32({ bc[1], bc[2], bc[3], 0.95 * a }), 1.5);
+                            DL.RF(dl, px, ly - ((k < #lines) and 0 or 0), px + 3, ly + ((k < #lines) and lh or th0), U4(bc[1], bc[2], bc[3], 0.95 * a), 1.5);
                             if k == 1 and bts then
                                 local fs = FS;
                                 imgui.SetWindowFontScale(fs * CL.tsk);
@@ -6752,11 +6765,11 @@ local function draw_chat(n)
                         local tw_ = e.feed and C.feed_draw(dl, px, ly, e, a, lh, true, cl_, k) or line_w(txt);
                         local th = lh - math.max(0, math.min(16, tonumber(cfg.chat_gap) or 6));
                         if glow > 0.01 then                          -- (new, or a feed line that just grew: a soft glow in its colour)
-                            dl:AddRectFilled({ px - 5, ly - 2 }, { px + tw_ + 5, ly + th + 1 }, u32({ c[1], c[2], c[3], 0.22 * glow * glow * a }), 4);
+                            DL.RF(dl, px - 5, ly - 2, px + tw_ + 5, ly + th + 1, U4(c[1], c[2], c[3], 0.22 * glow * glow * a), 4);
                         end
                         local fresh = (cfg.chat_anim ~= false) and math.max(0, math.min(1, 1 - ((now - (e.flash or e.t0 or -99)) - 1.5) / 1.5)) or 0;
                         if fresh > 0.01 and not cl_ then             -- (the clear look has its bar all the time)                         -- (new, or a feed line that just grew: a short bar in its colour on the
-                            dl:AddRectFilled({ px - 10, ly }, { px - 7, ly + th - 1 }, u32({ c[1], c[2], c[3], 0.9 * fresh * a }), 1.5);   --  left, for a moment)
+                            DL.RF(dl, px - 10, ly, px - 7, ly + th - 1, U4(c[1], c[2], c[3], 0.9 * fresh * a), 1.5);   --  left, for a moment)
                         end
                         local ts = (not cl_ and not e.feed and k == 1 and (e.tslen or 0) > 0 and #txt > e.tslen) and txt:sub(1, e.tslen) or nil;
                         if e.feed then
@@ -6776,11 +6789,11 @@ local function draw_chat(n)
                             for _, iid in ipairs(e.items) do
                                 local t = YUI_EQ_ICON and YUI_EQ_ICON(iid) or nil;
                                 if t then
-                                    pcall(function() dl:AddImage(t.ptr, { ix, ly }, { ix + isz, ly + isz }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, a })); end);
+                                    pcall(function() DL.I(dl, t.ptr, ix, ly, ix + isz, ly + isz, 0, 0, 1, 1, U4(1, 1, 1, a)); end);
                                     local mx, my = imgui.GetMousePos();
                                     if a > 0.3 and mx >= ix and mx <= ix + isz and my >= ly and my <= ly + isz then
                                         itip = iid;
-                                        dl:AddRect({ ix - 1, ly - 1 }, { ix + isz + 1, ly + isz + 1 }, u32({ 1, 1, 1, 0.8 }), 2, C.rall, 1.2);
+                                        DL.R(dl, ix - 1, ly - 1, ix + isz + 1, ly + isz + 1, U4(1, 1, 1, 0.8), 2, C.rall, 1.2);
                                     end
                                     ix = ix + isz + 3;
                                 end
@@ -6809,8 +6822,8 @@ local function draw_chat(n)
         if typing then                                               -- the typing line: a dark strip, your text, a blinking caret
             local tx0, ty0 = x + pad - 4, y + h - barv - type_h - 2;
             local tw0, th0 = maxw + 8, lh + 6;
-            dl:AddRectFilled({ tx0, ty0 }, { tx0 + tw0, ty0 + th0 }, u32({ 0.03, 0.03, 0.05, 0.75 }), 6);
-            dl:AddRect({ tx0, ty0 }, { tx0 + tw0, ty0 + th0 }, u32({ C.acc[1], C.acc[2], C.acc[3], 0.35 }), 6, C.rall, 1);
+            DL.RF(dl, tx0, ty0, tx0 + tw0, ty0 + th0, U4(0.03, 0.03, 0.05, 0.75), 6);
+            DL.R(dl, tx0, ty0, tx0 + tw0, ty0 + th0, U4(C.acc[1], C.acc[2], C.acc[3], 0.35), 6, C.rall, 1);
             local c = { 1, 1, 1 };                                -- (what you type: always white, whatever channel it goes to)
             local cx = line_w(typing.before);
             local shift = math.max(0, cx - (maxw - 14));               -- long text: keep the caret in view
@@ -6818,7 +6831,7 @@ local function draw_chat(n)
             chat_line(dl, x + pad - shift, ty0 + 3, typing.text, c, 1, lh);
             if math.floor(now * 2.4) % 2 == 0 then
                 local kx = x + pad - shift + cx + 1;
-                dl:AddRectFilled({ kx, ty0 + 4 }, { kx + 2, ty0 + th0 - 4 }, u32({ c[1], c[2], c[3], 0.95 }));
+                DL.RF(dl, kx, ty0 + 4, kx + 2, ty0 + th0 - 4, U4(c[1], c[2], c[3], 0.95));
             end
             imgui.PopClipRect();
         end
@@ -6845,14 +6858,14 @@ local function draw_chat(n)
                 -- just the words (no boxes): the chosen tab bright with a short line under it, the others dimmer
                 local ty_ = by + (bar - 4 - lh + 2) / 2;
                 local ta = (on and 1 or (over and 0.85 or 0.5)) * thv;
-                dl:AddText({ bx + 9, ty_ + 1 }, u32({ 0, 0, 0, 0.8 * ta }), ch[1]);
-                dl:AddText({ bx + 8, ty_ }, u32({ col[1], col[2], col[3], ta }), ch[1]);
+                DL.T(dl, bx + 9, ty_ + 1, U4(0, 0, 0, 0.8 * ta), ch[1]);
+                DL.T(dl, bx + 8, ty_, U4(col[1], col[2], col[3], ta), ch[1]);
                 if on then
                     local tw_ = imgui.CalcTextSize(ch[1]);
-                    dl:AddLine({ bx + 8, ty_ + lh - 1 }, { bx + 8 + tw_, ty_ + lh - 1 }, u32({ col[1], col[2], col[3], 0.8 * thv }), 1);
+                    DL.L(dl, bx + 8, ty_ + lh - 1, bx + 8 + tw_, ty_ + lh - 1, U4(col[1], col[2], col[3], 0.8 * thv), 1);
                 end
                 if unread[ci] then                                   -- new messages on this tab
-                    dl:AddCircleFilled({ bx + bw2 - 3, by + 3 }, 3, u32({ col[1], col[2], col[3], thv }), 10);
+                    DL.CF(dl, bx + bw2 - 3, by + 3, 3, U4(col[1], col[2], col[3], thv), 10);
                 end
                 imgui.SetCursorScreenPos({ bx, by });
                 if imgui.InvisibleButton('##yui_ch' .. ci, { bw2, bar - 4 }) then
@@ -6865,7 +6878,7 @@ local function draw_chat(n)
         if n == 2 and st.hv > 0.05 then                              -- the combat window says what it is
             local fs = FS;
             imgui.SetWindowFontScale(fs * 0.62);
-            dl:AddText({ x + pad, y + h - imgui.GetTextLineHeight() - 8 }, u32({ C.muted[1], C.muted[2], C.muted[3], 0.7 * st.hv }), 'COMBAT LOG');
+            DL.T(dl, x + pad, y + h - imgui.GetTextLineHeight() - 8, U4(C.muted[1], C.muted[2], C.muted[3], 0.7 * st.hv), 'COMBAT LOG');
             imgui.SetWindowFontScale(fs);
         end
         unsized(pushed);
@@ -6878,7 +6891,7 @@ local function draw_chat(n)
             imgui.SetCursorScreenPos({ x + w - 26, y + h - bar - 22 });
             if imgui.InvisibleButton('##yui_chat_end' .. n, { 20, 18 }) then st.scroll = 0; end
             local cx, cy = x + w - 16, y + h - bar - 13;
-            dl:AddTriangleFilled({ cx - 5, cy - 3 }, { cx + 5, cy - 3 }, { cx, cy + 3 }, u32({ C.gold[1], C.gold[2], C.gold[3], 0.9 }));
+            DL.TF(dl, cx - 5, cy - 3, cx + 5, cy - 3, cx, cy + 3, U4(C.gold[1], C.gold[2], C.gold[3], 0.9));
         end
         -- resize from the top right corner (the bottom stays where it is)
         local nowc = os.clock();                                     -- (the corner icons fade 5 s after the mouse leaves; back when it's over)
@@ -6906,9 +6919,9 @@ local function draw_chat(n)
             local cx, cy = ax + bs / 2, ay + bs / 2;
             local vx, vy = 5, 0;                                     -- (the two dots: side by side, or one above the other when on top)
             if on and cfg.chat_link_v then vx, vy = 0, 5; end
-            if on then dl:AddLine({ cx - vx, cy - vy }, { cx + vx, cy + vy }, u32(c), 2.2); end
-            dl:AddCircleFilled({ cx - vx, cy - vy }, 3.3, u32(c), 12);
-            dl:AddCircleFilled({ cx + vx, cy + vy }, 3.3, u32(c), 12);
+            if on then DL.L(dl, cx - vx, cy - vy, cx + vx, cy + vy, u32(c), 2.2); end
+            DL.CF(dl, cx - vx, cy - vy, 3.3, u32(c), 12);
+            DL.CF(dl, cx + vx, cy + vy, 3.3, u32(c), 12);
         end
         if not cfg.locked and not big then                           -- (the big chat has no resize grip)
             imgui.SetCursorScreenPos({ x + w - 24, y });
@@ -6920,8 +6933,8 @@ local function draw_chat(n)
                 local k = st.hv * (on and 1 or 0.6) * gf;
                 local cx, cy = x + w - 9, y + 9;
                 local r = on and 3.6 or 3;
-                dl:AddCircleFilled({ cx, cy }, r + 3, u32({ C.hp2[1], C.hp2[2], C.hp2[3], 0.18 * k }), 20);
-                dl:AddCircleFilled({ cx, cy }, r, u32({ C.hp[1], C.hp[2], C.hp[3], 0.85 * k }), 16);
+                DL.CF(dl, cx, cy, r + 3, U4(C.hp2[1], C.hp2[2], C.hp2[3], 0.18 * k), 20);
+                DL.CF(dl, cx, cy, r, U4(C.hp[1], C.hp[2], C.hp[3], 0.85 * k), 16);
             end
             if act then
                 local dx, dy = imgui.GetMouseDragDelta(0);
@@ -6967,9 +6980,9 @@ local function commas(n)
     return (neg and '-' or '') .. s;
 end
 local function outlined(dl, tx, ty, s, col)
-    local oc = u32({ 0, 0, 0, 0.9 * (col[4] or 1) });
-    for _, o in ipairs(OUTLINE) do dl:AddText({ tx + o[1], ty + o[2] }, oc, s); end
-    dl:AddText({ tx, ty }, u32(col), s);
+    local oc = U4(0, 0, 0, 0.9 * (col[4] or 1));
+    for _, o in ipairs(OUTLINE) do DL.T(dl, tx + o[1], ty + o[2], oc, s); end
+    DL.T(dl, tx, ty, u32(col), s);
 end
 -- the first time, each one is placed near the bottom middle of the screen (then they go wherever you drag them)
 local function first_place(kx, ky, dx, dy)
@@ -7049,7 +7062,7 @@ function C.exp_ring(sc, v, job, label)
             local on = (k + 1) <= head + 0.001;
             pcall(function()
                 dl:AddImageQuad(t.ptr, P(c0, s0, G.r1), P(c0, s0, G.r2), P(c1, s1, G.r2), P(c1, s1, G.r1),
-                    U(c0, s0, G.r1), U(c0, s0, G.r2), U(c1, s1, G.r2), U(c1, s1, G.r1), u32({ 1, 1, 1, on and 1 or 0.14 }));
+                    U(c0, s0, G.r1), U(c0, s0, G.r2), U(c1, s1, G.r2), U(c1, s1, G.r1), U4(1, 1, 1, on and 1 or 0.14));
             end);
         end
     end
@@ -7181,10 +7194,10 @@ local function draw_gil()
         local lh = imgui.GetTextLineHeight();
         local cr = 7 * sc;
         local ccx, ccy = x + cr, y + lh / 2;
-        dl:AddCircleFilled({ ccx, ccy }, cr + 2, u32({ 0.95, 0.76, 0.34, 0.18 }), 20);
-        dl:AddCircleFilled({ ccx, ccy }, cr, u32({ 0.86, 0.66, 0.24, 1 }), 20);
-        dl:AddCircleFilled({ ccx, ccy }, cr * 0.68, u32({ 1, 0.88, 0.50, 1 }), 20);
-        dl:AddCircle({ ccx, ccy }, cr, u32({ 0, 0, 0, 0.7 }), 20, 1);
+        DL.CF(dl, ccx, ccy, cr + 2, U4(0.95, 0.76, 0.34, 0.18), 20);
+        DL.CF(dl, ccx, ccy, cr, U4(0.86, 0.66, 0.24, 1), 20);
+        DL.CF(dl, ccx, ccy, cr * 0.68, U4(1, 0.88, 0.50, 1), 20);
+        DL.C(dl, ccx, ccy, cr, U4(0, 0, 0, 0.7), 20, 1);
         local gs = commas(gil);
         outlined(dl, x + cr * 2 + 6 * sc, y, gs, { GOLD[1], GOLD[2], GOLD[3], 1 });
         local gw = imgui.CalcTextSize(gs);
@@ -7249,10 +7262,10 @@ local function draw_bag()
                 local on = k < used;
                 local col = on and slot_col(c / (gcols - 1)) or { 0.32, 0.33, 0.38, 0.55 };
                 if style == 'dots' then
-                    if on then dl:AddCircleFilled({ sx + gs / 2, sy + gs / 2 }, gs / 2 + 1, u32({ col[1], col[2], col[3], 0.2 }), 10); end
-                    dl:AddCircleFilled({ sx + gs / 2, sy + gs / 2 }, gs / 2, u32(col), 10);
+                    if on then DL.CF(dl, sx + gs / 2, sy + gs / 2, gs / 2 + 1, U4(col[1], col[2], col[3], 0.2), 10); end
+                    DL.CF(dl, sx + gs / 2, sy + gs / 2, gs / 2, u32(col), 10);
                 else
-                    dl:AddRectFilled({ sx, sy }, { sx + gs, sy + gs }, u32(col), 1);
+                    DL.RF(dl, sx, sy, sx + gs, sy + gs, u32(col), 1);
                 end
             end
             bottom = by + rows * (gs + gg) - gg;
@@ -7271,11 +7284,11 @@ local function draw_bag()
                 local f = k / (n - 1);
                 local col = full and { C.hp[1], C.hp[2], C.hp[3], 1 }
                     or { C.mp[1] + (C.mp2[1] - C.mp[1]) * f, C.mp[2] + (C.mp2[2] - C.mp[2]) * f, C.mp[3] + (C.mp2[3] - C.mp[3]) * f, 1 };
-                dl:AddRectFilled({ bx - 1, by - 1 }, { bx + cs + 1, by + cs + 1 }, u32({ col[1], col[2], col[3], 0.18 }), 2);
-                dl:AddRectFilled({ bx, by }, { bx + cs, by + cs }, u32(col), 1.5);
-                dl:AddLine({ bx + 1, by + 1 }, { bx + cs - 1, by + 1 }, u32({ 1, 1, 1, 0.35 }), 1);
+                DL.RF(dl, bx - 1, by - 1, bx + cs + 1, by + cs + 1, U4(col[1], col[2], col[3], 0.18), 2);
+                DL.RF(dl, bx, by, bx + cs, by + cs, u32(col), 1.5);
+                DL.L(dl, bx + 1, by + 1, bx + cs - 1, by + 1, U4(1, 1, 1, 0.35), 1);
             else
-                dl:AddRectFilled({ bx, by }, { bx + cs, by + cs }, u32({ 0.32, 0.33, 0.38, 0.55 }), 1.5);
+                DL.RF(dl, bx, by, bx + cs, by + cs, U4(0.32, 0.33, 0.38, 0.55), 1.5);
             end
         end
         imgui.Dummy({ w + 14, bottom - y + 10 });
@@ -7367,7 +7380,7 @@ local function draw_doll()
         -- the centre: the animated portal (its size and colour strength are settings), dark only inside its void
         local pr = cr * 1.35;
         for q = 0, 5 do                                              -- the void: dark, with a soft edge
-            dl:AddCircleFilled({ cx, cy }, pr * (0.30 - q * 0.02), u32({ 0.02, 0.01, 0.04, 0.12 + q * 0.14 }), 40);
+            DL.CF(dl, cx, cy, pr * (0.30 - q * 0.02), U4(0.02, 0.01, 0.04, 0.12 + q * 0.14), 40);
         end
         local ptex = tex(string.format('portal/%03d.png', math.floor(now * 15) % 115));   -- a seamless loop
         local ps = tonumber(cfg.portal_strength) or 1;               -- above 1: drawn again on top, more vivid
@@ -7388,12 +7401,12 @@ local function draw_doll()
             local top, rgt, bot, lft = { sx, sy - hd }, { sx + hd, sy }, { sx, sy + hd }, { sx - hd, sy };
             for g = 3, 1, -1 do                                      -- a soft violet glow round it
                 local k = g * 1.6 * sc;
-                quad_fill(dl, { sx, sy - hd - k }, { sx + hd + k, sy }, { sx, sy + hd + k }, { sx - hd - k, sy }, u32({ V[1], V[2], V[3], 0.05 }));
+                quad_fill(dl, { sx, sy - hd - k }, { sx + hd + k, sy }, { sx, sy + hd + k }, { sx - hd - k, sy }, U4(V[1], V[2], V[3], 0.05));
             end
-            quad_fill(dl, top, rgt, bot, lft, u32({ 0.05, 0.04, 0.09, 0.82 }));
-            quad_line(dl, top, rgt, bot, lft, u32({ V[1], V[2], V[3], hov and 1 or 0.8 }), 1.5);
+            quad_fill(dl, top, rgt, bot, lft, U4(0.05, 0.04, 0.09, 0.82));
+            quad_line(dl, top, rgt, bot, lft, U4(V[1], V[2], V[3], hov and 1 or 0.8), 1.5);
             local ih = hd - 3 * sc;                                  -- a thin inner line
-            quad_line(dl, { sx, sy - ih }, { sx + ih, sy }, { sx, sy + ih }, { sx - ih, sy }, u32({ 1, 1, 1, 0.08 }), 1);
+            quad_line(dl, { sx, sy - ih }, { sx + ih, sy }, { sx, sy + ih }, { sx - ih, sy }, U4(1, 1, 1, 0.08), 1);
             if os.clock() >= DOLL.at then DOLL.items[slot] = { equipped(slot) }; end   -- looked up twice a second
             local it_ = DOLL.items[slot] or {};
             local id, name = it_[1], it_[2];
@@ -7520,8 +7533,8 @@ local function draw_strip()
                     local x0, y0, x1, y1 = sx - pad, sy - pad, sx + S + pad, sy + S + pad;
                     local rr = math.max(3, 5 * sc);
                     local k = hv_ and 1 or math.max(0, 1 - t / 1.2);
-                    for g = 3, 1, -1 do dl:AddRect({ x0 - g, y0 - g }, { x1 + g, y1 + g }, u32({ 0.66, 0.48, 1.0, 0.10 * k * a }), rr + g, allc, 2); end
-                    dl:AddRect({ x0, y0 }, { x1, y1 }, u32({ 0.74, 0.58, 1.0, 0.95 * k * a }), rr, allc, 1.5);
+                    for g = 3, 1, -1 do DL.R(dl, x0 - g, y0 - g, x1 + g, y1 + g, U4(0.66, 0.48, 1.0, 0.10 * k * a), rr + g, allc, 2); end
+                    DL.R(dl, x0, y0, x1, y1, U4(0.74, 0.58, 1.0, 0.95 * k * a), rr, allc, 1.5);
                 end
             end
             if sw and sw.behind then swap_clip(); end
@@ -7544,18 +7557,18 @@ local function draw_strip()
                     if u0 >= grow then break; end
                     local u = (u0 + u1) / 2;
                     local col = { c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u };
-                    dl:AddRectFilled({ sx + S * u0, ly }, { sx + S * math.min(u1, grow), ly + lw }, u32({ col[1], col[2], col[3], f }));
-                    dl:AddRectFilled({ sx + S * u0, ly - lw }, { sx + S * math.min(u1, grow), ly + lw * 2 }, u32({ col[1], col[2], col[3], 0.18 * f }));
+                    DL.RF(dl, sx + S * u0, ly, sx + S * math.min(u1, grow), ly + lw, U4(col[1], col[2], col[3], f));
+                    DL.RF(dl, sx + S * u0, ly - lw, sx + S * math.min(u1, grow), ly + lw * 2, U4(col[1], col[2], col[3], 0.18 * f));
                 end
                 local hx = sx + S * grow;                            -- the tip: a small white dot with a soft halo
-                dl:AddCircleFilled({ hx, ly + lw / 2 }, lw * 2.6, u32({ 1, 0.85, 1, 0.22 * f }), 12);
-                dl:AddCircleFilled({ hx, ly + lw / 2 }, lw * 1.1, u32({ 1, 1, 1, 0.95 * f }), 10);
+                DL.CF(dl, hx, ly + lw / 2, lw * 2.6, U4(1, 0.85, 1, 0.22 * f), 12);
+                DL.CF(dl, hx, ly + lw / 2, lw * 1.1, U4(1, 1, 1, 0.95 * f), 10);
             end
             if ic then
                 local hv = DOLL.hover and mx >= sx and mx < sx + S and my >= sy and my < sy + S;
                 if hv then YUI_TIP(DOLL_SLOTS[slot][1] .. ': ' .. (name or '?')); end
             else                                                     -- empty: a faint dot
-                dl:AddCircleFilled({ cx_, cy_ }, math.max(1.5, S * 0.06), u32({ 1, 1, 1, 0.25 * a }), 8);
+                DL.CF(dl, cx_, cy_, math.max(1.5, S * 0.06), U4(1, 1, 1, 0.25 * a), 8);
             end
         end
         imgui.Dummy({ W + 16 + pad * 2, H + 6 + pad * 2 });
@@ -7608,7 +7621,7 @@ local function draw_cast()
         local by = y + lh + 4 * sc;
         glow_bar(dl, x, by, w, bh, pct, nil, { c1[1], c1[2], c1[3] }, { c2[1], c2[2], c2[3] }, 9.1, fx);
         if alpha < 1 and not broke then                              -- the landing flash
-            dl:AddRectFilled({ x - 2, by - 2 }, { x + w + 2, by + bh + 2 }, u32({ 1, 1, 1, 0.5 * alpha }), bh);
+            DL.RF(dl, x - 2, by - 2, x + w + 2, by + bh + 2, U4(1, 1, 1, 0.5 * alpha), bh);
         end
         imgui.Dummy({ w + 16, by + bh - y + 12 });
         end_plain('cast_x', 'cast_y');
@@ -7679,8 +7692,8 @@ local function draw_logo(dt)
                 ui.fan = false; ui.fan_t = now;
             end
             local bh = e > 0.6 and imgui.IsItemHovered();
-            dl:AddCircleFilled({ bx, by }, r * e, u32({ 0.06, 0.07, 0.11, 0.95 * e }), 32);
-            dl:AddCircle({ bx, by }, r * e, u32({ C.gold[1], C.gold[2], C.gold[3], (bh and 1 or 0.6) * e }), 32, bh and 2 or 1.3);
+            DL.CF(dl, bx, by, r * e, U4(0.06, 0.07, 0.11, 0.95 * e), 32);
+            DL.C(dl, bx, by, r * e, U4(C.gold[1], C.gold[2], C.gold[3], (bh and 1 or 0.6) * e), 32, bh and 2 or 1.3);
             image(dl, tex(b[1]), bx - r * 0.78 * e, by - r * 0.78 * e, bx + r * 0.78 * e, by + r * 0.78 * e, { 1, 1, 1, e });
             if bh then YUI_TIP(b[2]); end
         end
@@ -7951,11 +7964,11 @@ function TIMERS.draw()
             if e[5] then                                             -- READY: a bright flash that fades
                 local a = 1 - e[5] / 2;
                 local pulse = 0.6 + 0.4 * math.sin(e[5] * 12);
-                dl:AddRectFilled({ x - 6, ry - 2 }, { x + w + 6, by + bh + 3 }, u32({ c[1], c[2], c[3], 0.18 * a * pulse }), 4);
+                DL.RF(dl, x - 6, ry - 2, x + w + 6, by + bh + 3, U4(c[1], c[2], c[3], 0.18 * a * pulse), 4);
                 outlined(dl, x, ry, e[1], { tc[1], tc[2], tc[3], a });
                 local rs = 'READY';
                 outlined(dl, x + w - imgui.CalcTextSize(rs), ry, rs, { c[1], c[2], c[3], a });
-                dl:AddRectFilled({ x, by }, { x + w, by + bh }, u32({ c[1], c[2], c[3], a * pulse }), bh / 2);
+                DL.RF(dl, x, by, x + w, by + bh, U4(c[1], c[2], c[3], a * pulse), bh / 2);
             else
                 outlined(dl, x, ry, e[1], { tc[1], tc[2], tc[3], 1 });
                 local ts = TIMERS.clock(e[2]);
@@ -8140,7 +8153,7 @@ function PET.draw(dt)
         end
         -- what it's fighting: a faint line, then the name and HP% over a thin bar in the enemy list's colours
         if d.tname then
-            dl:AddLine({ x, cy }, { x + w, cy }, u32({ 1, 1, 1, 0.12 }), 1);
+            DL.L(dl, x, cy, x + w, cy, U4(1, 1, 1, 0.12), 1);
             cy = cy + 5 * sc;
             outlined(dl, x, cy, '> ' .. d.tname, { 1, 0.8, 0.75, 1 });
             local tp_ = string.format('%d%%', math.floor(d.thp * 100 + 0.5));
@@ -8161,26 +8174,26 @@ function PET.draw(dt)
                 local lx = x - 40 * sc + (w + 80 * sc) * t;
                 local la = math.sin(t * math.pi) * 0.45;
                 pcall(function()
-                    dl:AddRectFilledMultiColor({ lx - 30 * sc, y - 2 }, { lx, cy }, u32({ 1, 0.85, 1, 0 }), u32({ 1, 0.85, 1, la }), u32({ 1, 0.85, 1, la }), u32({ 1, 0.85, 1, 0 }));
-                    dl:AddRectFilledMultiColor({ lx, y - 2 }, { lx + 30 * sc, cy }, u32({ 1, 0.85, 1, la }), u32({ 1, 0.85, 1, 0 }), u32({ 1, 0.85, 1, 0 }), u32({ 1, 0.85, 1, la }));
+                    DL.RFM(dl, lx - 30 * sc, y - 2, lx, cy, U4(1, 0.85, 1, 0), U4(1, 0.85, 1, la), U4(1, 0.85, 1, la), U4(1, 0.85, 1, 0));
+                    DL.RFM(dl, lx, y - 2, lx + 30 * sc, cy, U4(1, 0.85, 1, la), U4(1, 0.85, 1, 0), U4(1, 0.85, 1, 0), U4(1, 0.85, 1, la));
                 end);
             elseif fx == 'wipe' then                                 -- the bright edge of the reveal
                 local ex = x - 8 + (w + 24 * sc) * ease;
-                dl:AddRectFilled({ ex - 10 * sc, y - 4 }, { ex, cy }, u32({ C.hp2[1], C.hp2[2], C.hp2[3], 0.16 * fade_ }));
-                dl:AddRectFilled({ ex - 2, y - 4 }, { ex, cy }, u32({ 1, 0.9, 1, 0.9 * fade_ }));
+                DL.RF(dl, ex - 10 * sc, y - 4, ex, cy, U4(C.hp2[1], C.hp2[2], C.hp2[3], 0.16 * fade_));
+                DL.RF(dl, ex - 2, y - 4, ex, cy, U4(1, 0.9, 1, 0.9 * fade_));
             elseif fx == 'glitch' then                               -- a few pink / blue scan lines
                 for q = 1, 3 do
                     local r = frac(math.sin((math.floor(now * 30) + q * 7) * 78.233) * 43758.5453);
                     local ly = y + (cy - y) * r;
                     local col = (q % 2 == 0) and { 0.45, 0.85, 1.0 } or { 1.0, 0.36, 0.62 };
-                    dl:AddRectFilled({ x - 4 + (r - 0.5) * 20 * sc, ly }, { x + w * (0.4 + r * 0.6), ly + 2 * sc }, u32({ col[1], col[2], col[3], 0.45 * fade_ }));
+                    DL.RF(dl, x - 4 + (r - 0.5) * 20 * sc, ly, x + w * (0.4 + r * 0.6), ly + 2 * sc, U4(col[1], col[2], col[3], 0.45 * fade_));
                 end
             elseif fx == 'summon' then                               -- rings opening out from the pet's name
                 local cxr, cyr = x + 10 * sc, y + nh / 2;
                 local r = (8 + appear * 70) * sc;
-                fg:AddCircle({ cxr, cyr }, r, u32({ C.mp2[1], C.mp2[2], C.mp2[3], 0.9 * fade_ }), 48, 2);
-                fg:AddCircle({ cxr, cyr }, r * 0.6, u32({ C.hp[1], C.hp[2], C.hp[3], 0.6 * fade_ }), 40, 1.5);
-                fg:AddCircleFilled({ cxr, cyr }, 10 * sc * fade_, u32({ 1, 0.9, 1, 0.8 * fade_ }), 20);
+                DL.C(fg, cxr, cyr, r, U4(C.mp2[1], C.mp2[2], C.mp2[3], 0.9 * fade_), 48, 2);
+                DL.C(fg, cxr, cyr, r * 0.6, U4(C.hp[1], C.hp[2], C.hp[3], 0.6 * fade_), 40, 1.5);
+                DL.CF(fg, cxr, cyr, 10 * sc * fade_, U4(1, 0.9, 1, 0.8 * fade_), 20);
             elseif fx == 'spell' then                                -- the violet magic flash (Magic Spell 9) on the name
                 local fk = math.floor((now - (PET.born or now)) * 30);
                 if fk < 24 then
@@ -8382,9 +8395,9 @@ function C.lot_badge(dl, m, x1, tip, ny, ch, sc, v, party)
     local pw, ph = tw_ + 14 * sc, th_ + 4 * sc;
     local rx = tip - ch * 0.30 * 0.5 - 6 * sc - (party and ALLY.tpw(sc) or 0);
     local bx, by = rx - pw, ny - ph / 2;
-    dl:AddRectFilled({ bx, by }, { bx + pw, by + ph }, u32({ 0.045, 0.04, 0.065, 0.95 * v }), ph / 2);
+    DL.RF(dl, bx, by, bx + pw, by + ph, U4(0.045, 0.04, 0.065, 0.95 * v), ph / 2);
     local ec = win and { 1.0, 0.82, 0.42, 0.95 * v } or { NEON2[1], NEON2[2], NEON2[3], ((lv < 0) and 0.25 or 0.6) * v };
-    dl:AddRect({ bx, by }, { bx + pw, by + ph }, u32(ec), ph / 2, C.rall, 1.2);
+    DL.R(dl, bx, by, bx + pw, by + ph, u32(ec), ph / 2, C.rall, 1.2);
     local tc = win and { 1.0, 0.86, 0.48, v } or ((lv < 0) and { 0.62, 0.60, 0.70, v } or { 1, 1, 1, v });
     text(dl, bx + (pw - tw_) / 2, by + (ph - th_) / 2, str, tc);
     imgui.SetWindowFontScale(fs * 0.80);
@@ -8484,23 +8497,23 @@ function C.loot_flights(fg, sc)
                     for k = 0, 27 do local an = k / 28 * math.pi * 2; pts[#pts + 1] = { cx_ + math.cos(an) * rx, cy_ + math.sin(an) * ry }; end
                     return pts;
                 end
-                fg:AddCircleFilled({ hx, hy }, R * 1.25, u32({ 1.0, 0.82, 0.40, 0.06 * ga }), 24);   -- (a faint warm halo, hugging it)
+                DL.CF(fg, hx, hy, R * 1.25, U4(1.0, 0.82, 0.40, 0.06 * ga), 24);   -- (a faint warm halo, hugging it)
                 local side = (1 - wk) * 3.5 * sc * ((spin < 0) and -1 or 1);   -- (its thickness, showing as it turns)
-                ALLY.poly(fg, ell(hx + side, hy, R * wk, R), u32({ 0.66, 0.42, 0.10, ga }));
-                ALLY.poly(fg, ell(hx, hy, R * wk, R), u32({ 1.0, 0.84, 0.38, ga }));   -- its bright rim
-                ALLY.poly(fg, ell(hx, hy, R * 0.82 * wk, R * 0.82), u32({ 0.70, 0.46, 0.12, ga }));   -- its face, a deeper gold
+                ALLY.poly(fg, ell(hx + side, hy, R * wk, R), U4(0.66, 0.42, 0.10, ga));
+                ALLY.poly(fg, ell(hx, hy, R * wk, R), U4(1.0, 0.84, 0.38, ga));   -- its bright rim
+                ALLY.poly(fg, ell(hx, hy, R * 0.82 * wk, R * 0.82), U4(0.70, 0.46, 0.12, ga));   -- its face, a deeper gold
                 local ic = YUI_EQ_ICON and YUI_EQ_ICON(f.id) or nil;  -- the item on its face (mirrored on the back)
                 if ic and wk > 0.22 then
                     local iw, ih = R * 1.08 * wk / 2, R * 1.08 / 2;
-                    pcall(function() fg:AddImage(ic.ptr, { hx - iw, hy - ih }, { hx + iw, hy + ih }, { (spin < 0) and 1 or 0, 0 }, { (spin < 0) and 0 or 1, 1 }, u32({ 1, 1, 1, ga })); end);
+                    pcall(function() DL.I(fg, ic.ptr, hx - iw, hy - ih, hx + iw, hy + ih, (spin < 0) and 1 or 0, 0, (spin < 0) and 0 or 1, 1, U4(1, 1, 1, ga)); end);
                 end
-                fg:AddCircleFilled({ hx - R * 0.45 * wk, hy - R * 0.55 }, math.max(1, R * 0.10), u32({ 1, 1, 0.92, 0.75 * ga * wk }), 10);   -- (a glint on its rim)
+                DL.CF(fg, hx - R * 0.45 * wk, hy - R * 0.55, math.max(1, R * 0.10), U4(1, 1, 0.92, 0.75 * ga * wk), 10);   -- (a glint on its rim)
                 local tw = 0.5 + 0.5 * math.sin(now * 14 + f.slot * 2.1);   -- a small sparkle by it, twinkling
                 local sx_, sy_ = hx + R * 0.95, hy - R * 0.95;
                 local sr = (3 + 4 * tw) * sc;
                 local sq = sr * 0.22;
-                ALLY.poly(fg, { { sx_, sy_ - sr }, { sx_ + sq, sy_ }, { sx_, sy_ + sr }, { sx_ - sq, sy_ } }, u32({ 1, 0.95, 0.75, ga }));
-                ALLY.poly(fg, { { sx_ - sr, sy_ }, { sx_, sy_ - sq }, { sx_ + sr, sy_ }, { sx_, sy_ + sq } }, u32({ 1, 0.95, 0.75, ga }));
+                ALLY.poly(fg, { { sx_, sy_ - sr }, { sx_ + sq, sy_ }, { sx_, sy_ + sr }, { sx_ - sq, sy_ } }, U4(1, 0.95, 0.75, ga));
+                ALLY.poly(fg, { { sx_ - sr, sy_ }, { sx_, sy_ - sq }, { sx_ + sr, sy_ }, { sx_, sy_ + sq } }, U4(1, 0.95, 0.75, ga));
             elseif not f.done then
                 f.done = true;
                 L.flash[f.slot] = now;                               -- (it arrived: the line on the left lights up, the row slides out)
@@ -8538,25 +8551,25 @@ function C.loot_wait_card(w, sc)
     local x, y = w.x, w.y;
     if x + Wc > SW - 4 then x = SW - 4 - Wc; end
     if y + Hc > SH - 4 then y = SH - 4 - Hc; end
-    for k = 3, 1, -1 do fg:AddRectFilled({ x - k * 2, y - k * 2 + 3 }, { x + Wc + k * 2, y + Hc + k * 2 + 3 }, u32({ 0, 0, 0, 0.10 }), 10 * sc + k * 2); end
-    fg:AddRectFilled({ x, y }, { x + Wc, y + Hc }, u32({ 0.035, 0.03, 0.05, 0.95 }), 9 * sc);
-    fg:AddRect({ x, y }, { x + Wc, y + Hc }, u32({ 1.0, 0.66, 0.28, 0.35 }), 9 * sc, C.rall, 1);
-    fg:AddRectFilled({ x + 9 * sc, y }, { x + Wc - 9 * sc, y + 1.5 * sc }, u32({ 1.0, 0.70, 0.32, 0.85 }));   -- (a fine amber line along its top)
+    for k = 3, 1, -1 do DL.RF(fg, x - k * 2, y - k * 2 + 3, x + Wc + k * 2, y + Hc + k * 2 + 3, U4(0, 0, 0, 0.10), 10 * sc + k * 2); end
+    DL.RF(fg, x, y, x + Wc, y + Hc, U4(0.035, 0.03, 0.05, 0.95), 9 * sc);
+    DL.R(fg, x, y, x + Wc, y + Hc, U4(1.0, 0.66, 0.28, 0.35), 9 * sc, C.rall, 1);
+    DL.RF(fg, x + 9 * sc, y, x + Wc - 9 * sc, y + 1.5 * sc, U4(1.0, 0.70, 0.32, 0.85));   -- (a fine amber line along its top)
     local q = 0.75 + 0.25 * math.sin(os.clock() * 3);
-    fg:AddCircleFilled({ x + pad + 3 * sc, y + pad + lh / 2 }, 2.6 * sc, u32({ 1.0, 0.66, 0.26, q }), 10);
+    DL.CF(fg, x + pad + 3 * sc, y + pad + lh / 2, 2.6 * sc, U4(1.0, 0.66, 0.26, q), 10);
     local hx = x + pad + 12 * sc;
     for i = 1, #htxt do
         local ch = htxt:sub(i, i);
         text(fg, hx, y + pad, ch, { 1.0, 0.74, 0.38, 1 });
         hx = hx + imgui.CalcTextSize(ch) + 1.6 * sc;
     end
-    fg:AddLine({ x + pad, y + pad + head - 4 * sc }, { x + Wc - pad, y + pad + head - 4 * sc }, u32({ 1, 1, 1, 0.08 }), 1);
+    DL.L(fg, x + pad, y + pad + head - 4 * sc, x + Wc - pad, y + pad + head - 4 * sc, U4(1, 1, 1, 0.08), 1);
     for k, r in ipairs(rows_) do
         local c_ = math.floor((k - 1) / per);
         local r_ = (k - 1) % per;
         local nx = x + pad + c_ * (cw + 8 * sc);
         local ny = y + pad + head + r_ * (lh + 3 * sc);
-        fg:AddCircleFilled({ nx + 3 * sc, ny + lh / 2 }, 2.4 * sc, u32({ r[2][1], r[2][2], r[2][3], 1 }), 10);
+        DL.CF(fg, nx + 3 * sc, ny + lh / 2, 2.4 * sc, U4(r[2][1], r[2][2], r[2][3], 1), 10);
         text(fg, nx + 11 * sc, ny, r[1], { 0.93, 0.91, 0.97, 1 });
     end
     imgui.SetWindowFontScale(fs);
@@ -8575,9 +8588,9 @@ function C.loot_btn(dl, id, x, y, w, h, label, kind, on, lit)
     local ink = pink and { 0.28, 0.16, 0.02 } or { 0.96, 0.95, 1.0 };
     local a = on and 1 or 0.45;
     local pts = { { x + s, y - up }, { x + w, y - up }, { x + w - s, y + h - up }, { x, y + h - up } };
-    ALLY.poly(dl, pts, u32({ f[1], f[2], f[3], a }));
+    ALLY.poly(dl, pts, U4(f[1], f[2], f[3], a));
     local tw_, th_ = imgui.CalcTextSize(label);
-    dl:AddText({ x + (w - tw_) / 2, y - up + (h - (tonumber(th_) or h)) / 2 }, u32({ ink[1], ink[2], ink[3], a }), label);
+    DL.T(dl, x + (w - tw_) / 2, y - up + (h - (tonumber(th_) or h)) / 2, U4(ink[1], ink[2], ink[3], a), label);
     return hit and on;
 end
 function C.loot_win()
@@ -8645,28 +8658,28 @@ function C.loot_win()
         local x0 = math.floor(x + ox + 0.5);                          -- (on whole pixels: crisp edges)
         local bw0 = rh * 1.05;                                       -- the icon's block: dark, a bright stripe down its left side
         local blk = { { x0 + sl, ry }, { x0 + sl + bw0, ry }, { x0 + bw0, ry + rh }, { x0, ry + rh } };
-        ALLY.poly(dl, blk, u32({ 0.07, 0.065, 0.10, 0.92 }));
+        ALLY.poly(dl, blk, U4(0.07, 0.065, 0.10, 0.92));
         local mine0 = (not fake) and it.mine or nil;                 -- (its colour: gold; brighter if it's going to you, grey once passed)
         local wn0 = (not fake) and C.lot_winner(slot) or nil;
         local me0 = '';
         pcall(function() me0 = AshitaCore:GetMemoryManager():GetParty():GetMemberName(0) or ''; end);
         local hc = (mine0 and mine0 >= 0 and wn0 == me0) and { 1.0, 0.93, 0.62 } or ((mine0 and mine0 < 0) and { 0.50, 0.48, 0.62 } or { 0.96, 0.74, 0.28 });
-        for k = 1, 4 do dl:AddLine(blk[k], blk[k % 4 + 1], u32({ 0.96, 0.76, 0.32, picked and 1 or 0.45 }), picked and 1.3 or 1); end
+        for k = 1, 4 do dl:AddLine(blk[k], blk[k % 4 + 1], U4(0.96, 0.76, 0.32, picked and 1 or 0.45), picked and 1.3 or 1); end
         local sw1 = math.max(2, math.floor(2.5 * sc + 0.5));         -- (just the line, crisp, over the block's edge)
-        ALLY.poly(dl, { { x0 + sl, ry }, { x0 + sl + sw1, ry }, { x0 + sw1, ry + rh }, { x0, ry + rh } }, u32({ hc[1], hc[2], hc[3], 1 }));
+        ALLY.poly(dl, { { x0 + sl, ry }, { x0 + sl + sw1, ry }, { x0 + sw1, ry + rh }, { x0, ry + rh } }, U4(hc[1], hc[2], hc[3], 1));
         local isz = rh - 12 * sc;
         local ic = YUI_EQ_ICON and YUI_EQ_ICON(it.id) or nil;
         local icx = x0 + (bw0 + sl) / 2 + 2 * sc;
-        if ic then pcall(function() dl:AddImage(ic.ptr, { icx - isz / 2, cy - isz / 2 }, { icx + isz / 2, cy + isz / 2 }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 })); end); end
+        if ic then pcall(function() DL.I(dl, ic.ptr, icx - isz / 2, cy - isz / 2, icx + isz / 2, cy + isz / 2, 0, 0, 1, 1, U4(1, 1, 1, 1)); end); end
         local gp = 3 * sc;                                           -- the card: dark, a little see-through, a light along its top
         local c0 = x0 + bw0 + gp;
         local card = { { c0 + sl, ry }, { x0 + W, ry }, { x0 + W - sl, ry + rh }, { c0, ry + rh } };
-        ALLY.poly(dl, card, u32({ 0.085, 0.08, 0.115, (over or picked) and 0.90 or 0.82 }));
+        ALLY.poly(dl, card, U4(0.085, 0.08, 0.115, (over or picked) and 0.90 or 0.82));
         ALLY.grad(dl, { c0 + sl, ry }, { x0 + W - sl, ry + 1 }, { 1, 1, 1, 0.14 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0.14 });
         local fl1 = L.flash[slot] and math.max(0, 1 - (now - L.flash[slot]) / 0.6) or 0;   -- (just landed: its gold edge flashes)
-        if fl1 > 0 then pcall(ALLY.glow_ring, dl, card, 3 * sc, u32({ 1.0, 0.85, 0.45, 0.30 * fl1 })); end
+        if fl1 > 0 then pcall(ALLY.glow_ring, dl, card, 3 * sc, U4(1.0, 0.85, 0.45, 0.30 * fl1)); end
         local ea = math.max(picked and 1 or 0.45, fl1);
-        for k = 1, 4 do dl:AddLine(card[k], card[k % 4 + 1], u32({ 0.96 + 0.04 * fl1, 0.76 + 0.14 * fl1, 0.32 + 0.30 * fl1, ea }), (picked and 1.3 or 1) + fl1); end   -- (a gold edge; bright on the picked one)
+        for k = 1, 4 do dl:AddLine(card[k], card[k % 4 + 1], U4(0.96 + 0.04 * fl1, 0.76 + 0.14 * fl1, 0.32 + 0.30 * fl1, ea), (picked and 1.3 or 1) + fl1); end   -- (a gold edge; bright on the picked one)
         local bx_ = x0 + W - sl * 0.5 - 8 * sc;                      -- your LOT / PASS (or what you did), at its right end
         local mine = (not fake) and it.mine or nil;
         local bw_ = math.floor(46 * sc);
@@ -9025,7 +9038,7 @@ function LAYOUT.mine_rows()
         end
         if (b[1] or '') == '' and not imgui.IsItemActive() then     -- (an empty box: a faint placeholder)
             local mx, my = imgui.GetItemRectMin();
-            pcall(function() imgui.GetWindowDrawList():AddText({ mx + 8 * ps, my + 4 * ps }, u32({ 1, 1, 1, 0.30 }), 'Layout ' .. n .. (has and ' (saved)' or '')); end);
+            pcall(function() imgui.GetWindowDrawList():AddText({ mx + 8 * ps, my + 4 * ps }, U4(1, 1, 1, 0.30), 'Layout ' .. n .. (has and ' (saved)' or '')); end);
         end
         imgui.SameLine(0, 8);
         if accent_button('SAVE##yui_lsave' .. n, { bw, 0 }, false, true) then LAYOUT.save_mine(n); end
@@ -9085,10 +9098,10 @@ local function tab_bar(dl)
         local on = (ui.tab or 1) == k;
         local over = mx >= x - 4 and mx < x + w + 4 and my >= y0 - 2 and my < y0 + lh + 6;
         local col = on and C.acc or (over and C.text or C.muted);
-        dl:AddText({ x, y0 }, u32(col), n);
+        DL.T(dl, x, y0, u32(col), n);
         if on then                                                   -- the chosen tab: a glowing line under it
-            pcall(function() dl:AddRectFilledMultiColor({ x - 2, y0 + lh + 3 }, { x + w + 2, y0 + lh + 5 }, u32(C.hp), u32(C.mp2), u32(C.mp2), u32(C.hp)); end);
-            dl:AddRectFilled({ x - 4, y0 + lh + 1 }, { x + w + 4, y0 + lh + 7 }, u32({ C.hp2[1], C.hp2[2], C.hp2[3], 0.18 }), 3);
+            pcall(function() DL.RFM(dl, x - 2, y0 + lh + 3, x + w + 2, y0 + lh + 5, u32(C.hp), u32(C.mp2), u32(C.mp2), u32(C.hp)); end);
+            DL.RF(dl, x - 4, y0 + lh + 1, x + w + 4, y0 + lh + 7, U4(C.hp2[1], C.hp2[2], C.hp2[3], 0.18), 3);
         end
         imgui.SetCursorScreenPos({ x - 4, y0 - 2 });
         if imgui.InvisibleButton('##yui_tab' .. k, { w + 8, lh + 8 }) then ui.tab = k; end
@@ -9119,26 +9132,26 @@ function PANEL.frame(dl, x, y, w, h, SW)                         -- rounded, wit
     local r = 30 * ps;
     x, y, w, h = x + 5, y + 5, w - 10, h - 10;
     local bga = math.max(0.15, math.min(1, tonumber(cfg.panel_alpha) or 0.95));
-    dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.035, 0.032, 0.050, bga }), r);
+    DL.RF(dl, x, y, x + w, y + h, U4(0.035, 0.032, 0.050, bga), r);
     for k = 3, 1, -1 do                                              -- the glow: a few wide faint strokes on the edge
-        dl:AddRect({ x, y }, { x + w, y + h }, u32({ NEON[1], NEON[2], NEON[3], 0.07 * (4 - k) }), r, C.rall, (2 + k * 2.2) * ps);
+        DL.R(dl, x, y, x + w, y + h, U4(NEON[1], NEON[2], NEON[3], 0.07 * (4 - k)), r, C.rall, (2 + k * 2.2) * ps);
     end
-    dl:AddRect({ x, y }, { x + w, y + h }, u32({ NEON2[1], NEON2[2], NEON2[3], 0.85 }), r, C.rall, 1.6);
+    DL.R(dl, x, y, x + w, y + h, U4(NEON2[1], NEON2[2], NEON2[3], 0.85), r, C.rall, 1.6);
     -- the sidebar's slanted edge: faint all the way down, bright near the top
     local tx, bx = x + SW + 30 * ps, x + SW - 60 * ps;
-    dl:AddLine({ tx, y + 24 * ps }, { bx, y + h - 24 * ps }, u32({ 1, 1, 1, 0.08 }), 1);
+    DL.L(dl, tx, y + 24 * ps, bx, y + h - 24 * ps, U4(1, 1, 1, 0.08), 1);
     local k = 0.28;
     local mx2, my2 = tx + (bx - tx) * k, y + 24 * ps + (h - 48 * ps) * k;
-    dl:AddLine({ tx, y + 24 * ps }, { mx2, my2 }, u32({ NEON[1], NEON[2], NEON[3], 0.25 }), 6 * ps);
-    dl:AddLine({ tx, y + 24 * ps }, { mx2, my2 }, u32({ NEON2[1], NEON2[2], NEON2[3], 0.9 }), 1.6);
+    DL.L(dl, tx, y + 24 * ps, mx2, my2, U4(NEON[1], NEON[2], NEON[3], 0.25), 6 * ps);
+    DL.L(dl, tx, y + 24 * ps, mx2, my2, U4(NEON2[1], NEON2[2], NEON2[3], 0.9), 1.6);
 end
 -- The beta testers (bottom left of the panel) and the heart by YUNA UI: thanks, and a link to the author's Ko-fi
 PANEL.TESTERS = { 'rezzattack', 'Loudnoises', 'Chadbrowick', 'Rusbando' };
 PANEL.KOFI = 'https://ko-fi.com/yunasxi';
 function PANEL.heart(dl, cx, cy, r, col)                             -- (a small heart: two round tops and a point)
-    dl:AddCircleFilled({ cx - r * 0.5, cy - r * 0.15 }, r * 0.55, col, 16);
-    dl:AddCircleFilled({ cx + r * 0.5, cy - r * 0.15 }, r * 0.55, col, 16);
-    dl:AddTriangleFilled({ cx - r * 1.02, cy + r * 0.02 }, { cx + r * 1.02, cy + r * 0.02 }, { cx, cy + r * 1.05 }, col);
+    DL.CF(dl, cx - r * 0.5, cy - r * 0.15, r * 0.55, col, 16);
+    DL.CF(dl, cx + r * 0.5, cy - r * 0.15, r * 0.55, col, 16);
+    DL.TF(dl, cx - r * 1.02, cy + r * 0.02, cx + r * 1.02, cy + r * 0.02, cx, cy + r * 1.05, col);
 end
 function PANEL.sidebar(dl, x0, y0, SW, bottom)
     local ps = C.ps;
@@ -9156,8 +9169,8 @@ function PANEL.sidebar(dl, x0, y0, SW, bottom)
         local mx_, my_ = imgui.GetMousePos();
         local over = mx_ >= hx - r * 1.6 and mx_ <= hx + r * 1.6 and my_ >= hy - r * 1.6 and my_ <= hy + r * 1.6;
         local beat = 1 + 0.08 * math.max(0, math.sin(os.clock() * 3.2)) ^ 8;
-        if over then PANEL.heart(dl, hx, hy, r * 1.55 * beat, u32({ 1, 0.42, 0.72, 0.22 })); end
-        PANEL.heart(dl, hx, hy, (r + 1.5) * beat, u32({ 0, 0, 0, 0.8 }));
+        if over then PANEL.heart(dl, hx, hy, r * 1.55 * beat, U4(1, 0.42, 0.72, 0.22)); end
+        PANEL.heart(dl, hx, hy, (r + 1.5) * beat, U4(0, 0, 0, 0.8));
         PANEL.heart(dl, hx, hy, r * beat, u32(over and { 1, 0.55, 0.80, 1 } or { 1, 0.42, 0.70, 0.95 }));
         imgui.SetCursorScreenPos({ hx - r * 1.6, hy - r * 1.6 });
         if imgui.InvisibleButton('##yui_kofi', { r * 3.2, r * 3.2 }) then pcall(function() ashita.misc.open_url(PANEL.KOFI); end); end
@@ -9166,7 +9179,7 @@ function PANEL.sidebar(dl, x0, y0, SW, bottom)
     end
     local vs = 'v' .. addon.version;
     local vw, vh = imgui.CalcTextSize(vs);
-    dl:AddText({ x0 + (SW - vw) / 2, ty }, u32(C.muted), vs);
+    DL.T(dl, x0 + (SW - vw) / 2, ty, u32(C.muted), vs);
     y = ty + vh + 34 * ps;
     -- the tabs: the chosen one lit, with a violet glow fading to the right
     local ih = math.floor(40 * ps);
@@ -9176,21 +9189,19 @@ function PANEL.sidebar(dl, x0, y0, SW, bottom)
         local over = mx >= x0 and mx < x0 + SW and my >= y and my < y + ih;
         if on then
             pcall(function()
-                dl:AddRectFilledMultiColor({ x0, y }, { x0 + SW, y + ih }, u32({ NEON[1], NEON[2], NEON[3], 0.38 }), u32({ NEON[1], NEON[2], NEON[3], 0 }),
-                    u32({ NEON[1], NEON[2], NEON[3], 0 }), u32({ NEON[1], NEON[2], NEON[3], 0.38 }));
-                dl:AddRectFilledMultiColor({ x0, y + ih - 2 }, { x0 + SW, y + ih }, u32({ NEON2[1], NEON2[2], NEON2[3], 1 }), u32({ NEON2[1], NEON2[2], NEON2[3], 0 }),
-                    u32({ NEON2[1], NEON2[2], NEON2[3], 0 }), u32({ NEON2[1], NEON2[2], NEON2[3], 1 }));
+                DL.RFM(dl, x0, y, x0 + SW, y + ih, U4(NEON[1], NEON[2], NEON[3], 0.38), U4(NEON[1], NEON[2], NEON[3], 0), U4(NEON[1], NEON[2], NEON[3], 0), U4(NEON[1], NEON[2], NEON[3], 0.38));
+                DL.RFM(dl, x0, y + ih - 2, x0 + SW, y + ih, U4(NEON2[1], NEON2[2], NEON2[3], 1), U4(NEON2[1], NEON2[2], NEON2[3], 0), U4(NEON2[1], NEON2[2], NEON2[3], 0), U4(NEON2[1], NEON2[2], NEON2[3], 1));
             end);
-            dl:AddRectFilled({ x0, y }, { x0 + 3, y + ih }, u32({ 0.92, 0.80, 1, 1 }));
+            DL.RF(dl, x0, y, x0 + 3, y + ih, U4(0.92, 0.80, 1, 1));
         elseif over then
-            dl:AddRectFilled({ x0, y }, { x0 + SW, y + ih }, u32({ 1, 1, 1, 0.04 }));
+            DL.RF(dl, x0, y, x0 + SW, y + ih, U4(1, 1, 1, 0.04));
         end
         local tw0 = imgui.CalcTextSize(n);
         local room = SW - 34 * ps;
         local fit = (tw0 > room) and (room / tw0) or 1;
         if fit < 1 then imgui.SetWindowFontScale(C.wfs * fit); end
         local _, nh = imgui.CalcTextSize(n);
-        dl:AddText({ x0 + 20 * ps, y + (ih - nh) / 2 }, u32(on and { 0.97, 0.94, 1, 1 } or (over and { 1, 1, 1, 1 } or C.text)), n);   -- (the same white as YUNA)
+        DL.T(dl, x0 + 20 * ps, y + (ih - nh) / 2, u32(on and { 0.97, 0.94, 1, 1 } or (over and { 1, 1, 1, 1 } or C.text)), n);   -- (the same white as YUNA)
         if fit < 1 then imgui.SetWindowFontScale(C.wfs); end
         imgui.SetCursorScreenPos({ x0, y });
         if imgui.InvisibleButton('##yui_side' .. k, { SW, ih }) then ui.tab = k; end
@@ -9204,8 +9215,8 @@ function PANEL.sidebar(dl, x0, y0, SW, bottom)
             local bw = imgui.CalcTextSize('BETA TESTERS');
             local mx_, my_ = imgui.GetMousePos();
             local over = mx_ >= x0 + 20 * ps and mx_ <= x0 + 20 * ps + bw and my_ >= top and my_ <= top + lh;
-            dl:AddText({ x0 + 20 * ps, top }, u32({ C.hp2[1], C.hp2[2], C.hp2[3], over and 1 or 0.85 }), 'BETA TESTERS');
-            pcall(function() dl:AddRectFilledMultiColor({ x0 + 20 * ps, top + lh + 1 }, { x0 + 20 * ps + bw, top + lh + 2 }, u32(C.hp), u32({ C.mp2[1], C.mp2[2], C.mp2[3], 0 }), u32({ C.mp2[1], C.mp2[2], C.mp2[3], 0 }), u32(C.hp)); end);
+            DL.T(dl, x0 + 20 * ps, top, U4(C.hp2[1], C.hp2[2], C.hp2[3], over and 1 or 0.85), 'BETA TESTERS');
+            pcall(function() DL.RFM(dl, x0 + 20 * ps, top + lh + 1, x0 + 20 * ps + bw, top + lh + 2, u32(C.hp), U4(C.mp2[1], C.mp2[2], C.mp2[3], 0), U4(C.mp2[1], C.mp2[2], C.mp2[3], 0), u32(C.hp)); end);
             if over then YUI_TIP('Thank you to our beta testers:\n' .. table.concat(PANEL.TESTERS, '\n')); end
         end
         imgui.SetWindowFontScale(C.wfs);
@@ -9227,33 +9238,33 @@ function PANEL.buttons(dl, wx, wy, ww)                               -- size arr
         local clicked = imgui.InvisibleButton('##yui_sz' .. a[1], { bs, bs });
         local hov = imgui.IsItemHovered();
         if hov then
-            dl:AddRectFilled({ ax, by }, { ax + bs, by + bs }, u32({ C.acc[1], C.acc[2], C.acc[3], 0.22 }), bs / 2);
+            DL.RF(dl, ax, by, ax + bs, by + bs, U4(C.acc[1], C.acc[2], C.acc[3], 0.22), bs / 2);
             YUI_TIP(a[3]);
         end
         local col = u32(hov and { 1, 1, 1, 1 } or { 0.80, 0.78, 0.90, 0.9 });
         local cx, cy, r = ax + bs / 2, by + bs / 2, bs * 0.18;
-        if a[1] < 0 then dl:AddTriangleFilled({ cx + r * 0.7, cy - r }, { cx + r * 0.7, cy + r }, { cx - r * 0.8, cy }, col);
-        else dl:AddTriangleFilled({ cx - r * 0.7, cy - r }, { cx + r * 0.8, cy }, { cx - r * 0.7, cy + r }, col); end
+        if a[1] < 0 then DL.TF(dl, cx + r * 0.7, cy - r, cx + r * 0.7, cy + r, cx - r * 0.8, cy, col);
+        else DL.TF(dl, cx - r * 0.7, cy - r, cx + r * 0.8, cy, cx - r * 0.7, cy + r, col); end
         if clicked then
             cfg.panel_scale = math.max(0.7, math.min(1.8, math.floor((ps + a[1] * 0.05) * 100 + 0.5) / 100));
             save();
         end
     end
-    dl:AddText({ right - bs - 6 * ps - pw, by + (bs - ph) / 2 }, u32({ 0.85, 0.83, 0.93, 1 }), pct);
+    DL.T(dl, right - bs - 6 * ps - pw, by + (bs - ph) / 2, U4(0.85, 0.83, 0.93, 1), pct);
     for k, b in ipairs({ { 'x', 'Close (type /yunaui to open it again)' } }) do
         local bx = wx + ww - 14 * ps - bs;
         imgui.SetCursorScreenPos({ bx, by });
         local clicked = imgui.InvisibleButton('##yui_tb' .. k, { bs, bs });
         local hov = imgui.IsItemHovered();
         if hov then
-            dl:AddRectFilled({ bx, by }, { bx + bs, by + bs }, u32({ 1, 0.36, 0.62, 0.30 }), bs / 2);
+            DL.RF(dl, bx, by, bx + bs, by + bs, U4(1, 0.36, 0.62, 0.30), bs / 2);
             YUI_TIP(b[2]);
         end
         local col = u32(hov and { 1, 1, 1, 1 } or { 0.80, 0.78, 0.90, 0.9 });
         local cx, cy, r = bx + bs / 2, by + bs / 2, bs * 0.22;
         do
-            dl:AddLine({ cx - r, cy - r }, { cx + r, cy + r }, col, 1.6 * ps);
-            dl:AddLine({ cx - r, cy + r }, { cx + r, cy - r }, col, 1.6 * ps);
+            DL.L(dl, cx - r, cy - r, cx + r, cy + r, col, 1.6 * ps);
+            DL.L(dl, cx - r, cy + r, cx + r, cy - r, col, 1.6 * ps);
         end
         if clicked then ui.open, ui.min, PANEL.anim = false, false, nil; end
     end
@@ -9318,9 +9329,9 @@ local function draw_window()
         local function cut(fg, q, a, fill)                           -- the panel's rounded shape
             local x1, y1, x2, y2 = q[1], q[2], q[1] + q[3], q[2] + q[4];
             local r = math.min(q[3], q[4]) * 0.10;
-            if fill then fg:AddRectFilled({ x1, y1 }, { x2, y2 }, u32({ 0.035, 0.032, 0.050, fill }), r); end
-            fg:AddRect({ x1, y1 }, { x2, y2 }, u32({ NEON[1], NEON[2], NEON[3], 0.25 * a }), r, C.rall, 6);
-            fg:AddRect({ x1, y1 }, { x2, y2 }, u32({ 0.85, 0.65, 1.00, 0.9 * a }), r, C.rall, 1.5);
+            if fill then DL.RF(fg, x1, y1, x2, y2, U4(0.035, 0.032, 0.050, fill), r); end
+            DL.R(fg, x1, y1, x2, y2, U4(NEON[1], NEON[2], NEON[3], 0.25 * a), r, C.rall, 6);
+            DL.R(fg, x1, y1, x2, y2, U4(0.85, 0.65, 1.00, 0.9 * a), r, C.rall, 1.5);
         end
         if e < 1 then pcall(function()
             local fg = imgui.GetForegroundDrawList();
@@ -9344,12 +9355,12 @@ local function draw_window()
                 local tx, ty = (an.kind == 'min') and bx or ax, (an.kind == 'min') and by or ay;
                 local hx, hy = fx + (tx - fx) * h1, fy + (ty - fy) * h1;
                 local qx, qy = fx + (tx - fx) * h0, fy + (ty - fy) * h0;
-                fg:AddLine({ qx, qy }, { hx, hy }, u32({ NEON[1], NEON[2], NEON[3], 0.35 }), 10);
-                fg:AddLine({ qx, qy }, { hx, hy }, u32({ 0.92, 0.80, 1.00, 0.95 }), 2.5);
-                fg:AddCircleFilled({ hx, hy }, 6, u32({ 1, 0.95, 1, 0.9 }), 16);
+                DL.L(fg, qx, qy, hx, hy, U4(NEON[1], NEON[2], NEON[3], 0.35), 10);
+                DL.L(fg, qx, qy, hx, hy, U4(0.92, 0.80, 1.00, 0.95), 2.5);
+                DL.CF(fg, hx, hy, 6, U4(1, 0.95, 1, 0.9), 16);
                 if h1 > 0.7 then
                     local f = (h1 - 0.7) / 0.3;
-                    fg:AddCircle({ tx, ty }, 8 + f * 40, u32({ 0.80, 0.55, 1.00, 0.9 * (1 - f) }), 32, 2);
+                    DL.C(fg, tx, ty, 8 + f * 40, U4(0.80, 0.55, 1.00, 0.9 * (1 - f)), 32, 2);
                 end
                 cut(fg, PA, 0.6 * (1 - uu));
             elseif style == 'fold' then                              -- folds flat into a line, the line flies into the icon
@@ -9363,8 +9374,8 @@ local function draw_window()
                     local cx2, cy2 = IB[1] + IB[3] / 2, IB[2] + IB[4] / 2;
                     local cx, cy = cx1 + (cx2 - cx1) * f, cy1 + (cy2 - cy1) * f;
                     local hw = (PA[3] / 2) * (1 - f) + 4;
-                    fg:AddLine({ cx - hw, cy }, { cx + hw, cy }, u32({ NEON[1], NEON[2], NEON[3], 0.35 }), 8);
-                    fg:AddLine({ cx - hw, cy }, { cx + hw, cy }, u32({ 0.92, 0.82, 1.00, 0.95 }), 2);
+                    DL.L(fg, cx - hw, cy, cx + hw, cy, U4(NEON[1], NEON[2], NEON[3], 0.35), 8);
+                    DL.L(fg, cx - hw, cy, cx + hw, cy, U4(0.92, 0.82, 1.00, 0.95), 2);
                 end
             end
         end); end
@@ -9781,7 +9792,7 @@ local function draw_window()
         imgui.EndChild();
         -- the bottom: a faint line, and CLOSE
         local by = wy + WIN_H - math.floor(70 * ps);
-        dl:AddLine({ cx + MARGIN - 20 * ps, by - 10 * ps }, { cx + MARGIN + ROW_W, by - 10 * ps }, u32({ 1, 1, 1, 0.08 }), 1);
+        DL.L(dl, cx + MARGIN - 20 * ps, by - 10 * ps, cx + MARGIN + ROW_W, by - 10 * ps, U4(1, 1, 1, 0.08), 1);
         local cw = math.floor(260 * ps);
         imgui.SetCursorScreenPos({ cx + MARGIN + (ROW_W - cw) / 2, by });
         if accent_button('CLOSE##yui_close', { cw, math.floor(40 * ps) }, true) then ui.open = false; end
@@ -9873,7 +9884,7 @@ end
 function C.outline(dl, x, y, w, h)
     if cfg.hp_outline == false then return; end
     local all = ImDrawFlags_RoundCornersAll or ImDrawCornerFlags_All or 15;
-    dl:AddRect({ x - 1, y - 1 }, { x + w + 1, y + h + 1 }, u32({ 0, 0, 0, 0.92 }), h / 2 + 1, all, 1.5);   -- (touching the bar: no gap of background inside it)
+    DL.R(dl, x - 1, y - 1, x + w + 1, y + h + 1, U4(0, 0, 0, 0.92), h / 2 + 1, all, 1.5);   -- (touching the bar: no gap of background inside it)
 end
 YUI_BAR_OUTLINE = function(dl, x, y, w, h) pcall(C.outline, dl, x, y, w, h); end
 ----------------------------------------------------------------------------------------------------
@@ -9896,12 +9907,12 @@ YMAP.ACOLS = { white = { 1, 1, 1 }, pink = { 1.00, 0.55, 0.78 }, violet = { 0.70
                gold = { 1.00, 0.84, 0.45 }, green = { 0.55, 1.00, 0.65 } };
 function YMAP.acol(al)                                               -- your arrow's colour (MINIMAP > Your arrow; 'lines' = as the lines)
     local c = YMAP.ACOLS[cfg.map_arrow_color or 'lines'] or YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
-    return u32({ c[1], c[2], c[3], al or 1 });
+    return U4(c[1], c[2], c[3], al or 1);
 end
 function YMAP.lcol(dim)                                              -- (dim: the place names, softer than the lines)
     local c = YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
     local m = dim and 0.66 or 1;
-    return u32({ c[1] * m, c[2] * m, c[3] * m, 1 });
+    return U4(c[1] * m, c[2] * m, c[3] * m, 1);
 end
 pcall(ffi.cdef, 'typedef int32_t (__thiscall* YUI_FloorFn)(void* pThis, float X, float Y, float Z);');
 function YMAP.table_ptr()
@@ -10101,9 +10112,9 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
     local function dot(wx, wy, col, r, ring)
         local sx, sy = tomap(wx, wy);
         if not inside(sx, sy) then return; end
-        dl:AddCircleFilled({ sx, sy }, r + 1.2, u32({ 0, 0, 0, 0.85 }), 12);
-        dl:AddCircleFilled({ sx, sy }, r, u32(col), 12);
-        if ring then dl:AddCircle({ sx, sy }, r + 4 * sc, u32({ 1, 1, 1, 0.95 }), 16, 1.6); end
+        DL.CF(dl, sx, sy, r + 1.2, U4(0, 0, 0, 0.85), 12);
+        DL.CF(dl, sx, sy, r, u32(col), 12);
+        if ring then DL.C(dl, sx, sy, r + 4 * sc, U4(1, 1, 1, 0.95), 16, 1.6); end
     end
     if cfg.map_mobs ~= false then                                   -- (monsters on another floor - over 6 yalms up or down - fade, gone past 10)
         local myz = ent:GetLocalPositionZ(me) or 0;
@@ -10126,7 +10137,7 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
         local ok, tx, ty = pcall(function() return ent:GetLocalPositionX(tidx), ent:GetLocalPositionY(tidx); end);
         if ok and tx then
             local sx, sy = tomap(tx, ty);
-            if inside(sx, sy) then dl:AddCircle({ sx, sy }, 5 * sc, u32({ 1, 1, 1, 0.95 }), 16, 1.6); end
+            if inside(sx, sy) then DL.C(dl, sx, sy, 5 * sc, U4(1, 1, 1, 0.95), 16, 1.6); end
         end
     end
     local px, py = tomap(ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0);
@@ -10158,9 +10169,9 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
     local l = { px - fx * s * 0.7 - fy * s * 0.65, py - fy * s * 0.7 + fx * s * 0.65 };
     local r = { px - fx * s * 0.7 + fy * s * 0.65, py - fy * s * 0.7 - fx * s * 0.65 };
     local back = { px - fx * s * 0.35, py - fy * s * 0.35 };
-    ALLY.poly(dl, { tip, r, back }, u32({ 1.0, 0.36, 0.62, 1 }));
-    ALLY.poly(dl, { tip, back, l }, u32({ 1.0, 0.36, 0.62, 1 }));
-    local wc = u32({ 1, 1, 1, 1 });
+    ALLY.poly(dl, { tip, r, back }, U4(1.0, 0.36, 0.62, 1));
+    ALLY.poly(dl, { tip, back, l }, U4(1.0, 0.36, 0.62, 1));
+    local wc = U4(1, 1, 1, 1);
     dl:AddLine(tip, l, wc, 1.2); dl:AddLine(l, back, wc, 1.2); dl:AddLine(back, r, wc, 1.2); dl:AddLine(r, tip, wc, 1.2);
 end
 -- MINIMAP > Tilt the map: in a zone with no 3D shape (most of the open country), its map is laid flat on the ground under
@@ -10212,12 +10223,12 @@ function YMAP.tilt2d(dl, ent, party, zid, me, sc, x, y, M, W, H)
                             do
                                 local uv1, uv2, uv3, uv4 = { a0 / 512, b0 / 512 }, { a1 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, { a0 / 512, b1 / 512 };
                                 if pass == 2 then                    -- (the lines: a dark copy a pixel down first, readable over snow)
-                                    pcall(function() dl:AddImageQuad(tx_.ptr, { p1x + 1, p1y + 1 }, { p2x + 1, p2y + 1 }, { p3x + 1, p3y + 1 }, { p4x + 1, p4y + 1 }, uv1, uv2, uv3, uv4, u32({ 0, 0, 0, 0.30 * al })); end);   -- (lighter: a full dark copy made the lines look thick)
+                                    pcall(function() dl:AddImageQuad(tx_.ptr, { p1x + 1, p1y + 1 }, { p2x + 1, p2y + 1 }, { p3x + 1, p3y + 1 }, { p4x + 1, p4y + 1 }, uv1, uv2, uv3, uv4, U4(0, 0, 0, 0.30 * al)); end);   -- (lighter: a full dark copy made the lines look thick)
                                 end
                                 local c_ = (pass == 1) and { 1, 1, 1 } or (YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white);
                                 if pass == 2 then al = al * 0.72; end    -- (the lines a little softer: thinner-looking on the tilted map)
                                 if pass == 3 then c_ = { c_[1] * 0.66, c_[2] * 0.66, c_[3] * 0.66 }; end
-                                pcall(function() dl:AddImageQuad(tx_.ptr, { p1x, p1y }, { p2x, p2y }, { p3x, p3y }, { p4x, p4y }, uv1, uv2, uv3, uv4, u32({ c_[1], c_[2], c_[3], al })); end);
+                                pcall(function() dl:AddImageQuad(tx_.ptr, { p1x, p1y }, { p2x, p2y }, { p3x, p3y }, { p4x, p4y }, uv1, uv2, uv3, uv4, U4(c_[1], c_[2], c_[3], al)); end);
                             end
                         end
                     end
@@ -10315,11 +10326,11 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
     local fade = dist * 2.6;
     local x0, x1, y0, y1 = vx, vx + W, vy, vy + H;
     local cols = {};                                                 -- (a handful of brightness steps, made once a frame)
-    for k = 0, 8 do cols[k] = u32({ lc[1], lc[2], lc[3], 0.18 + 0.82 * k / 8 }); end
+    for k = 0, 8 do cols[k] = U4(lc[1], lc[2], lc[3], 0.18 + 0.82 * k / 8); end
     local softc = {};                                                -- (the soft edge: from nothing to full, in 16 steps)
-    for k = 0, 16 do softc[k] = u32({ lc[1], lc[2], lc[3], k / 16 }); end
+    for k = 0, 16 do softc[k] = U4(lc[1], lc[2], lc[3], k / 16); end
     local blackc = {};                                               -- (the outline: black, a little softer than the line)
-    for k = 0, 16 do blackc[k] = u32({ 0, 0, 0, 0.75 * k / 16 }); end
+    for k = 0, 16 do blackc[k] = U4(0, 0, 0, 0.75 * k / 16); end
     -- (open country: past m.net come the lines of the ground's net - left out: bent over the hills, it read as a crooked
     --  copy of the position grid)
     local netk = m.net or (#e + 1);
@@ -10346,12 +10357,12 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
                     end
                     local a_ = (0.18 + 0.82 * math.max(0, math.min(1, t))) * ef * dim;
                     if a_ > 0.03 then
-                        if pass == 1 then dl:AddLine({ ax, ay }, { bx_, by_ }, blackc[math.floor(a_ * 16 + 0.5)], 3);
-                        else dl:AddLine({ ax, ay }, { bx_, by_ }, softc[math.floor(a_ * 16 + 0.5)], 1); end
+                        if pass == 1 then DL.L(dl, ax, ay, bx_, by_, blackc[math.floor(a_ * 16 + 0.5)], 3);
+                        else DL.L(dl, ax, ay, bx_, by_, softc[math.floor(a_ * 16 + 0.5)], 1); end
                     end
                 else
                     local step = math.floor(math.max(0, math.min(1, t)) * 8 + 0.5);
-                    dl:AddLine({ ax, ay }, { bx_, by_ }, cols[step], 1);
+                    DL.L(dl, ax, ay, bx_, by_, cols[step], 1);
                 end
             end
         end
@@ -10374,7 +10385,7 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
                 local sx1, sy1 = proj(ax1, th, ay1);
                 if sx0 and sx1 then
                     local al = a_ * fadeat((sx0 + sx1) / 2, (sy0 + sy1) / 2);
-                    if al > 0.01 then dl:AddLine({ sx0, sy0 }, { sx1, sy1 }, u32({ lc[1], lc[2], lc[3], al }), 1); end
+                    if al > 0.01 then DL.L(dl, sx0, sy0, sx1, sy1, U4(lc[1], lc[2], lc[3], al), 1); end
                 end
             end
         end
@@ -10418,9 +10429,9 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
             local ex, ey = (px - cxs) / (W / 2), (py - cys) / (H / 2);
             if ex * ex + ey * ey > 0.80 then return; end
         end
-        dl:AddCircleFilled({ px, py }, r + 1.2, u32({ 0, 0, 0, 0.85 }), 12);
-        dl:AddCircleFilled({ px, py }, r, u32(col), 12);
-        if ring then dl:AddCircle({ px, py }, r + 4 * sc, u32({ 1, 1, 1, 0.95 }), 16, 1.6); end
+        DL.CF(dl, px, py, r + 1.2, U4(0, 0, 0, 0.85), 12);
+        DL.CF(dl, px, py, r, u32(col), 12);
+        if ring then DL.C(dl, px, py, r + 4 * sc, U4(1, 1, 1, 0.95), 16, 1.6); end
     end
     if cfg.map_mobs ~= false then
         for _, mo in ipairs(YMAP.mobs_near(ent)) do
@@ -10451,7 +10462,7 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
         local cx_, cy2 = proj(X, th, Y);
         if ax and lx_ and rx_ and cx_ then
             local wc = YMAP.acol();
-            dl:AddCircleFilled({ cx_, cy2 }, 9 * sc, YMAP.acol(0.16), 20);
+            DL.CF(dl, cx_, cy2, 9 * sc, YMAP.acol(0.16), 20);
             ALLY.poly(dl, { { ax, ay }, { rx_, ry_ }, { cx_, cy2 } }, wc);
             ALLY.poly(dl, { { ax, ay }, { cx_, cy2 }, { lx_, ly_ } }, wc);
         end
@@ -10468,8 +10479,8 @@ function YMAP.d3draw(party, ent, zid, me, sc)
     local x, y = imgui.GetCursorScreenPos();
     x, y = math.floor(x + 4), math.floor(y + 4);
     local top = math.floor(30 * sc);
-    dl:AddRectFilled({ x, y }, { x + W, y + H + top }, u32({ 0.035, 0.032, 0.05, 0.96 }), 10 * sc);
-    dl:AddRect({ x, y }, { x + W, y + H + top }, u32({ NEON2[1], NEON2[2], NEON2[3], 0.6 }), 10 * sc, C.rall, 1.2);
+    DL.RF(dl, x, y, x + W, y + H + top, U4(0.035, 0.032, 0.05, 0.96), 10 * sc);
+    DL.R(dl, x, y, x + W, y + H + top, U4(NEON2[1], NEON2[2], NEON2[3], 0.6), 10 * sc, C.rall, 1.2);
     local pushed = sized('chat', 16 * sc);
     text(dl, x + 12 * sc, y + 6 * sc, ((YMAP.name and YMAP.name ~= '') and YMAP.name or '?') .. '  -  3D', { 1, 1, 1, 1 });
     unsized(pushed);
@@ -10478,8 +10489,8 @@ function YMAP.d3draw(party, ent, zid, me, sc)
     if imgui.InvisibleButton('##yui_map3d_x', { 22 * sc, 22 * sc }) then D.on = false; end
     local xcol = u32(imgui.IsItemHovered() and { 1, 1, 1, 1 } or { 0.8, 0.78, 0.9, 0.9 });
     local xc, yc, rr = bx + 11 * sc, y + 15 * sc, 5 * sc;
-    dl:AddLine({ xc - rr, yc - rr }, { xc + rr, yc + rr }, xcol, 1.6);
-    dl:AddLine({ xc - rr, yc + rr }, { xc + rr, yc - rr }, xcol, 1.6);
+    DL.L(dl, xc - rr, yc - rr, xc + rr, yc + rr, xcol, 1.6);
+    DL.L(dl, xc - rr, yc + rr, xc + rr, yc - rr, xcol, 1.6);
     local vx, vy = x, y + top;
     imgui.SetCursorScreenPos({ vx, vy });                            -- the view: drag to turn, the wheel to zoom
     imgui.InvisibleButton('##yui_map3d_view', { W, H });
@@ -10638,8 +10649,8 @@ function YMAP.gapline(dl, a, b, c, th, ytop)                         -- (a line,
     if not g or math.abs(a[2] - ytop) > 0.6 or math.abs(b[2] - ytop) > 0.6 then dl:AddLine(a, b, c, th); return; end
     local x0, x1 = math.min(a[1], b[1]), math.max(a[1], b[1]);
     if x1 <= g[1] or x0 >= g[2] then dl:AddLine(a, b, c, th); return; end
-    if x0 < g[1] then dl:AddLine({ x0, a[2] }, { g[1], a[2] }, c, th); end
-    if x1 > g[2] then dl:AddLine({ g[2], a[2] }, { x1, a[2] }, c, th); end
+    if x0 < g[1] then DL.L(dl, x0, a[2], g[1], a[2], c, th); end
+    if x1 > g[2] then DL.L(dl, g[2], a[2], x1, a[2], c, th); end
 end
 function YMAP.title(dl, x, y, M, sc, Wt)                             -- (Wt: the map's width, when it isn't square)
     local name = (YMAP.name and YMAP.name ~= '') and YMAP.name or '?';
@@ -10680,15 +10691,15 @@ function YMAP.title(dl, x, y, M, sc, Wt)                             -- (Wt: the
                 local a0 = y0f + (y1f - y0f) * j / N;
                 local a1 = y0f + (y1f - y0f) * (j + 1) / N;
                 local t0, t1 = va(a0), va(a1);
-                local function c(a) return u32({ 0.01, 0.01, 0.03, a }); end
+                local function c(a) return U4(0.01, 0.01, 0.03, a); end
                 pcall(function()
-                    dl:AddRectFilledMultiColor({ fmid - core, a0 }, { fmid + core, a1 }, c(t0), c(t0), c(t1), c(t1));
+                    DL.RFM(dl, fmid - core, a0, fmid + core, a1, c(t0), c(t0), c(t1), c(t1));
                     for k = 0, K - 1 do
                         local u0, u1 = k / K, (k + 1) / K;
                         local h0, h1 = ha(u0), ha(u1);
                         local xa, xb = core + (half - core) * u0, core + (half - core) * u1;
-                        dl:AddRectFilledMultiColor({ fmid + xa, a0 }, { fmid + xb, a1 }, c(t0 * h0), c(t0 * h1), c(t1 * h1), c(t1 * h0));
-                        dl:AddRectFilledMultiColor({ fmid - xb, a0 }, { fmid - xa, a1 }, c(t0 * h1), c(t0 * h0), c(t1 * h0), c(t1 * h1));
+                        DL.RFM(dl, fmid + xa, a0, fmid + xb, a1, c(t0 * h0), c(t0 * h1), c(t1 * h1), c(t1 * h0));
+                        DL.RFM(dl, fmid - xb, a0, fmid - xa, a1, c(t0 * h1), c(t0 * h0), c(t1 * h0), c(t1 * h1));
                     end
                 end);
             end
@@ -10706,9 +10717,9 @@ function YMAP.title(dl, x, y, M, sc, Wt)                             -- (Wt: the
         local lc = YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
         local uw = (tw / 2 + 26 * sc) * ez;
         local ly_ = ty + th + 3 * sc;
-        local c1, c0 = u32({ lc[1], lc[2], lc[3], 0.85 * ez }), u32({ lc[1], lc[2], lc[3], 0 });
-        pcall(function() dl:AddRectFilledMultiColor({ mid - uw, ly_ }, { mid, ly_ + 1 }, c0, c1, c1, c0); end);
-        pcall(function() dl:AddRectFilledMultiColor({ mid, ly_ }, { mid + uw, ly_ + 1 }, c1, c0, c0, c1); end);
+        local c1, c0 = U4(lc[1], lc[2], lc[3], 0.85 * ez), U4(lc[1], lc[2], lc[3], 0);
+        pcall(function() DL.RFM(dl, mid - uw, ly_, mid, ly_ + 1, c0, c1, c1, c0); end);
+        pcall(function() DL.RFM(dl, mid, ly_, mid + uw, ly_ + 1, c1, c0, c0, c1); end);
     end
     unsized(pushed);
     return H + math.floor(6 * sc);
@@ -10756,7 +10767,7 @@ function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
     local s = math.max(0.55, M / 220);
     local PK, VI, AZ = C.hp or { 1, 0.42, 0.72 }, C.mp2 or { 0.62, 0.40, 1 }, { 0.35, 0.78, 1 };
     local GO2 = { 1, 0.9, 0.62 };
-    local function col(c, a) return u32({ c[1], c[2], c[3], a }); end
+    local function col(c, a) return U4(c[1], c[2], c[3], a); end
     local function mix(t) return { PK[1] + (VI[1] - PK[1]) * t, PK[2] + (VI[2] - PK[2]) * t, PK[3] + (VI[3] - PK[3]) * t }; end
     local pad = 6 * s;
     local lft, top, rgt, bot = cx - MW / 2 - pad, cy - MH / 2 - pad, cx + MW / 2 + pad, cy + MH / 2 + pad;
@@ -10790,13 +10801,13 @@ function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
         local q = (za - 0.6) / 1.0;
         local sy = top + q * (bot - top);
         local hw = (rgt - lft) / 2 - R * 0.6;
-        dl:AddLine({ cx - hw, sy }, { cx + hw, sy }, col(PK, 0.6 * (1 - q)), 2 * s);
-        dl:AddLine({ cx - hw, sy - 3 * s }, { cx + hw, sy - 3 * s }, col(VI, 0.2 * (1 - q)), 5 * s);
+        DL.L(dl, cx - hw, sy, cx + hw, sy, col(PK, 0.6 * (1 - q)), 2 * s);
+        DL.L(dl, cx - hw, sy - 3 * s, cx + hw, sy - 3 * s, col(VI, 0.2 * (1 - q)), 5 * s);
     end
     local function pill(x0, y0, x1, y1, ec, ea)                      -- (a rounded pill behind words: dark, a fine edge)
         local r = (y1 - y0) / 2;
-        dl:AddRectFilled({ x0, y0 }, { x1, y1 }, u32({ 0.07, 0.06, 0.10, 0.88 }), r);
-        dl:AddRect({ x0, y0 }, { x1, y1 }, col(ec, ea), r, C.rall, 1);
+        DL.RF(dl, x0, y0, x1, y1, U4(0.07, 0.06, 0.10, 0.88), r);
+        DL.R(dl, x0, y0, x1, y1, col(ec, ea), r, C.rall, 1);
     end
     local function label(str, px_, x_, y_, c_, align)
         local pushed = sized('chat', px_);
@@ -10822,11 +10833,11 @@ function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
         local inner = 11 * s + tw0 + (wn and (10 * s + 11 * s + ww0) or 0);
         pill(x0, y0, x0 + 8 * s + inner + 9 * s, y0 + ph, PK, 0.5 * zf);
         local tx, ty = x0 + 8 * s, y0 + (ph - th0) / 2;
-        dl:AddCircleFilled({ tx + 4 * s, y0 + ph / 2 }, 3.5 * s, col(d[2], 0.95 * zf), 12);
+        DL.CF(dl, tx + 4 * s, y0 + ph / 2, 3.5 * s, col(d[2], 0.95 * zf), 12);
         label(ts, 10.5 * s, tx + 11 * s, ty, { 0.94, 0.92, 0.96, 0.95 * zf });
         if wn then
             local wxx = tx + 11 * s + tw0 + 10 * s;
-            dl:AddCircle({ wxx + 4 * s, y0 + ph / 2 }, 3.5 * s, col(wc, 0.95 * zf), 12, 1.3);
+            DL.C(dl, wxx + 4 * s, y0 + ph / 2, 3.5 * s, col(wc, 0.95 * zf), 12, 1.3);
             label(wn, 10.5 * s, wxx + 11 * s, ty, { wc[1], wc[2], wc[3], 0.95 * zf });
         end
     end
@@ -10887,24 +10898,24 @@ function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
         label(bs, 12 * s, x0 + 9 * s, y0 + (ph - bh0) / 2 - 1 * s, near and { 1, 0.72, 0.75, 1 } or { 0.86, 0.94, 1, 1 });
         local f = bmax > 0 and used / bmax or 0;
         local lx0, lx1, ly = x0 + ph * 0.5, x1 - ph * 0.5, y0 + ph - 2.5 * s;
-        dl:AddLine({ lx0, ly }, { lx1, ly }, col({ 1, 1, 1 }, 0.10), 1.5 * s);
-        if f > 0 then dl:AddLine({ lx0, ly }, { lx0 + (lx1 - lx0) * f, ly }, col(bc, 1), 1.5 * s); end
+        DL.L(dl, lx0, ly, lx1, ly, col({ 1, 1, 1 }, 0.10), 1.5 * s);
+        if f > 0 then DL.L(dl, lx0, ly, lx0 + (lx1 - lx0) * f, ly, col(bc, 1), 1.5 * s); end
     end
     -- EXP (or merits, or limit points) glowing along the card's foot, its words just over its start
     local bx0, bx1 = lft + R * 0.8, rgt - R * 0.8;
     local by = bot - 10 * s;
     local bth = math.max(3, math.floor(4 * s + 0.5));
-    dl:AddRectFilled({ bx0, by }, { bx1, by + bth }, u32({ 0.10, 0.08, 0.14, 0.9 }), bth / 2);
+    DL.RF(dl, bx0, by, bx1, by + bth, U4(0.10, 0.08, 0.14, 0.9), bth / 2);
     local ex_ = bx0 + (bx1 - bx0) * H.v;
     if H.v > 0.003 then
         local fx = math.max(bx0 + bth, ex_);
-        dl:AddRectFilled({ bx0 - 2 * s, by - 2 * s }, { fx + 2 * s, by + bth + 2 * s }, col(mix(H.v), 0.12 + 0.3 * fl + 0.3 * lit), bth);
+        DL.RF(dl, bx0 - 2 * s, by - 2 * s, fx + 2 * s, by + bth + 2 * s, col(mix(H.v), 0.12 + 0.3 * fl + 0.3 * lit), bth);
         pcall(function()
             local c1, c2 = col(PK, 1), col(mix(H.v), 1);
-            dl:AddRectFilledMultiColor({ bx0 + bth / 2, by }, { fx - bth / 2, by + bth }, c1, c2, c2, c1);
+            DL.RFM(dl, bx0 + bth / 2, by, fx - bth / 2, by + bth, c1, c2, c2, c1);
         end);
-        dl:AddCircleFilled({ bx0 + bth / 2, by + bth / 2 }, bth / 2, col(PK, 1), 10);
-        dl:AddCircleFilled({ fx - bth / 2, by + bth / 2 }, bth / 2, col(mix(H.v), 1), 10);
+        DL.CF(dl, bx0 + bth / 2, by + bth / 2, bth / 2, col(PK, 1), 10);
+        DL.CF(dl, fx - bth / 2, by + bth / 2, bth / 2, col(mix(H.v), 1), 10);
     end
     do
         local word, val;
@@ -10926,8 +10937,8 @@ function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
             local e = q * q * (3 - 2 * q);
             local mx_ = c.sx + (ex_ - c.sx) * e;
             local my_ = c.sy + (by - c.sy) * e - math.sin(q * math.pi) * 30 * s;
-            dl:AddCircleFilled({ mx_, my_ }, 6 * s, col(PK, 0.3), 14);
-            dl:AddCircleFilled({ mx_, my_ }, 3.5 * s, col({ 1, 0.85, 0.95 }, 1), 12);
+            DL.CF(dl, mx_, my_, 6 * s, col(PK, 0.3), 14);
+            DL.CF(dl, mx_, my_, 3.5 * s, col({ 1, 0.85, 0.95 }, 1), 12);
             label('+' .. commas(c.n), 12 * s, mx_ + 6 * s, my_ - 14 * s, { 1, 0.72, 0.88, 1 - q * 0.6 });
         end
     end
@@ -10949,8 +10960,8 @@ function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
         local ds = (diff ~= 0) and ((diff > 0 and '+' or '') .. commas(diff)) or nil;
         local dw = ds and ((tonumber((imgui.CalcTextSize(ds))) or 0) * 0.85 + 8 * s) or 0;
         gx = rgt - 4 * s - phh / 2 - 6 * s - gw - dw;
-        dl:AddCircleFilled({ gx - 9 * s, tyy + th / 2 }, 5 * s, u32({ 0.86, 0.66, 0.24, 1 }), 14);
-        dl:AddCircleFilled({ gx - 9 * s, tyy + th / 2 }, 3 * s, u32({ 1, 0.88, 0.50, 1 }), 12);
+        DL.CF(dl, gx - 9 * s, tyy + th / 2, 5 * s, U4(0.86, 0.66, 0.24, 1), 14);
+        DL.CF(dl, gx - 9 * s, tyy + th / 2, 3 * s, U4(1, 0.88, 0.50, 1), 12);
         outlined(dl, gx, tyy, gs, { GO2[1], GO2[2], GO2[3], 1 });
         if ds then
             local fs = FS;
@@ -10992,8 +11003,8 @@ function YMAP.hub(dl, cx, cy, M)                                     -- the jobs
         local W = gw + 7 * s + rw;
         local x0 = math.floor(cx - W / 2);
         local tc, ink = info.col, info.ink;
-        ALLY.poly(dl, { { x0, y }, { x0 + gw, y }, { x0 + gw - sl, y + th }, { x0, y + th } }, u32({ tc[1], tc[2], tc[3], 1 }));
-        dl:AddText({ x0 + px_, y + 1 }, u32({ ink[1], ink[2], ink[3], 1 }), info.tag);
+        ALLY.poly(dl, { { x0, y }, { x0 + gw, y }, { x0 + gw - sl, y + th }, { x0, y + th } }, U4(tc[1], tc[2], tc[3], 1));
+        DL.T(dl, x0 + px_, y + 1, U4(ink[1], ink[2], ink[3], 1), info.tag);
         outlined(dl, x0 + gw + 7 * s, y + 1, info.rest, { 0.97, 0.96, 0.98, 1 });
         y = y + lh + 6 * s;
         unsized(pushed);
@@ -11026,8 +11037,8 @@ function YMAP.hub(dl, cx, cy, M)                                     -- the jobs
         chip(x0, gw);
         local cr = 5 * s;
         local ccx, ccy = x0 + pad + cr, y + ch / 2;
-        dl:AddCircleFilled({ ccx, ccy }, cr, u32({ 0.86, 0.66, 0.24, 1 }), 16);
-        dl:AddCircleFilled({ ccx, ccy }, cr * 0.66, u32({ 1, 0.88, 0.50, 1 }), 16);
+        DL.CF(dl, ccx, ccy, cr, U4(0.86, 0.66, 0.24, 1), 16);
+        DL.CF(dl, ccx, ccy, cr * 0.66, U4(1, 0.88, 0.50, 1), 16);
         outlined(dl, x0 + pad + 14 * s, math.floor(y + (ch - lh) / 2), gs, { GOLD[1], GOLD[2], GOLD[3], 1 });
         local diff, ga = C.gil_diff(gil);
         if diff ~= 0 then
@@ -11047,16 +11058,16 @@ function YMAP.hub(dl, cx, cy, M)                                     -- the jobs
         local ic = math.floor(9 * s);
         local ix, iy = x0 + pad, math.floor(y + ch / 2 - ic / 2 - 1 * s);
         local vc = full and C.hp or C.mp2;
-        dl:AddRect({ ix, iy }, { ix + ic, iy + ic }, u32({ vc[1], vc[2], vc[3], 1 }), 2 * s, C.rall, 1.5);
-        dl:AddLine({ ix + ic * 0.3, iy }, { ix + ic * 0.3, iy - 2.5 * s }, u32({ vc[1], vc[2], vc[3], 1 }), 1.5);
-        dl:AddLine({ ix + ic * 0.7, iy }, { ix + ic * 0.7, iy - 2.5 * s }, u32({ vc[1], vc[2], vc[3], 1 }), 1.5);
+        DL.R(dl, ix, iy, ix + ic, iy + ic, U4(vc[1], vc[2], vc[3], 1), 2 * s, C.rall, 1.5);
+        DL.L(dl, ix + ic * 0.3, iy, ix + ic * 0.3, iy - 2.5 * s, U4(vc[1], vc[2], vc[3], 1), 1.5);
+        DL.L(dl, ix + ic * 0.7, iy, ix + ic * 0.7, iy - 2.5 * s, U4(vc[1], vc[2], vc[3], 1), 1.5);
         outlined(dl, x0 + pad + 16 * s, math.floor(y + (ch - lh) / 2 - 1 * s), bs, full and { 1, 0.6, 0.78, 1 } or { 0.92, 0.92, 0.96, 1 });
         local bx0, bx1, by_ = x0 + ch / 2, x0 + bw - ch / 2, math.floor(y + ch - 4 * s);
         local f = math.max(0, math.min(1, used / max));
-        dl:AddRectFilled({ bx0, by_ }, { bx1, by_ + 2 * s }, u32({ 1, 1, 1, 0.10 }), s);
+        DL.RF(dl, bx0, by_, bx1, by_ + 2 * s, U4(1, 1, 1, 0.10), s);
         local a, b = full and C.hp or C.mp, full and C.hp2 or C.mp2;
         if f > 0 then
-            pcall(function() dl:AddRectFilledMultiColor({ bx0, by_ }, { bx0 + (bx1 - bx0) * f, by_ + 2 * s }, u32({ a[1], a[2], a[3], 1 }), u32({ b[1], b[2], b[3], 1 }), u32({ b[1], b[2], b[3], 1 }), u32({ a[1], a[2], a[3], 1 })); end);
+            pcall(function() DL.RFM(dl, bx0, by_, bx0 + (bx1 - bx0) * f, by_ + 2 * s, U4(a[1], a[2], a[3], 1), U4(b[1], b[2], b[3], 1), U4(b[1], b[2], b[3], 1), U4(a[1], a[2], a[3], 1)); end);
         end
     end
     unsized(pushed);
@@ -11099,13 +11110,13 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
     end
     local ground = 'none';                                           -- (no frame: just the lines over the game, on a soft fade)
     if ground ~= 'none' then
-        dl:AddRectFilled({ x, y }, { x + M, y + M }, u32({ 0.055, 0.05, 0.078, (ground == 'soft') and 0.38 or 0.92 }), 8 * sc);   -- (the party cards' violet, a little darker)
+        DL.RF(dl, x, y, x + M, y + M, U4(0.055, 0.05, 0.078, (ground == 'soft') and 0.38 or 0.92), 8 * sc);   -- (the party cards' violet, a little darker)
     else                                                             -- (no frame: a smooth dark fade under the map, images/map_fade.png -
         local ft = tex('map_fade.png');                              --  darkest in the middle, nothing at the edge, no rim anywhere)
         if ft then                                                   -- (darker over bright ground, lighter over dark: YMAP.lum)
             local k = YMAP.shade(x, y, M);
             while k > 0.01 do                                        -- (above 1: drawn again on top, darker)
-                dl:AddImage(ft.ptr, { x, y }, { x + MW, y + MH }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, math.min(1, k) }));
+                DL.I(dl, ft.ptr, x, y, x + MW, y + MH, 0, 0, 1, 1, U4(1, 1, 1, math.min(1, k)));
                 k = k - 1;
             end
         end
@@ -11133,30 +11144,27 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
         local a0, b0 = math.max(0, u0), math.max(0, v0);
         local a1, b1 = math.min(512, u1), math.min(512, v1);
         if a1 > a0 and b1 > b0 then
-            dl:AddImage(YMAP.tex.ptr, { x + (a0 - u0) * k, y + (b0 - v0) * k }, { x + (a1 - u0) * k, y + (b1 - v0) * k },
-                { a0 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, u32({ 1, 1, 1, 1 }));
+            DL.I(dl, YMAP.tex.ptr, x + (a0 - u0) * k, y + (b0 - v0) * k, x + (a1 - u0) * k, y + (b1 - v0) * k, a0 / 512, b0 / 512, a1 / 512, b1 / 512, U4(1, 1, 1, 1));
             if YMAP.ltex then
                 local ix0, iy0, ix1, iy1 = x + (a0 - u0) * k, y + (b0 - v0) * k, x + (a1 - u0) * k, y + (b1 - v0) * k;
-                local bk = u32({ 0, 0, 0, 0.8 });                    -- (a black outline first: readable over bright ground)
+                local bk = U4(0, 0, 0, 0.8);                    -- (a black outline first: readable over bright ground)
                 for _, o in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }) do
-                    dl:AddImage(YMAP.ltex.ptr, { ix0 + o[1], iy0 + o[2] }, { ix1 + o[1], iy1 + o[2] }, { a0 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, bk);
+                    DL.I(dl, YMAP.ltex.ptr, ix0 + o[1], iy0 + o[2], ix1 + o[1], iy1 + o[2], a0 / 512, b0 / 512, a1 / 512, b1 / 512, bk);
                 end
-                dl:AddImage(YMAP.ltex.ptr, { ix0, iy0 }, { ix1, iy1 }, { a0 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, YMAP.lcol());
+                DL.I(dl, YMAP.ltex.ptr, ix0, iy0, ix1, iy1, a0 / 512, b0 / 512, a1 / 512, b1 / 512, YMAP.lcol());
             end
             if YMAP.ntex then
-                dl:AddImage(YMAP.ntex.ptr, { x + (a0 - u0) * k, y + (b0 - v0) * k }, { x + (a1 - u0) * k, y + (b1 - v0) * k },
-                    { a0 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, YMAP.lcol(true));
+                DL.I(dl, YMAP.ntex.ptr, x + (a0 - u0) * k, y + (b0 - v0) * k, x + (a1 - u0) * k, y + (b1 - v0) * k, a0 / 512, b0 / 512, a1 / 512, b1 / 512, YMAP.lcol(true));
             end
             if YMAP.mtex then                                        -- (the numbered exit boxes: in their own colours, on top)
-                dl:AddImage(YMAP.mtex.ptr, { x + (a0 - u0) * k, y + (b0 - v0) * k }, { x + (a1 - u0) * k, y + (b1 - v0) * k },
-                    { a0 / 512, b0 / 512 }, { a1 / 512, b1 / 512 }, u32({ 1, 1, 1, 1 }));
+                DL.I(dl, YMAP.mtex.ptr, x + (a0 - u0) * k, y + (b0 - v0) * k, x + (a1 - u0) * k, y + (b1 - v0) * k, a0 / 512, b0 / 512, a1 / 512, b1 / 512, U4(1, 1, 1, 1));
             end
         end
         local function tomap(wx, wy) local mx, my = YMAP.to_map(wx, wy); return cx + (mx - pmx) * k, cy + (my - pmy) * k; end
         local function inside(sx, sy) return sx > x + 2 and sx < x + MW - 2 and sy > y + 2 and sy < y + MH - 2; end
         YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside);
     end
-    if ground == 'dark' then dl:AddRect({ x, y }, { x + M, y + M }, u32({ 1, 1, 1, 0.10 }), 8 * sc, C.rall, 1); end
+    if ground == 'dark' then DL.R(dl, x, y, x + M, y + M, U4(1, 1, 1, 0.10), 8 * sc, C.rall, 1); end
     local pushed = sized('chat', 13 * sc);
     if false then                                                    -- (the name sits over the map, never inside it)
         text(dl, x + 8 * sc, y + 5 * sc, (YMAP.name and YMAP.name ~= '') and YMAP.name or '?', { 0.95, 0.95, 0.97, 0.95 });
@@ -11195,7 +11203,7 @@ function YMAP.bigmap(party, ent, zid, me, sc)                        -- the big 
         cfg.gmap_x, cfg.gmap_y = math.floor((SW - M - 8) / 2), math.floor((SH - M - 38 * sc - 8) / 2);
         pcall(function()
             local bg = imgui.GetBackgroundDrawList();
-            bg:AddRectFilled({ 0, 0 }, { SW, SH }, u32({ 0.02, 0.018, 0.03, 1.0 }));
+            DL.RF(bg, 0, 0, SW, SH, U4(0.02, 0.018, 0.03, 1.0));
         end);
     end
     first_place(kx, ky, -M / 2, -M - 160);
@@ -11210,19 +11218,19 @@ function YMAP.bigmap(party, ent, zid, me, sc)                        -- the big 
         local ft = tex('map_fade.png');
         if ft then
             local g = M * 0.08;
-            dl:AddImage(ft.ptr, { x - g, my0 - g }, { x + M + g, my0 + M + g }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 }));
+            DL.I(dl, ft.ptr, x - g, my0 - g, x + M + g, my0 + M + g, 0, 0, 1, 1, U4(1, 1, 1, 1));
         end
     else
         local ga = ((cfg.map_ground or 'none') == 'soft') and 0.45 or 0.95;
-        dl:AddRectFilled({ x, y }, { x + M, y + M + top }, u32({ 0.055, 0.05, 0.078, ga }), 10 * sc);   -- (the party cards' violet, a little darker)
-        if ga > 0.9 then dl:AddRect({ x, y }, { x + M, y + M + top }, u32({ NEON2[1], NEON2[2], NEON2[3], 0.6 }), 10 * sc, C.rall, 1.2); end
+        DL.RF(dl, x, y, x + M, y + M + top, U4(0.055, 0.05, 0.078, ga), 10 * sc);   -- (the party cards' violet, a little darker)
+        if ga > 0.9 then DL.R(dl, x, y, x + M, y + M + top, U4(NEON2[1], NEON2[2], NEON2[3], 0.6), 10 * sc, C.rall, 1.2); end
     end
     local k = M / 512;
     local e = YMAP.entry;
     local m3 = YMAP.d3load(zid);
     if m3 and e then                                                 -- the zone's 3D shapes seen from straight above, the whole map
         local lc = YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
-        if YMAP.ntex then dl:AddImage(YMAP.ntex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, YMAP.lcol(true)); end   -- (the place names)
+        if YMAP.ntex then DL.I(dl, YMAP.ntex.ptr, x, my0, x + M, my0 + M, 0, 0, 1, 1, YMAP.lcol(true)); end   -- (the place names)
         local X, Y, Z = ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0, ent:GetLocalPositionZ(me) or 0;
         if YMAP.d3.hs == nil then YMAP.d3.hs = YMAP.d3height(m3, X, Y, Z); end
         local th = Z * YMAP.d3.hs;
@@ -11236,21 +11244,21 @@ function YMAP.bigmap(party, ent, zid, me, sc)                        -- the big 
             SH[i] = v[j + 1];
         end
         local cols = {};                                             -- (brightest at your level, fainter above and below)
-        for q = 0, 8 do cols[q] = u32({ lc[1], lc[2], lc[3], 0.18 + 0.82 * q / 8 }); end
+        for q = 0, 8 do cols[q] = U4(lc[1], lc[2], lc[3], 0.18 + 0.82 * q / 8); end
         local last = (m3.net or (#ed + 1)) - 1;                      -- (open country: no ground net here)
         C.clip(dl, { x, my0 }, { x + M, my0 + M }, true);
         for q = 1, last, 2 do
             local a_, b_ = ed[q], ed[q + 1];
             local dh = math.abs((SH[a_] + SH[b_]) / 2 - th);
             local st = 8 - math.floor(math.min(1, dh / 40) * 7 + 0.5);
-            dl:AddLine({ SX[a_], SY[a_] }, { SX[b_], SY[b_] }, cols[st], 1);
+            DL.L(dl, SX[a_], SY[a_], SX[b_], SY[b_], cols[st], 1);
         end
         dl:PopClipRect();
-        local gc = u32({ 1, 1, 1, 0.10 });
+        local gc = U4(1, 1, 1, 0.10);
         for i = 0, 15 do                                             -- the grid: every 32 map pixels from the 16th
             local gv = (16 + 32 * i) * k;
-            dl:AddLine({ x + gv, my0 + 16 * k }, { x + gv, my0 + M - 16 * k }, gc, 1);
-            dl:AddLine({ x + 16 * k, my0 + gv }, { x + M - 16 * k, my0 + gv }, gc, 1);
+            DL.L(dl, x + gv, my0 + 16 * k, x + gv, my0 + M - 16 * k, gc, 1);
+            DL.L(dl, x + 16 * k, my0 + gv, x + M - 16 * k, my0 + gv, gc, 1);
         end
         local pushed = sized('chat', 12 * sc);
         for i = 0, 14 do                                             -- its letters and numbers on the borders, in YunaUI's font
@@ -11268,15 +11276,15 @@ function YMAP.bigmap(party, ent, zid, me, sc)                        -- the big 
         local function inside(sx, sy) return sx > x and sx < x + M and sy > my0 and sy < my0 + M; end
         YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside);
     elseif e and YMAP.tex then
-        dl:AddImage(YMAP.tex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 }));
-        if YMAP.ltex then dl:AddImage(YMAP.ltex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, YMAP.lcol()); end
-        if YMAP.ntex then dl:AddImage(YMAP.ntex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, YMAP.lcol(true)); end
-        if YMAP.mtex then dl:AddImage(YMAP.mtex.ptr, { x, my0 }, { x + M, my0 + M }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 })); end
-        local gc = u32({ 1, 1, 1, 0.08 });
+        DL.I(dl, YMAP.tex.ptr, x, my0, x + M, my0 + M, 0, 0, 1, 1, U4(1, 1, 1, 1));
+        if YMAP.ltex then DL.I(dl, YMAP.ltex.ptr, x, my0, x + M, my0 + M, 0, 0, 1, 1, YMAP.lcol()); end
+        if YMAP.ntex then DL.I(dl, YMAP.ntex.ptr, x, my0, x + M, my0 + M, 0, 0, 1, 1, YMAP.lcol(true)); end
+        if YMAP.mtex then DL.I(dl, YMAP.mtex.ptr, x, my0, x + M, my0 + M, 0, 0, 1, 1, U4(1, 1, 1, 1)); end
+        local gc = U4(1, 1, 1, 0.08);
         for i = 0, 15 do                                             -- the grid: every 32 map pixels from the 16th
             local v = (16 + 32 * i) * k;
-            dl:AddLine({ x + v, my0 + 16 * k }, { x + v, my0 + M - 16 * k }, gc, 1);
-            dl:AddLine({ x + 16 * k, my0 + v }, { x + M - 16 * k, my0 + v }, gc, 1);
+            DL.L(dl, x + v, my0 + 16 * k, x + v, my0 + M - 16 * k, gc, 1);
+            DL.L(dl, x + 16 * k, my0 + v, x + M - 16 * k, my0 + v, gc, 1);
         end
         local pushed = sized('chat', 12 * sc);
         for i = 0, 14 do                                             -- its letters and numbers, in YunaUI's font
@@ -11304,14 +11312,14 @@ function YMAP.bigmap(party, ent, zid, me, sc)                        -- the big 
         local ft = tex('map_fade.png');
         if ft then
             local gw, gh = tw * 0.85 + 34 * sc, th * 1.3;
-            dl:AddImage(ft.ptr, { mid - gw, ty + th / 2 - gh }, { mid + gw, ty + th / 2 + gh }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 }));
+            DL.I(dl, ft.ptr, mid - gw, ty + th / 2 - gh, mid + gw, ty + th / 2 + gh, 0, 0, 1, 1, U4(1, 1, 1, 1));
         end
         outlined(dl, math.floor(mid - tw / 2), ty, name, { 0.98, 0.97, 1.0, 1 });
         local lc = YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
         local uw, ly_ = tw / 2 + 30 * sc, ty + th + 4 * sc;
-        local c1, c0 = u32({ lc[1], lc[2], lc[3], 0.85 }), u32({ lc[1], lc[2], lc[3], 0 });
-        pcall(function() dl:AddRectFilledMultiColor({ mid - uw, ly_ }, { mid, ly_ + 1 }, c0, c1, c1, c0); end);
-        pcall(function() dl:AddRectFilledMultiColor({ mid, ly_ }, { mid + uw, ly_ + 1 }, c1, c0, c0, c1); end);
+        local c1, c0 = U4(lc[1], lc[2], lc[3], 0.85), U4(lc[1], lc[2], lc[3], 0);
+        pcall(function() DL.RFM(dl, mid - uw, ly_, mid, ly_ + 1, c0, c1, c1, c0); end);
+        pcall(function() DL.RFM(dl, mid, ly_, mid + uw, ly_ + 1, c1, c0, c0, c1); end);
         unsized(pushed);
     end
     local bx = x + M - 26 * sc;                                      -- X to close it (quiet until the mouse is on it)
@@ -11320,8 +11328,8 @@ function YMAP.bigmap(party, ent, zid, me, sc)                        -- the big 
     local hov = imgui.IsItemHovered();
     local xc, yc, rr = bx + 11 * sc, y + 15 * sc, 5 * sc;
     local xcol = u32(hov and { 1, 1, 1, 1 } or { 0.8, 0.78, 0.9, 0.55 });
-    dl:AddLine({ xc - rr, yc - rr }, { xc + rr, yc + rr }, xcol, 1.6);
-    dl:AddLine({ xc - rr, yc + rr }, { xc + rr, yc - rr }, xcol, 1.6);
+    DL.L(dl, xc - rr, yc - rr, xc + rr, yc + rr, xcol, 1.6);
+    DL.L(dl, xc - rr, yc + rr, xc + rr, yc - rr, xcol, 1.6);
     imgui.SetCursorScreenPos({ x, y });
     imgui.Dummy({ M + 8, M + top + 8 });
     end_plain(kx, ky);
@@ -11443,9 +11451,9 @@ function EDIT.G.splash()
             ImGuiWindowFlags_NoInputs, ImGuiWindowFlags_NoScrollbar, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing)) then
         pcall(function()                                             -- a dark band across the middle, soft at its top and bottom
             local cy, bh = H * 0.5, 170 * k;
-            local c0, c1 = u32({ 0, 0, 0, 0 }), u32({ 0.01, 0.01, 0.02, 0.72 * a });
-            fg:AddRectFilledMultiColor({ 0, cy - bh }, { W, cy }, c0, c0, c1, c1);
-            fg:AddRectFilledMultiColor({ 0, cy }, { W, cy + bh }, c1, c1, c0, c0);
+            local c0, c1 = U4(0, 0, 0, 0), U4(0.01, 0.01, 0.02, 0.72 * a);
+            DL.RFM(fg, 0, cy - bh, W, cy, c0, c0, c1, c1);
+            DL.RFM(fg, 0, cy, W, cy + bh, c1, c1, c0, c0);
         end);
         local f1 = sized('chat', 64 * k);                            -- the big line: letters spreading, pink to violet, a glow behind
         local sp = (4 + 10 * e) * k;
@@ -11458,24 +11466,24 @@ function EDIT.G.splash()
             local u = 0.5 + 0.5 * math.sin(os.clock() * 1.6 - i * 0.35);
             local c = { C.hp[1] + (C.mp2[1] - C.hp[1]) * u, C.hp[2] + (C.mp2[2] - C.hp[2]) * u, C.hp[3] + (C.mp2[3] - C.hp[3]) * u };
             for _, o in ipairs({ { -2, 0 }, { 2, 0 }, { 0, -2 }, { 0, 2 } }) do
-                fg:AddText({ cx + o[1] * k, ty + o[2] * k }, u32({ c[1], c[2], c[3], 0.18 * a }), ch);
+                DL.T(fg, cx + o[1] * k, ty + o[2] * k, U4(c[1], c[2], c[3], 0.18 * a), ch);
             end
-            fg:AddText({ cx + 2, ty + 3 }, u32({ 0, 0, 0, 0.7 * a }), ch);
-            fg:AddText({ cx, ty }, u32({ 1, 0.97, 1, a }), ch);
+            DL.T(fg, cx + 2, ty + 3, U4(0, 0, 0, 0.7 * a), ch);
+            DL.T(fg, cx, ty, U4(1, 0.97, 1, a), ch);
             cx = cx + imgui.CalcTextSize(ch) + sp;
         end
         unsized(f1);
         pcall(function()                                             -- a glowing line opening out from the middle
             local lw = tw * 0.5 * e;
             local ly = H * 0.5 + 2 * k;
-            fg:AddRectFilledMultiColor({ W / 2 - lw, ly }, { W / 2, ly + 2 * k }, u32({ C.hp[1], C.hp[2], C.hp[3], 0 }), u32({ 1, 1, 1, a }), u32({ 1, 1, 1, a }), u32({ C.hp[1], C.hp[2], C.hp[3], 0 }));
-            fg:AddRectFilledMultiColor({ W / 2, ly }, { W / 2 + lw, ly + 2 * k }, u32({ 1, 1, 1, a }), u32({ C.mp2[1], C.mp2[2], C.mp2[3], 0 }), u32({ C.mp2[1], C.mp2[2], C.mp2[3], 0 }), u32({ 1, 1, 1, a }));
+            DL.RFM(fg, W / 2 - lw, ly, W / 2, ly + 2 * k, U4(C.hp[1], C.hp[2], C.hp[3], 0), U4(1, 1, 1, a), U4(1, 1, 1, a), U4(C.hp[1], C.hp[2], C.hp[3], 0));
+            DL.RFM(fg, W / 2, ly, W / 2 + lw, ly + 2 * k, U4(1, 1, 1, a), U4(C.mp2[1], C.mp2[2], C.mp2[3], 0), U4(C.mp2[1], C.mp2[2], C.mp2[3], 0), U4(1, 1, 1, a));
         end);
         local f2 = sized('chat', 22 * k);                            -- the words under it, a moment later
         local a2 = a * math.max(0, math.min(1, (t - 0.45) / 0.5));
         local sw = spaced_w(G.SUB, 2 * k);
-        spaced(fg, (W - sw) / 2 + 1, H * 0.5 + 22 * k + 2, G.SUB, u32({ 0, 0, 0, 0.7 * a2 }), 2 * k);
-        spaced(fg, (W - sw) / 2, H * 0.5 + 22 * k, G.SUB, u32({ 0.90, 0.88, 0.96, a2 }), 2 * k);
+        spaced(fg, (W - sw) / 2 + 1, H * 0.5 + 22 * k + 2, G.SUB, U4(0, 0, 0, 0.7 * a2), 2 * k);
+        spaced(fg, (W - sw) / 2, H * 0.5 + 22 * k, G.SUB, U4(0.90, 0.88, 0.96, a2), 2 * k);
         unsized(f2);
     end
     imgui.End();
@@ -11531,19 +11539,19 @@ function EDIT.G.draw()
             end
         end
     end
-    local dim = u32({ 0.01, 0.01, 0.02, 0.62 });
+    local dim = U4(0.01, 0.01, 0.02, 0.62);
     if r then
         local p = 5 * k;
         r = { math.max(0, r[1] - p), math.max(0, r[2] - p), math.min(W, r[3] + p), math.min(H, r[4] + p) };
-        fg:AddRectFilled({ 0, 0 }, { W, r[2] }, dim);
-        fg:AddRectFilled({ 0, r[4] }, { W, H }, dim);
-        fg:AddRectFilled({ 0, r[2] }, { r[1], r[4] }, dim);
-        fg:AddRectFilled({ r[3], r[2] }, { W, r[4] }, dim);
+        DL.RF(fg, 0, 0, W, r[2], dim);
+        DL.RF(fg, 0, r[4], W, H, dim);
+        DL.RF(fg, 0, r[2], r[1], r[4], dim);
+        DL.RF(fg, r[3], r[2], W, r[4], dim);
         local pulse = 0.65 + 0.35 * math.sin(os.clock() * 3);
-        fg:AddRect({ r[1] - 3, r[2] - 3 }, { r[3] + 3, r[4] + 3 }, u32({ NEON[1], NEON[2], NEON[3], 0.22 * pulse }), 10 * k, C.rall, 6);
-        fg:AddRect({ r[1], r[2] }, { r[3], r[4] }, u32({ NEON2[1], NEON2[2], NEON2[3], 0.95 }), 8 * k, C.rall, 1.6);
+        DL.R(fg, r[1] - 3, r[2] - 3, r[3] + 3, r[4] + 3, U4(NEON[1], NEON[2], NEON[3], 0.22 * pulse), 10 * k, C.rall, 6);
+        DL.R(fg, r[1], r[2], r[3], r[4], U4(NEON2[1], NEON2[2], NEON2[3], 0.95), 8 * k, C.rall, 1.6);
     else
-        fg:AddRectFilled({ 0, 0 }, { W, H }, dim);
+        DL.RF(fg, 0, 0, W, H, dim);
     end
     -- where the card goes: beside the box (right, then left), else under or over it, else in the middle
     local CW, CH, gap = math.floor(420 * k), G.h, 22 * k;
@@ -11568,22 +11576,22 @@ function EDIT.G.draw()
             ImGuiWindowFlags_NoScrollbar, ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_NoSavedSettings)) then
         local pad = math.floor(20 * k);
         local rr = 14 * k;
-        fg:AddRectFilled({ cx, cy }, { cx + CW, cy + CH }, u32({ 0.05, 0.045, 0.07, 0.97 }), rr);
-        fg:AddRect({ cx, cy }, { cx + CW, cy + CH }, u32({ NEON2[1], NEON2[2], NEON2[3], 0.75 }), rr, C.rall, 1.4);
+        DL.RF(fg, cx, cy, cx + CW, cy + CH, U4(0.05, 0.045, 0.07, 0.97), rr);
+        DL.R(fg, cx, cy, cx + CW, cy + CH, U4(NEON2[1], NEON2[2], NEON2[3], 0.75), rr, C.rall, 1.4);
         local y = cy + pad;
         local f1 = sized('chat', 13 * k);                            -- the step, top right
         local stp = string.format('%d / %d', G.i, #G.STEPS);
         local sw = imgui.CalcTextSize(stp);
-        fg:AddText({ cx + CW - pad - sw, y + 4 * k }, u32({ 0.62, 0.60, 0.70, 1 }), stp);
+        DL.T(fg, cx + CW - pad - sw, y + 4 * k, U4(0.62, 0.60, 0.70, 1), stp);
         unsized(f1);
         local f2 = sized('chat', 22 * k);                            -- the title
         local ttl = (st.title and st.title()) or st[1];             -- (a title that changes with your settings)
         local _, th = imgui.CalcTextSize(ttl);
-        fg:AddText({ cx + pad, y }, u32({ 1, 1, 1, 1 }), ttl);
+        DL.T(fg, cx + pad, y, U4(1, 1, 1, 1), ttl);
         unsized(f2);
         y = y + th + 6 * k;
         pcall(function()                                             -- a short pink-to-violet line under it
-            fg:AddRectFilledMultiColor({ cx + pad, y }, { cx + pad + 60 * k, y + 2 }, u32(C.hp), u32(C.mp2), u32(C.mp2), u32(C.hp));
+            DL.RFM(fg, cx + pad, y, cx + pad + 60 * k, y + 2, u32(C.hp), u32(C.mp2), u32(C.mp2), u32(C.hp));
         end);
         y = y + 14 * k;
         local f3 = sized('chat', 15.5 * k);                          -- the words
@@ -11591,7 +11599,7 @@ function EDIT.G.draw()
         for pi, para in ipairs(words) do
             if pi > 1 then y = y + lh * 0.45; end
             for _, ln in ipairs(G.lines(para, CW - pad * 2)) do
-                fg:AddText({ cx + pad, y }, u32({ 0.88, 0.87, 0.93, 1 }), ln);
+                DL.T(fg, cx + pad, y, U4(0.88, 0.87, 0.93, 1), ln);
                 y = y + lh;
             end
         end
@@ -11606,11 +11614,11 @@ function EDIT.G.draw()
             imgui.SetCursorScreenPos({ bx, y });
             local hit = imgui.InvisibleButton('##yui_g_' .. id, { bw, bh });
             local hov = mx >= bx and mx < bx + bw and my >= y and my < y + bh;
-            fg:AddRectFilled({ bx, y }, { bx + bw, y + bh }, u32(hov and { 0.17, 0.15, 0.22, 1 } or { 0.10, 0.09, 0.13, 1 }), bh * 0.45);
+            DL.RF(fg, bx, y, bx + bw, y + bh, u32(hov and { 0.17, 0.15, 0.22, 1 } or { 0.10, 0.09, 0.13, 1 }), bh * 0.45);
             local ec = main and { NEON2[1], NEON2[2], NEON2[3], hov and 1 or 0.85 } or { 1, 1, 1, hov and 0.30 or 0.16 };
-            fg:AddRect({ bx, y }, { bx + bw, y + bh }, u32(ec), bh * 0.45, C.rall, main and 1.6 or 1);
+            DL.R(fg, bx, y, bx + bw, y + bh, u32(ec), bh * 0.45, C.rall, main and 1.6 or 1);
             local lw, lh2 = imgui.CalcTextSize(label);
-            fg:AddText({ bx + (bw - lw) / 2, y + (bh - lh2) / 2 }, u32({ 0.95, 0.93, 1, 1 }), label);
+            DL.T(fg, bx + (bw - lw) / 2, y + (bh - lh2) / 2, U4(0.95, 0.93, 1, 1), label);
             return hit;
         end
         local nw = math.floor((last and 190 or 100) * k);
@@ -11706,8 +11714,8 @@ ashita.events.register('d3d_present', 'yui_present', function()
             return;
         end
         -- settings copied in from another character? take them now
-        if os.clock() >= WATCH.at then
-            WATCH.at = os.clock() + 2;
+        if os.clock() >= WATCH.at then                               -- (settings copied in from another character: looked for every 15 s -
+            WATCH.at = os.clock() + 15;                              --  two files read from disk, off the every-frame path)
             local function parse(data)
                 local chunk = data and loadstring(data);
                 if chunk == nil then return nil; end
@@ -11748,8 +11756,11 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(FIGHT.win);                                            -- (the fan / enemy cast when placed anywhere)
         piece(draw_subtarget, dt);
         piece(draw_enemies, dt);
-        if cfg.chat and cfg.hide_game_chat then pcall(pin_game_chat); end
-        legacy.hide_logs(cfg.chat and cfg.hide_game_chat);               -- the game's chat windows: not drawn at all
+        C.fc = (C.fc or 0) + 1;                                      -- (game memory read and written every 6th frame, not every one: plenty)
+        if C.fc % 6 == 0 then
+            if cfg.chat and cfg.hide_game_chat then pcall(pin_game_chat); end
+            legacy.hide_logs(cfg.chat and cfg.hide_game_chat);           -- the game's chat windows: not drawn at all
+        end
         legacy.hide_input(cfg.chat and cfg.hide_game_input);             -- the game's typing bar: not drawn (you type in YunaUI's)
         if YUI_OPEN_EQUIP then YUI_OPEN_EQUIP = false; ui.open = true; ui.tab = 6; end
         pcall(legacy.pad_tick);                                      -- (the pad opened the game's log: YunaUI's chat instead)

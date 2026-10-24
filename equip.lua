@@ -95,6 +95,25 @@ local C = {
     red      = { 1.000, 0.450, 0.450, 1.00 },
 };
 local function u32(c) return imgui.GetColorU32(c); end
+-- Frame cost (VanaCore's findings): no Lua table made per draw call. U4(r, g, b, a) is u32({ r, g, b, a }) through one
+-- scratch table; DL.L(dl, x, y, x2, y2, ...) is dl:AddLine({ x, y }, { x2, y2 }, ...) through scratch points (the binding
+-- reads them during the call and keeps nothing). The arguments are all worked out before a call fills its scratch.
+local U4, DL;
+do
+    local c4, P1, P2, P3, P4 = { 0, 0, 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 };
+    U4 = function(r, g, b, a) c4[1], c4[2], c4[3], c4[4] = r, g, b, a; return imgui.GetColorU32(c4); end
+    DL = {};
+    function DL.L(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddLine(P1, P2, ...); end
+    function DL.R(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRect(P1, P2, ...); end
+    function DL.RF(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRectFilled(P1, P2, ...); end
+    function DL.RFM(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRectFilledMultiColor(P1, P2, ...); end
+    function DL.C(d, a, b, ...) P1[1], P1[2] = a, b; return d:AddCircle(P1, ...); end
+    function DL.CF(d, a, b, ...) P1[1], P1[2] = a, b; return d:AddCircleFilled(P1, ...); end
+    function DL.T(d, a, b, ...) P1[1], P1[2] = a, b; return d:AddText(P1, ...); end
+    function DL.TF(d, a, b, c, e, f, g, ...) P1[1], P1[2], P2[1], P2[2], P3[1], P3[2] = a, b, c, e, f, g; return d:AddTriangleFilled(P1, P2, P3, ...); end
+    function DL.I(d, t, a, b, c, e, f, g, h, k, ...) P1[1], P1[2], P2[1], P2[2], P3[1], P3[2], P4[1], P4[2] = a, b, c, e, f, g, h, k; return d:AddImage(t, P1, P2, P3, P4, ...); end
+    function DL.I2(d, t, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddImage(t, P1, P2, ...); end
+end
 local function esc(t) return tostring(t); end                       -- (this ImGui prints text as it is: no %% doubling)
 
 -- Equipmon's 4x4 order (slot ids)
@@ -507,18 +526,18 @@ local function logo_blood(dl, x, y, w)
         local ph = (t + d[3]) % 2.7;
         if ph < 1.2 then                                            -- swelling on the edge
             local rr = w * (0.011 + 0.017 * ph / 1.2);
-            dl:AddLine({ tx, ty - rr }, { tx, ty + rr }, col(0.9), rr * 0.9);
-            dl:AddCircleFilled({ tx, ty + rr * 1.2 }, rr, col(0.92), 12);
+            DL.L(dl, tx, ty - rr, tx, ty + rr, col(0.9), rr * 0.9);
+            DL.CF(dl, tx, ty + rr * 1.2, rr, col(0.92), 12);
         elseif ph < 1.65 then                                       -- falling, speeding up
             local u = (ph - 1.2) / 0.45;
             local fy = ty + w * 0.02 + (land - ty - w * 0.02) * u * u;
-            dl:AddCircleFilled({ tx, fy }, w * 0.026, col(0.92), 12);
-            dl:AddCircleFilled({ tx, fy - w * 0.026 }, w * 0.015, col(0.8), 10);
+            DL.CF(dl, tx, fy, w * 0.026, col(0.92), 12);
+            DL.CF(dl, tx, fy - w * 0.026, w * 0.015, col(0.8), 10);
         elseif ph < 2.4 then                                        -- a tiny splash, fading
             local al = 1 - (ph - 1.65) / 0.75;
-            dl:AddCircleFilled({ tx, land }, w * 0.024, col(0.85 * al), 12);
+            DL.CF(dl, tx, land, w * 0.024, col(0.85 * al), 12);
             for _, f in ipairs({ { -1.0, -0.5 }, { 1.1, -0.6 }, { -1.8, 0.1 }, { 1.7, 0.2 } }) do
-                dl:AddCircleFilled({ tx + f[1] * w * 0.04, land + f[2] * w * 0.024 }, w * 0.011, col(0.75 * al), 8);
+                DL.CF(dl, tx + f[1] * w * 0.04, land + f[2] * w * 0.024, w * 0.011, col(0.75 * al), 8);
             end
         end
     end
@@ -534,7 +553,7 @@ local function draw_image(dl, tex, x1, y1, x2, y2, alpha, tint)
         local t = tint or { 1, 1, 1, alpha or 1 };
         tint = { t[1], t[2], t[3], (t[4] or 1) * ART.a };
     end
-    local ok = pcall(function() dl:AddImage(tex.ptr, { x1, y1 }, { x2, y2 }, { 0, 0 }, { 1, 1 }, u32(tint or { 1, 1, 1, alpha or 1 })); end);
+    local ok = pcall(function() DL.I(dl, tex.ptr, x1, y1, x2, y2, 0, 0, 1, 1, u32(tint or { 1, 1, 1, alpha or 1 })); end);
     if not ok and (tint == nil or tint[1] > 0.3) then dl:AddImage(tex.ptr, { x1, y1 }, { x2, y2 }); end
 end
 
@@ -652,7 +671,7 @@ function JOBS.draw(dl, key, lx, ly, lw, engaged, casting, now, dt, bs, flash)
     if holy > 0.01 then                                         -- White Mage / Paladin casting: a holy light behind them
         local hx_, hy_ = lx + lw / 2, ly + lw / 2;
         for k = 1, 10 do
-            dl:AddCircleFilled({ hx_, hy_ }, lw * (0.52 - k * 0.04) * (1 + 0.04 * beat), u32({ 1, 0.92, 0.70, 0.045 * holy * (0.75 + 0.25 * beat) }), 48);
+            DL.CF(dl, hx_, hy_, lw * (0.52 - k * 0.04) * (1 + 0.04 * beat), U4(1, 0.92, 0.70, 0.045 * holy * (0.75 + 0.25 * beat)), 48);
         end
         for _, d in ipairs(dirs) do                             -- and a bright outline of light round the figure
             local o = (2.2 + 1.2 * beat) * bs;
@@ -706,18 +725,18 @@ function JOBS.draw(dl, key, lx, ly, lw, engaged, casting, now, dt, bs, flash)
                         local sx = gx + (wa[3] - wa[1]) * lw * f + math.sin(q * 7.1) * 2.5 * bs;
                         local sy = gy + (wa[4] - wa[2]) * lw * f + math.cos(q * 5.3) * 2.5 * bs;
                         local sr = (1.5 + 2.5 * tw) * bs;
-                        dl:AddCircleFilled({ sx, sy }, sr * 1.8, u32({ 1, 0.82, 0.35, 0.18 * tw }), 12);
-                        dl:AddLine({ sx - sr, sy }, { sx + sr, sy }, u32({ 1, 0.92, 0.6, 0.85 * tw }), 1 * bs);
-                        dl:AddLine({ sx, sy - sr }, { sx, sy + sr }, u32({ 1, 0.92, 0.6, 0.85 * tw }), 1 * bs);
-                        dl:AddCircleFilled({ sx, sy }, 0.8 * bs, u32({ 1, 1, 0.85, tw }), 8);
+                        DL.CF(dl, sx, sy, sr * 1.8, U4(1, 0.82, 0.35, 0.18 * tw), 12);
+                        DL.L(dl, sx - sr, sy, sx + sr, sy, U4(1, 0.92, 0.6, 0.85 * tw), 1 * bs);
+                        DL.L(dl, sx, sy - sr, sx, sy + sr, U4(1, 0.92, 0.6, 0.85 * tw), 1 * bs);
+                        DL.CF(dl, sx, sy, 0.8 * bs, U4(1, 1, 0.85, tw), 8);
                     end
                 end
                 if JOBS.blade < 1 and engaged and key ~= 'mnk' then   -- the glint running along the edge (not on the gauntlets)
                     local gr = (2.0 + 2.0 * out) * bs;
-                    dl:AddCircleFilled({ hx, hy }, gr * 2.2, u32({ jc[1], jc[2], jc[3], 0.22 }), 16);
-                    dl:AddLine({ hx - gr * 2, hy }, { hx + gr * 2, hy }, u32({ 1, 1, 1, 0.9 }), 1.2 * bs);
-                    dl:AddLine({ hx, hy - gr * 2 }, { hx, hy + gr * 2 }, u32({ 1, 1, 1, 0.9 }), 1.2 * bs);
-                    dl:AddCircleFilled({ hx, hy }, gr * 0.6, u32({ 1, 1, 1, 1 }), 12);
+                    DL.CF(dl, hx, hy, gr * 2.2, U4(jc[1], jc[2], jc[3], 0.22), 16);
+                    DL.L(dl, hx - gr * 2, hy, hx + gr * 2, hy, U4(1, 1, 1, 0.9), 1.2 * bs);
+                    DL.L(dl, hx, hy - gr * 2, hx, hy + gr * 2, U4(1, 1, 1, 0.9), 1.2 * bs);
+                    DL.CF(dl, hx, hy, gr * 0.6, U4(1, 1, 1, 1), 12);
                 end
             end
         end
@@ -886,12 +905,12 @@ local function draw_border(dl, x1, y1, x2, y2, r, sc, gs, c1, c2)
     for i = 1, 16 do                                               -- outer glow: 1 px rings, so it fades smoothly
         local o = i * px;
         local al = math.max(0, math.min(1, 0.30 * (1 - i / 17) ^ 1.6 * gs));
-        dl:AddRect({ x1 - o, y1 - o }, { x2 + o, y2 + o }, u32({ mid[1], mid[2], mid[3], al }), r + o);
+        DL.R(dl, x1 - o, y1 - o, x2 + o, y2 + o, U4(mid[1], mid[2], mid[3], al), r + o);
     end
     for i = 1, 6 do                                                -- inner glow
         local o = i * px;
         local al = math.max(0, math.min(1, 0.22 * (1 - i / 7) ^ 1.5 * gs));
-        dl:AddRect({ x1 + o, y1 + o }, { x2 - o, y2 - o }, u32({ mid[1], mid[2], mid[3], al }), math.max(1, r - o));
+        DL.R(dl, x1 + o, y1 + o, x2 - o, y2 - o, U4(mid[1], mid[2], mid[3], al), math.max(1, r - o));
     end
     local key = string.format('%.1f,%.1f,%.1f,%.1f,%.1f', x1, y1, x2, y2, sc);
     if ye.bkey ~= key then ye.bkey, ye.bpts = key, rrect_points(x1, y1, x2, y2, r, 3 * sc); end
@@ -908,13 +927,13 @@ local function draw_border(dl, x1, y1, x2, y2, r, sc, gs, c1, c2)
             kk = math.max(0, 1 - math.min(d, 1 - d) / 0.06);
         end
         local p, q = pts[i], pts[i % n + 1];
-        dl:AddLine(p, q, u32({ cr, cg, cb, 0.35 }), 4.5 * sc);     -- a soft halo right on the line
-        dl:AddLine(p, q, u32({ cr + (1 - cr) * kk, cg + (1 - cg) * kk, cb + (1 - cb) * kk, 1 }), 2.2 * sc);
+        dl:AddLine(p, q, U4(cr, cg, cb, 0.35), 4.5 * sc);     -- a soft halo right on the line
+        dl:AddLine(p, q, U4(cr + (1 - cr) * kk, cg + (1 - cg) * kk, cb + (1 - cb) * kk, 1), 2.2 * sc);
     end
     if sweep then
         local hp = pts[math.floor(sweep * n) % n + 1];
-        dl:AddCircleFilled(hp, 7 * sc, u32({ 1, 1, 1, 0.14 }), 16);
-        dl:AddCircleFilled(hp, 2.8 * sc, u32({ 1, 1, 1, 0.9 }), 12);
+        dl:AddCircleFilled(hp, 7 * sc, U4(1, 1, 1, 0.14), 16);
+        dl:AddCircleFilled(hp, 2.8 * sc, U4(1, 1, 1, 0.9), 12);
     end
 end
 
@@ -950,9 +969,9 @@ end
 
 local function puff(dl, x, y, r, c, al)
     if al <= 0.005 or r <= 0.5 then return; end
-    dl:AddCircleFilled({ x, y }, r, u32({ c[1], c[2], c[3], al * 0.35 }), 20);
-    dl:AddCircleFilled({ x, y }, r * 0.72, u32({ c[1], c[2], c[3], al * 0.45 }), 18);
-    dl:AddCircleFilled({ x, y }, r * 0.45, u32({ c[1], c[2], c[3], al * 0.55 }), 14);
+    DL.CF(dl, x, y, r, U4(c[1], c[2], c[3], al * 0.35), 20);
+    DL.CF(dl, x, y, r * 0.72, U4(c[1], c[2], c[3], al * 0.45), 18);
+    DL.CF(dl, x, y, r * 0.45, U4(c[1], c[2], c[3], al * 0.55), 14);
 end
 
 local function draw_fx(dl, mx, my, size, sc, ft, seed)
@@ -992,7 +1011,7 @@ local function draw_fx(dl, mx, my, size, sc, ft, seed)
         local tw = math.max(0, math.sin(ft * 7 + i * 1.7));
         local ang = zh(i, seed + 9) * math.pi * 2 + swirl;
         local d = size * 0.22 * zh(i, seed + 10);
-        dl:AddCircleFilled({ mx + math.cos(ang) * d, my + math.sin(ang) * d }, 0.7 * sc, u32({ S_EDGE[1], S_EDGE[2], S_EDGE[3], 0.7 * tw * fade }), 6);
+        DL.CF(dl, mx + math.cos(ang) * d, my + math.sin(ang) * d, 0.7 * sc, U4(S_EDGE[1], S_EDGE[2], S_EDGE[3], 0.7 * tw * fade), 6);
     end
     dl:PopClipRect();
 end
@@ -1019,9 +1038,9 @@ local function name_letters(dl, text, cx, y, sc, c1, c2, al, tc, oc)
     if tc then                                                       -- fixed colour with a crisp outline
         local x = cx - imgui.CalcTextSize(text) / 2;
         for _, o in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } }) do
-            dl:AddText({ x + o[1] * sc, y + o[2] * sc }, u32({ oc[1], oc[2], oc[3], 0.95 * al }), text);
+            DL.T(dl, x + o[1] * sc, y + o[2] * sc, U4(oc[1], oc[2], oc[3], 0.95 * al), text);
         end
-        dl:AddText({ x, y }, u32({ tc[1], tc[2], tc[3], al }), text);
+        DL.T(dl, x, y, U4(tc[1], tc[2], tc[3], al), text);
         return;
     end
     local now = os.clock();
@@ -1031,10 +1050,10 @@ local function name_letters(dl, text, cx, y, sc, c1, c2, al, tc, oc)
         local u = 0.5 + 0.5 * math.sin(now * 1.2 - i * 0.45);
         local c = { c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u };
         for _, o in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }) do            -- soft glow
-            dl:AddText({ x + o[1] * sc, y + o[2] * sc }, u32({ c[1], c[2], c[3], 0.18 * al }), ch);
+            DL.T(dl, x + o[1] * sc, y + o[2] * sc, U4(c[1], c[2], c[3], 0.18 * al), ch);
         end
-        dl:AddText({ x + 1 * sc, y + 1.2 * sc }, u32({ 0, 0, 0, 0.8 * al }), ch);       -- shadow
-        dl:AddText({ x, y }, u32({ c[1] + (1 - c[1]) * 0.30, c[2] + (1 - c[2]) * 0.30, c[3] + (1 - c[3]) * 0.30, al }), ch);
+        DL.T(dl, x + 1 * sc, y + 1.2 * sc, U4(0, 0, 0, 0.8 * al), ch);       -- shadow
+        DL.T(dl, x, y, U4(c[1] + (1 - c[1]) * 0.30, c[2] + (1 - c[2]) * 0.30, c[3] + (1 - c[3]) * 0.30, al), ch);
         x = x + imgui.CalcTextSize(ch);
     end
 end
@@ -1066,9 +1085,9 @@ local function draw_state(dl, cx, ytop, sc, text, c1, c2, maxw)
     -- the notch: card-coloured, so the border seems to pass behind the name
     local pw = fading and ((ye.label_prev_w or tw) + (tw - (ye.label_prev_w or tw)) * e) or tw;
     local pad = 7 * sc;
-    dl:AddRectFilled({ cx - pw / 2 - pad, ytop - th / 2 }, { cx + pw / 2 + pad, ytop + th / 2 }, u32(C.face), th / 2);
-    dl:AddCircleFilled({ cx - pw / 2 - pad, ytop }, 1.6 * sc, u32({ c1[1], c1[2], c1[3], 0.9 }), 8);   -- where the
-    dl:AddCircleFilled({ cx + pw / 2 + pad, ytop }, 1.6 * sc, u32({ c2[1], c2[2], c2[3], 0.9 }), 8);   -- border tucks in
+    DL.RF(dl, cx - pw / 2 - pad, ytop - th / 2, cx + pw / 2 + pad, ytop + th / 2, u32(C.face), th / 2);
+    DL.CF(dl, cx - pw / 2 - pad, ytop, 1.6 * sc, U4(c1[1], c1[2], c1[3], 0.9), 8);   -- where the
+    DL.CF(dl, cx + pw / 2 + pad, ytop, 1.6 * sc, U4(c2[1], c2[2], c2[3], 0.9), 8);   -- border tucks in
     local y = ytop - th / 2;
     if fading then
         local ptc, poc = name_style(ye.label_prev);
@@ -1201,9 +1220,9 @@ local function draw_mp_timer(dl, cx, ybot, sc, c1, c2, maxw)
     end
     if not (maxw and tw + 14 * sc > maxw) then
         local pad = 6 * sc;
-        dl:AddRectFilled({ cx - tw / 2 - pad, ybot - th / 2 }, { cx + tw / 2 + pad, ybot + th / 2 }, u32({ C.face[1], C.face[2], C.face[3], al }), th / 2);
-        dl:AddCircleFilled({ cx - tw / 2 - pad, ybot }, 1.4 * sc, u32({ c1[1], c1[2], c1[3], 0.9 * al }), 8);
-        dl:AddCircleFilled({ cx + tw / 2 + pad, ybot }, 1.4 * sc, u32({ c2[1], c2[2], c2[3], 0.9 * al }), 8);
+        DL.RF(dl, cx - tw / 2 - pad, ybot - th / 2, cx + tw / 2 + pad, ybot + th / 2, U4(C.face[1], C.face[2], C.face[3], al), th / 2);
+        DL.CF(dl, cx - tw / 2 - pad, ybot, 1.4 * sc, U4(c1[1], c1[2], c1[3], 0.9 * al), 8);
+        DL.CF(dl, cx + tw / 2 + pad, ybot, 1.4 * sc, U4(c2[1], c2[2], c2[3], 0.9 * al), 8);
         name_letters(dl, text, cx, ybot - th / 2, sc, c1, c2, al);
     end
     if pushed then imgui.PopFont(); end
@@ -1247,14 +1266,14 @@ local function draw_slot(k, i, slot, tx, ty, T, rdelay, plain)
 
 
     if hov then                                                 -- hover: a soft light in the border's colour
-        dl:AddRectFilled({ tx, ty }, { tx2, ty2 }, u32({ 1, 1, 1, 0.05 }), 6 * bs);
+        DL.RF(dl, tx, ty, tx2, ty2, U4(1, 1, 1, 0.05), 6 * bs);
         for j = 1, 4 do
-            dl:AddCircleFilled({ mx, my }, T * (0.66 - j * 0.09), u32({ gcol[1], gcol[2], gcol[3], 0.07 * j }), 24);
+            DL.CF(dl, mx, my, T * (0.66 - j * 0.09), U4(gcol[1], gcol[2], gcol[3], 0.07 * j), 24);
         end
     end
     if k.socket then                                            -- a dark round socket with a thin grey rim
-        dl:AddCircleFilled({ mx, my }, T * 0.56, u32({ 0.05, 0.05, 0.07, 0.88 }), 32);
-        dl:AddCircle({ mx, my }, T * 0.56, u32({ 0.72, 0.72, 0.76, 0.55 }), 40, 1.3 * bs);
+        DL.CF(dl, mx, my, T * 0.56, U4(0.05, 0.05, 0.07, 0.88), 32);
+        DL.C(dl, mx, my, T * 0.56, U4(0.72, 0.72, 0.76, 0.55), 40, 1.3 * bs);
     end
     if ft then draw_fx(dl, mx, my, T, bs, ft, seed); end
 
@@ -1271,7 +1290,7 @@ local function draw_slot(k, i, slot, tx, ty, T, rdelay, plain)
                 if not plain and not k.round then               -- glow in the item's own colour (card only)
                     local g3 = ic.glow;
                     for j = 1, 5 do
-                        dl:AddCircleFilled({ mx, my }, T * (0.54 - j * 0.07) * scale, u32({ g3[1], g3[2], g3[3], (0.04 + j * 0.012) * ia }), 24);
+                        DL.CF(dl, mx, my, T * (0.54 - j * 0.07) * scale, U4(g3[1], g3[2], g3[3], (0.04 + j * 0.012) * ia), 24);
                     end
                 end
                 if hov and not ft and scale == 1 then scale = 1.06; end   -- the hovered item lifts a little
@@ -1294,31 +1313,31 @@ local function draw_slot(k, i, slot, tx, ty, T, rdelay, plain)
             imgui.SetWindowFontScale(0.72 * fs * math.max(0.6, d));
             local ct = tostring(e.count);
             local cw, ch = imgui.CalcTextSize(ct);
-            dl:AddText({ tx2 - cw + 1, ty2 - ch + 1 }, u32({ 0, 0, 0, 0.9 }), ct);
-            dl:AddText({ tx2 - cw, ty2 - ch }, u32({ 1, 1, 1, 1 }), ct);
+            DL.T(dl, tx2 - cw + 1, ty2 - ch + 1, U4(0, 0, 0, 0.9), ct);
+            DL.T(dl, tx2 - cw, ty2 - ch, U4(1, 1, 1, 1), ct);
             imgui.SetWindowFontScale(fs);
         end
         if ic and ic.hq then                                    -- HQ / +1: a hand-drawn sketchy circle round the item
             if k.round then
                 -- (no ring round HQ items any more)
             else
-                dl:AddRect({ tx - 1, ty - 1 }, { tx2 + 1, ty2 + 1 }, u32({ 1, 1, 1, 0.85 }), 7 * bs);
+                DL.R(dl, tx - 1, ty - 1, tx2 + 1, ty2 + 1, U4(1, 1, 1, 0.85), 7 * bs);
             end
         end
         if e.augmented and k.round then                        -- augmented: no mark in the Orbit (the user removed the violet arc)
         elseif e.augmented then                                 -- a small violet diamond, top right
             local dx, dy = tx2 - 3 * bs, ty + 3 * bs;
-            dl:AddTriangleFilled({ dx, dy - 3.6 * bs }, { dx + 3.0 * bs, dy }, { dx - 3.0 * bs, dy }, u32({ 0, 0, 0, 0.8 }));
-            dl:AddTriangleFilled({ dx - 3.0 * bs, dy }, { dx + 3.0 * bs, dy }, { dx, dy + 3.6 * bs }, u32({ 0, 0, 0, 0.8 }));
-            dl:AddTriangleFilled({ dx, dy - 2.7 * bs }, { dx + 2.1 * bs, dy }, { dx - 2.1 * bs, dy }, u32(C.aug));
-            dl:AddTriangleFilled({ dx - 2.1 * bs, dy }, { dx + 2.1 * bs, dy }, { dx, dy + 2.7 * bs }, u32(C.aug));
+            DL.TF(dl, dx, dy - 3.6 * bs, dx + 3.0 * bs, dy, dx - 3.0 * bs, dy, U4(0, 0, 0, 0.8));
+            DL.TF(dl, dx - 3.0 * bs, dy, dx + 3.0 * bs, dy, dx, dy + 3.6 * bs, U4(0, 0, 0, 0.8));
+            DL.TF(dl, dx, dy - 2.7 * bs, dx + 2.1 * bs, dy, dx - 2.1 * bs, dy, u32(C.aug));
+            DL.TF(dl, dx - 2.1 * bs, dy, dx + 2.1 * bs, dy, dx, dy + 2.7 * bs, u32(C.aug));
         end
     elseif not ft and not k.round then                          -- empty: a barely-there outline (the Orbit just leaves a gap)
-        dl:AddRect({ tx + 1, ty + 1 }, { tx2 - 1, ty2 - 1 }, u32({ 1, 1, 1, 0.07 }), 6 * bs);
+        DL.R(dl, tx + 1, ty + 1, tx2 - 1, ty2 - 1, U4(1, 1, 1, 0.07), 6 * bs);
     end
     if blocked then
-        dl:AddRectFilled({ tx, ty }, { tx2, ty2 }, u32({ 0.85, 0.1, 0.12, 0.22 }), 6 * bs);
-        dl:AddRect({ tx, ty }, { tx2, ty2 }, u32({ 0.95, 0.2, 0.2, 0.9 }), 6 * bs);
+        DL.RF(dl, tx, ty, tx2, ty2, U4(0.85, 0.1, 0.12, 0.22), 6 * bs);
+        DL.R(dl, tx, ty, tx2, ty2, U4(0.95, 0.2, 0.2, 0.9), 6 * bs);
     end
 end
 
@@ -1329,11 +1348,11 @@ local function draw_ring_border(dl, cx, cy, rad, bs, gs, c1, c2)
     local px = math.max(1, bs);
     for i = 1, 16 do                                           -- outer glow
         local al = math.max(0, math.min(1, 0.30 * (1 - i / 17) ^ 1.6 * gs));
-        dl:AddCircle({ cx, cy }, rad + i * px, u32({ mid[1], mid[2], mid[3], al }), 96, px * 1.1);
+        DL.C(dl, cx, cy, rad + i * px, U4(mid[1], mid[2], mid[3], al), 96, px * 1.1);
     end
     for i = 1, 6 do                                            -- inner glow
         local al = math.max(0, math.min(1, 0.22 * (1 - i / 7) ^ 1.5 * gs));
-        dl:AddCircle({ cx, cy }, rad - i * px, u32({ mid[1], mid[2], mid[3], al }), 96, px * 1.1);
+        DL.C(dl, cx, cy, rad - i * px, U4(mid[1], mid[2], mid[3], al), 96, px * 1.1);
     end
     local n = 144;
     local ph = now % 6;
@@ -1349,14 +1368,14 @@ local function draw_ring_border(dl, cx, cy, rad, bs, gs, c1, c2)
             kk = math.max(0, 1 - math.min(dd, 1 - dd) / 0.06);
         end
         local p, q = { cx + math.cos(a1) * rad, cy + math.sin(a1) * rad }, { cx + math.cos(a2) * rad, cy + math.sin(a2) * rad };
-        dl:AddLine(p, q, u32({ cr, cg, cb, 0.35 }), 4.5 * bs);
-        dl:AddLine(p, q, u32({ cr + (1 - cr) * kk, cg + (1 - cg) * kk, cb + (1 - cb) * kk, 1 }), 2.2 * bs);
+        dl:AddLine(p, q, U4(cr, cg, cb, 0.35), 4.5 * bs);
+        dl:AddLine(p, q, U4(cr + (1 - cr) * kk, cg + (1 - cg) * kk, cb + (1 - cb) * kk, 1), 2.2 * bs);
     end
     if sweep then
         local a = -math.pi / 2 + sweep * math.pi * 2;
         local hp = { cx + math.cos(a) * rad, cy + math.sin(a) * rad };
-        dl:AddCircleFilled(hp, 7 * bs, u32({ 1, 1, 1, 0.14 }), 16);
-        dl:AddCircleFilled(hp, 2.8 * bs, u32({ 1, 1, 1, 0.9 }), 12);
+        dl:AddCircleFilled(hp, 7 * bs, U4(1, 1, 1, 0.14), 16);
+        dl:AddCircleFilled(hp, 2.8 * bs, U4(1, 1, 1, 0.9), 12);
     end
 end
 
@@ -1366,7 +1385,7 @@ function JOBS.arc(dl, cx, cy, r, a1, a2, col, th)
     local n = math.max(4, math.floor(math.abs(a2 - a1) / 3));
     for i = 0, n - 1 do
         local p, q = math.rad(a1 + (a2 - a1) * i / n), math.rad(a1 + (a2 - a1) * (i + 1) / n);
-        dl:AddLine({ cx + math.cos(p) * r, cy + math.sin(p) * r }, { cx + math.cos(q) * r, cy + math.sin(q) * r }, col, th);
+        DL.L(dl, cx + math.cos(p) * r, cy + math.sin(p) * r, cx + math.cos(q) * r, cy + math.sin(q) * r, col, th);
     end
 end
 JOBS.abbr = { 'WAR', 'MNK', 'WHM', 'BLM', 'RDM', 'THF', 'PLD', 'DRK', 'BST', 'BRD', 'RNG', 'SAM', 'NIN', 'DRG', 'SMN',
@@ -1397,7 +1416,7 @@ function JOBS.low_ring(dl, cx, cy, r, bs, now)
             local function band(f0, f1, al, w)                       -- part of this side (0 = bottom, 1 = top)
                 local a1 = (side == 1) and (90 + 180 * f0) or (90 - 180 * f0);
                 local a2 = (side == 1) and (90 + 180 * f1) or (90 - 180 * f1);
-                JOBS.arc(dl, cx, cy, r, math.min(a1, a2), math.max(a1, a2), u32({ c[1], c[2], c[3], al }), w * bs);
+                JOBS.arc(dl, cx, cy, r, math.min(a1, a2), math.max(a1, a2), U4(c[1], c[2], c[3], al), w * bs);
             end
             if fx == 'breath' or fx == 'glow' then
                 local b = (fx == 'glow') and (0.7 + 0.3 * L.beat) or L.beat * 1.6;
@@ -1422,8 +1441,8 @@ function JOBS.low_ring(dl, cx, cy, r, bs, now)
                     local rr = r + (6 + 26 * t) * bs;
                     local x, y = cx + math.cos(a) * rr, cy + math.sin(a) * rr - 10 * bs * t;
                     local al = (1 - t) * (0.5 + 0.4 * k);
-                    dl:AddCircleFilled({ x, y }, (2.4 - 1.4 * t) * bs, u32({ c[1], c[2], c[3], al }), 10);
-                    dl:AddCircleFilled({ x, y }, (5 - 2 * t) * bs, u32({ c[1], c[2], c[3], al * 0.25 }), 12);
+                    DL.CF(dl, x, y, (2.4 - 1.4 * t) * bs, U4(c[1], c[2], c[3], al), 10);
+                    DL.CF(dl, x, y, (5 - 2 * t) * bs, U4(c[1], c[2], c[3], al * 0.25), 12);
                 end
             end
         end
@@ -1471,12 +1490,12 @@ end
 -- A pill (round ends drawn by hand, so it's round on every ImGui version)
 function JOBS.capsule(dl, x1, y1, x2, y2, fill, line, th)
     local rr = (y2 - y1) / 2;
-    dl:AddRectFilled({ x1 + rr, y1 }, { x2 - rr, y2 }, fill);
-    dl:AddCircleFilled({ x1 + rr, y1 + rr }, rr, fill, 24);
-    dl:AddCircleFilled({ x2 - rr, y1 + rr }, rr, fill, 24);
+    DL.RF(dl, x1 + rr, y1, x2 - rr, y2, fill);
+    DL.CF(dl, x1 + rr, y1 + rr, rr, fill, 24);
+    DL.CF(dl, x2 - rr, y1 + rr, rr, fill, 24);
     if line then
-        dl:AddLine({ x1 + rr, y1 }, { x2 - rr, y1 }, line, th);
-        dl:AddLine({ x1 + rr, y2 }, { x2 - rr, y2 }, line, th);
+        DL.L(dl, x1 + rr, y1, x2 - rr, y1, line, th);
+        DL.L(dl, x1 + rr, y2, x2 - rr, y2, line, th);
         JOBS.arc(dl, x1 + rr, y1 + rr, rr, 90, 270, line, th);
         JOBS.arc(dl, x2 - rr, y1 + rr, rr, -90, 90, line, th);
     end
@@ -1488,9 +1507,9 @@ function JOBS.text(dl, x, y, ax, str, c, scale, fs)
     local w, h = imgui.CalcTextSize(str);
     local x1 = (ax < 0) and (x - w) or ((ax > 0) and x or (x - w / 2));
     for _, o in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do
-        dl:AddText({ x1 + o[1], y + o[2] }, u32({ 0, 0, 0, 0.7 }), str);
+        DL.T(dl, x1 + o[1], y + o[2], U4(0, 0, 0, 0.7), str);
     end
-    dl:AddText({ x1, y }, u32(c), str);
+    DL.T(dl, x1, y, u32(c), str);
     imgui.SetWindowFontScale(fs);
     return h;
 end
@@ -1526,9 +1545,9 @@ function JOBS.stat(dl, x, y, ax, label, value, c, fs, bs, ytop, frac, beat)
     scale(14 * bs);
     local lx_, ly_ = x1 + (bw - lw) / 2, y1 + (bh - lh) / 2;
     for _, o in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do
-        dl:AddText({ lx_ + o[1], ly_ + o[2] }, u32({ 0, 0, 0, 0.7 }), label);
+        DL.T(dl, lx_ + o[1], ly_ + o[2], U4(0, 0, 0, 0.7), label);
     end
-    dl:AddText({ lx_, ly_ }, u32({ lc[1], lc[2], lc[3], 1 }), label);
+    DL.T(dl, lx_, ly_, U4(lc[1], lc[2], lc[3], 1), label);
     -- the number, white with a soft dark edge so it reads on light ground too
     scale(21 * bs);
     local vx, vy = x1 + bw + gap, y1 + (bh - vh) / 2 - 2 * bs;
@@ -1541,28 +1560,28 @@ function JOBS.stat(dl, x, y, ax, label, value, c, fs, bs, ytop, frac, beat)
         vcol = { 1, 1 - 0.12 * p, 1 - 0.55 * p, 1 };
         local gx, gy = vx + vw / 2, vy + vh / 2;
         for k = 1, 5 do                                         -- a soft gold glow behind it, swelling with the pulse
-            dl:AddCircleFilled({ gx, gy + 1 * bs }, vh * (0.80 - k * 0.1) * (1 + 0.35 * p), u32({ 1, 0.80, 0.30, 0.08 * p }), 24);
+            DL.CF(dl, gx, gy + 1 * bs, vh * (0.80 - k * 0.1) * (1 + 0.35 * p), U4(1, 0.80, 0.30, 0.08 * p), 24);
         end
     end
     scale(21 * bs * vs);
     local pw_, ph_ = imgui.CalcTextSize(value);
     local px_, py_ = vx + (vw - pw_) / 2, vy + (vh - ph_) / 2;  -- grows from its own middle
     for _, o in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 }, { 0, 2 } }) do
-        dl:AddText({ px_ + o[1], py_ + o[2] }, u32({ 0, 0, 0, 0.6 }), value);
+        DL.T(dl, px_ + o[1], py_ + o[2], U4(0, 0, 0, 0.6), value);
     end
     local gl;
     vcol, gl = JOBS.low_text(beat or 0, c, vcol);                     -- low HP / MP: the chosen effect
     if gl > 0 then
         for _, o in ipairs({ { -2, 0 }, { 2, 0 }, { 0, -2 }, { 0, 2 } }) do
-            dl:AddText({ px_ + o[1] * bs, py_ + o[2] * bs }, u32({ c[1], c[2], c[3], gl }), value);
+            DL.T(dl, px_ + o[1] * bs, py_ + o[2] * bs, U4(c[1], c[2], c[3], gl), value);
         end
     end
-    dl:AddText({ px_, py_ }, u32(vcol), value);
+    DL.T(dl, px_, py_, u32(vcol), value);
     -- the line under it: dim, and bright as far as the stat is full
     local ly = y1 + bh - 1.5 * bs;
     local f = math.max(0, math.min(1, frac or 1));
-    dl:AddLine({ vx, ly }, { vx + uw, ly }, u32({ c[1] * 0.35, c[2] * 0.35, c[3] * 0.35, 0.9 }), 2.5 * bs);
-    if f > 0 then dl:AddLine({ vx, ly }, { vx + uw * f, ly }, u32({ c[1], c[2], c[3], 1 }), 2.5 * bs); end
+    DL.L(dl, vx, ly, vx + uw, ly, U4(c[1] * 0.35, c[2] * 0.35, c[3] * 0.35, 0.9), 2.5 * bs);
+    if f > 0 then DL.L(dl, vx, ly, vx + uw * f, ly, U4(c[1], c[2], c[3], 1), 2.5 * bs); end
     if pushed then imgui.PopFont(); end
     imgui.SetWindowFontScale(fs);
     return w, h;
@@ -1671,7 +1690,7 @@ function JOBS.ring_fx(dl, cx, cy, r, a1, e, c0, c, th, seed, recolor)
             for k = 0, n - 1 do
                 local f1, f2 = k / n, (k + 1) / n;
                 local u = 0.5 + 0.5 * math.sin((f1 * 1.6 - ph) * math.pi * 2);
-                local col = u32({ c0[1] + (c[1] - c0[1]) * u, c0[2] + (c[2] - c0[2]) * u, c0[3] + (c[3] - c0[3]) * u, 1 });
+                local col = U4(c0[1] + (c[1] - c0[1]) * u, c0[2] + (c[2] - c0[2]) * u, c0[3] + (c[3] - c0[3]) * u, 1);
                 dl:AddLine(pt(a1 + (e - a1) * f1), pt(a1 + (e - a1) * f2), col, th * 0.8);
             end
         end
@@ -1682,7 +1701,7 @@ function JOBS.ring_fx(dl, cx, cy, r, a1, e, c0, c, th, seed, recolor)
             local lo, hi = math.min(a1, e), math.max(a1, e);
             if fa >= lo and fa <= hi and fb >= lo and fb <= hi then
                 local al = 0.55 * (1 - math.abs(k + 0.5) / 6.5);
-                dl:AddLine(pt(fa), pt(fb), u32({ 1, 1, 1, al }), th * 0.6);
+                dl:AddLine(pt(fa), pt(fb), U4(1, 1, 1, al), th * 0.6);
             end
         end
     elseif fx == 'electric' then                                     -- crackling threads inside the ring
@@ -1694,13 +1713,13 @@ function JOBS.ring_fx(dl, cx, cy, r, a1, e, c0, c, th, seed, recolor)
             for k = 0, n do
                 local rnd = (math.sin(tick * 31.7 + k * 12.9898 + seed * 7.1 + pass * 3.3) * 43758.5453) % 1;
                 local p = pt(a1 + (e - a1) * k / n, r + (rnd - 0.5) * th * 0.7);
-                if prev then dl:AddLine(prev, p, u32({ 0.95, 0.97, 1, a * ((pass == 1) and 1 or 0.45) }), (pass == 1) and 1.2 or 2); end
+                if prev then dl:AddLine(prev, p, U4(0.95, 0.97, 1, a * ((pass == 1) and 1 or 0.45)), (pass == 1) and 1.2 or 2); end
                 prev = p;
             end
         end
     elseif fx == 'pulse' then                                        -- the whole lit part brightens softly and back
         local pb = 0.5 - 0.5 * math.cos(now * 2.2 + seed);
-        for k = 0, n - 1 do dl:AddLine(pt(a1 + (e - a1) * k / n), pt(a1 + (e - a1) * (k + 1) / n), u32({ 1, 1, 1, 0.25 * pb }), th * 0.8); end
+        for k = 0, n - 1 do dl:AddLine(pt(a1 + (e - a1) * k / n), pt(a1 + (e - a1) * (k + 1) / n), U4(1, 1, 1, 0.25 * pb), th * 0.8); end
     end
 end
 
@@ -1712,32 +1731,32 @@ function JOBS.vbar(dl, x, y, w, h, v, lag, c1, c2, seed, warn)
     local now = os.clock();
     local fx = cfg.ring_fx or 'same';
     if fx == 'same' then fx = (YUI_BAR_FX and YUI_BAR_FX()) or 'flow'; end
-    dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.05, 0.04, 0.07, 0.75 }), w / 2);
-    if lag and lag > v then dl:AddRectFilled({ x, y + h * (1 - lag) }, { x + w, y + h * (1 - v) }, u32({ 1, 0.92, 0.95, 0.40 }), w / 2); end
+    DL.RF(dl, x, y, x + w, y + h, U4(0.05, 0.04, 0.07, 0.75), w / 2);
+    if lag and lag > v then DL.RF(dl, x, y + h * (1 - lag), x + w, y + h * (1 - v), U4(1, 0.92, 0.95, 0.40), w / 2); end
     if v <= 0 then return; end
     local fh = h * v;
     local top = y + h - fh;
     local pulse = 0.5 + 0.5 * math.sin(now * 2.2 + seed);
     local gl = 0.75 + 0.5 * pulse + warn * 2;
     for k = 1, 3 + math.floor(warn * 3) do
-        dl:AddRectFilled({ x - k, top - k }, { x + w + k, y + h + k }, u32({ c2[1], c2[2], c2[3], math.max(0, 0.10 - k * 0.02) * gl }), w / 2 + k);
+        DL.RF(dl, x - k, top - k, x + w + k, y + h + k, U4(c2[1], c2[2], c2[3], math.max(0, 0.10 - k * 0.02) * gl), w / 2 + k);
     end
-    dl:AddRectFilled({ x - 1, top - 1 }, { x + w + 1, y + h + 1 }, u32({ c2[1], c2[2], c2[3], 0.85 }), w / 2 + 1);
+    DL.RF(dl, x - 1, top - 1, x + w + 1, y + h + 1, U4(c2[1], c2[2], c2[3], 0.85), w / 2 + 1);
     local segs = math.max(4, math.floor(h / 30));
     local ph = (fx == 'flow') and (now * 0.35 + seed * 0.21) or 0.3;
     local function col_at(f)
         local u = 0.5 + 0.5 * math.sin((f * 1.6 - ph) * math.pi * 2);
-        return u32({ c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u, 1 });
+        return U4(c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u, 1);
     end
     for k = 0, segs - 1 do                                           -- f: 0 at the bottom, 1 at the top
         local f1, f2 = k / segs, (k + 1) / segs;
         local ya, yb = y + h - h * f1, math.max(top, y + h - h * f2);
         if ya > yb then
             local a, b = col_at(f1), col_at(yb == top and v or f2);
-            dl:AddRectFilledMultiColor({ x, yb }, { x + w, ya }, b, b, a, a);
+            DL.RFM(dl, x, yb, x + w, ya, b, b, a, a);
         end
     end
-    if warn > 0.01 then dl:AddRectFilled({ x, top }, { x + w, y + h }, u32({ 1, 1, 1, 0.3 * warn }), w / 2); end
+    if warn > 0.01 then DL.RF(dl, x, top, x + w, y + h, U4(1, 1, 1, 0.3 * warn), w / 2); end
     if fx == 'flow' then                                             -- the sheen gliding up
         local sp = (now * 0.32 + seed * 0.137) % 1;
         local hy, hw = y + h + 30 - sp * (fh + 60), 30;
@@ -1746,7 +1765,7 @@ function JOBS.vbar(dl, x, y, w, h, v, lag, c1, c2, seed, warn)
             if cy2 <= cy1 then return; end
             local f1, f2 = (cy1 - y1) / (y2 - y1), (cy2 - y1) / (y2 - y1);
             local b1, b2 = a1 + (a2 - a1) * f1, a1 + (a2 - a1) * f2;
-            dl:AddRectFilledMultiColor({ x, cy1 }, { x + w, cy2 }, u32({ 1, 1, 1, b1 }), u32({ 1, 1, 1, b1 }), u32({ 1, 1, 1, b2 }), u32({ 1, 1, 1, b2 }));
+            DL.RFM(dl, x, cy1, x + w, cy2, U4(1, 1, 1, b1), U4(1, 1, 1, b1), U4(1, 1, 1, b2), U4(1, 1, 1, b2));
         end
         band(hy - hw, hy, 0, 0.55);
         band(hy, hy + hw, 0.55, 0);
@@ -1761,16 +1780,16 @@ function JOBS.vbar(dl, x, y, w, h, v, lag, c1, c2, seed, warn)
             local r = (math.sin(tick * 31.7 + k * 12.9898 + seed * 7.1) * 43758.5453) % 1;
             local ny = math.max(top, py - math.max(4, w * 1.8) * (0.6 + 0.8 * ((r * 7.7) % 1)));
             local nx = x + w * (0.12 + 0.76 * r);
-            dl:AddLine({ px, py }, { nx, ny }, u32({ 0.92, 0.97, 1, 0.2 + 0.55 * beat }), 1);
+            DL.L(dl, px, py, nx, ny, U4(0.92, 0.97, 1, 0.2 + 0.55 * beat), 1);
             px, py = nx, ny;
         end
         dl:PopClipRect();
     elseif fx == 'pulse' then
         local pb = 0.5 - 0.5 * math.cos(now * 2.2 + seed);
-        dl:AddRectFilled({ x, top }, { x + w, y + h }, u32({ 1, 1, 1, 0.22 * pb }), w / 2);
+        DL.RF(dl, x, top, x + w, y + h, U4(1, 1, 1, 0.22 * pb), w / 2);
     end
-    dl:AddCircleFilled({ x + w / 2, top }, w * 1.1, u32({ 1, 1, 1, 0.18 + 0.1 * pulse }), 12);
-    dl:AddCircleFilled({ x + w / 2, top }, w * 0.5, u32({ 1, 1, 1, 0.95 }), 10);
+    DL.CF(dl, x + w / 2, top, w * 1.1, U4(1, 1, 1, 0.18 + 0.1 * pulse), 12);
+    DL.CF(dl, x + w / 2, top, w * 0.5, U4(1, 1, 1, 0.95), 10);
 end
 function JOBS.mid_bars(dl, cx, cy, inner, icon_half, bs)
     local b = JOBS.bars;
@@ -1792,10 +1811,10 @@ function JOBS.neon(dl, cx, cy, R, bs, fs)
     local b = JOBS.bars;
     local now = os.clock();
     local dc = JOBS.disc_col();
-    dl:AddCircleFilled({ cx, cy }, R, u32({ dc[1], dc[2], dc[3], JOBS.disc_alpha() }), 96);
-    for i = 1, (cfg.disc == 'none') and 0 or 6 do dl:AddCircle({ cx, cy }, R - i * 2.5 * bs, u32({ 0, 0, 0, 0.10 * (1 - i / 7) }), 96, 2.5 * bs); end
+    DL.CF(dl, cx, cy, R, U4(dc[1], dc[2], dc[3], JOBS.disc_alpha()), 96);
+    for i = 1, (cfg.disc == 'none') and 0 or 6 do DL.C(dl, cx, cy, R - i * 2.5 * bs, U4(0, 0, 0, 0.10 * (1 - i / 7)), 96, 2.5 * bs); end
     local th = 5.5 * bs;                                            -- thick enough to read at a glance
-    dl:AddCircle({ cx, cy }, R, u32({ 0, 0, 0, 0.95 }), 160, th + 3.5 * bs);   -- a black outline round the whole ring
+    DL.C(dl, cx, cy, R, U4(0, 0, 0, 0.95), 160, th + 3.5 * bs);   -- a black outline round the whole ring
     for side = 1, 2 do
         local v, lag = (side == 1) and b.hp or b.mp, (side == 1) and b.hp_lag or b.mp_lag;
         local c = (side == 1) and JOBS.UI.hp2 or JOBS.UI.mp2;           -- the glow and the far end
@@ -1970,9 +1989,9 @@ function JOBS.serif(dl, x, y, str, px, col, spacing)
     for ch in str:gmatch('.') do
         local cw = imgui.CalcTextSize(ch);
         for _, o in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do
-            dl:AddText({ tx + o[1], y + o[2] }, u32({ 0, 0, 0, 0.8 * col[4] }), ch);
+            DL.T(dl, tx + o[1], y + o[2], U4(0, 0, 0, 0.8 * col[4]), ch);
         end
-        dl:AddText({ tx, y }, u32(col), ch);
+        DL.T(dl, tx, y, u32(col), ch);
         tx = tx + cw + sp;
     end
     if pushed then imgui.PopFont(); end
@@ -1991,9 +2010,9 @@ function JOBS.bahn(dl, x, y, str, px, col, spacing)
     for ch in str:gmatch('.') do
         local cw = imgui.CalcTextSize(ch);
         for _, o in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do
-            dl:AddText({ tx + o[1], y + o[2] }, u32({ 0, 0, 0, 0.75 * col[4] }), ch);
+            DL.T(dl, tx + o[1], y + o[2], U4(0, 0, 0, 0.75 * col[4]), ch);
         end
-        dl:AddText({ tx, y }, u32(col), ch);
+        DL.T(dl, tx, y, u32(col), ch);
         tx = tx + cw + sp;
     end
     if pushed then imgui.PopFont(); end
@@ -2070,8 +2089,8 @@ function JOBS.veins(dl, cx, cy, r0, r1, c, bs, now)
                 local tm = (p[1] + v.pts[q - 1][1]) / 2;
                 local glow = math.max(0, 1 - math.abs(tm - ph) / 0.16);
                 local base = 0.14 * (1 - tm * 0.4);
-                dl:AddLine(prev, pt, u32({ c[1], c[2], c[3], (0.08 + 0.25 * glow) }), (3.5 + 3 * glow) * bs);
-                dl:AddLine(prev, pt, u32({ c[1] + (1 - c[1]) * 0.5 * glow, c[2] + (1 - c[2]) * 0.5 * glow, c[3] + (1 - c[3]) * 0.5 * glow, base + 0.7 * glow }), (1.0 + 0.8 * glow) * bs);
+                dl:AddLine(prev, pt, U4(c[1], c[2], c[3], (0.08 + 0.25 * glow)), (3.5 + 3 * glow) * bs);
+                dl:AddLine(prev, pt, U4(c[1] + (1 - c[1]) * 0.5 * glow, c[2] + (1 - c[2]) * 0.5 * glow, c[3] + (1 - c[3]) * 0.5 * glow, base + 0.7 * glow), (1.0 + 0.8 * glow) * bs);
             end
             prev = pt;
         end
@@ -2079,11 +2098,11 @@ function JOBS.veins(dl, cx, cy, r0, r1, c, bs, now)
             local s0 = at(v, b.t0, 0);
             local s1 = at(v, b.t0 + b.len, b.side * 9);
             local glow = math.max(0, 1 - math.abs(b.t0 - ph) / 0.2);
-            dl:AddLine(s0, s1, u32({ c[1], c[2], c[3], 0.12 + 0.35 * glow }), (0.8 + 0.5 * glow) * bs);
+            dl:AddLine(s0, s1, U4(c[1], c[2], c[3], 0.12 + 0.35 * glow), (0.8 + 0.5 * glow) * bs);
         end
         local tip = at(v, 1, 0);                                    -- the pulse lands on the gear: a small flash
         local land = math.max(0, 1 - math.abs(ph - 0.97) / 0.06);
-        if land > 0 then dl:AddCircleFilled(tip, (3 + 3 * land) * bs, u32({ c[1], c[2], c[3], 0.35 * land }), 16); end
+        if land > 0 then dl:AddCircleFilled(tip, (3 + 3 * land) * bs, U4(c[1], c[2], c[3], 0.35 * land), 16); end
     end
 end
 
@@ -2100,9 +2119,9 @@ function JOBS.fx(name, dl, cx, cy, r0, r1, c, bs, now)
             local rr = r0 + (r1 - r0) * t;
             local al = math.sin(t * math.pi) * 0.5;
             for q = 1, 4 do
-                dl:AddCircle({ cx, cy }, rr - q * 2 * bs, u32({ c[1], c[2], c[3], al * (0.35 - q * 0.07) }), 96, 3 * bs);
+                DL.C(dl, cx, cy, rr - q * 2 * bs, U4(c[1], c[2], c[3], al * (0.35 - q * 0.07)), 96, 3 * bs);
             end
-            dl:AddCircle({ cx, cy }, rr, u32({ c[1] + (1 - c[1]) * 0.4, c[2] + (1 - c[2]) * 0.4, c[3] + (1 - c[3]) * 0.4, al }), 96, 1.4 * bs);
+            DL.C(dl, cx, cy, rr, U4(c[1] + (1 - c[1]) * 0.4, c[2] + (1 - c[2]) * 0.4, c[3] + (1 - c[3]) * 0.4, al), 96, 1.4 * bs);
         end
         return;
     end
@@ -2130,10 +2149,10 @@ function JOBS.fx(name, dl, cx, cy, r0, r1, c, bs, now)
                 end
                 pts[#pts + 1] = p2;
                 for q = 1, #pts - 1 do
-                    dl:AddLine(pts[q], pts[q + 1], u32({ c[1], c[2], c[3], 0.25 * al }), 6 * bs);
-                    dl:AddLine(pts[q], pts[q + 1], u32({ 1, 1, 1, 0.9 * al }), 1.4 * bs);
+                    dl:AddLine(pts[q], pts[q + 1], U4(c[1], c[2], c[3], 0.25 * al), 6 * bs);
+                    dl:AddLine(pts[q], pts[q + 1], U4(1, 1, 1, 0.9 * al), 1.4 * bs);
                 end
-                dl:AddCircleFilled(p2, 7 * bs * al, u32({ c[1], c[2], c[3], 0.35 * al }), 16);
+                dl:AddCircleFilled(p2, 7 * bs * al, U4(c[1], c[2], c[3], 0.35 * al), 16);
             end
         end
         return;
@@ -2147,14 +2166,14 @@ function JOBS.fx(name, dl, cx, cy, r0, r1, c, bs, now)
             local len = (r1 - r0) * (0.12 + 0.35 * v);
             local p1 = { cx + math.cos(a) * r0 * 1.05, cy + math.sin(a) * r0 * 1.05 };
             local p2 = { cx + math.cos(a) * (r0 * 1.05 + len), cy + math.sin(a) * (r0 * 1.05 + len) };
-            dl:AddLine(p1, p2, u32({ c[1], c[2], c[3], 0.25 + 0.45 * v }), 2.2 * bs);
+            dl:AddLine(p1, p2, U4(c[1], c[2], c[3], 0.25 + 0.45 * v), 2.2 * bs);
         end
         local prev;
         for q = 0, 96 do
             local a = q / 96 * math.pi * 2;
             local rr = r0 + (r1 - r0) * 0.72 + math.sin(a * 8 + now * 4) * 4 * bs * (0.6 + 0.4 * math.sin(now * 1.7));
             local pt = { cx + math.cos(a) * rr, cy + math.sin(a) * rr };
-            if prev then dl:AddLine(prev, pt, u32({ c[1], c[2], c[3], 0.45 }), 1.3 * bs); end
+            if prev then dl:AddLine(prev, pt, U4(c[1], c[2], c[3], 0.45), 1.3 * bs); end
             prev = pt;
         end
         return;
@@ -2168,7 +2187,7 @@ function JOBS.fx(name, dl, cx, cy, r0, r1, c, bs, now)
                 local a = now * sp + k * 2.4 - tr * 0.05 * (sp > 0 and 1 or -1);
                 local pt = { cx + math.cos(a) * rr, cy + math.sin(a) * rr };
                 local al = (1 - tr / 6) * (0.6 + 0.4 * math.sin(now * 3 + k));
-                dl:AddCircleFilled(pt, (2.2 - tr * 0.3) * bs, u32({ c[1], c[2], c[3], 0.8 * al }), 8);
+                dl:AddCircleFilled(pt, (2.2 - tr * 0.3) * bs, U4(c[1], c[2], c[3], 0.8 * al), 8);
             end
         end
         return;
@@ -2180,12 +2199,12 @@ function JOBS.fx(name, dl, cx, cy, r0, r1, c, bs, now)
             local p1 = slot(j);
             local p2 = slot(j % n + 1);
             local mid = { cx + (p1[1] - cx) * 0.45, cy + (p1[2] - cy) * 0.45 };
-            dl:AddLine(p1, p2, u32({ c[1], c[2], c[3], 0.22 }), 1 * bs);
-            dl:AddLine(mid, p1, u32({ c[1], c[2], c[3], 0.15 }), 1 * bs);
-            if j % 2 == 0 then dl:AddLine(mid, slot((j + 3) % n + 1), u32({ c[1], c[2], c[3], 0.12 }), 1 * bs); end
+            dl:AddLine(p1, p2, U4(c[1], c[2], c[3], 0.22), 1 * bs);
+            dl:AddLine(mid, p1, U4(c[1], c[2], c[3], 0.15), 1 * bs);
+            if j % 2 == 0 then dl:AddLine(mid, slot((j + 3) % n + 1), U4(c[1], c[2], c[3], 0.12), 1 * bs); end
             local tw = 0.5 + 0.5 * math.sin(now * 2.3 + j * 1.7);
-            dl:AddCircleFilled(mid, (1.5 + 1.5 * tw) * bs, u32({ 1, 1, 1, 0.5 + 0.5 * tw }), 8);
-            dl:AddCircleFilled(mid, (4 + 3 * tw) * bs, u32({ c[1], c[2], c[3], 0.15 * tw }), 12);
+            dl:AddCircleFilled(mid, (1.5 + 1.5 * tw) * bs, U4(1, 1, 1, 0.5 + 0.5 * tw), 8);
+            dl:AddCircleFilled(mid, (4 + 3 * tw) * bs, U4(c[1], c[2], c[3], 0.15 * tw), 12);
         end
         return;
     end
@@ -2193,13 +2212,13 @@ function JOBS.fx(name, dl, cx, cy, r0, r1, c, bs, now)
         -- a magic circle: two rings turning opposite ways with marks on them, and a star drawn between them
         local ra, rb = r0 + (r1 - r0) * 0.45, r0 + (r1 - r0) * 0.80;
         for _, rr in ipairs({ ra, rb }) do
-            dl:AddCircle({ cx, cy }, rr, u32({ c[1], c[2], c[3], 0.45 }), 96, 1.3 * bs);
+            DL.C(dl, cx, cy, rr, U4(c[1], c[2], c[3], 0.45), 96, 1.3 * bs);
         end
         for q = 0, 23 do
             local a = q / 24 * math.pi * 2 + now * 0.2;
             local p1 = { cx + math.cos(a) * (rb - 4 * bs), cy + math.sin(a) * (rb - 4 * bs) };
             local p2 = { cx + math.cos(a) * (rb + 4 * bs), cy + math.sin(a) * (rb + 4 * bs) };
-            dl:AddLine(p1, p2, u32({ c[1], c[2], c[3], (q % 3 == 0) and 0.8 or 0.35 }), 1.3 * bs);
+            dl:AddLine(p1, p2, U4(c[1], c[2], c[3], (q % 3 == 0) and 0.8 or 0.35), 1.3 * bs);
         end
         local star = {};
         for q = 0, 5 do
@@ -2207,7 +2226,7 @@ function JOBS.fx(name, dl, cx, cy, r0, r1, c, bs, now)
             star[#star + 1] = { cx + math.cos(a) * ra, cy + math.sin(a) * ra };
         end
         for q = 1, 6 do
-            dl:AddLine(star[q], star[(q + 1) % 6 + 1], u32({ c[1], c[2], c[3], 0.35 + 0.15 * math.sin(now * 2 + q) }), 1.2 * bs);
+            dl:AddLine(star[q], star[(q + 1) % 6 + 1], U4(c[1], c[2], c[3], 0.35 + 0.15 * math.sin(now * 2 + q)), 1.2 * bs);
         end
         return;
     end
@@ -2298,7 +2317,7 @@ function JOBS.mid_label(dl, cx, cy, half, bs, fs, label, jkey)
     local jc = (jkey and JOBS.color[jkey]) or { 0.6, 0.66, 1 };
     local breathe = 0.5 + 0.5 * math.sin(now * 1.6);
     for k = 1, 8 do
-        dl:AddCircleFilled({ cx, cy }, half * (0.95 - k * 0.09), u32({ jc[1], jc[2], jc[3], (0.025 + 0.015 * breathe) * (0.6 + 0.4 * e) }), 48);
+        DL.CF(dl, cx, cy, half * (0.95 - k * 0.09), U4(jc[1], jc[2], jc[3], (0.025 + 0.015 * breathe) * (0.6 + 0.4 * e)), 48);
     end
     local f = fonts.set[cfg.set_font or 'bahn'] or fonts.set.bahn;
     local function word(str, a, dy, sc)
@@ -2327,15 +2346,15 @@ function JOBS.mid_label(dl, cx, cy, half, bs, fs, label, jkey)
             local u = (x - tx) / math.max(1, tw);
             local shine = math.max(0, 1 - math.abs(u - sweep) / 0.12);
             for _, o in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 }, { 0, 2 } }) do
-                dl:AddText({ x + o[1], ty + o[2] }, u32({ 0, 0, 0, 0.85 * a }), ch);
+                DL.T(dl, x + o[1], ty + o[2], U4(0, 0, 0, 0.85 * a), ch);
             end
             for _, o in ipairs({ { -2, 0 }, { 2, 0 }, { 0, -2 }, { 0, 2 } }) do  -- a soft glow of the job's colour
-                dl:AddText({ x + o[1] * bs, ty + o[2] * bs }, u32({ jc[1], jc[2], jc[3], 0.16 * a }), ch);
+                DL.T(dl, x + o[1] * bs, ty + o[2] * bs, U4(jc[1], jc[2], jc[3], 0.16 * a), ch);
             end
             local m = 0.30 * (1 - u);                               -- white on the left, taking the job's colour to the right
             local c = { 1 - m * (1 - jc[1]) * 0.4, 1 - m * (1 - jc[2]) * 0.4 - 0.1 * w, 1 - m * (1 - jc[3]) * 0.4 - 0.3 * w, a };
             c = { c[1] + (1 - c[1]) * shine, c[2] + (1 - c[2]) * shine, c[3] + (1 - c[3]) * shine, a };
-            dl:AddText({ x, ty }, u32(c), ch);
+            DL.T(dl, x, ty, u32(c), ch);
             x = x + cw + sp;
         end
         -- a thin line under it in the job's colour, fading at both ends
@@ -2343,7 +2362,7 @@ function JOBS.mid_label(dl, cx, cy, half, bs, fs, label, jkey)
         for q = 0, 9 do
             local f1, f2 = q / 10, (q + 1) / 10;
             local al = math.sin((f1 + 0.05) * math.pi) * 0.7 * a;
-            dl:AddLine({ cx - tw * 0.4 + tw * 0.8 * f1, ly }, { cx - tw * 0.4 + tw * 0.8 * f2, ly }, u32({ jc[1], jc[2], jc[3], al }), 1.5 * bs);
+            DL.L(dl, cx - tw * 0.4 + tw * 0.8 * f1, ly, cx - tw * 0.4 + tw * 0.8 * f2, ly, U4(jc[1], jc[2], jc[3], al), 1.5 * bs);
         end
         if pushed then imgui.PopFont(); end
     end
@@ -2387,9 +2406,9 @@ function JOBS.title(dl, cx, cy, R, bs, fs, status)
     local r1, r2 = R + 3 * bs, R + 3 * bs + th + 8 * bs;         -- just the name, under the ring (no band)
     local tx, ty = cx - tw / 2, cy + (r1 + r2) / 2 - th / 2;
     for _, o in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 }, { 0, 2 } }) do
-        dl:AddText({ tx + o[1], ty + o[2] }, u32({ 0, 0, 0, 0.85 }), label);
+        DL.T(dl, tx + o[1], ty + o[2], U4(0, 0, 0, 0.85), label);
     end
-    dl:AddText({ tx, ty }, u32(col), label);
+    DL.T(dl, tx, ty, u32(col), label);
     if pushed then imgui.PopFont(); end
     imgui.SetWindowFontScale(fs);
 end
@@ -2413,7 +2432,7 @@ function JOBS.overlay(dl, cx, cy, R, bs, fs, theme)
     local ss = math.max(0.6, math.min(2.0, tonumber(cfg.stat_size) or 1));
     local ty = cy - R - 4 * bs;
     if theme == 'neon' then
-        dl:AddTriangleFilled({ cx - 6 * bs, ty + 6 * bs }, { cx + 6 * bs, ty + 6 * bs }, { cx, ty + 12 * bs }, u32(tpc));
+        DL.TF(dl, cx - 6 * bs, ty + 6 * bs, cx + 6 * bs, ty + 6 * bs, cx, ty + 12 * bs, u32(tpc));
     end
     JOBS.stat(dl, cx, ty - 16 * bs * ss, 0, 'TP', tostring(tp), tpc, fs, bs, false, b.tp);
 end
@@ -2430,7 +2449,7 @@ function JOBS.disc(dl, cx, cy, R, ring_r, bs, gs, c1, c2, jkey, fs)
         local tex = logo_texture('bg_ink.png');
         if tex then
             for i = 1, 3 do
-                dl:AddCircleFilled({ cx, cy + i * 1.5 * bs }, R + i * 1.2 * bs, u32({ 0, 0, 0, 0.06 }), 64);
+                DL.CF(dl, cx, cy + i * 1.5 * bs, R + i * 1.2 * bs, U4(0, 0, 0, 0.06), 64);
             end
             draw_image(dl, tex, cx - R, cy - R, cx + R, cy + R, 1);
             JOBS.bezel(dl, cx, cy, R, bs, fs);
@@ -2441,17 +2460,17 @@ function JOBS.disc(dl, cx, cy, R, ring_r, bs, gs, c1, c2, jkey, fs)
     if bg == 'solid' then
         for i = 1, 6 do
             local o = i * bs;
-            dl:AddCircleFilled({ cx + o, cy + o * 1.5 }, R + o * 0.5, u32({ 0, 0, 0, 0.10 }), 64);
+            DL.CF(dl, cx + o, cy + o * 1.5, R + o * 0.5, U4(0, 0, 0, 0.10), 64);
         end
-        dl:AddCircleFilled({ cx, cy }, R, u32(C.face), 96);
+        DL.CF(dl, cx, cy, R, u32(C.face), 96);
         JOBS.bezel(dl, cx, cy, R, bs, fs);
         return;
     end
     if bg == 'none' then
-        dl:AddCircle({ cx, cy }, ring_r, u32({ 0, 0, 0, 0.22 }), 96, 3 * bs);
-        dl:AddCircle({ cx, cy }, ring_r, u32({ 1, 1, 1, 0.16 }), 96, 1 * bs);
+        DL.C(dl, cx, cy, ring_r, U4(0, 0, 0, 0.22), 96, 3 * bs);
+        DL.C(dl, cx, cy, ring_r, U4(1, 1, 1, 0.16), 96, 1 * bs);
         for i = 1, 10 do                                    -- a soft shade behind the figure, so it reads on bright ground
-            dl:AddCircleFilled({ cx, cy }, (ring_r * 0.62) * (1 - (i - 1) / 12), u32({ 0.02, 0.02, 0.05, 0.045 }), 48);
+            DL.CF(dl, cx, cy, (ring_r * 0.62) * (1 - (i - 1) / 12), U4(0.02, 0.02, 0.05, 0.045), 48);
         end
         JOBS.bezel(dl, cx, cy, R, bs, fs);
         return;
@@ -2462,17 +2481,17 @@ function JOBS.disc(dl, cx, cy, R, ring_r, bs, gs, c1, c2, jkey, fs)
         t = { t[1] * 0.55 + jc[1] * 0.16, t[2] * 0.55 + jc[2] * 0.16, t[3] * 0.55 + jc[3] * 0.16 };
     end
     for i = 1, 3 do                                         -- a light shadow, spread out
-        dl:AddCircleFilled({ cx, cy + i * 1.5 * bs }, R + i * 1.2 * bs, u32({ 0, 0, 0, 0.05 }), 64);
+        DL.CF(dl, cx, cy + i * 1.5 * bs, R + i * 1.2 * bs, U4(0, 0, 0, 0.05), 64);
     end
-    dl:AddCircleFilled({ cx, cy }, R, u32({ t[1], t[2], t[3], 0.74 }), 96);        -- smoked glass
+    DL.CF(dl, cx, cy, R, U4(t[1], t[2], t[3], 0.74), 96);        -- smoked glass
     for i = 1, 8 do                                         -- lighter towards the middle
-        dl:AddCircleFilled({ cx, cy }, R * (0.92 - i * 0.09), u32({ t[1] + 0.10, t[2] + 0.10, t[3] + 0.14, 0.035 }), 64);
+        DL.CF(dl, cx, cy, R * (0.92 - i * 0.09), U4(t[1] + 0.10, t[2] + 0.10, t[3] + 0.14, 0.035), 64);
     end
     for i = 1, 6 do                                         -- darker at the edge
-        dl:AddCircle({ cx, cy }, R - i * 2 * bs, u32({ 0, 0, 0, 0.07 * (1 - i / 7) }), 96, 2 * bs);
+        DL.C(dl, cx, cy, R - i * 2 * bs, U4(0, 0, 0, 0.07 * (1 - i / 7)), 96, 2 * bs);
     end
     JOBS.bezel(dl, cx, cy, R, bs, fs);
-    JOBS.arc(dl, cx, cy, R - 3 * bs, 200, 340, u32({ 1, 1, 1, 0.08 }), 3 * bs);     -- a sheen across the top
+    JOBS.arc(dl, cx, cy, R - 3 * bs, 200, 340, U4(1, 1, 1, 0.08), 3 * bs);     -- a sheen across the top
 end
 
 -- Every piece of gear you own (inventory and wardrobes) gets its sharp copy made in the background, after the
@@ -2526,14 +2545,14 @@ function JOBS.bar(dl, cx, cy, r, a1, a2, col, col2, th)
         local f, g = i / n, (i + 1) / n;
         local p, q = math.rad(a1 + (a2 - a1) * f), math.rad(a1 + (a2 - a1) * g);
         local m = (f + g) / 2;
-        local c = u32({ col[1] + (col2[1] - col[1]) * m, col[2] + (col2[2] - col[2]) * m, col[3] + (col2[3] - col[3]) * m, col[4] + (col2[4] - col[4]) * m });
-        dl:AddLine({ cx + math.cos(p) * r, cy + math.sin(p) * r }, { cx + math.cos(q) * r, cy + math.sin(q) * r }, c, th);
+        local c = U4(col[1] + (col2[1] - col[1]) * m, col[2] + (col2[2] - col[2]) * m, col[3] + (col2[3] - col[3]) * m, col[4] + (col2[4] - col[4]) * m);
+        DL.L(dl, cx + math.cos(p) * r, cy + math.sin(p) * r, cx + math.cos(q) * r, cy + math.sin(q) * r, c, th);
         -- fill the little notch where two straight pieces meet (the black outline showed through there)
-        if i < n - 1 then dl:AddCircleFilled({ cx + math.cos(q) * r, cy + math.sin(q) * r }, th / 2, c, 10); end
+        if i < n - 1 then DL.CF(dl, cx + math.cos(q) * r, cy + math.sin(q) * r, th / 2, c, 10); end
     end
     local s1, s2 = math.rad(a1), math.rad(a2);                            -- the round ends
-    dl:AddCircleFilled({ cx + math.cos(s1) * r, cy + math.sin(s1) * r }, th / 2, u32(col), 16);
-    dl:AddCircleFilled({ cx + math.cos(s2) * r, cy + math.sin(s2) * r }, th / 2, u32(col2), 16);
+    DL.CF(dl, cx + math.cos(s1) * r, cy + math.sin(s1) * r, th / 2, u32(col), 16);
+    DL.CF(dl, cx + math.cos(s2) * r, cy + math.sin(s2) * r, th / 2, u32(col2), 16);
 end
 -- A small label and value beside a bar: the label in the bar's colour over the value, in the card's own font
 function JOBS.tag(dl, x, y, ax, label, value, c, fs)
@@ -2549,14 +2568,14 @@ function JOBS.tag(dl, x, y, ax, label, value, c, fs)
     local y1 = y - h / 2;
     local function al(tw) if ax < 0 then return x1 + w - tw; elseif ax > 0 then return x1; end return x1 + (w - tw) / 2; end
     imgui.SetWindowFontScale(fs * LS);
-    dl:AddText({ al(lw) + 1, y1 + 1 }, u32({ 0, 0, 0, 0.85 }), label);
-    dl:AddText({ al(lw), y1 }, u32({ c[1], c[2], c[3], 1 }), label);
+    DL.T(dl, al(lw) + 1, y1 + 1, U4(0, 0, 0, 0.85), label);
+    DL.T(dl, al(lw), y1, U4(c[1], c[2], c[3], 1), label);
     imgui.SetWindowFontScale(fs * VS);
     for _, o in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do       -- a dark outline: readable anywhere
-        dl:AddText({ al(vw) + o[1], y1 + lh - 2 + o[2] }, u32({ 0, 0, 0, 0.75 }), value);
+        DL.T(dl, al(vw) + o[1], y1 + lh - 2 + o[2], U4(0, 0, 0, 0.75), value);
     end
-    dl:AddText({ al(vw) + 1, y1 + lh - 1 }, u32({ 0, 0, 0, 0.85 }), value);
-    dl:AddText({ al(vw), y1 + lh - 2 }, u32({ 1, 1, 1, 0.96 }), value);
+    DL.T(dl, al(vw) + 1, y1 + lh - 1, U4(0, 0, 0, 0.85), value);
+    DL.T(dl, al(vw), y1 + lh - 2, U4(1, 1, 1, 0.96), value);
     imgui.SetWindowFontScale(fs);
 end
 function JOBS.bezel(dl, cx, cy, R, bs, fs)
@@ -2582,7 +2601,7 @@ function JOBS.bezel(dl, cx, cy, R, bs, fs)
     end
     ease('hp', hpp / 100); ease('mp', mpp / 100); ease('tp', math.min(3000, tp) / 3000);
     local th = 6 * bs;
-    dl:AddCircle({ cx, cy }, R, u32({ 0, 0, 0, 0.45 }), 128, th + 4 * bs);                -- the bezel under the bars
+    DL.C(dl, cx, cy, R, U4(0, 0, 0, 0.45), 128, th + 4 * bs);                -- the bezel under the bars
     local low = (hpp <= 25 and hpp > 0) and (0.5 + 0.5 * math.sin(now * 8)) or 0;
     local hpc = { 0.95 + 0.05 * low, 0.33 - 0.1 * low, 0.38 - 0.1 * low };
     local mpc = { 0.40, 0.66, 1.00 };
@@ -2612,21 +2631,21 @@ function JOBS.bezel(dl, cx, cy, R, bs, fs)
                     local lo, hi = math.min(a1, e), math.max(a1, e);
                     s1, s2 = math.max(lo, math.min(hi, s1)), math.max(lo, math.min(hi, s2));
                     if math.abs(s2 - s1) > 0.3 and span > 4 then
-                        JOBS.arc(dl, cx, cy, R, s1, s2, u32({ 1, 1, 1, 0.10 * k }), th * (0.5 + 0.15 * k));
+                        JOBS.arc(dl, cx, cy, R, s1, s2, U4(1, 1, 1, 0.10 * k), th * (0.5 + 0.15 * k));
                     end
                 end
                 -- the tip breathes
                 local ta = math.rad(e);
                 local pulse = 0.5 + 0.5 * math.sin(now * 3 + bar[7] * 6);
-                dl:AddCircleFilled({ cx + math.cos(ta) * R, cy + math.sin(ta) * R }, th * (0.9 + 0.35 * pulse), u32({ c[1], c[2], c[3], 0.25 }), 16);
-                dl:AddCircleFilled({ cx + math.cos(ta) * R, cy + math.sin(ta) * R }, th * 0.28, u32({ 1, 1, 1, 0.55 + 0.3 * pulse }), 12);
+                DL.CF(dl, cx + math.cos(ta) * R, cy + math.sin(ta) * R, th * (0.9 + 0.35 * pulse), U4(c[1], c[2], c[3], 0.25), 16);
+                DL.CF(dl, cx + math.cos(ta) * R, cy + math.sin(ta) * R, th * 0.28, U4(1, 1, 1, 0.55 + 0.3 * pulse), 12);
             end
-            JOBS.arc(dl, cx, cy, R - th * 0.25, a1, e, u32({ 1, 1, 1, 0.18 }), 1 * bs);      -- a thin shine along it
+            JOBS.arc(dl, cx, cy, R - th * 0.25, a1, e, U4(1, 1, 1, 0.18), 1 * bs);      -- a thin shine along it
         end
         if not bar[6] then                                                          -- TP: marks at 1000 and 2000
             for _, f in ipairs({ 1 / 3, 2 / 3 }) do
                 local a = math.rad(a1 + (a2 - a1) * f);
-                dl:AddLine({ cx + math.cos(a) * (R - th / 2), cy + math.sin(a) * (R - th / 2) }, { cx + math.cos(a) * (R + th / 2), cy + math.sin(a) * (R + th / 2) }, u32({ 0, 0, 0, 0.85 }), 1.5 * bs);
+                DL.L(dl, cx + math.cos(a) * (R - th / 2), cy + math.sin(a) * (R - th / 2), cx + math.cos(a) * (R + th / 2), cy + math.sin(a) * (R + th / 2), U4(0, 0, 0, 0.85), 1.5 * bs);
             end
         end
     end
@@ -2657,22 +2676,22 @@ function JOBS.ybar(dl, x, y, w, h, v, lag, c1, c2, seed, warn)
     v = math.max(0, math.min(1, v or 0));
     warn = warn or 0;
     local now = os.clock();
-    dl:AddRectFilled({ x, y }, { x + w, y + h }, u32({ 0.05, 0.04, 0.07, 0.70 }), h / 2);
-    if lag and lag > v + 0.002 then dl:AddRectFilled({ x + math.max(0, math.min(w * v, w * lag - h)), y }, { x + w * lag, y + h }, u32({ 1, 0.92, 0.95, 0.40 }), h / 2); end   -- (what was just lost: never a sliver - that came out square, its corners poking out of the round edge)
+    DL.RF(dl, x, y, x + w, y + h, U4(0.05, 0.04, 0.07, 0.70), h / 2);
+    if lag and lag > v + 0.002 then DL.RF(dl, x + math.max(0, math.min(w * v, w * lag - h)), y, x + w * lag, y + h, U4(1, 0.92, 0.95, 0.40), h / 2); end   -- (what was just lost: never a sliver - that came out square, its corners poking out of the round edge)
     if v <= 0 then return; end
     local fw = w * v;
     local pulse = 0.5 + 0.5 * math.sin(now * 2.2 + seed);
     local gl = (0.75 + 0.5 * pulse) + warn * 2.2;
     for k = 1, 4 + math.floor(warn * 4) do
-        dl:AddRectFilled({ x - k, y - k }, { x + fw + k, y + h + k }, u32({ c2[1], c2[2], c2[3], math.max(0, 0.11 - k * 0.018) * gl }), h / 2 + k);
+        DL.RF(dl, x - k, y - k, x + fw + k, y + h + k, U4(c2[1], c2[2], c2[3], math.max(0, 0.11 - k * 0.018) * gl), h / 2 + k);
     end
-    dl:AddRectFilled({ x - 1, y - 1 }, { x + fw + 1, y + h + 1 }, u32({ c2[1], c2[2], c2[3], 0.85 }), h / 2 + 1);
+    DL.RF(dl, x - 1, y - 1, x + fw + 1, y + h + 1, U4(c2[1], c2[2], c2[3], 0.85), h / 2 + 1);
     local segs = math.max(4, math.floor(w / 40));
     local still = (cfg.sb_fx == 'still') or ((cfg.sb_fx or 'same') == 'same' and YUI_BAR_FX and YUI_BAR_FX() ~= 'flow');
     local ph = still and 0.3 or (now * (0.35 + warn * 0.5) + seed * 0.21);
     local function col_at(f)
         local u = 0.5 + 0.5 * math.sin((f * 1.6 - ph) * math.pi * 2);
-        return u32({ c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u, 1 });
+        return U4(c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u, 1);
     end
     local r_ = math.min(h / 2, fw / 2);                              -- (the fill's two ends are round, like its edge)
     local L_ = (v < 0.985) and math.min(fw, math.max(8, h * 2.6)) or 0;   -- (its end lights up in the bar's own colour: not on a full bar)
@@ -2682,10 +2701,10 @@ function JOBS.ybar(dl, x, y, w, h, v, lag, c1, c2, seed, warn)
         local u = 0.5 + 0.5 * math.sin((f * 1.6 - ph) * math.pi * 2);
         local c = { c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u };
         local t = (L_ > 0) and 0.45 * math.max(0, math.min(1, (px - (x + fw - L_)) / math.max(1, L_ - r_))) or 0;
-        return u32({ c[1] + (lt_[1] - c[1]) * t, c[2] + (lt_[2] - c[2]) * t, c[3] + (lt_[3] - c[3]) * t, 1 });
+        return U4(c[1] + (lt_[1] - c[1]) * t, c[2] + (lt_[2] - c[2]) * t, c[3] + (lt_[3] - c[3]) * t, 1);
     end
-    dl:AddRectFilled({ x, y }, { x + math.min(fw, h), y + h }, colx(x), r_);
-    dl:AddRectFilled({ x + fw - math.min(fw, h), y }, { x + fw, y + h }, colx(x + fw), r_);
+    DL.RF(dl, x, y, x + math.min(fw, h), y + h, colx(x), r_);
+    DL.RF(dl, x + fw - math.min(fw, h), y, x + fw, y + h, colx(x + fw), r_);
     local cuts = {};                                                 -- (the strips: the colours' steps, and where the light starts)
     for k = 0, segs do cuts[#cuts + 1] = x + w * k / segs; end
     if L_ > 0 then cuts[#cuts + 1] = x + fw - L_; end
@@ -2694,10 +2713,10 @@ function JOBS.ybar(dl, x, y, w, h, v, lag, c1, c2, seed, warn)
         local x1, x2 = math.max(x + r_, cuts[k]), math.min(x + fw - r_, cuts[k + 1]);
         if x2 > x1 then
             local a, b = colx(x1), colx(x2);
-            dl:AddRectFilledMultiColor({ x1, y }, { x2, y + h }, a, b, b, a);
+            DL.RFM(dl, x1, y, x2, y + h, a, b, b, a);
         end
     end
-    if warn > 0.01 then dl:AddRectFilled({ x, y }, { x + fw, y + h }, u32({ 1, 1, 1, 0.30 * warn }), h / 2); end
+    if warn > 0.01 then DL.RF(dl, x, y, x + fw, y + h, U4(1, 1, 1, 0.30 * warn), h / 2); end
     local sp = JOBS.frac(now * 0.32 + seed * 0.137);
     local hx, hw = x - 40 + sp * (fw + 80), 40;
     local function band(x1, x2, a1, a2)
@@ -2705,7 +2724,7 @@ function JOBS.ybar(dl, x, y, w, h, v, lag, c1, c2, seed, warn)
         if cx2 <= cx1 then return; end
         local f1, f2 = (cx1 - x1) / (x2 - x1), (cx2 - x1) / (x2 - x1);
         local b1, b2 = a1 + (a2 - a1) * f1, a1 + (a2 - a1) * f2;
-        dl:AddRectFilledMultiColor({ cx1, y }, { cx2, y + h }, u32({ 1, 1, 1, b1 }), u32({ 1, 1, 1, b2 }), u32({ 1, 1, 1, b2 }), u32({ 1, 1, 1, b1 }));
+        DL.RFM(dl, cx1, y, cx2, y + h, U4(1, 1, 1, b1), U4(1, 1, 1, b2), U4(1, 1, 1, b2), U4(1, 1, 1, b1));
     end
     -- the effect: 'same' follows YunaUI's bar effect; flow (the sheen), electric, pulse or still
     local fx = cfg.sb_fx or 'same';
@@ -2727,24 +2746,24 @@ function JOBS.ybar(dl, x, y, w, h, v, lag, c1, c2, seed, warn)
                 local r = JOBS.frac(math.sin(tick * 31.7 + k * 12.9898 + seed * 7.1 + pass * 3.3) * 43758.5453);
                 local nx = math.min(x + fw, px + step * (0.6 + 0.8 * JOBS.frac(r * 7.7)));
                 local ny = y + h * (0.12 + 0.76 * r);
-                dl:AddLine({ px, py }, { nx, ny }, u32({ 0.92, 0.97, 1, a * ((pass == 1) and 1 or 0.4) }), (pass == 1) and 1 or 1.6);
+                DL.L(dl, px, py, nx, ny, U4(0.92, 0.97, 1, a * ((pass == 1) and 1 or 0.4)), (pass == 1) and 1 or 1.6);
                 px, py = nx, ny;
             end
         end
-        dl:AddRectFilled({ x, y }, { x + fw, y + h }, u32({ 1, 1, 1, 0.10 * beat }));
+        DL.RF(dl, x, y, x + fw, y + h, U4(1, 1, 1, 0.10 * beat));
         dl:PopClipRect();
     elseif fx == 'pulse' then
         local pb = 0.5 - 0.5 * math.cos(now * 2.2 + seed);
-        dl:AddRectFilled({ x, y }, { x + fw, y + h }, u32({ 1, 1, 1, 0.22 * pb }), h / 2);
+        DL.RF(dl, x, y, x + fw, y + h, U4(1, 1, 1, 0.22 * pb), h / 2);
     end
 end
 -- Text with a dark outline all round (as YunaUI's chat)
 function JOBS.otext(dl, x, y, s, c)
-    local oc = u32({ 0, 0, 0, 0.9 * (c[4] or 1) });
+    local oc = U4(0, 0, 0, 0.9 * (c[4] or 1));
     for _, o in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 }, { 1, 2 } }) do
-        dl:AddText({ x + o[1], y + o[2] }, oc, s);
+        DL.T(dl, x + o[1], y + o[2], oc, s);
     end
-    dl:AddText({ x, y }, u32(c), s);
+    DL.T(dl, x, y, u32(c), s);
 end
 JOBS.SB = {
     hp = { 'HP', { 1.00, 0.36, 0.62 }, { 0.86, 0.24, 0.86 }, { 1.00, 0.42, 0.72 }, 0 },
@@ -2773,8 +2792,8 @@ function JOBS.sb_anchor_icon(dl, ix, iy, h)
     for _, d in ipairs(pts) do
         local c = (mode > 0) and d[3] or { 1, 1, 1 };
         if mode > 0 and hov then c = { math.min(1, c[1] + 0.2), math.min(1, c[2] + 0.2), math.min(1, c[3] + 0.2) }; end
-        dl:AddCircleFilled({ d[1], d[2] }, r + 1.2, u32({ 0.15, 0.14, 0.18, 0.75 * math.max(a, 0.6) }), 20);   -- the dark rim
-        dl:AddCircleFilled({ d[1], d[2] }, r, u32({ c[1], c[2], c[3], a }), 20);
+        DL.CF(dl, d[1], d[2], r + 1.2, U4(0.15, 0.14, 0.18, 0.75 * math.max(a, 0.6)), 20);   -- the dark rim
+        DL.CF(dl, d[1], d[2], r, U4(c[1], c[2], c[3], a), 20);
     end
     if clicked then
         cfg.sb_anchor = (mode + 1) % 3;
@@ -2896,7 +2915,7 @@ function JOBS.statbar(key, value, v, lag, pct)
         if key == 'tp' then                                          -- marks at 1000 and 2000
             for m = 1, 2 do
                 local mx = x + w * m / 3;
-                dl:AddLine({ mx, by - 2 }, { mx, by + bh + 2 }, u32({ 0, 0, 0, 0.6 }), 1.5);
+                DL.L(dl, mx, by - 2, mx, by + bh + 2, U4(0, 0, 0, 0.6), 1.5);
             end
         end
         imgui.Dummy({ w + 16, by + bh - y + 12 });
@@ -3090,7 +3109,7 @@ local function draw_card(status)
                 local shade = 1 - math.min(1, JOBS.disc_alpha() / 0.7);
                 if shade > 0.01 then
                     for k = 1, 48 do                                    -- many faint layers: a smooth shade, no ring lines
-                        dl:AddCircleFilled({ ccx, ccy }, half * (1.16 - k * 0.022), u32({ 0.01, 0.01, 0.02, 0.022 * shade }), 96);
+                        DL.CF(dl, ccx, ccy, half * (1.16 - k * 0.022), U4(0.01, 0.01, 0.02, 0.022 * shade), 96);
                     end
                 end
                 jdone = JOBS.draw(dl, jkey, math.floor(ccx - half + 0.5), math.floor(ccy - half + 0.5), half * 2, status == 'Engaged', now < ye.cast_until, now, dt_, bs, flash);
@@ -3144,10 +3163,10 @@ local function draw_card(status)
                     dl:PopClipRect();
                     if ye.blade < 1 and engaged then                  -- a glint running along the edge as it comes out
                         local gr = (2.5 + 2.5 * out) * bs;
-                        dl:AddCircleFilled({ hx, hy }, gr * 2.2, u32({ 1, 1, 1, 0.18 }), 16);
-                        dl:AddLine({ hx - gr * 2, hy }, { hx + gr * 2, hy }, u32({ 1, 1, 1, 0.9 }), 1.2 * bs);
-                        dl:AddLine({ hx, hy - gr * 2 }, { hx, hy + gr * 2 }, u32({ 1, 1, 1, 0.9 }), 1.2 * bs);
-                        dl:AddCircleFilled({ hx, hy }, gr * 0.6, u32({ 1, 1, 1, 1 }), 12);
+                        DL.CF(dl, hx, hy, gr * 2.2, U4(1, 1, 1, 0.18), 16);
+                        DL.L(dl, hx - gr * 2, hy, hx + gr * 2, hy, U4(1, 1, 1, 0.9), 1.2 * bs);
+                        DL.L(dl, hx, hy - gr * 2, hx, hy + gr * 2, U4(1, 1, 1, 0.9), 1.2 * bs);
+                        DL.CF(dl, hx, hy, gr * 0.6, U4(1, 1, 1, 1), 12);
                     end
                 end
                 if out > 0.97 or full then logo_blood(dl, lx, ly, lw); end   -- blood only off a drawn blade
@@ -3162,12 +3181,12 @@ local function draw_card(status)
             -- Card: soft shadow, dark face with a faint sheen at the top, the living border
             for i = 1, 6 do
                 local o = i * bs;
-                dl:AddRectFilled({ cx1 + o, cy1 + o * 1.5 }, { cx2 + o, cy2 + o * 1.5 }, u32({ 0, 0, 0, 0.10 }), R + o);
+                DL.RF(dl, cx1 + o, cy1 + o * 1.5, cx2 + o, cy2 + o * 1.5, U4(0, 0, 0, 0.10), R + o);
             end
-            dl:AddRectFilled({ cx1, cy1 }, { cx2, cy2 }, u32(C.face), R);
+            DL.RF(dl, cx1, cy1, cx2, cy2, u32(C.face), R);
             pcall(function()
-                local t, b = u32({ 0.30, 0.38, 0.60, 0.10 }), u32({ 0.30, 0.38, 0.60, 0.0 });
-                dl:AddRectFilledMultiColor({ cx1 + R * 0.6, cy1 + 1 }, { cx2 - R * 0.6, cy1 + card_h * 0.4 }, t, t, b, b);
+                local t, b = U4(0.30, 0.38, 0.60, 0.10), U4(0.30, 0.38, 0.60, 0.0);
+                DL.RFM(dl, cx1 + R * 0.6, cy1 + 1, cx2 - R * 0.6, cy1 + card_h * 0.4, t, t, b, b);
             end);
             draw_border(dl, cx1, cy1, cx2, cy2, R, bs, gs, gcol, gcol2);
             if cfg.state then draw_state(dl, (cx1 + cx2) / 2, cy1, lsc, state_name(status), gcol, gcol2, card_w - R * 2); end
@@ -3244,9 +3263,9 @@ local function switch(id, on)
     local clicked = imgui.InvisibleButton(id, { w, h });
     local hov = imgui.IsItemHovered();
     local dl = imgui.GetWindowDrawList();
-    dl:AddRectFilled({ x, y }, { x + w, y + h }, u32(on and { 0.24, 0.22, 0.30, 1 } or (hov and { 0.14, 0.13, 0.18, 1 } or { 0.10, 0.095, 0.13, 1 })), h / 2);
+    DL.RF(dl, x, y, x + w, y + h, u32(on and { 0.24, 0.22, 0.30, 1 } or (hov and { 0.14, 0.13, 0.18, 1 } or { 0.10, 0.095, 0.13, 1 })), h / 2);
     local kx = on and (x + w - h / 2) or (x + h / 2);
-    dl:AddCircleFilled({ kx, y + h / 2 }, h / 2 - 3, u32(on and { 1, 1, 1, 1 } or { 0.55, 0.53, 0.62, 1 }), 20);
+    DL.CF(dl, kx, y + h / 2, h / 2 - 3, u32(on and { 1, 1, 1, 1 } or { 0.55, 0.53, 0.62, 1 }), 20);
     return clicked;
 end
 
@@ -3257,11 +3276,11 @@ local function close_button(id)
     local clicked = imgui.InvisibleButton(id, { sz, sz });
     local hov, held = imgui.IsItemHovered(), imgui.IsItemActive();
     local dl = imgui.GetWindowDrawList();
-    if hov then dl:AddRectFilled({ x, y }, { x + sz, y + sz }, u32({ 1.0, 0.35, 0.35, held and 0.28 or 0.16 }), 6); end
+    if hov then DL.RF(dl, x, y, x + sz, y + sz, U4(1.0, 0.35, 0.35, held and 0.28 or 0.16), 6); end
     local col = hov and { 1.0, 0.55, 0.55, 1 } or C.muted;
     local cx, cy, k = x + sz / 2, y + sz / 2, 5.5;
-    dl:AddLine({ cx - k, cy - k }, { cx + k, cy + k }, u32(col), 1.6);
-    dl:AddLine({ cx - k, cy + k }, { cx + k, cy - k }, u32(col), 1.6);
+    DL.L(dl, cx - k, cy - k, cx + k, cy + k, u32(col), 1.6);
+    DL.L(dl, cx - k, cy + k, cx + k, cy - k, u32(col), 1.6);
     return clicked;
 end
 
@@ -3282,7 +3301,7 @@ local function title(dl)
                 local u = 0.5 + 0.5 * math.sin(t * 1.2 - i * 0.45);
                 col = { C.gold[1] + (C.ice[1] - C.gold[1]) * u, C.gold[2] + (C.ice[2] - C.gold[2]) * u, 1.0, 1 };
             end
-            dl:AddText({ cx, y0 }, u32(col), ch);
+            DL.T(dl, cx, y0, u32(col), ch);
         end
     end
     imgui.Dummy({ tw, lh });
