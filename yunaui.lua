@@ -10807,11 +10807,14 @@ function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
     local used, bmax = 0, 0;
     pcall(function() local inv = AshitaCore:GetMemoryManager():GetInventory(); used, bmax = inv:GetContainerCount(0) or 0, inv:GetContainerCountMax(0) or 0; end);
     local gil = C.gil_read();
-    if H.pts and pts > H.pts and H.limit == limit and H.lvl == lvl then
+    local blank_ = (lvl <= 0 or mj == 0 or bmax <= 0);                -- (zoning: the game reads level 0, no bag... for a moment -
+    if blank_ then H.blank = now; end                                --  no level up, comets or bag alarm from that, nor for 3 s after)
+    local live = not blank_ and now - (H.blank or -99) > 3;
+    if live and H.pts and pts > H.pts and H.limit == limit and H.lvl == lvl then
         H.comets[#H.comets + 1] = { t = now, n = pts - H.pts, sx = cx + (math.random() - 0.5) * 20 * s, sy = cy };
     end
-    if H.lvl and lvl > H.lvl and H.mj == mj then H.burst = now; end
-    if H.used and used > H.used and used >= bmax and bmax > 0 then H.shake = now; end
+    if live and H.lvl and lvl > H.lvl and H.mj == mj then H.burst = now; end
+    if live and H.used and used > H.used and used >= bmax and bmax > 0 then H.shake = now; end
     H.pts, H.limit, H.lvl, H.mj, H.used = pts, limit, lvl, mj, used;
     local shown = (lvl >= 75 and not limit) and ((mmax > 0) and merits / mmax or 0) or v;   -- (capped: the bar fills with your merits)
     H.v = H.v and (H.v + (shown - H.v) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 4)) or shown;
