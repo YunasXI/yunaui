@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.50';
+addon.version = '1.0.51';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -10105,7 +10105,7 @@ function YMAP.update(ent, me, zid)                                   -- the righ
     local fl = YMAP.floor_of(x, y, z);
     if zid == YMAP.zone and fl == YMAP.floor and (YMAP.entry == nil or YMAP.covered(YMAP.entry, x, y)) then return; end
     local e = YMAP.best_entry(zid, fl, x, y);                        -- (still the same map: nothing to load)
-    if zid == YMAP.zone and fl == YMAP.floor and e and YMAP.entry and e.floor == YMAP.entry.floor then return; end
+    if zid == YMAP.zone and e and YMAP.entry and e.floor == YMAP.entry.floor then YMAP.floor = fl; return; end   -- (still the same map: nothing to load)
     YMAP.zone, YMAP.floor = zid, fl;
     pcall(function() YMAP.name = AshitaCore:GetResourceManager():GetString('zones.names', zid) or ''; end);
     YMAP.entry = e;
@@ -10621,10 +10621,10 @@ function YMAP.read_lum(x, y, M)
 end
 function YMAP.shade(x, y, M)                                         -- the fade's strength now: 0.5 (dark ground) .. 2.6 (bright)
     local now = os.clock();
-    if now - YMAP.lum_t > 0.5 then
-        YMAP.lum_t = now;
-        local ok, l = pcall(YMAP.read_lum, x, y, M);
-        if ok and l then YMAP.lum = l; end
+    if now - YMAP.lum_t > 0.5 then                                   -- (how bright it is round you, from the zone, the time and the weather -
+        YMAP.lum_t = now;                                            --  never read off the screen: that made the game stall twice a second)
+        pcall(C.amb_alpha, 0.5);
+        YMAP.lum = (C.AMB and C.AMB.v) or 0.55;
     end
     local target = 1;
     if YMAP.lum then target = math.max(0.5, math.min(2.6, 0.45 + YMAP.lum * 2.2 + math.max(0, YMAP.lum - 0.35) * 2.6)); end   -- (bright ground: much darker)
