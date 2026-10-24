@@ -1446,9 +1446,10 @@ function FIGHT.draw(dl, sid, x, y, w, sc)
             local dotsw = 0;
             for _ in ipairs(st.elems or {}) do dotsw = dotsw + r * 2 + 5 * s2; end
             local bw, bh = 110 * s2, math.max(2, math.floor(3 * s2));
+            local secw = imgui.CalcTextSize('0.0') + 8 * s2;               -- (the seconds left, after the bar)
             local x0 = x;
             local sepx = x0 + padx + w1 + 10 * s2;
-            local x1 = sepx + 10 * s2 + w2 + 8 * s2 + dotsw + 6 * s2 + bw + padx;
+            local x1 = sepx + 10 * s2 + w2 + 8 * s2 + dotsw + 6 * s2 + bw + secw + padx;
             local y0, y1 = row - pady, row + lh + pady;
             local rr = 6 * s2;
             local br = 0.5 + 0.5 * math.sin(now * 5);
@@ -1482,6 +1483,9 @@ function FIGHT.draw(dl, sid, x, y, w, sc)
                 DL.RFM(dl, bx, by, bx + bw * left, by + bh, U4(0.68, 0.50, 1.0, al), U4(0.55, 0.86, 1.0, al), U4(0.55, 0.86, 1.0, al), U4(0.68, 0.50, 1.0, al));
             end);
             DL.R(dl, bx - 1, by - 1, bx + bw + 1, by + bh + 1, U4(0, 0, 0, 0.9 * al), bh, all, 1.3);   -- (a black edge: seen on light ground)
+            local secs = math.max(0, st.dur - t);                    -- the seconds left, beside it (rose for the last two)
+            local sc_ = (secs < 2) and { 1, 0.62, 0.70, al } or { 0.86, 0.92, 1, al };
+            text(dl, bx + bw + 8 * s2, row, string.format('%.1f', secs), sc_);
         end
     end
     if st and now - st.ts > st.dur then FIGHT.sc[sid] = nil; end
