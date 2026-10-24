@@ -1441,6 +1441,16 @@ function fx.anchor_pos()
     if bp == nil or os.clock() - (bp[4] or 0) > 1 then return nil; end   -- your HP bar isn't showing: it stays where it is
     local tx, ty = bp[1] + bp[3] + Z(30), bp[2] - Z(64);           -- right of the bar, its title about level with the HP number
     local side = (bp[6] == 2) and 'below' or 'right';
+    if side == 'right' then                                          -- (your bars in a row but not linked: right of the HP bar would sit on the
+        local mw, mh = (ui.ww and ui.ww > 0) and ui.ww or Z(BASE_W), s.minimized and Z(60) or Z(s.h or 300);   --  MP or TP bar - then under it)
+        for _, k in ipairs({ 'mp', 'tp' }) do
+            local b = YUI_EQ_BARPOS[k];
+            if b and os.clock() - (b[4] or 0) < 1 then
+                local bx0, by0, bx1, by1 = b[1], b[2] - Z(40), b[1] + b[3], b[2] + Z(6);   -- (the bar and its numbers over it)
+                if tx < bx1 and tx + mw > bx0 and ty < by1 and ty + mh > by0 then side = 'below'; end
+            end
+        end
+    end
     if side == 'below' then tx, ty = bp[1] - Z(8), bp[2] + Z(6); end   -- your bars side by side: it sits under the HP bar instead
     local now_ = os.clock();
     if ui.anchor_side ~= side then ui.anchor_side, ui.anchor_t0 = side, nil; end   -- (moved: it fades in again at its new place)
