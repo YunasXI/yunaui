@@ -6585,11 +6585,11 @@ local function draw_chat(n)
         local hovx = hov or (linked and other.hovraw) or false;     -- (anchored: the mouse over either lights both)
         local want = (hovx or typing or chat_lit_all or st.scroll > 0) and 1 or 0;
         st.hv = st.hv + (want - st.hv) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 8);
-        if n == 1 then                                               -- CHAT > Back to All when it closes: a tab picked while it was open (Say,
-            if want == 1 then st.was_open = true;                    --  Party, Shout...) goes back to All as it closes - command results
-            elseif st.was_open then                                  --  (/find...) and everything else show again
+        if n == 1 then                                               -- CHAT > Back to All when it closes: a tab picked in the full screen chat
+            if legacy.pad.big then st.was_open = true;               --  (Say, Party, Shout...) goes back to All as it closes - command results
+            elseif st.was_open then                                  --  (/find...) show again; a tab picked anywhere else stays
                 st.was_open = false;
-                if cfg.chat_tab_reset ~= false and (tonumber(cfg.chat_tab) or 1) ~= 1 and not (legacy.pad and legacy.pad.open) then cfg.chat_tab = 1; save(); end
+                if cfg.chat_tab_reset ~= false and (tonumber(cfg.chat_tab) or 1) ~= 1 then cfg.chat_tab = 1; save(); end
             end
         end
         local right = (tonumber(cfg.chat2_x) or 0) > (tonumber(cfg.chat_x) or 0);   -- (which side the combat log is on)
@@ -9638,7 +9638,7 @@ local function draw_window()
                     row_switch('##yui_ctab_' .. nm, nm == 'Combat' and 'Combat (the combat log)' or nm, nm, nil, cfg.chat_tabs_on);
                 end
             end
-            row_switch('##yui_ctbr', 'Back to All when it closes', 'chat_tab_reset', 'On: a tab you pick while the chat is open (Say, Party, Shout...) goes back to All when it closes, so command results (/find...) and every other line show again. Off: the tab you picked stays.');
+            row_switch('##yui_ctbr', 'Back to All when it closes', 'chat_tab_reset', 'On: a tab you pick in the full screen chat (Say, Party, Shout...) goes back to All when you leave it, so command results (/find...) show again. A tab picked anywhere else stays.');
             row_switch('##yui_ctabs', 'Always show tabs', 'chat_tabs_always', 'On: the channel tabs (All, Say, Party...) stay at the bottom of the chat all the time. Off: they show while the mouse is over the chat or you type.');
             if cfg.chat_look ~= 'classic' then
                 hint('Clear: a dark rounded panel, a thin bar in each channel\'s colour, the time small on the left, long messages kept in one block.');
