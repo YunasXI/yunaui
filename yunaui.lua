@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.47';
+addon.version = '1.0.48';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1253,6 +1253,15 @@ FIGHT.CHAIN_WAIT, FIGHT.CHAIN_END, FIGHT.BURST = 3.0, 8.0, 8.0;      -- (seconds
 -- same spell again = it broke), type 4 / 11 = it landed unless the message is 16 / 84 / 106 (interrupted, paralyzed,
 -- intimidated); 0x029 with those messages breaks it too)
 FIGHT.BREAK = { [16] = true, [84] = true, [106] = true };
+function FIGHT.readies_name(line)                                    -- (a TP move still unnamed, started just now: named from its chat line)
+    local nm = line:gsub('[\1\2]', ''):match(' readies (.-)%.?$');
+    if not nm or nm == '' or not nm:find('%w') then return; end
+    local best, bt = nil, -1;
+    for _, c in pairs(FIGHT.casts) do
+        if c.pending and os.clock() - c.t0 < 2 and c.t0 > bt then best, bt = c, c.t0; end
+    end
+    if best then best.name, best.pending = nm, nil; end
+end
 function FIGHT.broke(actor)
     local c = FIGHT.casts[actor];
     if c and not c.broke then c.broke = os.clock(); c.at = math.min(1, (os.clock() - c.t0) / c.dur); end
@@ -1273,7 +1282,9 @@ function FIGHT.on_action(actor, kind, param, p, m, tid)
                     if type(n) == 'string' and n ~= '' then name = n:gsub('%z.*$', ''); end
                 end
             end);
-            if name and name ~= '' then FIGHT.casts[actor] = { name = name, t0 = now, dur = 3, kind = 'tp', tid = tid }; end
+            if name and not name:find('%w') then name = nil; end    -- (a blank entry - "." - in the list: the chat line will name it)
+            if name and name ~= '' then FIGHT.casts[actor] = { name = name, t0 = now, dur = 3, kind = 'tp', tid = tid };
+            else FIGHT.casts[actor] = { name = '...', t0 = now, dur = 3, kind = 'tp', tid = tid, pending = true }; end
         elseif kind == 8 then                                        -- a spell starts (the same one again: it broke)
             local c = FIGHT.casts[actor];
             if param == 28787 or (c and c.spell == p and not c.broke) then FIGHT.broke(actor); return; end
@@ -4646,6 +4657,7 @@ local CHAT_COLS = {
     { 'tell', 'Tell', { 0.86, 0.48, 1 } }, { 'emote', 'Emote', { 0.80, 0.65, 1 } }, { 'unity', 'Unity', { 0.95, 0.88, 0.55 } },
     { 'system', 'System / loot / exp', { 1, 0.95, 0.82 } }, { 'error', 'Errors', { 1, 0.35, 0.65 } },
     { 'combat', 'Combat (combat log)', { 0.80, 0.86, 0.95 } }, { 'roe', 'Records of Eminence', { 0.62, 0.92, 0.78 } },
+    { 'addon', 'Addons and plugins ([Name] ...)', { 0.56, 0.84, 0.96 } },
     { 'other', 'Everything else', { 0.92, 0.92, 0.94 } },
 };
 local CHAT_DEF = {};
@@ -5638,6 +5650,7 @@ local function chat_add(mode, raw)
             local stamped, l2 = false, line:gsub('^%[%d%d?:%d%d[^%]]-%]%s*', '');   -- (another chat addon's "[12:43:45]": YunaUI
             if l2 ~= line and l2 ~= '' then stamped, line = true, l2; end            --  has its own times; its copy of a line
             if C.seen_line(line, stamped) then goto skip_line; end
+            if is_combat(mode) then pcall(FIGHT.readies_name, line); end   -- ("The Golem readies Ice Break.": the name a move's number didn't give)
             if C.npc_dup(mode, line, is_combat(mode)) then goto skip_line; end         -- (an NPC's line sent again by its menu)                  --  YunaUI already has is left out)
             local raw_line = line;
             if C.is_roe(raw_line) then                               -- (Records of Eminence: to their own tab, RoE)
@@ -5676,7 +5689,9 @@ local function chat_add(mode, raw)
                 if not is_combat(mode) then pcall(C.chat_pop, mode, raw_line); end   -- (CHAT > Speech bubbles)
                 local pre = cfg.chat_time and C.ts_text(os.time()) or '';
                 line = pre .. line;
-                CHATLOG.add(log_, { text = line, raw = raw_line, cat = cat_of(mode), t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode, tslen = #pre, ctype = ctype });
+                local cat_ = cat_of(mode);                            -- (an addon's or plugin's own message - "[Name] ...": Addons, on any channel -
+                if cat_ ~= 'combat' and raw_line:match('^%[[%a][%w%s%._:%-]*%]') then cat_ = 'addon'; end   --  players' lines never start so; a linkshell's is "[1]<Name>")
+                CHATLOG.add(log_, { text = line, raw = raw_line, cat = cat_, t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode, tslen = #pre, ctype = ctype });
                 if n_ == 1 then chat_seen_new(mode); end
             end
             if fd ~= 'merged' and cw[n_].scroll > 0 then cw[n_].scroll = cw[n_].scroll + 1; end
@@ -7105,7 +7120,7 @@ function C.exp_ring(sc, v, job, label)
     local L = half - R;                                              -- (for the layout below: from the dashes' middle to the edge)
     do                                                               -- the % in the middle of the ring, in pink
         local pp = sized('chat', 17 * sc);                           -- (small: it sits well inside the dashes)
-        local ps = string.format('%d%%', math.floor(v * 100));
+        local ps = C.exp_mid or string.format('%d%%', math.floor(v * 100));   -- (at 75: your merits)
         local pw = tonumber((imgui.CalcTextSize(ps))) or 0;
         local ph = imgui.GetTextLineHeight();                        -- (the line's height: CalcTextSize gives only the width here)
         outlined(dl, math.floor(cx - pw / 2 + 0.5), math.floor(cy - ph / 2 + 0.5), ps, { 1.00, 0.62, 0.80, 1 });
@@ -7138,6 +7153,7 @@ function C.expinfo()
         label, v = string.format('LIMIT %s / 10,000   MERITS %d/%d', commas(lp), mp, mpx), lp / 10000;
     else
         label, v = string.format('EXP %s / %s', commas(cur), commas(need)), (need > 0) and (cur / need) or 0;
+        if lvl >= 75 then label = string.format('MERITS %d/%d', pl:GetMeritPoints() or 0, pl:GetMeritPointsMax() or 0); end   -- (capped: your merits instead)
     end
     local rest = tostring(lvl) .. ((JOBS[sub] and sublvl > 0) and ('  /  ' .. JOBS[sub] .. ' ' .. sublvl) or '');
     local tc = ALLY.tagcol(mj);                                      -- (the job's tag in its colour, as in the party list)
@@ -7177,6 +7193,12 @@ local function draw_exp(dt)
         label, v = string.format('LIMIT %s / 10,000   MERITS %d/%d', commas(lp), mp, mpx), lp / 10000;
     else
         label, v = string.format('EXP %s / %s', commas(cur), commas(need)), (need > 0) and (cur / need) or 0;
+        if lvl >= 75 then label = string.format('MERITS %d/%d', pl:GetMeritPoints() or 0, pl:GetMeritPointsMax() or 0); end   -- (capped: your merits instead)
+    end
+    C.exp_mid = nil;
+    if lvl >= 75 and not limit then                                  -- (capped: your merits instead - in the ring, which fills with them)
+        local mp, mpx = pl:GetMeritPoints() or 0, pl:GetMeritPointsMax() or 0;
+        label, v, C.exp_mid = 'MERITS', (mpx > 0) and (mp / mpx) or 0, string.format('%d/%d', mp, mpx);
     end
     v = math.max(0, math.min(1, v));
     local job = (JOBS[pl:GetMainJob()] or '?') .. ' ' .. lvl .. ((JOBS[sub] and sublvl > 0) and (' / ' .. JOBS[sub] .. ' ' .. sublvl) or '');
@@ -10610,6 +10632,20 @@ function YMAP.shade(x, y, M)                                         -- the fade
 end
 -- The zone's name over the minimap, in the "Fade" look (no box, a soft shade, a hairline). It comes in with a little
 -- animation each time the zone changes. Gives back the room it took above the map.
+function YMAP.gridpos()                                              -- your place on the map's grid, as the game's <pos>: "(I-7)"
+    if not (YMAP.entry and YMAP.to_map) then return nil; end
+    local out = nil;
+    pcall(function()
+        local mm = AshitaCore:GetMemoryManager();
+        local me = mm:GetParty():GetMemberTargetIndex(0) or 0;
+        if me == 0 then return; end
+        local ent = mm:GetEntity();
+        local mx, my = YMAP.to_map(ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0);
+        local c, r = math.floor((mx - 16) / 32), math.floor((my - 16) / 32) + 1;   -- (15 squares a side, A-O and 1-15, from map pixel 16)
+        if c >= 0 and c <= 14 and r >= 1 and r <= 15 then out = string.format('(%s-%d)', string.char(65 + c), r); end
+    end);
+    return out;
+end
 function YMAP.title(dl, x, y, M, sc)
     local name = (YMAP.name and YMAP.name ~= '') and YMAP.name or '?';
     local now = os.clock();
@@ -10638,6 +10674,14 @@ function YMAP.title(dl, x, y, M, sc)
             dl:AddImage(ft.ptr, { mid - gw, ty + th / 2 - gh }, { mid + gw, ty + th / 2 + gh }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, ez }));
         end
         outlined(dl, math.floor(mid - tw / 2), ty, s, { 0.98, 0.97, 1.0, ez });
+        local gp = YMAP.gridpos();                                   -- (where you are on the map's grid, as <pos> gives it)
+        if gp then
+            local fs = FS;
+            imgui.SetWindowFontScale(fs * 0.92);
+            local gh = imgui.GetTextLineHeight();
+            outlined(dl, math.floor(mid + tw / 2 + 7 * sc), math.floor(ty + th - gh), gp, { 1, 0.9, 0.62, ez });
+            imgui.SetWindowFontScale(fs);
+        end
         local lc = YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
         local uw = (tw / 2 + 26 * sc) * ez;
         local ly_ = ty + th + 3 * sc;
