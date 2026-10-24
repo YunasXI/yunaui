@@ -11341,8 +11341,11 @@ EDIT.G.STEPS = {
         "The other two parties of your alliance, smaller, so a full alliance doesn't fill your screen." }, { { 'alliance', 'PARTY (Alliance)' } } },
     { "Your HP, MP and TP", function(G) return { G.eq() }; end, {
         "Your own bars. Anchor them together or place each one apart. Their size, length and thickness are in BARS." } },
-    { "Cast bar, EXP, gil and bag", function(G) return { G.win('cast_x'), G.win('exp_x'), G.win('gil_x'), G.win('bag_x') }; end, {
-        "Your casting time, your experience to the next level, your gil (and what you made since you logged in) and how full your bag is." }, { { 'castbar', 'BARS (Cast bar)' }, { 'expbar', 'BARS (EXP bar)' }, { 'gil', 'BARS (Gil)' }, { 'bag', 'BARS (Bag)' } } },
+    { "Cast bar, EXP, gil and bag", function(G)
+        if YMAP.dock_on and YMAP.dock_on() then return { G.win('cast_x'), G.win('map_x') }; end   -- (EXP, gil and bag: in the minimap)
+        return { G.win('cast_x'), G.win('exp_x'), G.win('gil_x'), G.win('bag_x') }; end, function(G)
+        if YMAP.dock_on and YMAP.dock_on() then return { "Your casting time, over its bar. Your EXP (merits at level 75), gil and bag are built into the minimap: EXP along its foot, the bag at its top right, your jobs and gil under it - and what you made since you logged in rolls in beside your gil." }; end   -- (the minimap on: they're built into it)
+        return { "Your casting time, your experience to the next level, your gil (and what you made since you logged in) and how full your bag is." }; end, { { 'castbar', 'BARS (Cast bar)' }, { 'expbar', 'BARS (EXP bar)' }, { 'gil', 'BARS (Gil)' }, { 'bag', 'BARS (Bag)' } } },
     { "Pet", function(G) return { G.win('pet_x') }; end, {
         "Your avatar, wyvern, automaton or beast: its HP, MP, TP, its ability timers and what it is fighting. It shows only when you have a pet." }, { { 'petbar', 'BARS (Pet)' } } },
     { "Timers", function(G) return { G.win('timer_x') }; end, {
@@ -11470,7 +11473,9 @@ function EDIT.G.draw()
             end
         end
     end
-    local words = st[3];
+    local base = st[3];
+    if type(base) == 'function' then local okw, w_ = pcall(base, G); base = (okw and type(w_) == 'table') and w_ or {}; end   -- (words that change with your settings)
+    local words = base;
     if st[2] and r == nil and st[4] then                             -- (not on the screen: turned off? say where to turn it on)
         for _, o in ipairs(st[4]) do
             local off = false;
@@ -11479,7 +11484,7 @@ function EDIT.G.draw()
             else off = cfg[o[1]] == false; end
             if off then
                 words = {};
-                for _, w0 in ipairs(st[3]) do words[#words + 1] = w0; end
+                for _, w0 in ipairs(base) do words[#words + 1] = w0; end
                 words[#words + 1] = 'It is turned off right now: turn it on in /yui > ' .. o[2] .. '.';
                 break;
             end
