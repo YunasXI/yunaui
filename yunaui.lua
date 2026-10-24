@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.52';
+addon.version = '1.0.53';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -7093,6 +7093,7 @@ end
 local function draw_exp(dt)
     if not cfg.expbar then return; end
     if YMAP and YMAP.hub_on and YMAP.hub_on() then return; end      -- (MINIMAP > EXP, gil and bag on the map: shown there)
+    if YMAP and YMAP.dock_on and YMAP.dock_on() then return; end    -- (built into the minimap: the Capsule)
     local pl = AshitaCore:GetMemoryManager():GetPlayer();
     if pl == nil or (pl:GetMainJob() or 0) == 0 then return; end
     local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.exp_scale) or 1);
@@ -7143,6 +7144,7 @@ end
 local function draw_gil()
     if not cfg.gil then return; end
     if YMAP and YMAP.hub_on and YMAP.hub_on() then C.gil_diff(C.gil_read()); return; end   -- (shown on the map hub)
+    if YMAP and YMAP.dock_on and YMAP.dock_on() then return; end    -- (built into the minimap: the Capsule)
     local gil = 0;
     pcall(function() local it = AshitaCore:GetMemoryManager():GetInventory():GetContainerItem(0, 0); gil = (it and it.Count) or 0; end);
     if gil_start == nil and gil > 0 then gil_start = gil; end
@@ -7186,6 +7188,7 @@ end
 local function draw_bag()
     if not cfg.bag then return; end
     if YMAP and YMAP.hub_on and YMAP.hub_on() then return; end      -- (shown on the map hub)
+    if YMAP and YMAP.dock_on and YMAP.dock_on() then return; end    -- (built into the minimap: the Capsule)
     local used, max = 0, 0;
     pcall(function() local inv = AshitaCore:GetMemoryManager():GetInventory(); used, max = inv:GetContainerCount(0) or 0, inv:GetContainerCountMax(0) or 0; end);
     if max <= 0 then return; end
@@ -9515,10 +9518,16 @@ local function draw_window()
             if (cfg.head_bars or 'fixed') ~= 'head' then              -- (the fixed bars' own settings: only while they show)
                 if YUI_EQ_BARS then YUI_EQ_BARS(); end
             end
+            local docked = YMAP.dock_on and YMAP.dock_on();          -- (EXP, gil and bag built into the minimap: their own pieces never show)
+            if docked then
+                section('EXP, GIL AND BAG');
+                hint('They are built into the minimap: your EXP (or merits), gil and bag show on it. Their own pieces come back if you turn the minimap off (MINIMAP > Show).');
+            else
             section('EXP BAR');
             row_switch('##yui_e', 'Show', 'expbar', 'Experience, or limit points and merits when limit mode is on.');
             row_slider('##yui_s_e', 'Ring size', 'exp_scale', 0.5, 2.5, 0.05, '%.2fx');
             row_slider('##yui_s_et', 'Text size', 'exp_text', 0.5, 2.5, 0.05, '%.2fx');
+            end
             section('CAST BAR');
             row_switch('##yui_cb', 'Show', 'castbar', 'The spell or item you are casting, over a bar that fills (a preview shows while this tab is open).');
             row_pick('##yui_cbfx', 'Effect', 'cast_fx', { { 'same', 'As the bars' }, { 'still', 'Still' }, { 'flow', 'Flow' }, { 'pulse', 'Pulse' } });
@@ -9534,6 +9543,7 @@ local function draw_window()
             row_switch('##yui_ptt', 'What it is fighting', 'pet_target');
             row_slider('##yui_pts', 'Size', 'pet_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_slider('##yui_ptw', 'Length', 'pet_w', 150, 600, 10, '%d px');
+            if not docked then                                       -- (only while the minimap is off: then they are pieces of their own)
             section('GIL');
             row_switch('##yui_g', 'Show', 'gil', 'Your gil.');
             if cfg.gil_scale == nil then cfg.gil_scale = tonumber(cfg.gb_scale) or 1; end
@@ -9542,6 +9552,7 @@ local function draw_window()
             row_switch('##yui_bg', 'Show', 'bag', 'How full your bag is.');
             row_pick('##yui_bs', 'Look', 'bag_style', { { 'row', 'Row' }, { 'grid', 'Grid' }, { 'dots', 'Dots' }, { 'bar', 'Bar' } });
             row_slider('##yui_s_gb', 'Size', 'gb_scale', 0.5, 2.5, 0.05, '%.2fx');
+            end
         elseif tab == 5 then
             ------------------------------------------------------------------ CHAT
             section('CHAT');
@@ -9664,7 +9675,6 @@ local function draw_window()
             row_pick('##yui_mmc', 'Lines', 'map_color', { { 'white', 'White' }, { 'pink', 'Pink' }, { 'cyan', 'Cyan' } });
             row_pick('##yui_mma', 'Your arrow', 'map_arrow_color', { { 'lines', 'As the lines' }, { 'white', 'White' }, { 'pink', 'Pink' },
                 { 'violet', 'Violet' }, { 'cyan', 'Cyan' }, { 'gold', 'Gold' }, { 'green', 'Green' } });
-            row_switch('##yui_mmhub', 'EXP, gil and bag on the map', 'map_hub', 'On: your jobs, EXP, gil and bag sit under the minimap, all in one piece (their own windows hide). BARS > EXP / Gil / Bag "Show" still turn each one off.');
             if accent_button('PLAY THE ZONE NAME##yui_mmt_play', { ROW_W, 0 }) then YMAP.tt = os.clock(); end
             hint('The zone\'s name over the minimap comes in with a little animation when you change zone: this plays it again.');
             else
@@ -10121,7 +10131,8 @@ end
 -- you and seen by the 3D look's camera - behind you, tilted, turning with you - so every zone reads the same way.
 -- Drawn in tiles (each one placed by the camera, a little see-through toward the edge); you, your party and monsters
 -- sit on it.
-function YMAP.tilt2d(dl, ent, party, zid, me, sc, x, y, M)
+function YMAP.tilt2d(dl, ent, party, zid, me, sc, x, y, M, W, H)
+    W, H = W or M, H or M;                                           -- (a map that isn't square: the Capsule)
     local e = YMAP.entry;
     local kk = math.abs(e.scale) / 2560 * 512;                       -- (map pixels a yalm)
     local X, Y = ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0;
@@ -10130,8 +10141,8 @@ function YMAP.tilt2d(dl, ent, party, zid, me, sc, x, y, M)
     local pitch, dist = 0.95, R2 / kk * 0.62;                        -- (the camera's distance in yalms: about as much ground as the flat map)
     local cy_, sy_ = math.cos(yaw), math.sin(yaw);
     local cp, sp = math.cos(pitch), math.sin(pitch);
-    local f = M * 1.1;
-    local cxs, cys = x + M / 2, y + M / 2;
+    local f = H * 1.1;
+    local cxs, cys = x + W / 2, y + H / 2;
     local function proj(wx, wy)                                      -- (a spot on the ground at your height -> the screen)
         local dx, dn = wx - X, wy - Y;
         local rx = dx * cy_ - dn * sy_;
@@ -10141,10 +10152,10 @@ function YMAP.tilt2d(dl, ent, party, zid, me, sc, x, y, M)
         return cxs + f * rx / depth, cys - f * (rn * sp) / depth;
     end
     local pmx, pmy = YMAP.to_map(X, Y);
-    local Rm = R2 * 2.2;                                             -- (how much of the map round you: past the view's edge)
+    local Rm = R2 * 2.2 * math.max(1, W / H);                                             -- (how much of the map round you: past the view's edge)
     local N = 22;
     local step = Rm * 2 / N;
-    C.clip(dl, { x + 2, y + 2 }, { x + M - 2, y + M - 2 }, true);
+    C.clip(dl, { x + 2, y + 2 }, { x + W - 2, y + H - 2 }, true);
     local layers = { { YMAP.tex, nil }, { YMAP.ltex, 'l' }, { YMAP.ntex, 'n' } };
     for pass = 1, 3 do
         local tx_ = layers[pass][1];
@@ -10182,7 +10193,7 @@ function YMAP.tilt2d(dl, ent, party, zid, me, sc, x, y, M)
     local function tomap(wx, wy) local sx_, sy_ = proj(wx, wy); if not sx_ then return -9999, -9999; end return sx_, sy_; end
     local function inside(sx_, sy_)
         local qx, qy = sx_ - cxs, sy_ - cys;
-        return sx_ > x + 2 and sx_ < x + M - 2 and sy_ > y + 2 and sy_ < y + M - 2 and (qx * qx + qy * qy) < (M * 0.47) ^ 2;
+        return sx_ > x + 2 and sx_ < x + W - 2 and sy_ > y + 2 and sy_ < y + H - 2 and (qx / (W * 0.47)) ^ 2 + (qy / (H * 0.47)) ^ 2 < 1;
     end
     YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, true);
 end
@@ -10557,7 +10568,44 @@ function YMAP.gridpos()                                              -- your pla
     end);
     return out;
 end
-function YMAP.title(dl, x, y, M, sc)
+function YMAP.title_edge(dl, mid, cyl, sc, low)                     -- the zone's name on the frame's top edge, which breaks round it (YMAP.tgap);
+    local name = (YMAP.name and YMAP.name ~= '') and YMAP.name or '?';   -- (low: on the bottom edge, under the frame)
+    local now = os.clock();
+    if YMAP.tname ~= name then YMAP.tname, YMAP.tt = name, now; end
+    local ez = 1 - (1 - math.min(1, (now - (YMAP.tt or 0)) / 0.6)) ^ 3;
+    local pushed = sized('chat', 14 * sc);
+    local tw = tonumber((imgui.CalcTextSize(name))) or 0;
+    local th = imgui.GetTextLineHeight();
+    local ty = math.floor(low and (cyl - th * 0.15) or (cyl - th * 0.85));   -- (sitting on the edge, outside the frame: the chips inside stay clear)
+    outlined(dl, math.floor(mid - tw / 2), ty, name, { 0.98, 0.97, 1.0, ez });
+    local gp = YMAP.gridpos();
+    if gp then
+        local fs = FS;
+        imgui.SetWindowFontScale(fs * 0.92);
+        local gh = imgui.GetTextLineHeight();
+        local gc = C.GOLDH2 or { 1, 0.9, 0.62 };
+        outlined(dl, math.floor(mid + tw / 2 + 7 * sc), math.floor(ty + th - gh), gp, { gc[1], gc[2], gc[3], ez });
+        imgui.SetWindowFontScale(fs);
+    end
+    unsized(pushed);
+end
+function YMAP.tgap_of(mid, sc)                                       -- (where the frame's top edge breaks for the name: x from, x to)
+    local name = (YMAP.name and YMAP.name ~= '') and YMAP.name or '?';
+    local tw = YMAP.tsize(name, 14 * sc);
+    local gpw = 0;
+    local gp = YMAP.gridpos();
+    if gp then gpw = YMAP.tsize(gp, 14 * sc * 0.92) + 7 * sc; end
+    return { mid - tw / 2 - 9 * sc, mid + tw / 2 + gpw + 9 * sc };   -- (.low is set by the minimap)
+end
+function YMAP.gapline(dl, a, b, c, th, ytop)                         -- (a line, broken round the name where it runs along the top edge)
+    local g = YMAP.tgap;
+    if not g or math.abs(a[2] - ytop) > 0.6 or math.abs(b[2] - ytop) > 0.6 then dl:AddLine(a, b, c, th); return; end
+    local x0, x1 = math.min(a[1], b[1]), math.max(a[1], b[1]);
+    if x1 <= g[1] or x0 >= g[2] then dl:AddLine(a, b, c, th); return; end
+    if x0 < g[1] then dl:AddLine({ x0, a[2] }, { g[1], a[2] }, c, th); end
+    if x1 > g[2] then dl:AddLine({ g[2], a[2] }, { x1, a[2] }, c, th); end
+end
+function YMAP.title(dl, x, y, M, sc, Wt)                             -- (Wt: the map's width, when it isn't square)
     local name = (YMAP.name and YMAP.name ~= '') and YMAP.name or '?';
     local now = os.clock();
     if YMAP.tname ~= name then YMAP.tname, YMAP.tt = name, now; end
@@ -10575,7 +10623,7 @@ function YMAP.title(dl, x, y, M, sc)
         tw = tonumber((imgui.CalcTextSize(s))) or 0;
     end
     local th = imgui.GetTextLineHeight();
-    local mid = x + M / 2;
+    local mid = x + (Wt or M) / 2;
     local pk, vi = C.hp, C.mp2;
     do                                                               -- the name with no box at all: on the same soft dark fade as the map,
         local ty = math.floor(y + (H - th) / 2 + (1 - ez) * 4 * sc); --  a hairline under it fading out both ways
@@ -10586,7 +10634,7 @@ function YMAP.title(dl, x, y, M, sc)
             if gp0 then local fs = FS; imgui.SetWindowFontScale(fs * 0.92); gpw = (tonumber((imgui.CalcTextSize(gp0))) or 0) + 7 * sc; imgui.SetWindowFontScale(fs); end
             local fmid = mid + gpw / 2;                              -- (drawn here, all inside the name's own room: soft to every side,
             local half = (tw + gpw) / 2 + 90 * sc;                   --  never cut by the window's edge; to the sides it eases out in steps)
-            half = math.max((tw + gpw) / 2 + 10 * sc, math.min(half, fmid - x + 2, x + M - fmid - 2));   -- (never wider than the map: no flat cut at the sides)
+            half = math.max((tw + gpw) / 2 + 10 * sc, math.min(half, fmid - x + 2, x + (Wt or M) - fmid - 2));   -- (never wider than the map: no flat cut at the sides)
             local core = (tw + gpw) / 2 * 0.35;
             local y0f, y1f = y + 1, y + H - 1;
             local N, K = 14, 8;
@@ -10613,9 +10661,10 @@ function YMAP.title(dl, x, y, M, sc)
         local gp = YMAP.gridpos();                                   -- (where you are on the map's grid, as <pos> gives it)
         if gp then
             local fs = FS;
-            imgui.SetWindowFontScale(fs * 0.92);
+            imgui.SetWindowFontScale(fs * 0.92);                   -- (clear: nearly the name's size, in gold)
             local gh = imgui.GetTextLineHeight();
-            outlined(dl, math.floor(mid + tw / 2 + 7 * sc), math.floor(ty + th - gh), gp, { 1, 0.9, 0.62, ez });
+            local gc = C.GOLDH2 or { 1, 0.9, 0.62 };
+            outlined(dl, math.floor(mid + tw / 2 + 7 * sc), math.floor(ty + th - gh), gp, { gc[1], gc[2], gc[3], ez });
             imgui.SetWindowFontScale(fs);
         end
         local lc = YMAP.COLS[cfg.map_color or 'white'] or YMAP.COLS.white;
@@ -10630,7 +10679,262 @@ function YMAP.title(dl, x, y, M, sc)
 end
 -- MINIMAP > EXP, gil and bag on the map: under the minimap your jobs, the points, your gil and your bag - one piece
 -- instead of four floating ones.
-function YMAP.hub_on() return cfg.map_hub == true and cfg.minimap ~= false and YMAP.have(); end
+function YMAP.hub_on() return cfg.map_hub == true and cfg.minimap ~= false and YMAP.have() and not YMAP.dock_on(); end
+function YMAP.dock_on() return cfg.minimap ~= false and cfg.map_dock ~= false and YMAP.have(); end   -- (the minimap with your EXP, gil and bag built in: the Capsule)
+C.HD = { comets = {} };
+C.VDAYS = { { 'Firesday', { 1.0, 0.36, 0.28 } }, { 'Earthsday', { 0.86, 0.68, 0.30 } }, { 'Watersday', { 0.32, 0.62, 1.0 } },
+            { 'Windsday', { 0.40, 0.92, 0.50 } }, { 'Iceday', { 0.62, 0.92, 1.0 } }, { 'Lightningday', { 0.78, 0.48, 1.0 } },
+            { 'Lightsday', { 1.0, 0.97, 0.88 } }, { 'Darksday', { 0.50, 0.40, 0.72 } } };
+C.WXEL = { [4] = 1, [5] = 1, [6] = 3, [7] = 3, [8] = 2, [9] = 2, [10] = 4, [11] = 4, [12] = 5, [13] = 5, [14] = 6, [15] = 6,
+           [16] = 7, [17] = 7, [18] = 8, [19] = 8 };                 -- (the weather's element: an index into C.VDAYS' colours)
+C.WXNAME = { [4] = 'Hot spell', [5] = 'Heat wave', [6] = 'Rain', [7] = 'Squall', [8] = 'Dust storm', [9] = 'Sandstorm', [10] = 'Wind',
+             [11] = 'Gales', [12] = 'Snow', [13] = 'Blizzard', [14] = 'Thunder', [15] = 'Thunderstorm', [16] = 'Auroras', [17] = 'Stellar glare',
+             [18] = 'Gloom', [19] = 'Darkness' };
+function YMAP.tsize(str, px)                                         -- (a text's width and line height at a size)
+    local pushed = sized('chat', px);
+    local w_ = tonumber((imgui.CalcTextSize(str))) or 0;
+    local h_ = imgui.GetTextLineHeight();
+    unsized(pushed);
+    return w_, h_;
+end
+-- The map dock, the Capsule: the minimap in a rounded glass card with a pink-to-violet edge - your EXP (or
+-- merits, or limit points) glowing along its foot, your bag in a pill at its top right, the day and time in a pill at its
+-- top left, your jobs and gil in one rounded pill under it (over it, with the zone's name under, when the map is at the
+-- top of the screen). Alive: EXP comets, a level-up burst, the bag beating red near full and shaking when
+-- it fills, the gil rolling to its new amount, the frame drawing itself in a new zone.
+function YMAP.rrpts(x0, y0, x1, y1, r, n)                            -- (a rounded box's outline, clockwise from its top left)
+    local p = {};
+    local function arc(cx_, cy_, a0)
+        for k = 0, n do local a = a0 + (math.pi / 2) * k / n; p[#p + 1] = { cx_ + math.cos(a) * r, cy_ + math.sin(a) * r }; end
+    end
+    arc(x1 - r, y0 + r, -math.pi / 2);
+    arc(x1 - r, y1 - r, 0);
+    arc(x0 + r, y1 - r, math.pi / 2);
+    arc(x0 + r, y0 + r, math.pi);
+    return p;
+end
+function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
+    local H = C.HD;
+    local now = os.clock();
+    local s = math.max(0.55, M / 220);
+    local PK, VI, AZ = C.hp or { 1, 0.42, 0.72 }, C.mp2 or { 0.62, 0.40, 1 }, { 0.35, 0.78, 1 };
+    local GO2 = { 1, 0.9, 0.62 };
+    local function col(c, a) return u32({ c[1], c[2], c[3], a }); end
+    local function mix(t) return { PK[1] + (VI[1] - PK[1]) * t, PK[2] + (VI[2] - PK[2]) * t, PK[3] + (VI[3] - PK[3]) * t }; end
+    local pad = 6 * s;
+    local lft, top, rgt, bot = cx - MW / 2 - pad, cy - MH / 2 - pad, cx + MW / 2 + pad, cy + MH / 2 + pad;
+    local R = 18 * s;
+    local P = YMAP.rrpts(lft, top, rgt, bot, R, 6);
+    local function edge(pp, f, a, th)                                -- (the outline f of the way round, pink at the left to violet at the right)
+        local n = #pp;
+        local L = f * n;
+        local w = math.max(1, rgt - lft);
+        for i = 1, n do
+            if L <= 0 then break; end
+            local p0, p1 = pp[i], pp[i % n + 1];
+            local e = math.min(1, L);
+            local q = { p0[1] + (p1[1] - p0[1]) * e, p0[2] + (p1[2] - p0[2]) * e };
+            YMAP.gapline(dl, p0, q, col(mix(math.max(0, math.min(1, (p0[1] - lft) / w))), a), th, (YMAP.tgap and YMAP.tgap.low) and bot or top);
+            L = L - 1;
+        end
+    end
+    local function scaled(k_)
+        local q = {};
+        for i, p_ in ipairs(P) do q[i] = { cx + (p_[1] - cx) * k_, cy + (p_[2] - cy) * k_ }; end
+        return q;
+    end
+    -- a new zone: the edge draws itself round, then a soft scan runs down the card
+    local za = now - (YMAP.tt or 0);
+    local zf = math.min(1, za / 0.9); zf = 1 - (1 - zf) ^ 3;
+    for i = 1, #P do local p0, p1 = P[i], P[i % #P + 1]; YMAP.gapline(dl, p0, p1, col({ 0, 0, 0 }, 0.5), 4 * s, (YMAP.tgap and YMAP.tgap.low) and bot or top); end
+    edge(P, zf, 0.25, 5 * s);
+    edge(P, zf, 0.9, 1.5 * s);
+    if za > 0.6 and za < 1.6 then
+        local q = (za - 0.6) / 1.0;
+        local sy = top + q * (bot - top);
+        local hw = (rgt - lft) / 2 - R * 0.6;
+        dl:AddLine({ cx - hw, sy }, { cx + hw, sy }, col(PK, 0.6 * (1 - q)), 2 * s);
+        dl:AddLine({ cx - hw, sy - 3 * s }, { cx + hw, sy - 3 * s }, col(VI, 0.2 * (1 - q)), 5 * s);
+    end
+    local function pill(x0, y0, x1, y1, ec, ea)                      -- (a rounded pill behind words: dark, a fine edge)
+        local r = (y1 - y0) / 2;
+        dl:AddRectFilled({ x0, y0 }, { x1, y1 }, u32({ 0.07, 0.06, 0.10, 0.88 }), r);
+        dl:AddRect({ x0, y0 }, { x1, y1 }, col(ec, ea), r, C.rall, 1);
+    end
+    local function label(str, px_, x_, y_, c_, align)
+        local pushed = sized('chat', px_);
+        local w_ = tonumber((imgui.CalcTextSize(str))) or 0;
+        local h_ = imgui.GetTextLineHeight();
+        outlined(dl, math.floor((align == 'r') and (x_ - w_) or x_), math.floor(y_), str, c_);
+        unsized(pushed);
+        return w_, h_;
+    end
+    -- the day and time (and the weather) in a pill at the top left
+    do
+        local vt = (os.time() - 1009810800) * 25;
+        local hr, mn = math.floor(vt / 3600) % 24, math.floor(vt / 60) % 60;
+        local d = C.VDAYS[math.floor(vt / 86400) % 8 + 1];
+        local wx = C.AMB and C.AMB.wx or 0;
+        local we = C.WXEL[wx];
+        local ts = string.format('%s  %02d:%02d', d[1], hr, mn);
+        local wn, wc = we and C.WXNAME[wx] or nil, we and C.VDAYS[we][2] or nil;
+        local tw0, th0 = YMAP.tsize(ts, 10.5 * s);
+        local ww0 = wn and YMAP.tsize(wn, 10.5 * s) or 0;
+        local ph = math.floor(th0 * 1.25);
+        local x0, y0 = lft + R * 0.55, top + 7 * s;
+        local inner = 11 * s + tw0 + (wn and (10 * s + 11 * s + ww0) or 0);
+        pill(x0, y0, x0 + 8 * s + inner + 9 * s, y0 + ph, PK, 0.5 * zf);
+        local tx, ty = x0 + 8 * s, y0 + (ph - th0) / 2;
+        dl:AddCircleFilled({ tx + 4 * s, y0 + ph / 2 }, 3.5 * s, col(d[2], 0.95 * zf), 12);
+        label(ts, 10.5 * s, tx + 11 * s, ty, { 0.94, 0.92, 0.96, 0.95 * zf });
+        if wn then
+            local wxx = tx + 11 * s + tw0 + 10 * s;
+            dl:AddCircle({ wxx + 4 * s, y0 + ph / 2 }, 3.5 * s, col(wc, 0.95 * zf), 12, 1.3);
+            label(wn, 10.5 * s, wxx + 11 * s, ty, { wc[1], wc[2], wc[3], 0.95 * zf });
+        end
+    end
+    -- the readings
+    local pl = AshitaCore:GetMemoryManager():GetPlayer();
+    local mj, lvl = pl and pl:GetMainJob() or 0, pl and pl:GetMainJobLevel() or 0;
+    local sub, sublvl = pl and pl:GetSubJob() or 0, pl and pl:GetSubJobLevel() or 0;
+    local limit = pl and pl.GetIsLimitModeEnabled and pl:GetIsLimitModeEnabled() and lvl >= 75;
+    local pts, need, v = 0, 1, 0;
+    if pl then
+        if limit then pts, need = pl:GetLimitPoints() or 0, 10000; else pts, need = pl:GetExpCurrent() or 0, pl:GetExpNeeded() or 1; end
+        v = need > 0 and math.max(0, math.min(1, pts / need)) or 0;
+    end
+    local merits, mmax = pl and pl:GetMeritPoints() or 0, pl and pl:GetMeritPointsMax() or 0;
+    local used, bmax = 0, 0;
+    pcall(function() local inv = AshitaCore:GetMemoryManager():GetInventory(); used, bmax = inv:GetContainerCount(0) or 0, inv:GetContainerCountMax(0) or 0; end);
+    local gil = C.gil_read();
+    if H.pts and pts > H.pts and H.limit == limit and H.lvl == lvl then
+        H.comets[#H.comets + 1] = { t = now, n = pts - H.pts, sx = cx + (math.random() - 0.5) * 20 * s, sy = cy };
+    end
+    if H.lvl and lvl > H.lvl and H.mj == mj then H.burst = now; end
+    if H.used and used > H.used and used >= bmax and bmax > 0 then H.shake = now; end
+    H.pts, H.limit, H.lvl, H.mj, H.used = pts, limit, lvl, mj, used;
+    local shown = (lvl >= 75 and not limit) and ((mmax > 0) and merits / mmax or 0) or v;   -- (capped: the bar fills with your merits)
+    H.v = H.v and (H.v + (shown - H.v) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 4)) or shown;
+    local bu = H.burst and (now - H.burst) or 99;
+    local lit = (bu < 1.2) and (1 - bu / 1.2) or 0;
+    local fl = 0;
+    for _, c in ipairs(H.comets) do if now - c.t > 0.8 and now - c.t < 1.2 then fl = math.max(fl, 1 - (now - c.t - 0.8) / 0.4); end end
+    local sh = H.shake and (now - H.shake) or 99;
+    local ox = (sh < 0.5) and math.sin(sh * 60) * 3 * s * (1 - sh / 0.5) or 0;
+    local near = bmax > 0 and used >= bmax - 5;
+    local beat = near and (0.5 + 0.5 * math.sin(now * 6)) or 0;
+    local bc = near and { 1.0, 0.36, 0.40 } or AZ;
+    if bu < 1.6 then                                                 -- (a level up: rounded cards of light opening out of the map)
+        for k = 0, 2 do
+            local q = (bu - k * 0.18) / 1.2;
+            if q > 0 and q < 1 then edge(scaled(0.3 + q * 1.1), 1, 0.85 * (1 - q), (3 - k) * s); end
+        end
+        local pushed = sized('chat', 22 * s);
+        local lw = tonumber((imgui.CalcTextSize('LEVEL UP'))) or 0;
+        outlined(dl, cx - lw / 2, cy - MH * 0.2, 'LEVEL UP', { 1, 0.85, 0.95, math.min(1, (1.6 - bu) / 0.4) });
+        unsized(pushed);
+    end
+    -- the bag in a pill at the top right: the count, a fine azure line under it filling with the bag
+    do
+        local bs = string.format('%d/%d', used, bmax);
+        local bw0, bh0 = YMAP.tsize(bs, 12 * s);
+        local ph = math.floor(bh0 * 1.25);
+        local x1 = rgt - R * 0.55 + ox;
+        local x0 = x1 - (bw0 + 18 * s);
+        local y0 = top + 7 * s;
+        pill(x0, y0, x1, y0 + ph, bc, 0.65 + 0.3 * beat);
+        label(bs, 12 * s, x0 + 9 * s, y0 + (ph - bh0) / 2 - 1 * s, near and { 1, 0.72, 0.75, 1 } or { 0.86, 0.94, 1, 1 });
+        local f = bmax > 0 and used / bmax or 0;
+        local lx0, lx1, ly = x0 + ph * 0.5, x1 - ph * 0.5, y0 + ph - 2.5 * s;
+        dl:AddLine({ lx0, ly }, { lx1, ly }, col({ 1, 1, 1 }, 0.10), 1.5 * s);
+        if f > 0 then dl:AddLine({ lx0, ly }, { lx0 + (lx1 - lx0) * f, ly }, col(bc, 1), 1.5 * s); end
+    end
+    -- EXP (or merits, or limit points) glowing along the card's foot, its words just over its start
+    local bx0, bx1 = lft + R * 0.8, rgt - R * 0.8;
+    local by = bot - 10 * s;
+    local bth = math.max(3, math.floor(4 * s + 0.5));
+    dl:AddRectFilled({ bx0, by }, { bx1, by + bth }, u32({ 0.10, 0.08, 0.14, 0.9 }), bth / 2);
+    local ex_ = bx0 + (bx1 - bx0) * H.v;
+    if H.v > 0.003 then
+        local fx = math.max(bx0 + bth, ex_);
+        dl:AddRectFilled({ bx0 - 2 * s, by - 2 * s }, { fx + 2 * s, by + bth + 2 * s }, col(mix(H.v), 0.12 + 0.3 * fl + 0.3 * lit), bth);
+        pcall(function()
+            local c1, c2 = col(PK, 1), col(mix(H.v), 1);
+            dl:AddRectFilledMultiColor({ bx0 + bth / 2, by }, { fx - bth / 2, by + bth }, c1, c2, c2, c1);
+        end);
+        dl:AddCircleFilled({ bx0 + bth / 2, by + bth / 2 }, bth / 2, col(PK, 1), 10);
+        dl:AddCircleFilled({ fx - bth / 2, by + bth / 2 }, bth / 2, col(mix(H.v), 1), 10);
+    end
+    do
+        local word, val;
+        if limit then word, val = 'LIMIT', string.format('%d%%  -  merits %d/%d', math.floor(v * 100), merits, mmax);
+        elseif lvl >= 75 then word, val = 'MERITS', string.format('%d/%d', merits, mmax);
+        else word, val = 'EXP', string.format('%d%%', math.floor(v * 100)); end
+        local ww, wh = YMAP.tsize(word, 9.5 * s);
+        local _, vh = YMAP.tsize(val, 12 * s);
+        local ly = by - 4 * s - vh;
+        label(word, 9.5 * s, bx0, ly + vh * 0.80 - wh * 0.80, { 0.82, 0.76, 0.90, 0.95 });
+        label(val, 12 * s, bx0 + ww + 6 * s, ly, { 1, 0.72, 0.88, 1 });
+    end
+    -- the comets: "+N" flying from you into the bar's end
+    for i = #H.comets, 1, -1 do
+        local c = H.comets[i];
+        local q = (now - c.t) / 0.8;
+        if now - c.t > 1.3 then table.remove(H.comets, i);
+        elseif q < 1 then
+            local e = q * q * (3 - 2 * q);
+            local mx_ = c.sx + (ex_ - c.sx) * e;
+            local my_ = c.sy + (by - c.sy) * e - math.sin(q * math.pi) * 30 * s;
+            dl:AddCircleFilled({ mx_, my_ }, 6 * s, col(PK, 0.3), 14);
+            dl:AddCircleFilled({ mx_, my_ }, 3.5 * s, col({ 1, 0.85, 0.95 }, 1), 12);
+            label('+' .. commas(c.n), 12 * s, mx_ + 6 * s, my_ - 14 * s, { 1, 0.72, 0.88, 1 - q * 0.6 });
+        end
+    end
+    -- your jobs and gil in one rounded pill under the card (over it when low)
+    local phh = math.floor(20 * s);
+    local py0 = low and (top - 6 * s - phh) or (bot + 6 * s);
+    H.gd = H.gd or gil;
+    H.gd = H.gd + (gil - H.gd) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 5);
+    if math.abs(gil - H.gd) < 1 then H.gd = gil; end
+    pill(lft + 4 * s, py0, rgt - 4 * s, py0 + phh, mix(0.5), 0.5);
+    local pushed = sized('chat', 11.5 * s);
+    local th = imgui.GetTextLineHeight();
+    local tyy = math.floor(py0 + (phh - th) / 2);
+    local gx;
+    do                                                               -- (the gil at the right: the coin, the amount rolling, what changed)
+        local gs = commas(math.floor(H.gd + 0.5));
+        local gw = tonumber((imgui.CalcTextSize(gs))) or 0;
+        local diff, ga = C.gil_diff(gil);
+        local ds = (diff ~= 0) and ((diff > 0 and '+' or '') .. commas(diff)) or nil;
+        local dw = ds and ((tonumber((imgui.CalcTextSize(ds))) or 0) * 0.85 + 8 * s) or 0;
+        gx = rgt - 4 * s - phh / 2 - 6 * s - gw - dw;
+        dl:AddCircleFilled({ gx - 9 * s, tyy + th / 2 }, 5 * s, u32({ 0.86, 0.66, 0.24, 1 }), 14);
+        dl:AddCircleFilled({ gx - 9 * s, tyy + th / 2 }, 3 * s, u32({ 1, 0.88, 0.50, 1 }), 12);
+        outlined(dl, gx, tyy, gs, { GO2[1], GO2[2], GO2[3], 1 });
+        if ds then
+            local fs = FS;
+            imgui.SetWindowFontScale(fs * 0.85);
+            outlined(dl, gx + gw + 8 * s, tyy + 1 * s, ds, diff > 0 and { 0.55, 1, 0.65, ga } or { 1, 0.5, 0.65, ga });
+            imgui.SetWindowFontScale(fs);
+        end
+    end
+    do                                                               -- (your jobs at the left: the main one's tag in its colour, "75 / SAM 37")
+        local x0_ = lft + 4 * s + phh / 2 + 4 * s;
+        local tag = JOBS[mj] or '?';
+        local jt = ' ' .. lvl;
+        local st = (JOBS[sub] and sublvl > 0) and (' / ' .. JOBS[sub] .. ' ' .. sublvl) or '';
+        local tgw = tonumber((imgui.CalcTextSize(tag))) or 0;
+        local jw = tonumber((imgui.CalcTextSize(jt))) or 0;
+        local sw = tonumber((imgui.CalcTextSize(st))) or 0;
+        local tc = ALLY.tagcol(mj) or { { 0.9, 0.9, 0.9 } };
+        outlined(dl, x0_, tyy, tag, { tc[1][1], tc[1][2], tc[1][3], 1 });
+        outlined(dl, x0_ + tgw, tyy, jt, { 0.94, 0.92, 0.96, 1 });
+        if x0_ + tgw + jw + sw < gx - 22 * s then outlined(dl, x0_ + tgw + jw, tyy, st, { 0.80, 0.76, 0.86, 1 }); end
+    end
+    unsized(pushed);
+    if low then return bot + 4 * s; end
+    return py0 + phh + 4 * s;
+end
 function YMAP.hub(dl, cx, cy, M)                                     -- the jobs, the points, gil and bag under the map; gives back its bottom
     local s = math.max(0.55, M / 220);
     local info = (cfg.expbar ~= false) and C.expinfo() or nil;
@@ -10725,9 +11029,24 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
     local x, y = imgui.GetCursorScreenPos();
     x, y = math.floor(x + 4), math.floor(y + 4);
     local y0_ = y;
-    local T = YMAP.title(dl, x, y, M, sc);                           -- the zone's name, above the map
+    local style = YMAP.dock_on() and 'capsule' or nil;               -- (the map with your EXP, bag, jobs and gil built in: the Capsule)
+    local MW, MH = M, M;
+    if style == 'capsule' then MW, MH = math.floor(M * 1.25), math.floor(M * 0.9); end   -- (the Capsule: a little wide)
+    local s_ = math.max(0.55, M / 220);
+    local dockL = style and math.floor(6 * s_) or 0;                 -- (a little room either side for the frame)
+    local padR = dockL;
+    x = x + dockL;
+    local _, SH_ = C.screen();                                       -- (the zone's name above the map - or under it when the map is at the
+    local tlow = (tonumber(cfg.map_y) or 0) + M / 2 < SH_ * 0.4;     --  top of the screen; the Capsule flips with it)
+    local onedge = style and true or false;                          -- (with a frame the zone's name sits on its edge: the top, or the bottom when low)
+    local T;
+    if onedge and not tlow then T = math.floor(20 * s_);                          -- (a little room: the name sits on the frame's top edge, drawn after it)
+    elseif tlow then T = style and math.floor(30 * s_) or 0;
+    else T = YMAP.title(dl, x, y, M, sc, MW); end   -- the zone's name, above the map (under it: the dock flips - its plate over the map, the day tab under)
     y = y + T;
-    local cx, cy = x + M / 2, y + M / 2;
+    local cx, cy = x + MW / 2, y + MH / 2;
+    YMAP.tgap = onedge and YMAP.tgap_of(cx, s_) or nil;
+    if YMAP.tgap then YMAP.tgap.low = tlow; end
     if imgui.IsWindowHovered() then                                  -- the mouse wheel zooms in and out (as the Minimap plugin does)
         local wheel = imgui.GetIO().MouseWheel or 0;
         if wheel ~= 0 then
@@ -10745,7 +11064,7 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
         if ft then                                                   -- (darker over bright ground, lighter over dark: YMAP.lum)
             local k = YMAP.shade(x, y, M);
             while k > 0.01 do                                        -- (above 1: drawn again on top, darker)
-                dl:AddImage(ft.ptr, { x, y }, { x + M, y + M }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, math.min(1, k) }));
+                dl:AddImage(ft.ptr, { x, y }, { x + MW, y + MH }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, math.min(1, k) }));
                 k = k - 1;
             end
         end
@@ -10755,20 +11074,21 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
         local m3 = YMAP.d3load(zid);
         if m3 then
             local yaw = (cfg.map3d_follow ~= false) and YMAP.d3facing(ent, me) or 0;
-            pcall(YMAP.d3render, dl, m3, ent, party, zid, me, sc, x, y, M, M, yaw, 0.95, math.max(16, tonumber(cfg.map_zoom) or 60), ground == 'none');
+            pcall(YMAP.d3render, dl, m3, ent, party, zid, me, sc, x, y, MW, MH, yaw, 0.95, math.max(16, tonumber(cfg.map_zoom) or 60), ground == 'none');
             done3 = true;
         end
     end
     local e = (not done3) and YMAP.entry or nil;
     if e and YMAP.tex and cfg.map_tilt ~= false then                 -- (MINIMAP > Tilt the map: the 3D look's camera over the flat map)
-        local ok_, err_ = pcall(YMAP.tilt2d, dl, ent, party, zid, me, sc, x, y, M);
+        local ok_, err_ = pcall(YMAP.tilt2d, dl, ent, party, zid, me, sc, x, y, M, MW, MH);
         if not ok_ then YUI_ERRLOG('maptilt', err_); end
     elseif e and YMAP.tex then
         local R = math.max(8, tonumber(cfg.map_zoom) or 60);           -- map pixels from the middle to the edge
-        local k = (M / 2) / R;
+        local k = (MH / 2) / R;
+        local Rx = (MW / 2) / k;                                     -- (a wide map: more of it either side)
         local pmx, pmy = YMAP.to_map(ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0);
         -- the part of the map in view (kept inside the picture, so its edge never repeats)
-        local u0, v0, u1, v1 = pmx - R, pmy - R, pmx + R, pmy + R;
+        local u0, v0, u1, v1 = pmx - Rx, pmy - R, pmx + Rx, pmy + R;
         local a0, b0 = math.max(0, u0), math.max(0, v0);
         local a1, b1 = math.min(512, u1), math.min(512, v1);
         if a1 > a0 and b1 > b0 then
@@ -10792,7 +11112,7 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
             end
         end
         local function tomap(wx, wy) local mx, my = YMAP.to_map(wx, wy); return cx + (mx - pmx) * k, cy + (my - pmy) * k; end
-        local function inside(sx, sy) return sx > x + 2 and sx < x + M - 2 and sy > y + 2 and sy < y + M - 2; end
+        local function inside(sx, sy) return sx > x + 2 and sx < x + MW - 2 and sy > y + 2 and sy < y + MH - 2; end
         YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside);
     end
     if ground == 'dark' then dl:AddRect({ x, y }, { x + M, y + M }, u32({ 1, 1, 1, 0.10 }), 8 * sc, C.rall, 1); end
@@ -10803,12 +11123,24 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
     if not done3 and not (e and YMAP.tex) then
         local m_ = 'No map here';
         local mw = imgui.CalcTextSize(m_);
-        text(dl, x + (M - mw) / 2, y + M / 2 - 8 * sc, m_, { 0.7, 0.7, 0.75, 0.9 });
+        text(dl, x + (MW - mw) / 2, y + MH / 2 - 8 * sc, m_, { 0.7, 0.7, 0.75, 0.9 });
     end
     unsized(pushed);
-    local bottom = y + M;
+    local bottom = y + MH;
     if YMAP.hub_on() then bottom = YMAP.hub(dl, cx, cy, M) or bottom; end   -- (MINIMAP > EXP, gil and bag on the map)
-    imgui.Dummy({ M + 8, bottom - y0_ + 8 });
+    if style then                                                    -- (the map dock)
+        local okd, rb = pcall(YMAP.capsule, dl, x, y, M, cx, cy, tlow, MW, MH);
+        if okd and rb then bottom = math.max(bottom, rb); elseif not okd then YUI_ERRLOG('mapdock', rb); end
+        if onedge then                                               -- (the name on the frame's top edge, over the break)
+            local fp = 6 * s_;
+            if tlow then
+                pcall(YMAP.title_edge, dl, cx, cy + MH / 2 + fp, s_, true);
+                bottom = math.max(bottom, cy + MH / 2 + fp + 20 * s_);
+            else pcall(YMAP.title_edge, dl, cx, cy - MH / 2 - fp, s_); end
+        end
+    end
+    if tlow and not onedge then bottom = bottom + 4 * sc + YMAP.title(dl, x, bottom + 4 * sc, M, sc, MW); end   -- (the zone's name under it all)
+    imgui.Dummy({ MW + 8 + dockL + padR, bottom - y0_ + 8 });   -- (the frame's right corner sticks out a little)
     end_plain('map_x', 'map_y');
 end
 function YMAP.bigmap(party, ent, zid, me, sc)                        -- the big map (/yui map): the whole map with YunaUI's grid,
