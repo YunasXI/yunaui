@@ -9521,7 +9521,7 @@ local function draw_window()
             local docked = YMAP.dock_on and YMAP.dock_on();          -- (EXP, gil and bag built into the minimap: their own pieces never show)
             if docked then
                 section('EXP, GIL AND BAG');
-                hint('They are built into the minimap: your EXP (or merits), gil and bag show on it. Their own pieces come back if you turn the minimap off (MINIMAP > Show).');
+                hint('They are built into the minimap: your EXP (or merits), gil and bag show on it. Want them as windows of their own? MINIMAP > EXP, gil and bag on the map: Off.');
             else
             section('EXP BAR');
             row_switch('##yui_e', 'Show', 'expbar', 'Experience, or limit points and merits when limit mode is on.');
