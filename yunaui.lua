@@ -9666,6 +9666,7 @@ local function draw_window()
             section('MINIMAP');
             if YMAP.have() then
             row_switch('##yui_mm', 'Show', 'minimap', 'The map around you, redrawn dark in YunaUI\'s look: you (the arrow), your party in their role colours, monsters and your target.');
+            row_switch('##yui_mmdock', 'EXP, gil and bag on the map', 'map_dock', 'On: your EXP (or merits), gil and bag are built into the minimap\'s frame. Off: a plain minimap, and EXP, gil and bag are windows of their own again (their settings in BARS).');
             row_slider('##yui_mms', 'Size', 'map_size', 120, 480, 5, '%d px');
             row_slider('##yui_mmz', 'Zoom', 'map_zoom', 16, 256, 2, '%d');
             hint('Zoom: how much of the map shows round you (smaller is closer). The mouse wheel over the minimap zooms too.');
