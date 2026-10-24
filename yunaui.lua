@@ -11342,10 +11342,10 @@ EDIT.G.STEPS = {
     { "Your HP, MP and TP", function(G) return { G.eq() }; end, {
         "Your own bars. Anchor them together or place each one apart. Their size, length and thickness are in BARS." } },
     { "Cast bar, EXP, gil and bag", function(G)
-        if YMAP.dock_on and YMAP.dock_on() then return { G.win('cast_x'), G.win('map_x') }; end   -- (EXP, gil and bag: in the minimap)
-        return { G.win('cast_x'), G.win('exp_x'), G.win('gil_x'), G.win('bag_x') }; end, function(G)
-        if YMAP.dock_on and YMAP.dock_on() then return { "Your casting time, over its bar. Your EXP (merits at level 75), gil and bag are built into the minimap: EXP along its foot, the bag at its top right, your jobs and gil under it - and what you made since you logged in rolls in beside your gil." }; end   -- (the minimap on: they're built into it)
-        return { "Your casting time, your experience to the next level, your gil (and what you made since you logged in) and how full your bag is." }; end, { { 'castbar', 'BARS (Cast bar)' }, { 'expbar', 'BARS (EXP bar)' }, { 'gil', 'BARS (Gil)' }, { 'bag', 'BARS (Bag)' } } },
+        if YMAP.dock_on and YMAP.dock_on() then return { "The minimap: the map around you - you, your party and monsters - with the zone, your spot on its grid (as <pos> gives it) and Vana'diel's day, time and weather. The mouse wheel over it zooms.",
+            "Your EXP (merits at level 75), gil and bag are built into it: EXP along its foot, the bag at its top right, your jobs and gil under it. Over it all, your casting time." }; end   -- (the minimap on: about it, EXP, gil and bag built in)
+        return { "Your casting time, your experience to the next level, your gil (and what you made since you logged in) and how full your bag is." }; end, { { 'castbar', 'BARS (Cast bar)' }, { 'expbar', 'BARS (EXP bar)' }, { 'gil', 'BARS (Gil)' }, { 'bag', 'BARS (Bag)' } },
+        title = function() return (YMAP.dock_on and YMAP.dock_on()) and 'Cast bar and minimap' or nil; end },
     { "Pet", function(G) return { G.win('pet_x') }; end, {
         "Your avatar, wyvern, automaton or beast: its HP, MP, TP, its ability timers and what it is fighting. It shows only when you have a pet." }, { { 'petbar', 'BARS (Pet)' } } },
     { "Timers", function(G) return { G.win('timer_x') }; end, {
@@ -11536,8 +11536,9 @@ function EDIT.G.draw()
         fg:AddText({ cx + CW - pad - sw, y + 4 * k }, u32({ 0.62, 0.60, 0.70, 1 }), stp);
         unsized(f1);
         local f2 = sized('chat', 22 * k);                            -- the title
-        local _, th = imgui.CalcTextSize(st[1]);
-        fg:AddText({ cx + pad, y }, u32({ 1, 1, 1, 1 }), st[1]);
+        local ttl = (st.title and st.title()) or st[1];             -- (a title that changes with your settings)
+        local _, th = imgui.CalcTextSize(ttl);
+        fg:AddText({ cx + pad, y }, u32({ 1, 1, 1, 1 }), ttl);
         unsized(f2);
         y = y + th + 6 * k;
         pcall(function()                                             -- a short pink-to-violet line under it
