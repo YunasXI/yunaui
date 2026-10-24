@@ -4266,6 +4266,7 @@ function ALLY.spine(dl, list, x, y, sc, dt, tidx, n, party)
     imgui.SetWindowFontScale((FS or 1) * 0.80);                      -- (a card's height, so the cards never overlap)
     local lh80 = imgui.GetTextLineHeight();
     local gap = ALLY.ch(lh80, sc, party) + (party and 6 or 4) * sc;   -- (PARTY > CARDS: style, height)
+    if party then ALLY.pgap, ALLY.pn = gap, #list; end               -- (PARTY > Grow upward: how far a full party reaches)
     local brk = (cfg.card_style or 'plate') == 'bracket';          -- (Bracket: the arrow and buffs step left of the [)
     ALLY.tidx_cur = tidx;                                            -- (Bracket: your target's band lights up)
     local lp = brk and 12 * sc or 0;
@@ -9481,7 +9482,15 @@ local function draw_window()
             ------------------------------------------------------------------ PARTY
             section('PARTY LIST');
             row_switch('##yui_p', 'Show', 'party');
-            row_switch('##yui_pup', 'Grow upward', 'party_up', 'On: the list fills from the bottom - with a small party (or alone) it sits low, its bottom where you placed it, and new members push it up.');
+            row_switch('##yui_pup', 'Grow upward', 'party_up', 'On: the list fills from the bottom - with a small party (or alone) it sits low, its bottom where a full party\'s would be, and new members push it up.', nil, function()
+                if ALLY.pgap and ALLY.pn then                        -- (turned on: down to where a full party's bottom would be; off: back up)
+                    local d = (6 - ALLY.pn) * ALLY.pgap;
+                    cfg.party_y = (tonumber(cfg.party_y) or 0) + (cfg.party_up and d or -d);
+                    WATCH.one = WATCH.one or {}; WATCH.one.party_x = 2;
+                    ALLY.ph = nil;
+                end
+                save();
+            end);
             row_switch('##yui_pp', 'Pretend members (to place it)', 'party', 'Fills the empty places so you can place and size the list when alone.', PREVIEW, function() end);
             row_slider('##yui_s_p', 'Size', 'party_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_switch('##yui_pfar', 'Fade far members', 'party_dim_far', 'On: a member farther than the distance below (out of range for spells like Cure) is shown faded, party and alliance. A pretend member shows it while you place the list.');
@@ -10692,6 +10701,7 @@ end
 -- MINIMAP > EXP, gil and bag on the map: under the minimap your jobs, the points, your gil and your bag - one piece
 -- instead of four floating ones.
 function YMAP.hub_on() return cfg.map_hub == true and cfg.minimap ~= false and YMAP.have() and not YMAP.dock_on(); end
+function YMAP.frame_on() return cfg.minimap ~= false and YMAP.have(); end   -- (the map's frame: always with the minimap; EXP, gil and bag in it: dock_on)
 function YMAP.dock_on() return cfg.minimap ~= false and cfg.map_dock ~= false and YMAP.have(); end   -- (the minimap with your EXP, gil and bag built in: the Capsule)
 C.HD = { comets = {} };
 C.VDAYS = { { 'Firesday', { 1.0, 0.36, 0.28 } }, { 'Earthsday', { 0.86, 0.68, 0.30 } }, { 'Watersday', { 0.32, 0.62, 1.0 } },
@@ -10805,6 +10815,7 @@ function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
             label(wn, 10.5 * s, wxx + 11 * s, ty, { wc[1], wc[2], wc[3], 0.95 * zf });
         end
     end
+    if not YMAP.dock_on() then return bot + 4 * s; end            -- (EXP, gil and bag not on the map: just the frame)
     -- the readings
     local pl = AshitaCore:GetMemoryManager():GetPlayer();
     local mj, lvl = pl and pl:GetMainJob() or 0, pl and pl:GetMainJobLevel() or 0;
@@ -11044,7 +11055,7 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
     local x, y = imgui.GetCursorScreenPos();
     x, y = math.floor(x + 4), math.floor(y + 4);
     local y0_ = y;
-    local style = YMAP.dock_on() and 'capsule' or nil;               -- (the map with your EXP, bag, jobs and gil built in: the Capsule)
+    local style = YMAP.frame_on() and 'capsule' or nil;               -- (the map with your EXP, bag, jobs and gil built in: the Capsule)
     local MW, MH = M, M;
     if style == 'capsule' then MW, MH = math.floor(M * 1.25), math.floor(M * 0.9); end   -- (the Capsule: a little wide)
     local s_ = math.max(0.55, M / 220);
