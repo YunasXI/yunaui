@@ -6002,6 +6002,7 @@ function legacy.pad_tick()
     legacy.pad.menu = (ok and name) or '';
     do                                                               -- the game's Map ("map0", then "mapframe" while open): YunaUI's big map
         local inmap = legacy.pad.menu:find('map', 1, true) ~= nil;   --  opens over it, the whole screen (BARS > MINIMAP > Open with the game's Map)
+        if not inmap and legacy.inmap and legacy.pad.menu ~= '' then inmap = true; end   -- (Widescan, Markers... opened from the Map: still the Map, until every menu closes)
         if cfg.map_native_v == nil then cfg.map_native_v = 1; cfg.map_replace = false; end   -- (once: the game's own Map, now drawn in YunaUI's look, is used as it is)
         if cfg.map_replace == true and YMAP.have() then
             if inmap and not legacy.inmap then YMAP.big, YMAP.bygame = true, true; end
