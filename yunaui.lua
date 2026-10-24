@@ -762,7 +762,7 @@ function C.dd2bar(dl, x, y, w, h, v, lag, seed)
     local k = Hd / 48;
     local B = 13 * k;                                                -- (its band's height)
     dl:AddRectFilled({ x, cy - B / 2 }, { x + w, cy + B / 2 }, u32({ 0.05, 0.03, 0.07, 0.45 }), B / 2);   -- (the empty part: a dark band, round ends)
-    if lag and lag > v then dl:AddRectFilled({ x + fw - B, cy - B / 2 }, { x + w * lag, cy + B / 2 }, u32({ 1, 0.85, 1, 0.22 }), B / 2); end
+    if lag and lag > v then dl:AddRectFilled({ math.max(x, x + fw - B), cy - B / 2 }, { x + w * lag, cy + B / 2 }, u32({ 1, 0.85, 1, 0.22 }), B / 2); end
     if fw < 1 then return; end
     local f = (math.floor(os.clock() * 24) + math.floor(seed * 7)) % 48;
     local t = (cfg.target_bar_anim == false) and tex('dd2/nocore.png') or tex(string.format('dd2/%02d.png', f));   -- (TARGET > Bar effect off: just the band, no white line)
@@ -773,8 +773,10 @@ function C.dd2bar(dl, x, y, w, h, v, lag, seed)
     end
     local tp = tex((cfg.target_bar_anim == false) and 'dd2/tip_nocore.png' or 'dd2/tip.png');   -- the clean white tip, its round end on the HP's end
     if tp then
-        local tx = x + fw - 40 * k;                                  -- (the band's round end on the HP's end)
+        local tx = x + fw - 40 * k;                                  -- (the band's round end on the HP's end; never past the bar's left end -
+        local okc = pcall(function() dl:PushClipRect({ x, cy - Hd / 2 }, { x + w + 8 * k, cy + Hd / 2 }, true); end);   --  at low HP it's cut there, it shrinks away with it)
         pcall(function() dl:AddImage(tp.ptr, { tx, cy - Hd / 2 }, { tx + 44 * k, cy + Hd / 2 }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 })); end);
+        if okc then dl:PopClipRect(); end
     end
 end
 -- the same for YunaEquip's own HP bar ('Separate bars'), which lives in equip.lua
