@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.48';
+addon.version = '1.0.49';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -5593,13 +5593,14 @@ end
 C.NPCMODE = { [142] = true, [144] = true, [150] = true, [151] = true };
 C.NPCSEEN = { n = 0, t = {} };
 function C.npc_dup(mode, line, combat)
-    local win = C.NPCMODE[mode] and 15 or 3;
+    local win = C.NPCMODE[mode] and 2.5 or 2;                        -- (short: a menu's copies come within a second or two; a chest
+                                                                     --  peered into again, or another with the same words, still shows)
     if combat or (mode >= 1 and mode <= 15) or mode == 213 or mode == 214 then return false; end   -- (talk and battle: never)
     local R, now = C.NPCSEEN, os.clock();
     local dup = R.t[line] ~= nil and now - R.t[line] < win;
     if R.n > 200 then R.t, R.n = {}, 0; end
     if R.t[line] == nil then R.n = R.n + 1; end
-    if not dup then R.t[line] = now; end
+    R.t[line] = now;                                                 -- (copies coming one after another stay hidden; a pause and it shows again)
     return dup;
 end
 C.ROE_MODE = 300;
