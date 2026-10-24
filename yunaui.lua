@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.51';
+addon.version = '1.0.52';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -60,7 +60,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', target_aura = true, show_fan = true, show_mb = true, target_head = true, chat_panel_a = 0.72, chat_msg_gap = 5, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0,  setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', show_fan = true, show_mb = true, target_head = true, chat_panel_a = 0.72, chat_msg_gap = 5, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0,  setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -5209,94 +5209,6 @@ function C.head_bars_()                                             -- (the bars
         dl:AddCircle({ dx, dy }, d * (1.4 + (1 - fl) * 3), u32({ 1, 0.92, 0.65, 0.8 * fl }), 24, 1.5);
     end
 end
--- TARGET > Floor aura: a ring of light on the ground under what you target (instead of the game's arrow over it, hidden by
--- YunaUI's yunaui-ui DAT overlay): a soft fill, a bright edge, three short arcs turning round it, breathing a little.
--- Pink for monsters, ice blue for players and NPCs. Its size from the target's own when the game gives it.
-C.TA = { idx = 0, t0 = 0 };
-function C.target_aura()
-    if cfg.target_aura == false or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
-    local idx = target_index() or 0;
-    if idx == 0 then C.TA.idx = 0; return; end
-    local ent = AshitaCore:GetMemoryManager():GetEntity();
-    if ent:GetRawEntity(idx) == nil then return; end
-    local okty, ty = pcall(function() return ent:GetType(idx); end);   -- (the game's own kind: 0 players, 1 NPCs and monsters - characters;
-    local okfl, fl0 = pcall(function() return ent:GetSpawnFlags(idx); end);
-    local is_mob = okfl and type(fl0) == 'number' and bit.band(fl0, 0x10) ~= 0;   -- (monsters are type 2 too: keep theirs)
-    if okty and type(ty) == 'number' and ty >= 2 and not is_mob then return; end    --  2 and up objects: counters, doors, tables... no aura on those)
-    local okst, st_ = pcall(function() return ent:GetStatus(idx); end);
-    local me = AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0) or 0;
-    local okme, stme = pcall(function() return ent:GetStatus(me); end);
-    if okme and stme == 4 then return; end                           -- (you're in a cutscene)
-    local ap = ent:GetActorPointer(idx);
-    if ap == nil or ap == 0 then return; end
-    local px, py, pz = ashita.memory.read_float(ap + 0x678), ashita.memory.read_float(ap + 0x680), ashita.memory.read_float(ap + 0x67C);
-    local now = os.clock();
-    if C.TA.idx ~= idx then C.TA.idx, C.TA.t0 = idx, now; end         -- (a new target: the ring opens)
-    local open_ = math.min(1, (now - C.TA.t0) / 0.3);
-    open_ = 1 - (1 - open_) ^ 3;
-    local size = 0.75;
-    pcall(function() local m = ent:GetModelSize(idx); if m and m > 0.1 and m < 30 then size = math.max(0.55, m * 0.55); end end);
-    local R = size * (0.9 + 0.06 * math.sin(now * 2.4)) * (0.6 + 0.4 * open_);
-    local fl = 0;
-    pcall(function() fl = ent:GetSpawnFlags(idx) or 0; end);
-    -- its colours: pink to violet for monsters, green to teal for your party and alliance (you, their pets and trusts too),
-    -- blue to violet for anyone else
-    local mob = bit.band(fl, 0x10) ~= 0;
-    local ally = false;
-    if not mob then pcall(function() ally = (idx == me) or is_party_id(ent:GetServerId(idx)); end); end
-    local cA = mob and { 1.0, 0.42, 0.75 } or (ally and { 0.45, 1.0, 0.55 } or { 0.45, 0.72, 1.0 });
-    local cB = ally and { 0.30, 0.85, 0.80 } or { 0.72, 0.45, 1.0 };
-    local dl = imgui.GetBackgroundDrawList();
-    -- which way the camera looks at it (the picture's bottom toward you)
-    local face = 0;
-    pcall(function()
-        local ax0, ay0 = C.w2s(px, pz, py);
-        local ax1, ay1 = C.w2s(px + 1, pz, py);
-        local bx1, by1 = C.w2s(px, pz, py + 1);
-        local th = math.atan2(-(ax1 - ax0), (bx1 - ax0));           -- (the ground direction that shows straight down on screen)
-        if math.cos(th) * (ay1 - ay0) + math.sin(th) * (by1 - ay0) < 0 then th = th + math.pi; end
-        face = th - math.pi / 2;
-    end);
-    -- the picture laid on the ground round the target's feet: a 10 x 10 grid of pieces, each corner seen through the camera
-    -- (flat in perspective up close too), each piece in the colour of where it is round the ring
-    local function lay(t, Rw, rot, alpha, fixed)                     -- (fixed: one colour for it all, not the gradient)
-        local G = 10;
-        local E = Rw / 0.80;                                         -- (the pictures' main ring sits at 0.8 of their radius)
-        local cr, sr = math.cos(rot), math.sin(rot);
-        local P = {};
-        for i = 0, G do
-            P[i] = {};
-            for j = 0, G do
-                local u, v = (i / G) * 2 - 1, (j / G) * 2 - 1;
-                local sx, sy = C.w2s(px + (u * cr - v * sr) * E, pz, py + (u * sr + v * cr) * E);
-                if sx == nil then return; end
-                P[i][j] = { sx, sy };
-            end
-        end
-        for i = 0, G - 1 do
-            for j = 0, G - 1 do
-                local u = ((i + 0.5) / G) * 2 - 1;
-                local f = (u + 1) / 2;                               -- (left of the picture blue, right violet)
-                local cc = fixed and u32({ fixed[1], fixed[2], fixed[3], alpha })
-                    or u32({ cA[1] + (cB[1] - cA[1]) * f, cA[2] + (cB[2] - cA[2]) * f, cA[3] + (cB[3] - cA[3]) * f, alpha });
-                pcall(function()
-                    dl:AddImageQuad(t.ptr, P[i][j], P[i + 1][j], P[i + 1][j + 1], P[i][j + 1],
-                        { i / G, j / G }, { (i + 1) / G, j / G }, { (i + 1) / G, (j + 1) / G }, { i / G, (j + 1) / G }, cc);
-                end);
-            end
-        end
-    end
-    local t = tex('aura_dots.png');                                  -- (the "Dotted" look: a bright ring, its soft glow, a circle of
-    if t then                                                        --  little dots outside; nothing in the middle, so the target stays clear; it turns slowly and breathes)
-        local rot = face + now * 0.15;
-        local te = tex('aura_dots_edge.png');                        -- (a slim dark edge under it first: it still reads on snow or sand)
-        if te then lay(te, R, rot, 0.85 * open_, { 0, 0, 0 }); end
-        lay(t, R, rot, open_);
-        lay(t, R, rot, open_ * (0.55 + 0.25 * math.sin(now * 2.4)));    -- (twice: its colour strong on bright ground too; breathing)
-        local tc = tex('aura_dots_core.png');                        -- (a lighter line at its heart: it still shows when far and small)
-        if tc then lay(tc, R, rot, 0.7 * open_, { 1, 1, 1 }); end
-    end
-end
 -- Say and party lines: a bubble over the head of whoever said it, nearby, for a few seconds
 function C.bubble_draw()
     if next(C.BUBS) == nil then return; end
@@ -9536,8 +9448,6 @@ local function draw_window()
                 end
                 hint('To move the target name, the fan and the enemy cast on screen: GENERAL > LAYOUT > EDIT MODE.');
             end
-            section('FLOOR AURA');
-            row_switch('##yui_taura', 'Show', 'target_aura', 'On: a ring of light on the ground under what you target - green for your party and alliance, pink for monsters, blue to violet for anyone else.');
             section('ENTRANCE');
             row_pick('##yui_tfx', 'When you target', 'target_fx', { { 'off', 'Off' }, { 'blade', 'Blade of light' } });
             if (cfg.target_fx or 'blade') ~= 'off' then
@@ -11480,7 +11390,6 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(TIMERS.draw);
         piece(C.loot_win);                                           -- (TREASURE POOL)
         piece(C.bubble_draw);                                        -- (CHAT > Speech bubbles)
-        piece(C.target_aura);                                        -- (TARGET > Floor aura: under the bars and everything else)
         piece(C.head_bars);                                          -- (BARS > YOUR BARS > Where: over your head)
         YUI_EQ_HIDE = true;                                          -- (the old gear wheel never shows)
         YUI_LOCKED = cfg.locked and true or false;                 -- the HP / MP / TP bars (equip.lua) follow this lock
