@@ -773,10 +773,9 @@ function C.dd2bar(dl, x, y, w, h, v, lag, seed)
     end
     local tp = tex((cfg.target_bar_anim == false) and 'dd2/tip_nocore.png' or 'dd2/tip.png');   -- the clean white tip, its round end on the HP's end
     if tp then
-        local tx = x + fw - 40 * k;                                  -- (the band's round end on the HP's end; never past the bar's left end -
-        local okc = pcall(function() dl:PushClipRect({ x, cy - Hd / 2 }, { x + w + 8 * k, cy + Hd / 2 }, true); end);   --  at low HP it's cut there, it shrinks away with it)
-        pcall(function() dl:AddImage(tp.ptr, { tx, cy - Hd / 2 }, { tx + 44 * k, cy + Hd / 2 }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 })); end);
-        if okc then dl:PopClipRect(); end
+        local tw = math.min(44 * k, fw + 4 * k);                     -- (the band's round end on the HP's end; at low HP the whole tip narrows -
+        local tx = x + fw + 4 * k - tw;                              --  a small pill, round both ends, never past the bar's left end)
+        pcall(function() dl:AddImage(tp.ptr, { tx, cy - Hd / 2 }, { tx + tw, cy + Hd / 2 }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, 1 })); end);
     end
 end
 -- the same for YunaEquip's own HP bar ('Separate bars'), which lives in equip.lua
