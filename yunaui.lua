@@ -1,6 +1,6 @@
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.49';
+addon.version = '1.0.50';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -10670,9 +10670,34 @@ function YMAP.title(dl, x, y, M, sc)
     do                                                               -- the name with no box at all: on the same soft dark fade as the map,
         local ty = math.floor(y + (H - th) / 2 + (1 - ez) * 4 * sc); --  a hairline under it fading out both ways
         local ft = tex('map_fade.png');
-        if ft then
-            local gw, gh = tw * 0.85 + 30 * sc, H * 1.1;
-            dl:AddImage(ft.ptr, { mid - gw, ty + th / 2 - gh }, { mid + gw, ty + th / 2 + gh }, { 0, 0 }, { 1, 1 }, u32({ 1, 1, 1, ez }));
+        if ft then                                                   -- (a soft fade under the name and its map position together: a wide,
+            local gpw = 0;                                           --  light layer and a narrower one on it - no edge to see)
+            local gp0 = YMAP.gridpos();
+            if gp0 then local fs = FS; imgui.SetWindowFontScale(fs * 0.92); gpw = (tonumber((imgui.CalcTextSize(gp0))) or 0) + 7 * sc; imgui.SetWindowFontScale(fs); end
+            local fmid = mid + gpw / 2;                              -- (drawn here, all inside the name's own room: soft to every side,
+            local half = (tw + gpw) / 2 + 90 * sc;                   --  never cut by the window's edge; to the sides it eases out in steps)
+            half = math.max((tw + gpw) / 2 + 10 * sc, math.min(half, fmid - x + 2, x + M - fmid - 2));   -- (never wider than the map: no flat cut at the sides)
+            local core = (tw + gpw) / 2 * 0.35;
+            local y0f, y1f = y + 1, y + H - 1;
+            local N, K = 14, 8;
+            local function va(yy) local q = 1 - math.abs((yy - (y0f + y1f) / 2) / ((y1f - y0f) / 2)); q = math.max(0, math.min(1, q * 1.6)); return 0.62 * ez * q * q * (3 - 2 * q); end
+            local function ha(u) u = math.max(0, math.min(1, 1 - u)); return u * u * (3 - 2 * u); end   -- (u: 0 at the core's edge, 1 at the far end)
+            for j = 0, N - 1 do
+                local a0 = y0f + (y1f - y0f) * j / N;
+                local a1 = y0f + (y1f - y0f) * (j + 1) / N;
+                local t0, t1 = va(a0), va(a1);
+                local function c(a) return u32({ 0.01, 0.01, 0.03, a }); end
+                pcall(function()
+                    dl:AddRectFilledMultiColor({ fmid - core, a0 }, { fmid + core, a1 }, c(t0), c(t0), c(t1), c(t1));
+                    for k = 0, K - 1 do
+                        local u0, u1 = k / K, (k + 1) / K;
+                        local h0, h1 = ha(u0), ha(u1);
+                        local xa, xb = core + (half - core) * u0, core + (half - core) * u1;
+                        dl:AddRectFilledMultiColor({ fmid + xa, a0 }, { fmid + xb, a1 }, c(t0 * h0), c(t0 * h1), c(t1 * h1), c(t1 * h0));
+                        dl:AddRectFilledMultiColor({ fmid - xb, a0 }, { fmid - xa, a1 }, c(t0 * h1), c(t0 * h0), c(t1 * h0), c(t1 * h1));
+                    end
+                end);
+            end
         end
         outlined(dl, math.floor(mid - tw / 2), ty, s, { 0.98, 0.97, 1.0, ez });
         local gp = YMAP.gridpos();                                   -- (where you are on the map's grid, as <pos> gives it)
