@@ -1706,6 +1706,7 @@ local function update_scale()
 end
 
 local function draw_ui()
+    if YUI_MAPCOVER then return; end                                 -- (the game's Map is open: nothing over it)
     local fp = false;
     if ui.open[1] then
         update_scale();

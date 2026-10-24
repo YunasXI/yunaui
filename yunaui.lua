@@ -11707,10 +11707,10 @@ ashita.events.register('d3d_present', 'yui_present', function()
                 if ui.last_err ~= tostring(e2) then ui.last_err = tostring(e2); msg('Draw error: ' .. ui.last_err); end
             end
         end
-        YUI_MAPCOVER = (YMAP.big and YMAP.bygame) and true or false;  -- (the big map, opened by the game's Map: on its own, nothing else)
-        if YUI_MAPCOVER then
+        YUI_MAPCOVER = ((YMAP.big and YMAP.bygame) or legacy.inmap) and true or false;   -- (the game's Map open: none of the UI over it - or, with
+        if YUI_MAPCOVER then                                         --  MINIMAP > Open with the game's Map, YunaUI's big map on its own)
             pcall(legacy.pad_tick);                                  -- (still watching for the game's Map closing)
-            piece(YMAP.draw);
+            if YMAP.bygame then piece(YMAP.draw); end
             return;
         end
         -- settings copied in from another character? take them now
