@@ -4581,6 +4581,16 @@ local function draw_party(dt)
         imgui.SetCursorScreenPos({ x, y });
         imgui.Dummy({ w + 8 + bl, math.max(10, h + 6 + top) });
         end_plain('party_x', 'party_y');
+        if cfg.party_up then                                         -- PARTY > Grow upward: when the list's height changes, its top moves by as
+            local sz = WATCH.size and WATCH.size.party_x;            --  much the other way - its bottom stays put, new members push it up
+            local hn = sz and sz[2];
+            if hn and ALLY.ph and math.abs(hn - ALLY.ph) > 0.5 and not imgui.IsMouseDown(0) then
+                cfg.party_y = (tonumber(cfg.party_y) or 0) + (ALLY.ph - hn);
+                WATCH.one = WATCH.one or {}; WATCH.one.party_x = 2;
+                WATCH.later = true;
+            end
+            ALLY.ph = hn;
+        else ALLY.ph = nil; end
         ALLY.keep('party_x', 'party_y');                              -- (always on the screen)
     elseif cfg.party then imgui.End(); imgui.PopStyleVar(2); end
     -- the two alliance parties, side by side
@@ -9471,6 +9481,7 @@ local function draw_window()
             ------------------------------------------------------------------ PARTY
             section('PARTY LIST');
             row_switch('##yui_p', 'Show', 'party');
+            row_switch('##yui_pup', 'Grow upward', 'party_up', 'On: the list fills from the bottom - with a small party (or alone) it sits low, its bottom where you placed it, and new members push it up.');
             row_switch('##yui_pp', 'Pretend members (to place it)', 'party', 'Fills the empty places so you can place and size the list when alone.', PREVIEW, function() end);
             row_slider('##yui_s_p', 'Size', 'party_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_switch('##yui_pfar', 'Fade far members', 'party_dim_far', 'On: a member farther than the distance below (out of range for spells like Cure) is shown faded, party and alliance. A pretend member shows it while you place the list.');
