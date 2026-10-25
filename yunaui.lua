@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.64';
+addon.version = '1.0.65';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -10801,7 +10801,7 @@ end
 -- GENERAL > SHARE MY UI: your whole UI as one code to send to someone - every setting you changed (not the defaults),
 -- every place, your HP / MP / TP bars and the Damage Meter. Places are kept with your screen's size, so on another
 -- screen everything lands in the same spot. Importing keeps what you had first (UNDO puts it back).
-LAYOUT.SKIP = { setup_done = true, welcomed = true, mode_v1 = true, md_backup = true, g_backup = true, g_dps0 = true, layouts = true,
+LAYOUT.SKIP = { setup_done = true, welcomed = true, mode_v1 = true, mode_v2 = true, md_backup = true, g_backup = true, g_dps0 = true, layouts = true,
     layout_names = true, share_backup = true, locked = true };
 function LAYOUT.plain(v, d)                                          -- (a copy with only numbers, strings, booleans and tables of them)
     d = d or 0;
@@ -14516,7 +14516,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
     end);
     if cfg.welcomed == nil and logged then                           -- (the very first launch: Edit Mode opens once, to place everything;
         cfg.welcomed = true;                                         --  a player who already had YunaUI doesn't get it)
-        if not cfg.spine_v2 then EDIT.welcome = true; cfg.mode_v1 = true; pcall(C.MD.start, true); end   -- (the mode chooser, then the guide, then Edit Mode)
+        if not cfg.spine_v2 then EDIT.welcome = true; cfg.mode_v1, cfg.mode_v2 = true, true; pcall(C.MD.start, true); end   -- (the mode chooser, then the guide, then Edit Mode)
         pcall(save);
     end
     if cfg.g_dps0 and logged and not EDIT.G.on then                  -- (left mid-guide last time: the Damage Meter as it was)
@@ -14526,7 +14526,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
     end
     if cfg.md_backup and logged and not C.MD.on then pcall(C.MD.restore); pcall(save); end   -- (left mid-demo last time: your layout back)
     if cfg.g_backup and logged and not EDIT.G.on then pcall(EDIT.G.unstage); pcall(save); end   -- (left mid-guide: the same)
-    if cfg.mode_v1 == nil and logged and not EDIT.G.on then cfg.mode_v1 = true; pcall(C.MD.start, false); pcall(save); end   -- (once after this update: Normal or Hex link?)
+    if cfg.mode_v2 == nil and logged and not EDIT.G.on and not C.MD.on then cfg.mode_v1, cfg.mode_v2 = true, true; pcall(C.MD.start, true); pcall(save); end   -- (once after this update: Normal or Hex link?, then the guide - players who already had YunaUI too)
     if not cfg.pieces_v1 then                                        -- (once: old Edit Mode offsets of the target's name, Magic Burst, fan and
         for _, pc in ipairs(FIGHT.PIECES) do cfg[pc[1] .. '_dx'], cfg[pc[1] .. '_dy'] = 0, 0; end   --  cast cleared - they follow the bar)
         cfg.pieces_v1 = true; pcall(save);
