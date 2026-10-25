@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.66';
+addon.version = '1.0.67';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -11505,8 +11505,6 @@ local function draw_window()
                 if imgui.IsItemHovered() then YUI_TIP('Everything close round your bars, a little below the middle\nParty on their right, timers on their left'); end
                 if accent_button('EDIT MODE##yui_editmode', { ROW_W, 0 }, false, true) then EDIT.on = true; ui.open = false; end
                 if imgui.IsItemHovered() then YUI_TIP('Shows every piece with a grid; drag them and they snap into line\nAlso: /yui edit'); end
-                if accent_button('SHOW THE GUIDE##yui_guidebtn', { ROW_W, 0 }, false, true) then ui.open = false; EDIT.G.start(); end
-                if imgui.IsItemHovered() then YUI_TIP('A short presentation of every piece of YunaUI\nAlso: /yui guide'); end
                 hint(LAYOUT.msg or 'One click moves every piece of the UI for your screen size. Move anything afterwards as you like.');
             end
             section('MY LAYOUTS');                                   -- five of your own, each with a name
