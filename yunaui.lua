@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.61';
+addon.version = '1.0.62';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -62,7 +62,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', show_fan = true, show_mb = true, target_head = true, chat_panel_a = 0.72, chat_msg_gap = 5, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', show_fan = true, show_mb = true, target_head = true, chat_panel_a = 0.72, chat_msg_gap = 5, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -4914,14 +4914,26 @@ function C.ts_rebuild()                                              -- (the opt
 end
 function C.feed_text(e)                                              -- (its plain text: the saved log, the line's width)
     local f = e.feed;
+    if f.kind == 'melee' then                                        -- (a melee round: hits, their total, crits and misses)
+        local t = (e.tpre or '') .. f.actor .. ' > ' .. f.target .. '  ' .. f.hits .. ((f.hits == 1) and ' hit' or ' hits');
+        if f.dmg > 0 then local ds, k = tostring(f.dmg); repeat ds, k = ds:gsub('^(%d+)(%d%d%d)', '%1,%2'); until k == 0; t = t .. '  ' .. ds; end   -- (1,245)
+        local x = {};
+        if f.crit > 0 then x[#x + 1] = f.crit .. ' crit'; end
+        if f.miss > 0 then x[#x + 1] = f.miss .. ' miss'; end
+        if #x > 0 then t = t .. '  (' .. table.concat(x, ', ') .. ')'; end
+        return t;
+    end
     local t = (e.tpre or '') .. f.actor .. ' > ' .. f.act .. (f.state == 'cast' and '...' or '');
     if f.target then t = t .. ' > ' .. f.target; end
+    local none = {};
     for _, r in ipairs(f.res) do
-        if r.dmg then t = t .. '  ' .. r.who .. ' ' .. r.dmg;
+        if r.none then none[#none + 1] = r.who;
+        elseif r.dmg then t = t .. '  ' .. r.who .. ' ' .. r.dmg;
         elseif r.heal then t = t .. '  ' .. r.who .. ' +' .. r.heal;
         elseif r.miss then t = t .. '  ' .. r.who .. ' miss';
         else t = t .. '  ok ' .. ((r.who ~= f.target) and r.who or ''); end
     end
+    if #none > 0 then t = t .. '  no effect on ' .. table.concat(none, ', ') .. (f.more and (' +' .. f.more) or ''); end
     return t;
 end
 function C.feed_take(log, line, mode, only)
@@ -4947,6 +4959,62 @@ function C.feed_take(log, line, mode, only)
         F.last, F.last_t = e, now;
         pcall(CHATLOG.write, { raw = line, cat = cat_of(mode), ts = os.time() });
         return 'merged';
+    end
+    do                                                               -- "X's Poisona has no effect on Y": onto that spell's line
+        local na, nsp, nt = sl:match("^(.-)'s (.-) has no effect on (.-)%.$");
+        if na then
+            local L = F.last;
+            if not (L and L.feed and L.feed.kind ~= 'melee' and L.feed.actor == na and L.feed.act == nsp and now - (F.last_t or 0) < 2.5) then
+                if only then return nil; end
+                new(na, nsp, nil, 'magic', 'done');
+                L = F.last;
+            end
+            if #L.feed.res < 12 then L.feed.res[#L.feed.res + 1] = { who = nt, none = true };
+            else L.feed.more = (L.feed.more or 0) + 1; end
+            return grow(L);
+        end
+    end
+    if cfg.chat_rounds ~= false then                                 -- CHAT > Melee rounds: one attack round, one line
+        local ma, mt, md = sl:match('^(.-) hits (.-) for (%d+) points? of damage%.$');
+        local crit, miss = false, false;
+        if ma == nil and F.crit and now - F.crit.t < 0.3 then        -- (a critical hit: its damage comes on the next line)
+            mt, md = sl:match('^(.-) takes (%d+) points? of damage%.$');
+            if mt then ma, crit = F.crit.who, true; end
+        end
+        F.crit = nil;
+        if ma == nil then
+            local who = sl:match('^(.-) scores a critical hit!$');
+            if who then F.crit = { who = who, t = now }; return 'merged'; end
+        end
+        if ma == nil then
+            local L = F.last;                                        -- (a miss right after an ability is that ability's)
+            local wa, wt = sl:match('^(.-) misses (.-)%.$');
+            if wa and not (L and L.feed and L.feed.state == 'done' and L.feed.actor == wa and now - (F.last_t or 0) < 2.5) then ma, mt, miss = wa, wt, true; end
+        end
+        if ma then
+            local M = F.mel;
+            if not (M and M.feed.actor == ma and M.feed.target == mt and now - (F.mel_t or 0) < 1.2) then
+                if only then return nil; end
+                M = { raw = line, cat = cat_of(mode), t = now, t0 = now, flash = now, ts = os.time(), mode = mode,
+                    tpre = cfg.chat_time and C.ts_text(os.time()) or nil,
+                    feed = { actor = ma, target = mt, kind = 'melee', state = 'melee', res = {}, hits = 0, dmg = 0, crit = 0, miss = 0 } };
+                CHATLOG.add(log, M);
+                F.mel = M;
+                F.mel_t = now;
+                M.feed.hits, M.feed.dmg = (miss and 0 or 1), tonumber(md) or 0;
+                M.feed.crit, M.feed.miss = crit and 1 or 0, miss and 1 or 0;
+                M.text = C.feed_text(M);
+                return 'new';
+            end
+            if not miss then M.feed.hits = M.feed.hits + 1; M.feed.dmg = M.feed.dmg + (tonumber(md) or 0); end
+            if crit then M.feed.crit = M.feed.crit + 1; end
+            if miss then M.feed.miss = M.feed.miss + 1; end
+            F.mel_t = now;
+            M.t, M.flash = now, now;
+            M.text, M.lines = C.feed_text(M), nil;
+            pcall(CHATLOG.write, { raw = line, cat = cat_of(mode), ts = os.time() });
+            return 'merged';
+        end
     end
     local a, sp, tg = sl:match('^(.-) starts casting (.-) on (.-)%.$');
     if a then return new(a, sp, tg, 'magic', 'cast'); end
@@ -5091,7 +5159,10 @@ function C.hideown_sync()
         elseif cfg.hideown_prev ~= nil then
             vc.set('graphics', 'nameplates.hideown', (cfg.hideown_prev ~= '0' and cfg.hideown_prev ~= '') and cfg.hideown_prev or nil);
             cfg.hideown_prev = nil;
+        elseif not cfg.hideown_fix1 then                             -- (once: a name left hidden with no note of how it was - Normal mode
+            vc.set('graphics', 'nameplates.hideown', nil);           --  has no bars over your head, so your name shows again)
         end
+        if not on then cfg.hideown_fix1 = true; end
         pcall(save);
     end);
 end
@@ -9720,6 +9791,7 @@ local function draw_window()
             end
             row_switch('##yui_canim', 'Animated lines', 'chat_anim', 'On: new lines slide in with a soft glow (Classic: also a short bar in their channel\'s colour for a moment).');
             row_switch('##yui_cfeed', 'Combat feed', 'chat_feed', 'On: a spell or ability is one line that grows as it happens (who > spell > target, then a tick, the damage, the HP healed or miss) instead of three or four lines. Only new lines.');
+            if cfg.chat_feed ~= false then row_switch('##yui_crounds', 'Melee rounds', 'chat_rounds', 'On: one attack round (several hits - Kraken Club, double and triple attacks) is one line: who > target, hits, their damage, crits and misses. Only new lines.'); end
             row_switch('##yui_cfade', 'Fade when idle', 'chat_fade_old', 'On: each line shows for a while, then fades away, and the panel shrinks with it, so the chat clears when nobody writes (put the mouse over it to see everything). Off: every line stays visible all the time.');
             if cfg.chat_fade_old ~= false then row_slider('##yui_s_h', 'Lines stay for', 'chat_hold', 3, 60, 1, '%d s'); end
             row_switch('##yui_cbub', 'Speech bubbles', 'chat_bubbles', 'On: say and party lines also show as a bubble over the head of whoever said it (when they\'re near you).');
