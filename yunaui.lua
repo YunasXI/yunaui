@@ -1356,14 +1356,66 @@ FIGHT.PCOL = { Light = { 1, 1, 0.92 }, Darkness = { 0.62, 0.38, 0.85 }, Gravitat
                Compression = { 0.62, 0.45, 0.82 }, Liquefaction = { 1.0, 0.40, 0.28 }, Induration = { 0.55, 0.90, 1.0 },
                Reverberation = { 0.40, 0.62, 1.0 }, Transfixion = { 1, 1, 0.92 }, Scission = { 0.90, 0.72, 0.35 },
                Detonation = { 0.45, 0.95, 0.55 }, Impaction = { 0.80, 0.52, 1.0 }, Radiance = { 1, 1, 1 }, Umbra = { 0.55, 0.30, 0.75 } };
+-- SCH Immanence, BLU Chain Affinity: the next spell of that player can open or close a skillchain. It shows from the
+-- moment the cast starts (the fan waits in rose for it to land, the Magic Burst card comes up at once), so the party
+-- can get ready - and burst casts started - before it lands; when it lands the exact window takes over.
+FIGHT.READY = { [317] = true, [94] = true };
+FIGHT.ready, FIGHT.pre = {}, {};
+function FIGHT.early(actor, param, spell, tid, rdy)
+    local e = FIGHT.pre[actor];
+    if param == 28787 then                                           -- (the cast broke: back to what was there)
+        if e and FIGHT.sc[e.tid] == e.st then FIGHT.sc[e.tid] = e.st.prev; end
+        FIGHT.pre[actor] = nil;
+        return;
+    end
+    local sk = rdy and FIGHT.SKILLS[4] and FIGHT.SKILLS[4][spell or 0] or nil;
+    if sk == nil then return; end
+    local ct = 3;
+    pcall(function()
+        local r = AshitaCore:GetResourceManager():GetSpellById(spell);
+        if r then ct = math.max(0.5, (tonumber(r.CastTime) or 12) / 4); end
+    end);
+    local now, old = os.clock(), FIGHT.sc[tid];
+    if old and old.early then old = old.prev; end
+    local hit = nil;
+    if old and not old.closed and now + ct < old.ts + old.dur then     -- (it lands while the window is open: what it would make)
+        for _, p1 in ipairs(old.property or {}) do
+            local row = FIGHT.CHAIN[p1];
+            if row then for _, p2 in ipairs(sk.skillchain or {}) do if row[p2] then hit = row[p2]; break; end end end
+            if hit then break; end
+        end
+    end
+    local st;
+    if hit then                                                      -- it closes one: the Magic Burst card now
+        local step = (old.step or 1) + 1;
+        local level = hit[1];
+        if level == 3 and old.property[1] == hit[2] then level = 4; end
+        st = { en = sk.en, property = { hit[2] }, ts = now, dur = ct + 8 - step + 3, wait = ct, step = step,
+               closed = (level == 4), chain = hit[2], elems = FIGHT.CHAIN[hit[2]] and FIGHT.CHAIN[hit[2]][2] or {} };
+    else                                                             -- it opens its own properties
+        st = { en = sk.en, property = sk.skillchain or {}, ts = now, dur = ct + 10, wait = ct + 3, step = 1 };
+    end
+    st.early, st.prev = true, old;
+    FIGHT.sc[tid] = st;
+    FIGHT.pre[actor] = { tid = tid, st = st };
+end
 -- A party member's skill on a monster (its first target and action, with the added effect's property if any)
-function FIGHT.on_skill(actor, kind, param, m, tid, ap)
+function FIGHT.on_skill(actor, kind, param, m, tid, ap, first)
     if tid == nil or tid == 0 or not is_party_id(actor) then return; end
+    local rdy = FIGHT.ready[actor] ~= nil and os.clock() - FIGHT.ready[actor] < 60;
+    if kind == 6 and FIGHT.READY[param] then FIGHT.ready[actor] = os.clock(); return; end
+    if kind == 8 then return FIGHT.early(actor, param, first, tid, rdy); end
     local cat = FIGHT.PETMSG[m] and 13 or kind;
     local sk = FIGHT.SKILLS[cat] and FIGHT.SKILLS[cat][bit.band(param or 0, 0xFFFF)] or nil;
     if sk == nil then return; end
     local prop = ap and FIGHT.PROP[bit.band(ap, 0x3F)] or nil;
     local now, old = os.clock(), FIGHT.sc[tid];
+    local pre = (kind == 4) and FIGHT.pre[actor] or nil;
+    if kind == 4 then FIGHT.ready[actor], FIGHT.pre[actor] = nil, nil; end
+    if old and old.early then                                        -- (the early one: the real thing replaces it)
+        if pre and FIGHT.sc[tid] == pre.st then FIGHT.sc[tid] = old.prev; end
+        old = old.prev;
+    end
     local delay = sk.delay or 3;
     if prop and FIGHT.CHAIN[prop] then                               -- it made a skillchain
         local step = ((old and old.step) or 1) + 1;
@@ -1371,7 +1423,7 @@ function FIGHT.on_skill(actor, kind, param, m, tid, ap)
         if level == 3 and old and old.property and old.property[1] == prop then level = 4; end
         FIGHT.sc[tid] = { en = sk.en, property = { prop }, ts = now, dur = 8 - step + delay, wait = delay, step = step,
                           closed = (level == 4), chain = prop, elems = FIGHT.CHAIN[prop][2] };
-    elseif FIGHT.MSG[m] and kind ~= 4 then                           -- the first step: it opens its own properties
+    elseif FIGHT.MSG[m] and (kind ~= 4 or rdy) then                  -- the first step: it opens its own properties (a spell: under Immanence / Chain Affinity)
         FIGHT.sc[tid] = { en = sk.en, property = sk.skillchain or {}, ts = now, dur = 7 + delay, wait = delay, step = 1 };
     elseif m == 529 then                                             -- "... is chainbound" (SAM Konzen-ittai, DNC Wild Flourish): opens theirs
         FIGHT.sc[tid] = { en = sk.en, property = sk.skillchain or {}, ts = now, dur = 9, wait = 2, step = 1 };
@@ -1888,7 +1940,7 @@ local function read_action(e)
                 if am == 160 or am == 164 then enemy_add(tid, ap); end
                 if FIGHT.SCMSG[am] then fx_ap = aa; end              -- (a skillchain's own message only; its param is the damage)
             end
-            if is_first then pcall(FIGHT.on_skill, actor, kind, param, m, tid, fx_ap); end   -- skillchains (the Chains way)
+            if is_first then pcall(FIGHT.on_skill, actor, kind, param, m, tid, fx_ap, first); end   -- skillchains (the Chains way)
             if bits(1) == 1 then bits(10); bits(14); bits(10); end  -- spikes
             if max == 0 then return; end
             if not is_party_id(tid) then pcall(C.ja_hit, tid, kind, param, m); end
