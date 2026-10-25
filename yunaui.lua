@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.65';
+addon.version = '1.0.66';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -13840,6 +13840,7 @@ EDIT.G.STEPS = {
     { "Party", function(G) return { G.win('party_x') }; end, {
         "Each member: the job tag in its role colour (tank, healer, damage, support), the name, HP, MP and TP.",
         "The job tags are animated: click one to hide or show that member's buffs. A member under 30% HP trembles and beats red.",
+        "Double click a member to turn it over and see its exact HP and MP. Double click again to turn it back.",
         "The arrow next to the anchor icon, by PARTY, hides or shows the whole list." }, { { 'party', 'PARTY' } } },
     { "Alliance", function(G) return { G.win('alliance_x'), G.win('ally2_x') }; end, {
         "The other two parties of your alliance, smaller, so a full alliance doesn't fill your screen." }, { { 'alliance', 'PARTY (Alliance)' } } },
