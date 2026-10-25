@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.62';
+addon.version = '1.0.63';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -5141,6 +5141,37 @@ function C.vana_cfg()
     if type(v) == 'table' and type(v.config) == 'table' and type(v.config.set) == 'function' and type(v.config.get) == 'function' then return v.config; end
     return nil;
 end
+-- CHAT > hide the game's chat / typing bar through VanaCore's own settings ([client] chat.hide, chat2.hide, input.hide):
+-- set while the options are on, put back as they were when they're off. true when VanaCore does it (then YunaUI leaves
+-- the game's windows alone: no memory written into them).
+C.VCH_KEYS = { 'chat.hide', 'chat2.hide', 'input.hide' };
+function C.vchat_sync()
+    local vc = C.vana_cfg();
+    if vc == nil then return false; end
+    local now = os.clock();
+    local want = { (cfg.chat and cfg.hide_game_chat) and true or false, (cfg.chat and cfg.hide_game_chat) and true or false, (cfg.chat and cfg.hide_game_input) and true or false };
+    local key = tostring(want[1]) .. tostring(want[3]);
+    if key == C.VCH_last then return true; end
+    if C.VCH_at and now < C.VCH_at then return true; end
+    C.VCH_at = now + 1;
+    local ok = pcall(function()
+        cfg.vch_prev = cfg.vch_prev or {};
+        for i, k in ipairs(C.VCH_KEYS) do
+            if want[i] then
+                if cfg.vch_prev[k] == nil then local v = vc.get('client', k); cfg.vch_prev[k] = (v ~= nil) and tostring(v) or ''; end
+                vc.set('client', k, '1');
+            elseif cfg.vch_prev[k] ~= nil then                       -- (off: as it was before YunaUI set it)
+                local v = cfg.vch_prev[k];
+                vc.set('client', k, (v ~= '' and v ~= '0') and v or '0');
+                cfg.vch_prev[k] = nil;
+            end
+        end
+    end);
+    if not ok then return false; end
+    C.VCH_last = key;
+    pcall(save);
+    return true;
+end
 function C.hideown_sync()
     local on = C.head_bars_on();
     if C.HB.own == on then return; end
@@ -6164,12 +6195,18 @@ end
 -- frame while it's open, and put back when it closes. Still the game's: a second press of the log button highlights
 -- your buffs (top left) as always.
 function legacy.log_away()
-    local open = legacy.pad.menu:find('logwindo', 1, true) ~= nil and cfg.chat and cfg.hide_game_chat;
+    local open = legacy.pad.menu:find('logwindo', 1, true) ~= nil and cfg.chat and cfg.hide_game_chat and not C.byvc;   -- (VanaCore's chat.hide: not needed)
     local T = legacy.lt or {};
     legacy.lt = T;
     if not open then
         if T.obj then
-            for off, v in pairs(T.orig or {}) do pcall(ashita.memory.write_uint16, T.obj + off, v); end
+            local still = false;                                     -- (put back only on the log's own window - never on another one now there)
+            pcall(function()
+                local head = ashita.memory.read_uint32(T.obj + 4);
+                local nm = head and head ~= 0 and (ashita.memory.read_string(head + 0x46, 16) or '') or '';
+                still = nm:find('logwindo', 1, true) ~= nil or nm:find('logwin', 1, true) ~= nil;
+            end);
+            if still then for off, v in pairs(T.orig or {}) do pcall(ashita.memory.write_uint16, T.obj + off, v); end end
             T.obj, T.orig = nil, nil;
         end
         return;
@@ -11888,11 +11925,17 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(draw_subtarget, dt);
         piece(draw_enemies, dt);
         C.fc = (C.fc or 0) + 1;                                      -- (game memory read and written every 6th frame, not every one: plenty)
-        if C.fc % 6 == 0 then
-            if cfg.chat and cfg.hide_game_chat then pcall(pin_game_chat); end
-            legacy.hide_logs(cfg.chat and cfg.hide_game_chat);           -- the game's chat windows: not drawn at all
+        local okv, byvc = pcall(C.vchat_sync);                       -- (VanaCore hides them itself: nothing written into the game's windows)
+        C.byvc = okv and byvc or false;
+        if C.byvc then
+            if not C.byvc_done then C.byvc_done = true; pcall(legacy.hide_logs, false); pcall(legacy.hide_input, false); end   -- (anything YunaUI hid the old way: back)
+        else
+            if C.fc % 6 == 0 then
+                if cfg.chat and cfg.hide_game_chat then pcall(pin_game_chat); end
+                legacy.hide_logs(cfg.chat and cfg.hide_game_chat);       -- the game's chat windows: not drawn at all
+            end
+            legacy.hide_input(cfg.chat and cfg.hide_game_input);         -- the game's typing bar: not drawn (you type in YunaUI's)
         end
-        legacy.hide_input(cfg.chat and cfg.hide_game_input);             -- the game's typing bar: not drawn (you type in YunaUI's)
         if YUI_OPEN_EQUIP then YUI_OPEN_EQUIP = false; ui.open = true; ui.tab = 6; end
         pcall(legacy.pad_tick);                                      -- (the pad opened the game's log: YunaUI's chat instead)
         chat_lit_all = ui.open or not cfg.setup_done or EDIT.G.on or legacy.pad.open;
