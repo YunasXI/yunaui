@@ -1,3 +1,5 @@
+-- YunaUI - Copyright (C) 2026 Yunas - https://github.com/YunasXI/yunaui
+-- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
 addon.version = '1.0.61';

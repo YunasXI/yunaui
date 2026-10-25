@@ -1,3 +1,5 @@
+-- YunaUI - Copyright (C) 2026 Yunas - https://github.com/YunasXI/yunaui
+-- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 -- YunaEquip, as part of YunaUI: your equipment on screen in the YunaGearOpt style (a wheel of gear round your job,
 -- HP / MP / TP and your current gear set). Loaded by yunaui.lua; its pictures and fonts are in yunaui/equip/.
 YUI_EQ_VERSION = '1.0.4';

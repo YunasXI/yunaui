@@ -1,3 +1,5 @@
+-- YunaUI - Copyright (C) 2026 Yunas - https://github.com/YunasXI/yunaui
+-- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 -- Damage Meter: part of YunaUI (it was the separate YunaDPS addon). YunaUI loads it with require('dps'); its settings are
 -- dps.lua in YunaUI's config folder, its tab is DAMAGE METER (through YUI_DPS, at the end), and /dps still works.
 

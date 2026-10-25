@@ -59,6 +59,18 @@ YunaUI uses the game's own item and buff icons. For sharper HD ones, install the
   Vana'diel Atlas / ffxi-atlas.com maps, used with permission; 3D zone shapes from LandSandBoat's xiNavmeshOBJs (GPL-3.0);
   map table and floor reading after boussole by loonsies. FINAL FANTASY XI map art (c) SQUARE ENIX.
 
+## Using YunaUI in your own work
+
+YunaUI is made by **Yunas**. You are welcome to build on it, as long as you credit it:
+
+- **Using its code or files** (code, layouts, artwork, icons, in whole or in part): credit is **required**. Keep the
+  `NOTICE` file and the credits in the files, and put this in your README:
+  `Based on YunaUI by Yunas - https://github.com/YunasXI/yunaui`
+- **Inspired by its look or ideas** (your own code): please credit it the same way.
+
 ## Licence
 
-YunaUI is released under the GNU General Public License v3.0 (see `LICENSE`), because it includes GPL-3.0 code from XIUI.
+YunaUI is released under the GNU General Public License v3.0 (see `LICENSE`), because it includes GPL-3.0 code from XIUI,
+with one additional term (GPL-3.0 section 7(b)) for the parts written by Yunas: the author credit must be kept (see `NOTICE`).
+
+Copyright (C) 2026 Yunas.
