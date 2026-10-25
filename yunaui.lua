@@ -4854,6 +4854,33 @@ function ALLY.split2(x0, x1, hc, hm, mc, mm, lw, gap, fs0, fmax, sc)
     imgui.SetWindowFontScale(fs0);
     return f, x0 + lw + 3 * sc + f * wh + gap / 2;
 end
+-- a card's back: the label small, one number, and a small bar under them showing how full it is (hex: Hex plates' style)
+function ALLY.numbar(dl, x0, x2, ry, y2, lab, cur, frac, col, vcol, fs0, fsz, lfs, sc, a, hex)
+    local bh = math.max(2, math.floor(2.5 * sc + 0.5));
+    local by = math.floor(y2 - bh - 2 * sc);
+    local cs = tostring(cur);
+    imgui.SetWindowFontScale(fs0 * fsz);
+    local nw, nh = imgui.CalcTextSize(cs);
+    nw, nh = tonumber(nw) or 0, tonumber(nh) or 10;
+    imgui.SetWindowFontScale(fs0 * lfs);
+    local lw, lh = imgui.CalcTextSize(lab);
+    lw, lh = tonumber(lw) or 0, tonumber(lh) or 7;
+    local cy = ry + (by - 1 * sc - ry) / 2;
+    text(dl, x0, cy + nh / 2 - lh - nh * 0.06, lab, { col[1], col[2], col[3], 0.9 * a });   -- (label and number on one foot)
+    imgui.SetWindowFontScale(fs0 * fsz);
+    text(dl, x0 + lw + 3 * sc, cy - nh / 2, cs, { vcol[1], vcol[2], vcol[3], a });
+    imgui.SetWindowFontScale(fs0);
+    frac = math.max(0, math.min(1, tonumber(frac) or 0));
+    local w = x2 - x0;
+    if w < 4 then return; end
+    if hex then
+        C.hexbar(dl, x0, by, w, bh, frac, nil, 0, { c1 = col, c2 = { col[1] * 0.7, col[2] * 0.7, col[3] * 0.7 }, band = bh + 1, al = a, tip = false });
+    else
+        DL.RF(dl, x0, by, x2, by + bh, U4(0, 0, 0, 0.55 * a), bh / 2);
+        local fw = w * frac;
+        if fw >= 1 then DL.RF(dl, x0, by, x0 + fw, by + bh, U4(col[1], col[2], col[3], a), bh / 2); end
+    end
+end
 -- Normal mode's card turned over (see ALLY.turn): while turning, the card's shape flattening and opening again with a
 -- light across it; then its back - the tag, the name, HP and MP in numbers, the TP
 function ALLY.nflip(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live, f)
@@ -4908,24 +4935,10 @@ function ALLY.nflip(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live, f)
             local hpmax = (m.hpp and m.hpp > 0) and math.floor((m.hp or 0) / m.hpp + 0.5) or (m.hp or 0);
             local mpmax = (m.mpp and m.mpp > 0) and math.floor((m.mp or 0) / m.mpp + 0.5) or (m.mp or 0);
             local hasmp = party or (m.mp or 0) > 0;
-            imgui.SetWindowFontScale(fs0 * 0.62);
-            local lwm = tonumber((imgui.CalcTextSize('MP'))) or 10;
-            imgui.SetWindowFontScale(fs0);
-            local fsz, mid = 1.0, bx1;
-            if hasmp then fsz, mid = ALLY.split2(tx, bx1, m.hp or 0, hpmax, m.mp or 0, mpmax, lwm, 10 * sc, fs0, 1.0, sc); end
-            local function section(x0, x2, lab, cur, max, col, vcol)
-                imgui.SetWindowFontScale(fs0 * 0.62);
-                local lw_, lh_ = imgui.CalcTextSize(lab);
-                lh_ = tonumber(lh_) or lh * 0.6;
-                local cy = ry + (y2 - 1 * sc - ry) / 2;
-                local vh = ALLY.curmax(dl, x0 + lw_ + 3 * sc, cy, cur, max, (not hasmp) and (x2 - x0 - lw_ - 3 * sc) or nil, fs0, fsz, { vcol[1], vcol[2], vcol[3], v * ta });
-                imgui.SetWindowFontScale(fs0 * 0.62);
-                text(dl, x0, cy - vh / 2 + (vh - lh_) * 0.75, lab, { col[1], col[2], col[3], 0.9 * v * ta });
-                imgui.SetWindowFontScale(fs0);
-            end
+            local mid = hasmp and (tx + bx1) / 2 or bx1;              -- (one number each, a small bar under it)
             local hc = low and { 1, 0.42, 0.46 } or { 1, 0.55, 0.82 };
-            section(tx, mid - 5 * sc, 'HP', m.hp or 0, hpmax, hc, low and { 1, 0.70, 0.72 } or { 1, 0.80, 0.92 });
-            if hasmp then section(mid + 5 * sc, bx1, 'MP', m.mp or 0, mpmax, { 0.50, 0.68, 1 }, { 0.74, 0.84, 1 }); end
+            ALLY.numbar(dl, tx, mid - 5 * sc, ry, y2, 'HP', m.hp or 0, m.hpp, hc, low and { 1, 0.70, 0.72 } or { 1, 0.80, 0.92 }, fs0, 0.95, 0.62, sc, v * ta, false);
+            if hasmp then ALLY.numbar(dl, mid + 5 * sc, bx1, ry, y2, 'MP', m.mp or 0, m.mpp, { 0.50, 0.68, 1 }, { 0.74, 0.84, 1 }, fs0, 0.95, 0.62, sc, v * ta, false); end
         end
         if party and m.inzone then                                   -- (the TP, in its column as on the front)
             local tp = tonumber(m.tp) or 0;
@@ -5081,24 +5094,10 @@ function ALLY.hexrow(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
             local hpmax = (m.hpp and m.hpp > 0) and math.floor((m.hp or 0) / m.hpp + 0.5) or (m.hp or 0);
             local mpmax = (m.mpp and m.mpp > 0) and math.floor((m.mp or 0) / m.mpp + 0.5) or (m.mp or 0);
             local hasmp = party or (m.mp or 0) > 0;
-            imgui.SetWindowFontScale(fs0 * 0.74);
-            local lwm = tonumber((imgui.CalcTextSize('MP'))) or 10;
-            imgui.SetWindowFontScale(fs0);
-            local fsz, mid = 1.28, bx + bw;
-            if hasmp then fsz, mid = ALLY.split2(bx, bx + bw, m.hp or 0, hpmax, m.mp or 0, mpmax, lwm, 12 * sc, fs0, 1.28, sc); end
+            local mid = hasmp and (bx + bw / 2) or (bx + bw);         -- (one number each, a small hex bar under it)
             if hasmp then DL.L(dl, mid + 3 * sc, ry + 1 * sc, mid - 3 * sc, y2 - 3 * sc, U4(DK[1], DK[2], DK[3], 0.5 * v * ta), 1); end
-            local function section(x0, x2, lab, cur, max, col, vcol)   -- ("HP" small, then the numbers - as big as fit)
-                imgui.SetWindowFontScale(fs0 * 0.74);
-                local lw_, lh_ = imgui.CalcTextSize(lab);
-                lh_ = tonumber(lh_) or lh * 0.55;
-                local cy = ry + (y2 - 2 * sc - ry) / 2;
-                local vh = ALLY.curmax(dl, x0 + lw_ + 3 * sc, cy, cur, max, (not hasmp) and (x2 - x0 - lw_ - 3 * sc) or nil, fs0, fsz, { vcol[1], vcol[2], vcol[3], v * ta });
-                imgui.SetWindowFontScale(fs0 * 0.74);
-                text(dl, x0, cy - vh / 2 + (vh - lh_) * 0.75, lab, { col[1], col[2], col[3], 0.9 * v * ta });
-                imgui.SetWindowFontScale(fs0);
-            end
-            section(bx, mid - 6 * sc, 'HP', m.hp or 0, hpmax, low and { 1, 0.4, 0.42 } or GO, low and { 1, 0.66, 0.68 } or GO2);
-            if hasmp then section(mid + 6 * sc, bx + bw, 'MP', m.mp or 0, mpmax, AZ, { 0.72, 0.90, 1 }); end
+            ALLY.numbar(dl, bx, mid - 6 * sc, ry, y2 - 1 * sc, 'HP', m.hp or 0, m.hpp, low and { 1, 0.4, 0.42 } or GO, low and { 1, 0.66, 0.68 } or GO2, fs0, 1.1, 0.74, sc, v * ta, true);
+            if hasmp then ALLY.numbar(dl, mid + 6 * sc, bx + bw, ry, y2 - 1 * sc, 'MP', m.mp or 0, m.mpp, AZ, { 0.72, 0.90, 1 }, fs0, 1.1, 0.74, sc, v * ta, true); end
         end
     end
     if p < 1 then                                                    -- the turn: a gold light across the middle, brightest edge-on
