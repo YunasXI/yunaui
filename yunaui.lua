@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.63';
+addon.version = '1.0.69';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -4763,6 +4763,7 @@ local function cat_of(m)
     elseif m == 123 or m == 157 then return 'error';
     elseif m == 121 or (m >= 127 and m <= 148) then return 'system';
     elseif m >= 20 and m <= 122 then return 'combat';
+    elseif (m >= 162 and m <= 188) or m == 191 then return 'combat';   -- (the other parties of the alliance)
     end
     return 'other';
 end
@@ -4771,7 +4772,10 @@ local function chat_col(cat)
     if type(c) == 'table' and tonumber(c[1]) then return c; end
     return CHAT_DEF[cat or 'other'] or CHAT_DEF.other;
 end-- Combat-log lines: battle messages, "can't do that" (122), skill-ups (129), exp and gil (131)
-local function is_combat(m) return (m >= 20 and m <= 120) or m == 122 or m == 129 or m == 131; end
+local COMBAT_A = { [162] = true, [163] = true, [164] = true, [165] = true, [166] = true, [167] = true, [168] = true, [170] = true,   -- (the other
+    [171] = true, [174] = true, [175] = true, [177] = true, [181] = true, [182] = true, [183] = true, [185] = true, [186] = true,    --  parties of the
+    [187] = true, [188] = true, [191] = true };                                                                                       --  alliance's battle lines)
+local function is_combat(m) return (m >= 20 and m <= 120) or m == 122 or m == 129 or m == 131 or COMBAT_A[m] == true; end
 local SJIS = { ['\129\168'] = '>', ['\129\169'] = '<', ['\129\170'] = '^', ['\129\171'] = 'v', ['\129\64'] = ' ',
                ['\129\154'] = '*', ['\129\153'] = '*', ['\129\69'] = '-', ['\129\124'] = '-', ['\129\117'] = '"', ['\129\118'] = '"' };
 function C.mob_name(s)                                               -- (a name without the marker symbol it may start with)
@@ -5841,12 +5845,21 @@ local function chat_line(dl, x, y, s, c, a, lh)
     local cx = x;
     local low = -math.floor(imgui.GetTextLineHeight() * 0.11 + 0.5);   -- (this font draws < and > low, centred on small letters: raised to sit centred on capitals and numbers, as in "<3")
     local put1;
+    local sl_ = s:lower();                                           -- (only a /check result: "... seems tough", "... is impossible to gauge")
+    local hlok = sl_:find('seems', 1, true) ~= nil or sl_:find('impossible to gauge', 1, true) ~= nil;
     local function put(str)                                          -- (a piece of text at cx: the C.HL words in their colour)
         local low_ = str:lower();
         local best, bs, be;
-        for _, h in ipairs(C.HL) do
-            local i = low_:find(h[1], 1, true);
-            if i and (bs == nil or i < bs) then best, bs, be = h, i, i + #h[1] - 1; end
+        if hlok then
+            for _, h in ipairs(C.HL) do
+                local i = low_:find(h[1], 1, true);
+                while i do                                           -- (a whole word: never the end of a name like Ramtough)
+                    local b4, af = low_:sub(i - 1, i - 1), low_:sub(i + #h[1], i + #h[1]);
+                    if not b4:find('%a') and not af:find('%a') then break; end
+                    i = low_:find(h[1], i + 1, true);
+                end
+                if i and (bs == nil or i < bs) then best, bs, be = h, i, i + #h[1] - 1; end
+            end
         end
         if best == nil then put1(str, tc); return; end
         if bs > 1 then put1(str:sub(1, bs - 1), tc); end
@@ -7257,19 +7270,26 @@ function C.exp_ring(sc, v, job, label)
     end_plain('exp_x', 'exp_y');
 end
 -- your jobs and experience (or limit points), for the map hub: nil when there's no character
+-- EXP / merits: the job at 75 or more - its real level, not the synced one (a level sync party lowers GetMainJobLevel;
+-- the game's own per-job level keeps the real one)
+function C.lv75(pl, lvl)
+    if (tonumber(lvl) or 0) >= 75 then return true; end
+    local ok, real = pcall(function() return pl:GetJobLevel(pl:GetMainJob() or 0); end);
+    return ok and (tonumber(real) or 0) >= 75 or false;
+end
 function C.expinfo()
     local pl = AshitaCore:GetMemoryManager():GetPlayer();
     if pl == nil or (pl:GetMainJob() or 0) == 0 then return nil; end
     local mj, lvl, sub, sublvl = pl:GetMainJob(), pl:GetMainJobLevel() or 0, pl:GetSubJob() or 0, pl:GetSubJobLevel() or 0;
     local cur, need = pl:GetExpCurrent() or 0, pl:GetExpNeeded() or 1;
-    local limit = (pl.GetIsLimitModeEnabled and pl:GetIsLimitModeEnabled()) and lvl >= 75;
+    local limit = (pl.GetIsLimitModeEnabled and pl:GetIsLimitModeEnabled()) and C.lv75(pl, lvl);
     local label, v;
     if limit then
         local lp, mp, mpx = pl:GetLimitPoints() or 0, pl:GetMeritPoints() or 0, pl:GetMeritPointsMax() or 0;
         label, v = string.format('LIMIT %s / 10,000   MERITS %d/%d', commas(lp), mp, mpx), lp / 10000;
     else
         label, v = string.format('EXP %s / %s', commas(cur), commas(need)), (need > 0) and (cur / need) or 0;
-        if lvl >= 75 then label = string.format('MERITS %d/%d', pl:GetMeritPoints() or 0, pl:GetMeritPointsMax() or 0); end   -- (capped: your merits instead)
+        if C.lv75(pl, lvl) then label = string.format('MERITS %d/%d', pl:GetMeritPoints() or 0, pl:GetMeritPointsMax() or 0); end   -- (capped: your merits instead)
     end
     local rest = tostring(lvl) .. ((JOBS[sub] and sublvl > 0) and ('  /  ' .. JOBS[sub] .. ' ' .. sublvl) or '');
     local tc = ALLY.tagcol(mj);                                      -- (the job's tag in its colour, as in the party list)
@@ -7303,17 +7323,17 @@ local function draw_exp(dt)
     first_place('exp_x', 'exp_y', -(tonumber(cfg.exp_w) or 520) * sc / 2, -110);
     local lvl, sub, sublvl = pl:GetMainJobLevel() or 0, pl:GetSubJob() or 0, pl:GetSubJobLevel() or 0;
     local cur, need = pl:GetExpCurrent() or 0, pl:GetExpNeeded() or 1;
-    local limit = (pl.GetIsLimitModeEnabled and pl:GetIsLimitModeEnabled()) and lvl >= 75;
+    local limit = (pl.GetIsLimitModeEnabled and pl:GetIsLimitModeEnabled()) and C.lv75(pl, lvl);
     local label, v;
     if limit then
         local lp, mp, mpx = pl:GetLimitPoints() or 0, pl:GetMeritPoints() or 0, pl:GetMeritPointsMax() or 0;
         label, v = string.format('LIMIT %s / 10,000   MERITS %d/%d', commas(lp), mp, mpx), lp / 10000;
     else
         label, v = string.format('EXP %s / %s', commas(cur), commas(need)), (need > 0) and (cur / need) or 0;
-        if lvl >= 75 then label = string.format('MERITS %d/%d', pl:GetMeritPoints() or 0, pl:GetMeritPointsMax() or 0); end   -- (capped: your merits instead)
+        if C.lv75(pl, lvl) then label = string.format('MERITS %d/%d', pl:GetMeritPoints() or 0, pl:GetMeritPointsMax() or 0); end   -- (capped: your merits instead)
     end
     C.exp_mid = nil;
-    if lvl >= 75 and not limit then                                  -- (capped: your merits instead - in the ring, which fills with them)
+    if C.lv75(pl, lvl) and not limit then                                  -- (capped: your merits instead - in the ring, which fills with them)
         local mp, mpx = pl:GetMeritPoints() or 0, pl:GetMeritPointsMax() or 0;
         label, v, C.exp_mid = 'MERITS', (mpx > 0) and (mp / mpx) or 0, string.format('%d/%d', mp, mpx);
     end
@@ -11014,7 +11034,7 @@ function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
     local pl = AshitaCore:GetMemoryManager():GetPlayer();
     local mj, lvl = pl and pl:GetMainJob() or 0, pl and pl:GetMainJobLevel() or 0;
     local sub, sublvl = pl and pl:GetSubJob() or 0, pl and pl:GetSubJobLevel() or 0;
-    local limit = pl and pl.GetIsLimitModeEnabled and pl:GetIsLimitModeEnabled() and lvl >= 75;
+    local limit = pl and pl.GetIsLimitModeEnabled and pl:GetIsLimitModeEnabled() and C.lv75(pl, lvl);
     local pts, need, v = 0, 1, 0;
     if pl then
         if limit then pts, need = pl:GetLimitPoints() or 0, 10000; else pts, need = pl:GetExpCurrent() or 0, pl:GetExpNeeded() or 1; end
@@ -11033,7 +11053,7 @@ function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
     if live and H.lvl and lvl > H.lvl and H.mj == mj then H.burst = now; end
     if live and H.used and used > H.used and used >= bmax and bmax > 0 then H.shake = now; end
     H.pts, H.limit, H.lvl, H.mj, H.used = pts, limit, lvl, mj, used;
-    local shown = (lvl >= 75 and not limit) and ((mmax > 0) and merits / mmax or 0) or v;   -- (capped: the bar fills with your merits)
+    local shown = (C.lv75(pl, lvl) and not limit) and ((mmax > 0) and merits / mmax or 0) or v;   -- (capped: the bar fills with your merits)
     H.v = H.v and (H.v + (shown - H.v) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 4)) or shown;
     local bu = H.burst and (now - H.burst) or 99;
     local lit = (bu < 1.2) and (1 - bu / 1.2) or 0;
@@ -11088,7 +11108,7 @@ function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
     do
         local word, val;
         if limit then word, val = 'LIMIT', string.format('%d%%  -  merits %d/%d', math.floor(v * 100), merits, mmax);
-        elseif lvl >= 75 then word, val = 'MERITS', string.format('%d/%d', merits, mmax);
+        elseif C.lv75(pl, lvl) then word, val = 'MERITS', string.format('%d/%d', merits, mmax);
         else word, val = 'EXP', string.format('%d%%', math.floor(v * 100)); end
         local ww, wh = YMAP.tsize(word, 9.5 * s);
         local _, vh = YMAP.tsize(val, 12 * s);
