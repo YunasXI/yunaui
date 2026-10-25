@@ -62,7 +62,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -6336,11 +6336,11 @@ end
 -- one stronger. Played from memory by Windows (winmm PlaySound), at TP sound volume: the samples scaled once per volume.
 C.SND = { last = 0, bufs = {}, raw = {}, keep = {} };
 pcall(ffi.cdef, 'int __stdcall PlaySoundA(const char* pszSound, void* hmod, uint32_t fdwSound);');
-function C.snd_play(name)
+function C.snd_play(name, volkey)                                  -- (volkey: the setting its volume comes from - TP sound volume if none)
     local S = C.SND;
     if S.winmm == nil then local ok, lib = pcall(ffi.load, 'winmm'); S.winmm = ok and lib or false; end
     if not S.winmm then return; end
-    local vol = math.max(0, math.min(1.5, tonumber(cfg.tp_sound_vol) or 0.6));
+    local vol = math.max(0, math.min(1.5, tonumber(cfg[volkey or 'tp_sound_vol']) or 0.6));
     if vol <= 0.001 then return; end
     local key = name .. '@' .. string.format('%.2f', vol);
     local buf = S.bufs[key];
@@ -6367,6 +6367,26 @@ function C.snd_play(name)
     S.keep[#S.keep + 1] = buf;                                       -- (kept alive while Windows plays it)
     if #S.keep > 4 then table.remove(S.keep, 1); end
     pcall(function() S.winmm.PlaySoundA(ffi.cast('const char*', buf), nil, 0x0001 + 0x0002 + 0x0004); end);   -- (async, no default beep, from memory)
+end
+-- an MP3 from sounds/, by Windows' MCI (winmm): opened once, played from its start, at volume key's setting (1 = as recorded)
+pcall(ffi.cdef, 'uint32_t __stdcall mciSendStringA(const char* cmd, char* ret, uint32_t n, void* cb);');
+function C.mp3_play(name, volkey)
+    local S = C.SND;
+    if S.winmm == nil then local ok, lib = pcall(ffi.load, 'winmm'); S.winmm = ok and lib or false; end
+    if not S.winmm then return; end
+    local vol = math.max(0, math.min(1.5, tonumber(cfg[volkey]) or 0.8));
+    if vol <= 0.001 then return; end
+    local al = 'yui_' .. name;
+    S.mci = S.mci or {};
+    pcall(function()
+        if not S.mci[name] then
+            local path = (addon.path .. '/sounds/' .. name .. '.mp3'):gsub('/', string.char(92));
+            if S.winmm.mciSendStringA('open "' .. path .. '" type mpegvideo alias ' .. al, nil, 0, nil) ~= 0 then return; end
+            S.mci[name] = true;
+        end
+        S.winmm.mciSendStringA('setaudio ' .. al .. ' volume to ' .. math.floor(math.min(1000, vol * 1000 / 1.5)), nil, 0, nil);
+        S.winmm.mciSendStringA('play ' .. al .. ' from 0', nil, 0, nil);
+    end);
 end
 function C.tp_sound()
     local tp = 0;
@@ -10025,7 +10045,15 @@ function C.loot_packet(e)
     local wname = (d:sub(0x16 + 1, 0x16 + 16):match('^[^%z]*')) or '';
     local ename = (d:sub(0x26 + 1, 0x26 + 16):match('^[^%z]*')) or '';
     if slot == nil or slot > 9 then return; end
-    if (judge or 0) >= 1 then L.lots[slot] = nil; return; end         -- (it went to someone, or nobody wanted it)
+    if (judge or 0) >= 1 then                                        -- (it went to someone, or nobody wanted it)
+        L.lots[slot] = nil;
+        if (wid or 0) > 0 and cfg.loot_voice ~= false then           -- (to you: the item sound - once for a burst of items)
+            local me = '';
+            pcall(function() me = AshitaCore:GetMemoryManager():GetParty():GetMemberName(0) or ''; end);
+            if me ~= '' and wname == me and os.clock() - (L.voice_t or -99) > 2 then L.voice_t = os.clock(); C.mp3_play('item', 'loot_voice_vol'); end
+        end
+        return;
+    end
     local cur = L.pool[slot];
     local t = L.lots[slot];
     if t == nil or (cur and t.key and t.key ~= cur.key) then t = { key = cur and cur.key or nil, by = {} }; L.lots[slot] = t; end
@@ -11830,6 +11858,13 @@ local function draw_window()
             row_switch('##yui_lootw', 'Show the pool', 'loot_win', "On: when something drops, YunaUI's own treasure pool shows it: time left, who is winning, and Lot / Pass buttons. Click an item to keep it picked.");
             row_slider('##yui_s_loot', 'Pool size', 'loot_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_slider('##yui_s_coin', 'Drop coin size', 'loot_coin_scale', 0.5, 2.5, 0.05, '%.2fx');
+            row_switch('##yui_lootv', 'Item sound', 'loot_voice', 'On: a short sound plays when an item from the treasure pool goes to you.');
+            if cfg.loot_voice ~= false then
+                row_slider('##yui_lootvv', 'Item sound volume', 'loot_voice_vol', 0.05, 1.5, 0.05, '%.2fx', nil, function()
+                    C.SND.vprev = os.clock();                        -- (a preview plays)
+                end);
+                if C.SND.vprev and os.clock() - C.SND.vprev > 0.35 then C.SND.vprev = nil; C.mp3_play('item', 'loot_voice_vol'); end
+            end
             hint("With an item picked (the mouse over it or a click in the pool, or the cursor on it in the game's own pool), everyone's lot shows on their party card: a number, -- for a pass, ? for still to go, the highest in gold.");
         else
             ------------------------------------------------------------------ DAMAGE METER
