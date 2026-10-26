@@ -1474,6 +1474,7 @@ function JOBS.stats()
         hp, mp, tp = pt:GetMemberHP(0), pt:GetMemberMP(0), pt:GetMemberTP(0);
         hpp, mpp = pt:GetMemberHPPercent(0), pt:GetMemberMPPercent(0);
     end);
+    if YUI_FAKE_TP then tp = YUI_FAKE_TP; end                        -- (YunaUI's guide: a pretend TP filling up)
     local first = (b.seen2 == nil);
     b.seen2 = true;
     for _, kv in ipairs({ { 'hp', hpp / 100 }, { 'mp', mpp / 100 }, { 'tp', math.min(3000, tp) / 3000 } }) do
@@ -2835,6 +2836,9 @@ function JOBS.statbar(key, value, v, lag, pct)
     if key == 'hp' and type(YUI_HP_COL) == 'table' then             -- YunaUI's BARS > Your HP bar (Pink, Red or White)
         d[2], d[3], d[4] = YUI_HP_COL[1], YUI_HP_COL[2], YUI_HP_COL[3];
     end
+    if key == 'mp' and type(YUI_MP_COL) == 'table' then             -- (YunaUI's Hex link mode: azure)
+        d[2], d[3], d[4] = YUI_MP_COL[1], YUI_MP_COL[2], YUI_MP_COL[3];
+    end
     local kx, ky = key .. 'bar_x', key .. 'bar_y';
     local sc = math.max(0.5, math.min(2.5, (tonumber(cfg.sb_scale) or 1) * (tonumber(cfg['sb_' .. key .. '_size']) or 1)));
     if not cfg.sb_num_v1 then                                        -- (once: the text keeps the size it had with each bar's size)
@@ -3467,6 +3471,7 @@ ashita.events.register('d3d_present', 'ye_present', function()
     local ok, err = pcall(function()
         if not AshitaCore:GetFontManager():GetVisible() then return; end
         if YUI_MAPCOVER then return; end                              -- (YunaUI's big map is open over the game's Map: only it shows)
+        if YUI_PRES and not YUI_PRES.eq then return; end              -- (YunaUI's guide: only the slide's own pieces show)
         local status = player_status();
         if status == nil then return; end                           -- zoning / not logged in
         if not cfg.imported then JOBS.import(); end

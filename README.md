@@ -34,6 +34,10 @@ are kept), unzip the new one as above, and change `/addon load yunaui` in your s
 `/addon load yunaui vanacore`. The old `VanaCore\addons\vanacore\yunalink` helper isn't needed anymore: you can delete it too.
 3. The first time, a short guide shows what every piece does, then Edit Mode opens: place everything, then press **DONE**.
 
+**Changes to the game's interface** (through VanaCore, put back as soon as YunaUI is unloaded): while YunaUI's own
+pieces are on, the game's chat log, party list, alliance lists and Target window are hidden (the chat line too, if
+you choose), and the network window is hidden. Turn a YunaUI piece off and the game's own comes back.
+
 ## Commands
 
 | Command | What it does |

@@ -859,6 +859,22 @@ end
 -- Numbers for the window
 ----------------------------------------------------------------------------------------------------
 local function segment()
+    if ui.demo then                                                  -- (YunaUI's guide: a pretend fight, so the meter shows how it looks)
+        if ui.demo_seg == nil then
+            local t = now();
+            local seg = new_segment(t - 64);
+            local party = { { 'Yunas', 12, true, 41200 }, { 'Slayern', 8, false, 36800 }, { 'Ninjy', 22, false, 24100 },
+                            { 'Corsi', 14, false, 19900 }, { 'Tankie', 15, false, 12600 }, { 'Bardo', 7, false, 7400 } };
+            for _, m in ipairs(party) do
+                local who = { key = m[1], name = m[1], job = m[2], me = m[3] };
+                for k = 1, 20 do add_to(seg, who, 'Melee', math.floor(m[4] * 0.6 / 20), (k % 6 == 0) and 'crit' or 'hit'); end
+                add_to(seg, who, 'Weapon skill', math.floor(m[4] * 0.4), 'hit', 'Savage Blade');
+            end
+            ui.demo_seg = seg;
+        end
+        ui.demo_seg.last = now();
+        return ui.demo_seg;
+    end
     return meter.fight;
 end
 
@@ -1084,6 +1100,8 @@ end
 local function draw_header()
     local dl = imgui.GetWindowDrawList();
     local ox, oy = imgui.GetCursorPos();
+    local hx_t = fx.hexcol() ~= nil;                                 -- (Hex link: the title is on the frame's edge - room for it)
+    if hx_t then oy = oy + Z(8); end
     local H = Z(30);
     local ww = imgui.GetWindowWidth();
     local seg = segment();
@@ -1103,6 +1121,21 @@ local function draw_header()
     if two then H = Z(58); end
     imgui.SetCursorPos({ ox, ty });
     local tcol = fx.lit('col_title', C.gold, 'bright_title');        -- YunaUI > ADDONS: colour + brightness
+    if fx.hexcol() then local g = fx.hexcol().gold2; tcol = { g[1], g[2], g[3], 1 }; end   -- (Hex link: its gold)
+    if hx_t then                                                     -- (Hex link: the title drawn on the frame; a button over it)
+        local r = ui.trect;
+        if type(r) == 'table' then
+            local cx_, cy_ = imgui.GetCursorScreenPos();
+            imgui.SetCursorScreenPos({ r[1], r[2] });
+            imgui.InvisibleButton('##ym_title', { math.max(1, r[3]), math.max(1, r[4]) });
+            if imgui.IsItemHovered() and not ui.report_open then
+                imgui.SetTooltip('Damage Meter\nClick (or right click anywhere) to post the meter in party or linkshell chat.');
+            end
+            if imgui.IsItemClicked() then imgui.OpenPopup('##ydps_report'); end
+            imgui.SetCursorScreenPos({ cx_, cy_ });
+        end
+        if seg and s.mode ~= 3 then imgui.TextColored(C.muted, clock_text(duration(seg))); imgui.SameLine(0, Z(6)); end
+    else
     local tsx, tsy = imgui.GetCursorScreenPos();
     for _, d in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { 1, 1 } }) do put_text(tsx + d[1], tsy + d[2], { 0, 0, 0, 0.9 }, title); end
     imgui.TextColored(tcol, title);
@@ -1112,16 +1145,21 @@ local function draw_header()
     if imgui.IsItemClicked() then imgui.OpenPopup('##ydps_report'); end
     if seg and s.mode ~= 3 then imgui.SameLine(0, Z(10)); imgui.TextColored(C.muted, clock_text(duration(seg))); end
     imgui.SameLine(0, Z(4));
+    end
     fx.anchor_button('##ym_anchor', imgui.GetTextLineHeight());
     fx.report_menu('##ydps_report');
 
     imgui.SetCursorPos({ x_cb, oy + Z(3) });                -- RESET: the numbers only start again when you press it
+    if fx.hexcol() then
+        if fx.chip_button('##ym_reset', 'Reset', cw, Z(24), fx.hexcol().gold, false) then reset(); end
+    else
     imgui.PushStyleColor(ImGuiCol_Button, { 0.74, 0.66, 0.95, 0.12 });
     imgui.PushStyleColor(ImGuiCol_ButtonHovered, { 0.74, 0.66, 0.95, 0.28 });
     imgui.PushStyleColor(ImGuiCol_ButtonActive, { 0.74, 0.66, 0.95, 0.40 });
     imgui.PushStyleColor(ImGuiCol_Text, { 0.86, 0.82, 1.0, 1 });
     if imgui.Button('Reset##ym_reset', { cw, Z(24) }) then reset(); end
     imgui.PopStyleColor(4);
+    end
     if imgui.IsItemHovered() then
         local dur = duration(seg);
         imgui.SetTooltip(string.format('Clear every number and start again.%s',
@@ -1130,12 +1168,16 @@ local function draw_header()
 
     local on = s.mode == 3;                                   -- ENMITY: lit while open; a second click goes back
     imgui.SetCursorPos({ x_enm, oy + Z(3) });
+    if fx.hexcol() then
+        if fx.chip_button('##ym_hate', 'Enmity', enw, Z(24), fx.hexcol().azure, on) then ui.toggle_hate(); end
+    else
     imgui.PushStyleColor(ImGuiCol_Button, on and { 1.0, 0.36, 0.62, 0.55 } or { 1.0, 0.36, 0.62, 0.12 });
     imgui.PushStyleColor(ImGuiCol_ButtonHovered, on and { 1.0, 0.36, 0.62, 0.70 } or { 1.0, 0.36, 0.62, 0.25 });
     imgui.PushStyleColor(ImGuiCol_ButtonActive, { 1.0, 0.36, 0.62, 0.80 });
     imgui.PushStyleColor(ImGuiCol_Text, on and { 1, 1, 1, 1 } or { 1.0, 0.70, 0.82, 1 });
     if imgui.Button('Enmity##ym_hate', { enw, Z(24) }) then ui.toggle_hate(); end
     imgui.PopStyleColor(4);
+    end
     if imgui.IsItemHovered() then
         imgui.SetTooltip('Estimated enmity on your target (or the last monster fought).\nShows who the monster is attacking right now.');
     end
@@ -1149,7 +1191,8 @@ local function draw_header()
 
     imgui.SetCursorPos({ ox, oy + H });
     local x, y = imgui.GetCursorScreenPos();
-    DL.RF(dl, x, y + 1, x + W, y + 2, u32(C.line));
+    local hc = fx.hexcol();
+    DL.RF(dl, x, y + 1, x + W, y + 2, u32(hc and { hc.gold[1], hc.gold[2], hc.gold[3], 0.26 } or C.line));
     imgui.Dummy({ W, Z(6) });
 end
 
@@ -1237,6 +1280,8 @@ function fx.grip(x, y, w, h, hov)
     local fg = imgui.GetWindowDrawList();
     local cx, cy = x + w - Z(8), y + h - Z(8);
     local col = U4(0.86, 0.80, 1.00, hov and 0.95 or 0.55);
+    local hc = fx.hexcol();
+    if hc then col = U4(hc.gold[1], hc.gold[2], hc.gold[3], hov and 0.95 or 0.45); end
     DL.L(fg, cx - Z(10), cy, cx, cy - Z(10), col, 1.5);
     DL.L(fg, cx - Z(5), cy, cx, cy - Z(5), col, 1.5);
 end
@@ -1255,6 +1300,8 @@ function fx.col(key, def)                                           -- a colour 
     return def;
 end
 function fx.thin_bar(dl, x, y, w, frac, bright, c1, c2)
+    local hc = fx.hexcol();
+    if hc and not c1 then c1, c2 = bright and hc.gold2 or hc.azure2, bright and hc.gold or hc.azure; end   -- (Hex link: gold for you, azure for the rest)
     c1, c2 = c1 or fx.col('col_bar1', C.hp), c2 or fx.col('col_bar2', C.mp2);
     local h = math.max(2, math.floor(Z(3)));
     local fw = math.max(h, w * math.max(0, math.min(1, frac or 0)));
@@ -1344,9 +1391,27 @@ local function draw_rows()
     local h = lh + Z(13);
     local pctw = text_w('100.0%') + Z(14);                    -- the share column, and the damage column left of it
     local name_col = fx.col('col_name', { 1, 1, 1, 1 });
+    local hxr = fx.hexcol() ~= nil;                                  -- (Hex link: bars grow, numbers roll, rows slide to their new place)
+    local tn = os.clock();
+    local dt = math.min(0.1, tn - (ui.sm_t or tn));
+    ui.sm_t, ui.sm = tn, ui.sm or {};
+    local anyx = false;
+    for _, a in ipairs(list) do if ui.expanded[a.name] then anyx = true; end end
     for i, a in ipairs(list) do
         local x, y = imgui.GetCursorScreenPos();
         imgui.InvisibleButton('##ym_row' .. i, { W, h });
+        local sm = nil;
+        if hxr then
+            local key = a.name or '?';
+            sm = ui.sm[key];
+            if not sm or seg == nil then sm = { f = 0, n = 0, r = i }; ui.sm[key] = sm; end
+            local tf = top > 0 and a.total / top or 0;
+            sm.f = sm.f + (tf - sm.f) * math.min(1, dt * 7);
+            sm.n = sm.n + (a.total - sm.n) * math.min(1, dt * 6);
+            if math.abs(a.total - sm.n) < 1 or a.total < sm.n then sm.n = a.total; end
+            sm.r = anyx and i or (sm.r + (i - sm.r) * math.min(1, dt * 9));
+            y = y + (sm.r - i) * h;
+        end
         local hov = imgui.IsItemHovered();
         if imgui.IsItemClicked() then ui.expanded[a.name] = not ui.expanded[a.name]; end
         if hov then
@@ -1359,10 +1424,10 @@ local function draw_rows()
         if job then fx.otext(x + Z(10) + text_w(left), y, { 0.80, 0.78, 0.90, 1 }, job); end
         local pct = sum > 0 and a.total / sum * 100 or 0;
         local pct_txt = string.format('%.1f%%', pct);
-        local dmg_txt = fmt(a.total);
+        local dmg_txt = fmt(sm and math.floor(sm.n + 0.5) or a.total);
         fx.otext(x + W - text_w(pct_txt), y, { 0.85, 0.83, 0.93, 1 }, pct_txt);
         fx.otext(x + W - pctw - text_w(dmg_txt), y, { 1, 1, 1, 1 }, dmg_txt);
-        fx.thin_bar(dl, x, y + lh + Z(3), W, top > 0 and a.total / top or 0, a.me);
+        fx.thin_bar(dl, x, y + lh + Z(3), W, sm and sm.f or (top > 0 and a.total / top or 0), a.me);
         if ui.expanded[a.name] then draw_details(a); end
     end
     imgui.SetWindowFontScale(0.8);
@@ -1403,6 +1468,23 @@ function fx.frame(dl, x, y, w, h)
     neon({ { x, y + c + L * 0.6 }, { x, y + c }, { x + c, y }, { x + c + L, y } });
     neon({ { x + w, y + h - c - L * 0.6 }, { x + w, y + h - c }, { x + w - c, y + h }, { x + w - c - L, y + h } });
 end
+function fx.hexcol() return (YUI_HEX and type(YUI_HEXCOL) == 'table') and YUI_HEXCOL or nil; end   -- (Hex link's gold and azure)
+-- Hex link: a button as a slanted chip, like the minimap's (dark, a fine edge; filled with its colour when on)
+function fx.chip_button(id, label, w, h, edge, on)
+    local x, y = imgui.GetCursorScreenPos();
+    local clicked = imgui.InvisibleButton(id, { w, h });
+    local hov = imgui.IsItemHovered();
+    local dl = imgui.GetWindowDrawList();
+    local kc = h * 0.42;
+    local p = { { x + kc, y }, { x + w, y }, { x + w - kc, y + h }, { x, y + h } };
+    pcall(function() dl:AddConvexPolyFilled(p, U4(0.03, 0.035, 0.055, 0.85)); end);
+    local fa = on and 0.40 or (hov and 0.20 or 0);
+    if fa > 0 then pcall(function() dl:AddConvexPolyFilled(p, U4(edge[1], edge[2], edge[3], fa)); end); end
+    for i = 1, 4 do dl:AddLine(p[i], p[i % 4 + 1], U4(edge[1], edge[2], edge[3], (on or hov) and 0.95 or 0.55), 1); end
+    local tc = (on or hov) and { 1, 1, 1, 1 } or { 0.55 + edge[1] * 0.45, 0.55 + edge[2] * 0.45, 0.55 + edge[3] * 0.45, 1 };
+    put_text(x + (w - text_w(label)) / 2, y + (h - imgui.GetTextLineHeight()) / 2, tc, label);
+    return clicked;
+end
 -- the _ and X buttons, drawn as thin lines like YunaUI's
 function fx.icon_button(id, kind, size)
     local x, y = imgui.GetCursorScreenPos();
@@ -1410,7 +1492,9 @@ function fx.icon_button(id, kind, size)
     local hov = imgui.IsItemHovered();
     local dl = imgui.GetWindowDrawList();
     local w, h = size[1], size[2];
-    if hov then DL.RF(dl, x, y, x + w, y + h, u32(kind == 'x' and { 1, 0.36, 0.62, 0.30 } or { 0.74, 0.66, 0.95, 0.22 }), h / 2); end
+    local hc = fx.hexcol();
+    if hov and hc then DL.RF(dl, x, y, x + w, y + h, u32(kind == 'x' and { hc.gold[1], hc.gold[2], hc.gold[3], 0.25 } or { hc.azure[1], hc.azure[2], hc.azure[3], 0.22 }));
+    elseif hov then DL.RF(dl, x, y, x + w, y + h, u32(kind == 'x' and { 1, 0.36, 0.62, 0.30 } or { 0.74, 0.66, 0.95, 0.22 }), h / 2); end
     local col = u32(hov and { 1, 1, 1, 1 } or { 0.80, 0.78, 0.90, 0.9 });
     local cx, cy, r = x + w / 2, y + h / 2, math.min(w, h) * 0.22;
     if kind == '-' then DL.L(dl, cx - r, cy, cx + r, cy, col, 1.6);
@@ -1428,7 +1512,7 @@ function fx.anchor_button(id, h)
     local clicked = imgui.InvisibleButton(id, { w, h });
     local hov = imgui.IsItemHovered();
     ui.icon_hov = ui.icon_hov or hov;
-    if hov then imgui.SetTooltip(s.anchor and 'Anchored to your HP bar\nClick to let it go (then drag it anywhere)' or 'Anchor to your HP bar'); end
+    if hov and not YUI_HEX then imgui.SetTooltip(s.anchor and 'Anchored to your HP bar\nClick to let it go (then drag it anywhere)' or 'Anchor to your HP bar'); end   -- (Hex link: just the look - no anchoring)
     local dl = imgui.GetWindowDrawList();
     local cx, cy = x + w / 2, y + h / 2 - h * 0.10;                 -- (a little up: level with the capitals of DAMAGE)
     local r = h * 0.27;
@@ -1439,23 +1523,37 @@ function fx.anchor_button(id, h)
         local c = { 1, 1, 1 };
         if on then c = (sx < 0) and C.hp or C.mp2; end               -- anchored: pink and violet
         if on and hov then c = { math.min(1, c[1] + 0.2), math.min(1, c[2] + 0.2), math.min(1, c[3] + 0.2) }; end
-        DL.CF(dl, px, cy, r + Z(1.2), U4(0.15, 0.14, 0.18, 0.75 * math.max(a, 0.6)), 20);   -- the dark rim
-        DL.CF(dl, px, cy, r, U4(c[1], c[2], c[3], a), 20);
+        if YUI_HEX and type(YUI_HEXCOL) == 'table' then             -- (YunaUI's Hex link mode: two hexagons, gold and azure)
+            if on then c = (sx < 0) and YUI_HEXCOL.gold or YUI_HEXCOL.azure; end
+            if on and hov then c = { math.min(1, c[1] + 0.2), math.min(1, c[2] + 0.2), math.min(1, c[3] + 0.2) }; end
+            for pass = 1, 2 do
+                local rr = (pass == 1) and (r * 0.92 + Z(1.2)) or (r * 0.78);   -- (apart, a dark rim each)
+                local col = (pass == 1) and U4(0.15, 0.14, 0.18, 0.75 * math.max(a, 0.6)) or U4(c[1], c[2], c[3], a);
+                local pts = {};
+                for k = 0, 5 do local an = -math.pi / 2 + k * math.pi / 3; pts[k + 1] = { px + rr * math.cos(an), cy + rr * math.sin(an) }; end
+                if not pcall(function() dl:AddConvexPolyFilled(pts, col); end) then
+                    for k = 2, 5 do dl:AddTriangleFilled(pts[1], pts[k], pts[k + 1], col); end
+                end
+            end
+        else
+            DL.CF(dl, px, cy, r + Z(1.2), U4(0.15, 0.14, 0.18, 0.75 * math.max(a, 0.6)), 20);   -- the dark rim
+            DL.CF(dl, px, cy, r, U4(c[1], c[2], c[3], a), 20);
+        end
     end
-    if clicked then s.anchor, ui.anchor_t0, ui.place = not s.anchor, nil, true; settings.save('dps'); end
+    if clicked and not YUI_HEX then s.anchor, ui.anchor_t0, ui.place = not s.anchor, nil, true; settings.save('dps'); end
     return clicked;
 end
 -- Anchored to your HP bar (DAMAGE METER > Anchor to your HP bar): it sits just right of the bar and follows it. When it
 -- anchors it fades up into place, a little rise, with a bright pink-to-violet line running down its left edge.
 function fx.fade_alpha()
-    if not s.anchor then return 1; end
+    if not s.anchor or YUI_HEX then return 1; end
     local bp = (type(YUI_EQ_BARPOS) == 'table') and YUI_EQ_BARPOS.hp or nil;
     if bp == nil or os.clock() - (bp[4] or 0) > 1 then return 1; end
     if ui.anchor_t0 == nil then return 0.01; end                     -- (about to fade in)
     return math.max(0.01, math.min(1, (os.clock() - ui.anchor_t0) / 0.45));
 end
 function fx.anchor_pos()
-    if not s.anchor then ui.anchor_t0 = nil; ui.anchor_fx = nil; return nil; end
+    if not s.anchor or YUI_HEX then ui.anchor_t0 = nil; ui.anchor_fx = nil; return nil; end   -- (Hex link: never anchored)
     local bp = (type(YUI_EQ_BARPOS) == 'table') and YUI_EQ_BARPOS.hp or nil;
     if bp == nil or os.clock() - (bp[4] or 0) > 1 then return nil; end   -- your HP bar isn't showing: it stays where it is
     local tx, ty = bp[1] + bp[3] + Z(30), bp[2] - Z(64);           -- right of the bar, its title about level with the HP number
@@ -1500,8 +1598,18 @@ function fx.anchor_effect()
         fg:AddLine(p0, p1, U4(1, 0.92, 1, 0.95 * f), Z(1.2));         -- the bright core
     end
 end
+function fx.hex_tick()                                              -- (Hex link: when it appeared, the fight's start and end; gives its alpha)
+    local t = os.clock();
+    if not ui.hx_last or t - ui.hx_last > 1 then ui.hx_t0 = t; end  -- (just came up: it draws itself in)
+    ui.hx_last = t;
+    local f = fighting();
+    if ui.hx_fight == nil then ui.hx_fight = f; end
+    if f ~= ui.hx_fight then ui.hx_fight = f; if f then ui.hx_pulse = t; else ui.hx_sweep = t; end end
+    return math.min(1, 0.35 + (t - ui.hx_t0) / 0.5);                -- (the words come up as the frame draws)
+end
 local function draw_meter()
-    imgui.PushStyleVar(ImGuiStyleVar_Alpha, fx.fade_alpha());
+    local hxa = fx.hexcol() and fx.hex_tick() or 1;
+    imgui.PushStyleVar(ImGuiStyleVar_Alpha, fx.fade_alpha() * hxa);
     if ui.place then
         imgui.SetNextWindowPos({ s.x, s.y }, ImGuiCond_Always);
         imgui.SetNextWindowSize({ Z(BASE_W), Z(s.h or 300) }, ImGuiCond_Always);
@@ -1509,7 +1617,9 @@ local function draw_meter()
     end
     local ax, ay = fx.anchor_pos();
     if ax then imgui.SetNextWindowPos({ ax, ay }, ImGuiCond_Always); end
-    imgui.SetNextWindowSizeConstraints({ BASE_W * 0.5, Z(110) }, { BASE_W * 2.5, 4000 });
+    local hexw = fx.hexcol() ~= nil;                                 -- (Hex link: its frame, the height fitting the rows)
+    if hexw and ui.fit_h and ui.ww then imgui.SetNextWindowSize({ ui.ww, ui.fit_h }, ImGuiCond_Always); end
+    imgui.SetNextWindowSizeConstraints({ BASE_W * 0.5, hexw and Z(60) or Z(110) }, { BASE_W * 2.5, 4000 });
     if imgui.Begin('Damage Meter##ym_main', ui.open, bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoCollapse,
             ImGuiWindowFlags_NoScrollbar, ImGuiWindowFlags_NoScrollWithMouse, ImGuiWindowFlags_NoBackground,
             ax and ImGuiWindowFlags_NoMove or 0)) then
@@ -1522,11 +1632,23 @@ local function draw_meter()
         end
         ui.dps_hov = imgui.IsWindowHovered(ImGuiHoveredFlags_ChildWindows or 0);
         if type(ww) == 'number' and type(wh) == 'number' then
+            if hexw and YUI_HEXFRAME then
+                local t_ = os.clock();                               -- (it draws itself in; the edge pulses azure when a fight starts, a light
+                local pk = ui.hx_pulse and math.max(0, 1 - (t_ - ui.hx_pulse) / 0.9) or 0;   --  sweeps round it when it ends, a glint now and then)
+                local gl, gs = nil, 0.55;
+                if ui.hx_sweep and t_ - ui.hx_sweep < 1 then gl, gs = (t_ - ui.hx_sweep), 1;
+                elseif YUI_HEXGLINT then gl = YUI_HEXGLINT(ui.hx_t0); end
+                local okf, tr = pcall(YUI_HEXFRAME, imgui.GetWindowDrawList(), s.x + 2, s.y + Z(9), s.x + ww - 2, s.y + wh - 2,
+                    { s = scale.k, fill = math.min(0.94, (tonumber(s.backdrop) or 0.55) + 0.25), title = (s.mode == 3) and 'ENMITY' or 'DAMAGE',
+                      t = t_ - (ui.hx_t0 or t_), pulse = { fx.hexcol().azure, pk }, glint = gl, gs = gs });
+                ui.trect = okf and tr or nil;
+            else
             pcall(fx.backdrop, imgui.GetWindowDrawList(), s.x, s.y, ww, wh, tonumber(s.backdrop) or 0.55);   -- the window's own edges
+            end
             local mx, my = imgui.GetMousePos();
             if type(mx) == 'table' then mx, my = mx.x or mx[1], mx.y or mx[2]; end
             local near = type(mx) == 'number' and mx > s.x + ww - Z(26) and my > s.y + wh - Z(26) and mx < s.x + ww and my < s.y + wh;
-            pcall(fx.grip, s.x, s.y, ww, wh, near);
+            if near or not hexw then pcall(fx.grip, s.x, s.y, ww, wh, near); end   -- (Hex link: only when the mouse is at the corner)
         end
         -- right click anywhere on it: post the meter in party / linkshell chat
         if ui.dps_hov and imgui.IsMouseClicked(1) then imgui.OpenPopup('##ydps_report'); end
@@ -1534,7 +1656,8 @@ local function draw_meter()
             -- dragged wider / narrower: the Size follows (no re-placing, so the drag isn't interrupted)
             local k = math.max(0.5, math.min(2.5, ww / BASE_W));
             if math.abs(k - scale.k) > 0.005 then scale.k, ui.k_main, s.size = k, k, math.floor(k * 100 + 0.5); end
-            ui.ww, ui.wh, s.h = ww, wh, math.floor(wh / scale.k);
+            ui.ww, ui.wh = ww, wh;
+            if not hexw then s.h = math.floor(wh / scale.k); end      -- (Hex link: the height is the rows', not saved)
         end
         imgui.SetWindowFontScale(1.0);
         W = math.max(Z(200), (ui.ww or Z(404)) - Z(24));
@@ -1544,6 +1667,11 @@ local function draw_meter()
             imgui.SetWindowFontScale(1.0);
             W = math.max(Z(200), (ui.ww or Z(404)) - Z(24) - Z(10));
             draw_rows();
+            local _, ey = imgui.GetCursorScreenPos();
+            if type(ey) == 'table' then ey = ey.y or ey[2]; end
+            if hexw and type(ey) == 'number' then                    -- (where the rows end: next frame the window fits them)
+                ui.fit_h = math.floor(math.max(Z(60), math.min(Z(640), ey - s.y + Z(8))));
+            end
         end
         imgui.EndChild();
     end
@@ -1781,6 +1909,7 @@ ashita.events.register('d3d_present', 'ym_present', function()
     pcall(hate.tick);
     if lg.f and now() - lg.snap_t > 10 and fighting() then lg.snap_t = now(); pcall(lg.snapshot, hate.focus(), 'every 10s'); end
     send_chat_queue();
+    if YUI_PRES and not YUI_PRES.dps then return; end                 -- (YunaUI's guide: only the slide's own pieces show)
     local ok, err = pcall(draw_ui);
     if not ok then pcall(YUI_ERRLOG, 'meter draw', err); end
 end);
@@ -1894,9 +2023,11 @@ end);
 -- For YunaUI's DAMAGE METER tab: the settings, saving, and the few things that need more than a saved value
 YUI_DPS = {
     get = function() return s; end,                                  -- (s can be replaced when the file changes)
+    rect = function() if ui.ww and ui.wh then return { s.x, s.y, ui.ww, ui.wh }; end return nil; end,   -- (its window as drawn: the guide's picture)
     save = function() settings.save('dps'); end,
     reset = function() reset(); end,
     set_visible = function(v) ui.open[1], s.visible, ui.place = v, v, true; settings.save('dps'); end,
+    demo = function(on) ui.demo, ui.demo_seg = on and true or nil, nil; end,   -- (YunaUI's guide: a pretend fight while it shows)
     set_minimized = function(v) s.minimized, ui.place = v, true; settings.save('dps'); end,
     set_anchor = function(v) s.anchor, ui.anchor_t0, ui.place = v, nil, true; settings.save('dps'); end,
     place = function(x, y) s.x, s.y, ui.place = math.floor(x), math.floor(y), true; settings.save('dps'); end,   -- (GENERAL > LAYOUT)
