@@ -11,17 +11,21 @@ has both.
 local dir = ...;
 local SEP = '\\';
 local LIBS = vana.paths.addons .. SEP .. 'vanacore' .. SEP .. 'libs';
-local MARK = '--[[\r\nCompatibility layer: lets addons written for the Ashita v4';
+local MARK = 'Compatibility layer: lets addons written for the Ashita v4';
 
--- VanaCore's Ashita layer, as it runs it for Ashita addons
+-- VanaCore's Ashita layer, as it runs it for Ashita addons (its opening "--[[" then a line end - Windows' or Unix's:
+-- VanaCore's builds have used both)
 do
     local f = assert(io.open(vana.paths.install .. SEP .. 'VanaCore.Core.dll', 'rb'), 'YunaUI: VanaCore.Core.dll not found');
     local data = f:read('*a');
     f:close();
-    local s = data:find(MARK, 1, true);
-    assert(s ~= nil, 'YunaUI: this VanaCore has no Ashita layer to run');
+    local p = data:find(MARK, 1, true);
+    assert(p ~= nil, 'YunaUI: this VanaCore has no Ashita layer to run');
+    local s = p;
+    if data:sub(p - 6, p - 1) == '--[[\r\n' then s = p - 6; elseif data:sub(p - 5, p - 1) == '--[[\n' then s = p - 5; end
     local e = data:find('\0', s, true) or (#data + 1);
     local source = data:sub(s, e - 1);
+    if s == p then source = '--[[\n' .. source; end                 -- (its opening not found right before: the comment opened here)
     data = nil;
     assert(loadstring(source, '=VanaCore compat/ashita.lua'))();
 end
