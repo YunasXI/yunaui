@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.75';
+addon.version = '1.0.76';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -6140,17 +6140,30 @@ local function draw_party(dt)
         imgui.SetCursorScreenPos({ x, y });
         imgui.Dummy({ w + 8 + bl, math.max(10, h + 6 + top) });
         end_plain('party_x', 'party_y');
-        if cfg.party_up then                                         -- PARTY > Grow upward: when the list's height changes, its top moves by as
-            local sz = WATCH.size and WATCH.size.party_x;            --  much the other way - its bottom stays put, new members push it up
-            local hn = sz and sz[2];
-            if hn and ALLY.ph and math.abs(hn - ALLY.ph) > 0.5 and not imgui.IsMouseDown(0) then
-                cfg.party_y = (tonumber(cfg.party_y) or 0) + (ALLY.ph - hn);
-                WATCH.one = WATCH.one or {}; WATCH.one.party_x = 2;
-                WATCH.later = true;
+        if cfg.party_up then                                         -- PARTY > Grow upward: its bottom edge stays put (cfg.party_bot) and new
+            local sz = WATCH.size and WATCH.size.party_x;            --  members push its top up - the top set from the bottom each time, so
+            local hn = sz and sz[2];                                 --  nothing adds up (zoning made it creep up when it moved by each change)
+            local py = tonumber(cfg.party_y) or 0;
+            if hn and hn > 4 then
+                local moved = ALLY.py_set ~= nil and math.abs(py - ALLY.py_set) > 0.5;
+                if cfg.party_bot == nil or ALLY.py_set == nil or (moved and (imgui.IsMouseDown(0) or EDIT.on)) then
+                    cfg.party_bot = py + hn;                         -- (placed or moved - dragged, Edit Mode, a layout: its bottom taken again)
+                else                                                 -- (only kept on the screen: its bottom stays as it was)
+                    local _, H_ = C.screen();
+                    local bot = math.min(tonumber(cfg.party_bot) or (py + hn), H_ or 99999);
+                    local want = math.floor(bot - hn + 0.5);
+                    if math.abs(want - py) > 0.5 then
+                        cfg.party_y, py = want, want;
+                        WATCH.one = WATCH.one or {}; WATCH.one.party_x = 2;
+                        WATCH.later = true;
+                    end
+                end
+                ALLY.py_set = py;
             end
-            ALLY.ph = hn;
-        else ALLY.ph = nil; end
+        else ALLY.py_set, cfg.party_bot = nil, nil; end
+        local py0_ = cfg.party_y;
         ALLY.keep('party_x', 'party_y');                              -- (always on the screen)
+        if ALLY.py_set and cfg.party_y ~= py0_ then ALLY.py_set = tonumber(cfg.party_y); end   -- (kept on the screen: not a move - its bottom stays as it was)
     elseif cfg.party then imgui.End(); imgui.PopStyleVar(2); end
     -- the two alliance parties, side by side
     if not cfg.alliance then return; end
@@ -6167,19 +6180,24 @@ local function draw_party(dt)
         if has(12, l2) or has(6, l3) then b1, b2 = 12, 6; end
     end);
     if C.GST and C.GST.noally then return; end                       -- (the guide's Party slide: the party alone)
+    local has2 = PREVIEW.alliance;                                   -- (a second alliance party there)
+    for i = b2, b2 + 5 do if p:GetMemberIsActive(i) ~= 0 then has2 = true; end end
     for n, a in ipairs({ { b1, 'alliance_x', 'alliance_y', 'ally1_scale', 'ally1_cols' }, { b2, 'ally2_x', 'ally2_y', 'ally2_scale', 'ally2_cols' } }) do
         local any = PREVIEW.alliance;
         for i = a[1], a[1] + 5 do if p:GetMemberIsActive(i) ~= 0 then any = true; end end
         if any then
             local anch = cfg.ally_anchor and cfg.party and not (C.GST and C.GST.noparty);   -- anchored: stacked on the party, right edges lined up
             if anch then
-                local ref = (n == 1) and 'party' or 'alliance';
+                local ds = imgui.GetIO().DisplaySize;
+                local up = (tonumber(cfg.party_y) or 0) > ((ds and ds.y) or 1080) * 0.45;   -- (party low on screen: they go above it)
+                local ref = (n == 1) and 'party' or 'alliance';      -- (below the party: party, Alliance 1, Alliance 2 downward)
+                if up and has2 then ref = (n == 1) and 'ally2' or 'party'; end   -- (above it: Alliance 1 on top, then 2, then the party - the order the
+                                                                     --  game's cursor goes down in (party, 1, 2, back to the party): it flows down
+                                                                     --  the screen and wraps to the top, never jumping up between them - Chadbrowick)
                 local rs = WATCH.size and WATCH.size[ref .. '_x'];
                 local me = (WATCH.size and WATCH.size[a[2]]) or { 220, 150 };
                 local rx, ry = tonumber(cfg[ref .. '_x']), tonumber(cfg[ref .. '_y']);
                 if rs and rx and ry then
-                    local ds = imgui.GetIO().DisplaySize;
-                    local up = (tonumber(cfg.party_y) or 0) > ((ds and ds.y) or 1080) * 0.45;   -- (party low on screen: they go above it)
                     local nx = rx + rs[1] - me[1];
                     local pl, ml = ALLY.lx and ALLY.lx.PARTY, ALLY.lx and ALLY.lx[tostring(n)];
                     if pl and ml then nx = pl[1] - ml[2]; end                -- (its line on the party's line)
@@ -11795,6 +11813,7 @@ function LAYOUT.chats(o, lo, hi, split)
 end
 function LAYOUT.apply(o, eq, dps)
     for k, v in pairs(o) do cfg[k] = v; end
+    ALLY.py_set, cfg.party_bot = nil, nil;                           -- (PARTY > Grow upward: its bottom taken again where the layout puts it)
     WATCH.move = 3;                                                  -- every window jumps to its new place
     save();
     if eq and next(eq) and YUI_EQ_APPLY then pcall(YUI_EQ_APPLY, eq); end
@@ -12688,7 +12707,7 @@ local function draw_window()
                     local d = (6 - ALLY.pn) * ALLY.pgap;
                     cfg.party_y = (tonumber(cfg.party_y) or 0) + (cfg.party_up and d or -d);
                     WATCH.one = WATCH.one or {}; WATCH.one.party_x = 2;
-                    ALLY.ph = nil;
+                    ALLY.py_set, cfg.party_bot = nil, nil;
                 end
                 save();
             end);
