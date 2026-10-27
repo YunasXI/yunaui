@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.71';
+addon.version = '1.0.72';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -5713,9 +5713,10 @@ function ALLY.head_icons(dl, x, cy, sc)                              -- the arro
     local ka = ALLY.hbh.cards and 1 or (kon and 0.9 or 0.75);
     local ccx = kx + bs / 2;
     local cw_, ch_ = 5.6 * sc, 8.0 * sc;
+    local cyk = cy;                                                  -- (with the arrow and the anchor: the whole title sits higher - see ALLY.spine)
     for q = 1, 2 do                                                  -- (the back one up and left, the front one lower and right)
         local ox, oy = (q == 1) and -1.6 * sc or 1.6 * sc, (q == 1) and -1.2 * sc or 1.2 * sc;
-        local x0, y0 = ccx + ox - cw_ / 2, cy + oy - ch_ / 2;
+        local x0, y0 = ccx + ox - cw_ / 2, cyk + oy - ch_ / 2;
         DL.RF(dl, x0, y0, x0 + cw_, y0 + ch_, U4(0.08, 0.07, 0.11, 0.95 * ka), 1.4 * sc, C.rall);
         DL.R(dl, x0, y0, x0 + cw_, y0 + ch_, U4(kc[1], kc[2], kc[3], ((q == 2) and 1 or 0.6) * ka), 1.4 * sc, C.rall, 1.2 * sc);
     end
@@ -5757,8 +5758,9 @@ function ALLY.spine(dl, list, x, y, sc, dt, tidx, n, party)
     local lab = (type(n) == 'string') and n or ('ALLIANCE ' .. n);
     local lw = imgui.CalcTextSize(lab);
     local labh = imgui.GetTextLineHeight();
-    text(dl, lx - lw - 8 * sc, y, lab, { C.muted[1], C.muted[2], C.muted[3], 0.9 });
-    if party then ALLY.head_icons(dl, lx - lw - 14 * sc, y + labh / 2, sc); end
+    local hy_ = party and 2.5 * sc or 0;                              -- (your party's title and its icons a little higher: clear of the plate under them)
+    text(dl, lx - lw - 8 * sc, y - hy_, lab, { C.muted[1], C.muted[2], C.muted[3], 0.9 });
+    if party then ALLY.head_icons(dl, lx - lw - 14 * sc, y + labh / 2 - hy_, sc); end
     imgui.SetWindowFontScale(fs);
     local y0 = y + labh + 6 * sc;                                    -- (under its title)
     local y1 = y0 + 10 * sc + (#list - 1) * gap + 10 * sc;
@@ -6731,480 +6733,21 @@ function C.arc_spots(rx, ry)                                         -- (10 angl
     A.rx, A.ry, A.spots = rx, ry, out;
     return out;
 end
-function C.macroring(held, always, now)
-    local M = C.MB;
-    local row = (held ~= 0) and held or (M.ringrow or 1);
-    M.ringrow = row;
-    local mm = AshitaCore:GetMemoryManager();
-    local me = mm:GetParty():GetMemberTargetIndex(0) or 0;
-    if me == 0 then return; end
-    local ap = mm:GetEntity():GetActorPointer(me);
-    if ap == nil or ap == 0 then return; end
-    local px, py, pz = ashita.memory.read_float(ap + 0x678), ashita.memory.read_float(ap + 0x680), ashita.memory.read_float(ap + 0x67C);
-    local fx, fy = C.w2s(px, pz, py);
-    if fx == nil then return; end
-    local hex = cfg.target_fx == 'link';
-    local A = hex and (C.GOLDH or { 1.0, 0.76, 0.34 }) or { 1.0, 0.45, 0.85 };    -- (the style's own colours: gold / pink)
-    local A2 = hex and (C.GOLDH2 or { 1.0, 0.90, 0.62 }) or { 0.80, 0.70, 1.0 };  -- (and their light: pale gold / violet)
-    local sc = (tonumber(cfg.scale) or 1) * math.max(0.5, math.min(2.5, tonumber(cfg.mb_scale) or 1));
-    local op = M.a;
-    local rx, ry = 170 * sc, 52 * sc;
-    local cx, cy = fx, fy + 6 * sc;
-    local spots = C.arc_spots(rx, ry);
-    local sel = M.sel or 0;
-    local function pt(t) return cx + rx * math.cos(t), cy + ry * math.sin(t); end
-    -- an invisible window of its own: text sized outside any window makes ImGui open its "Debug" window
-    local SW, SH = C.screen();
-    imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
-    imgui.SetNextWindowSize({ SW, SH }, ImGuiCond_Always);          -- (as big as the screen, so nothing in it is clipped; it takes no input)
-    local fl_ = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoMove, ImGuiWindowFlags_NoScrollbar,
-        ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing,
-        ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoInputs or 0);
-    if imgui.Begin('##yui_mring', { true }, fl_) then
-        local dl = imgui.GetBackgroundDrawList();
-        -- the hairline arc, its ends fading out
-        local ta, tb = math.rad(C.ARC.a0 + 6), math.rad(C.ARC.a1 - 6);
-        local N = 72;
-        for q = 0, N - 1 do
-            local x0, y0 = pt(ta + (tb - ta) * q / N);
-            local x1, y1 = pt(ta + (tb - ta) * (q + 1) / N);
-            local edge = math.min(1, math.min(q, N - 1 - q) / (N * 0.2));
-            DL.L(dl, x0, y0, x1, y1, U4(A[1], A[2], A[3], 0.42 * op * edge), 1);
-        end
-        -- the lit segment round the pick: a soft glow under a fine bright line
-        do
-            local tc, half, sm = spots[sel], math.rad(11), 20;
-            for pass = 1, 2 do
-                for q = 0, sm - 1 do
-                    local x0, y0 = pt(tc - half + 2 * half * q / sm);
-                    local x1, y1 = pt(tc - half + 2 * half * (q + 1) / sm);
-                    local f = 1 - math.abs((q + 0.5) / sm - 0.5) * 2;
-                    if pass == 1 then DL.L(dl, x0, y0, x1, y1, U4(A[1], A[2], A[3], 0.18 * f * op), 5 * sc);
-                    else DL.L(dl, x0, y0, x1, y1, U4(A2[1], A2[2], A2[3], 0.9 * f * op), 1.4); end
-                end
-            end
-        end
-        -- the nodes
-        for k = 0, 9 do
-            local stag = math.max(0, math.min(1, op * 1.5 - math.abs(k - 4.5) * 0.06));   -- (fading in from the middle out)
-            if stag > 0.01 then
-                local x, y = pt(spots[k]);
-                local id = (row - 1) * 10 + k;
-                local fl = math.max(0, 1 - (now - (M.flash[id] or -99)) / 0.3);   -- (a quick pulse when it runs)
-                if k == sel then
-                    local r = (6 + 1.5 * fl) * sc;
-                    for g = 3, 1, -1 do DL.CF(dl, x, y, r + g * 3 * sc, U4(A[1], A[2], A[3], (0.07 + 0.08 * fl) * stag), 24); end
-                    DL.CF(dl, x, y, r, U4(0.05, 0.04, 0.08, 0.85 * stag), 24);
-                    pcall(function() dl:AddCircle({ x, y }, r, U4(A2[1], A2[2], A2[3], stag), 24, 1.6); end);
-                    DL.CF(dl, x, y, 2 * sc, U4(A2[1], A2[2], A2[3], stag), 12);
-                else
-                    local r = (3.2 + 1.5 * fl) * sc;
-                    DL.CF(dl, x, y, r, U4(0.05, 0.04, 0.08, 0.6 * stag), 16);
-                    pcall(function() dl:AddCircle({ x, y }, r, U4(A[1], A[2], A[3], (0.75 + 0.25 * fl) * stag), 16, 1.1); end);
-                end
-            end
-        end
-        -- the names: every one small and see-through, the pick big and bright - at the sides outward, at the bottom
-        -- alternately under and over the arc, so they never overlap
-        local pushed = sized('chat', 14 * sc);
-        local fs = FS or 1;
-        for k = 0, 9 do
-            local nm = M.names[(row - 1) * 10 + k] or '';
-            local stag = math.max(0, math.min(1, op * 1.5 - math.abs(k - 4.5) * 0.06));
-            if nm ~= '' and stag > 0.01 then
-                local t = spots[k];
-                local x, y = pt(t);
-                local pick = (k == sel);
-                imgui.SetWindowFontScale(fs * (pick and 1.0 or 0.68));
-                local tw, th = imgui.CalcTextSize(nm);
-                tw, th = tonumber(tw) or 0, tonumber(th) or 12;
-                local gap = (pick and 10 or 7) * sc;
-                local c = math.cos(t);
-                local tx, ty;
-                if c < -0.55 then tx, ty = x - gap - tw, y - th / 2;          -- (left side: outward, to the left)
-                elseif c > 0.55 then tx, ty = x + gap, y - th / 2;            -- (right side: to the right)
-                elseif k % 2 == 0 then tx, ty = x - tw / 2, y + gap;          -- (the bottom: under the arc...)
-                else tx, ty = x - tw / 2, y - gap - th; end                   -- (...or over it, every other one)
-                local al = (pick and 1 or 0.5) * stag;
-                DL.T(dl, tx + 1, ty + 1, U4(0, 0, 0, 0.65 * al), nm);
-                DL.T(dl, tx, ty, U4(1, 1, 1, al), nm);
-                if pick then                                          -- (its key, small, under its name)
-                    imgui.SetWindowFontScale(fs * 0.5);
-                    local kl = ((row == 1) and 'CTRL ' or 'ALT ') .. ((k == 9) and '0' or tostring(k + 1));
-                    local kw = tonumber((imgui.CalcTextSize(kl))) or 0;
-                    C.mb_otext(dl, tx + (tw - kw) / 2, ty + th, A2, stag, kl);
-                end
-            end
-        end
-        imgui.SetWindowFontScale(fs);
-        unsized(pushed);
-    end
-    imgui.End();
-end
 function C.lum(c) return 0.30 * c[1] + 0.59 * c[2] + 0.11 * c[3]; end   -- (how bright a colour looks)
-function C.mb_stext(dl, x, y, c, a, str)                             -- (the wave's text: a soft dark halo round it, only the text - it reads on bright snow, the bars untouched)
-    local k = U4(0, 0, 0, 0.18 * a);
-    for _, o in ipairs({ { 2, 0 }, { -2, 0 }, { 0, 2 }, { 0, -2 }, { 2, 2 }, { -2, 2 }, { 2, -2 }, { -2, -2 } }) do DL.T(dl, x + o[1], y + o[2], k, str); end
-    C.mb_otext(dl, x, y, c, a, str);
-end
-function C.mb_otext(dl, x, y, c, a, str)                             -- (small text with an edge all round: dark for a bright colour, light for a dark one - it reads anywhere)
-    local k = (C.lum(c) < 0.42) and U4(0.95, 0.95, 0.98, math.min(1, 1.1 * a)) or U4(0, 0, 0, math.min(1, 1.15 * a));   -- (solid: it never looks washed out)
-    for _, o in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }, { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do DL.T(dl, x + o[1], y + o[2], k, str); end
-    DL.T(dl, x, y, U4(c[1], c[2], c[3], a), str);
-end
-function C.mb_secs(dl, cx, ytop, h, cd, al, fsz, A, A2, hex)         -- (the recast's seconds: a small tag over the macro's top edge, clear of its name)
-    local fs = FS or 1;
-    local secs = (cd.s >= 60) and string.format('%d:%02d', math.floor(cd.s / 60), math.floor(cd.s % 60)) or tostring(math.ceil(cd.s));
-    imgui.SetWindowFontScale(fs * fsz * 0.74);
-    local sw_, sh_ = imgui.CalcTextSize(secs);
-    sw_, sh_ = tonumber(sw_) or 0, tonumber(sh_) or 8;
-    local bh = sh_ + 4;
-    local bw = math.max(bh * 2.2, sw_ + bh * (hex and 1.9 or 1.2));   -- (room for the numbers: a prism's pointed ends hold none)
-    local bx0, bx1, by0, by1 = cx - bw / 2, cx + bw / 2, ytop - bh * 0.62, ytop + bh * 0.38;
-    if hex then                                                      -- (Hex link: a little prism)
-        local k, my = bh / 2, (by0 + by1) / 2;
-        local pts = { { bx0, my }, { bx0 + k, by0 }, { bx1 - k, by0 }, { bx1, my }, { bx1 - k, by1 }, { bx0 + k, by1 } };
-        pcall(function() dl:AddConvexPolyFilled(pts, U4(0.075, 0.055, 0.10, 0.95 * al)); end);
-        for i = 1, 6 do dl:AddLine(pts[i], pts[i % 6 + 1], U4(A[1], A[2], A[3], 0.9 * al), 1); end
-    else
-        DL.RF(dl, bx0, by0, bx1, by1, U4(0.055, 0.045, 0.07, 0.95 * al), bh / 2);
-        DL.R(dl, bx0, by0, bx1, by1, U4(A[1], A[2], A[3], 0.9 * al), bh / 2, C.rall, 1);
-    end
-    DL.T(dl, cx - sw_ / 2, by0 + (bh - sh_) / 2, U4(A2[1], A2[2], A2[3], al), secs);
-    imgui.SetWindowFontScale(fs);
-end
-function C.mb_prism(dl, cx, cy, w, h, name, key, pick, al, fsz, A, A2, cd)   -- (Hex link: one macro as a prism, the head bars' shape)
-    local x0, x1, y0, y1 = cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2;
-    local k = h / 2;
-    local function poly(xa, xb, p, col)                              -- (the prism from xa to xb, grown by p)
-        local kk = math.min(k + p, (xb - xa) / 2 + p);
-        local pts = { { xa - p, cy }, { xa - p + kk, y0 - p }, { xb + p - kk, y0 - p }, { xb + p, cy }, { xb + p - kk, y1 + p }, { xa - p + kk, y1 + p } };
-        pcall(function() dl:AddConvexPolyFilled(pts, col); end);
-        return pts;
-    end
-    if pick then for g = 3, 1, -1 do poly(x0, x1, g * 2.4, U4(A[1], A[2], A[3], 0.10 * al)); end end
-    poly(x0, x1, 1.5, U4(0, 0, 0, 0.55 * al));                       -- (a dark rim: it reads on snow)
-    poly(x0, x1, 0, U4(0.075, 0.055, 0.10, (pick and 0.93 or 0.86) * al));
-    local busy = cd ~= nil and cd.f > 0;
-    if busy then poly(x0, x1, 0, U4(0, 0, 0, 0.22 * al)); end       -- (on recast: a touch darker)
-    if cd ~= nil and cd.ready then for g = 2, 1, -1 do poly(x0, x1, g * 3 * cd.ready, U4(A2[1], A2[2], A2[3], 0.2 * cd.ready * al)); end end
-    if x1 - x0 > 2 * k + 2 then                                      -- (glass: light on the top half, shade on the lower one)
-        local w0, w1, b0, b1 = U4(1, 1, 1, 0.20 * al), U4(1, 1, 1, 0), U4(0, 0, 0, 0), U4(0, 0, 0, 0.38 * al);
-        DL.RFM(dl, x0 + k, y0 + 1, x1 - k, cy, w0, w0, w1, w1);
-        DL.RFM(dl, x0 + k, cy, x1 - k, y1 - 1, b0, b0, b1, b1);
-        DL.L(dl, x0 + k, y0 + 1, x1 - k, y0 + 1, U4(1, 1, 1, (pick and 0.45 or 0.22) * al), 1);
-    end
-    local edge = poly(x0, x1, 0, 0);
-    local ec = pick and U4(A2[1], A2[2], A2[3], al) or U4(A[1], A[2], A[3], 0.7 * al);
-    for i = 1, 6 do dl:AddLine(edge[i], edge[i % 6 + 1], ec, pick and 1.6 or 1.1); end
-    local fs = FS or 1;
-    local gx, gr = x0 + k + h * 0.12, h * 0.36;                      -- (its key: a small gold hexagon)
-    if busy then                                                     -- (its recast: a slim bar along its foot, the head bars' own, emptying)
-        local bx, bw_ = gx + gr + 3, (x1 - k * 0.9) - (gx + gr + 3);
-        local bh_ = math.max(3, math.floor(h * 0.14 + 0.5));
-        if bw_ > 4 then pcall(C.hexbar, dl, bx, y1 - bh_ * 1.7 - 1, bw_, bh_, cd.f, nil, nil, { c1 = A2, c2 = A, band = bh_, live = true, al = al }); end
-    end
-    C.hexdot(dl, gx, cy, gr + 1, U4(0, 0, 0, 0.6 * al));
-    C.hexdot(dl, gx, cy, gr, U4(A[1], A[2], A[3], (pick and 1 or 0.75) * al));
-    imgui.SetWindowFontScale(fs * fsz * 0.66);
-    local kw, kh = imgui.CalcTextSize(key);
-    kw, kh = tonumber(kw) or 0, tonumber(kh) or 8;
-    DL.T(dl, gx - kw / 2, cy - kh / 2, U4(0.10, 0.06, 0.02, al), key);
-    if name ~= '' then
-        imgui.SetWindowFontScale(fs * fsz);
-        local nw, nh = imgui.CalcTextSize(name);
-        nw, nh = tonumber(nw) or 0, tonumber(nh) or 10;
-        local left, right = gx + gr + 3, x1 - k * 0.8;
-        if nw > 0 then                                               -- (one size for every name in the row: the longest one sets it)
-            C.MB.fq_next = math.min(C.MB.fq_next or 1, (right - left) / nw);
-            local q = math.max(0.65, math.min(1, C.MB.fq or 1));
-            if q < 0.999 then
-                imgui.SetWindowFontScale(fs * fsz * q);
-                nw, nh = imgui.CalcTextSize(name);
-                nw, nh = tonumber(nw) or 0, tonumber(nh) or 10;
-            end
-        end
-        local tx = left + math.max(0, (right - left - nw) / 2);
-        local ny = cy - nh / 2 - (busy and h * 0.09 or 0);           -- (a little higher over its recast bar)
-        DL.T(dl, tx + 1, ny + 1, U4(0, 0, 0, 0.6 * al), name);
-        DL.T(dl, tx, ny, U4(1, 1, 1, (pick and 1 or 0.92) * al * (busy and 0.8 or 1)), name);
-    end
-    if busy then C.mb_secs(dl, cx, y0, h, cd, al, fsz, A, A2, true); end
-    imgui.SetWindowFontScale(fs);
-end
-function C.mb_poly(dl, pts, col) pcall(function() dl:AddConvexPolyFilled(pts, col); end); end
-function C.mb_rpara(x0, y0, x1, y1, sl, r, grow)                     -- (a slanted plate "/" with rounded corners, as points)
-    grow = grow or 0;
-    x0, y0, x1, y1 = x0 - grow, y0 - grow, x1 + grow, y1 + grow;
-    local cs = { { x0 + sl, y0 }, { x1, y0 }, { x1 - sl, y1 }, { x0, y1 } };
-    local out = {};
-    for i = 1, 4 do
-        local c, pv, nx = cs[i], cs[(i + 2) % 4 + 1], cs[i % 4 + 1];
-        local function toward(q, d) local dx, dy = q[1] - c[1], q[2] - c[2]; local l = math.sqrt(dx * dx + dy * dy); return { c[1] + dx / l * d, c[2] + dy / l * d }; end
-        local a, b = toward(pv, r), toward(nx, r);
-        for t = 0, 4 do                                              -- (the corner rounded: a curve from a to b, pulled toward it)
-            local u = t / 4;
-            out[#out + 1] = { (1 - u) ^ 2 * a[1] + 2 * (1 - u) * u * c[1] + u * u * b[1], (1 - u) ^ 2 * a[2] + 2 * (1 - u) * u * c[2] + u * u * b[2] };
-        end
-    end
-    return out;
-end
-function C.mb_outline(dl, pts, col, th) for i = 1, #pts do dl:AddLine(pts[i], pts[i % #pts + 1], col, th); end end
-function C.mb_hexkey(x0, y0, x1, y1, k, g)                         -- (a long hexagon, pointed ends k deep, grown by g)
-    g = g or 0;
-    local cy = (y0 + y1) / 2;
-    return { { x0 - g, cy }, { x0 + k - g * 0.5, y0 - g }, { x1 - k + g * 0.5, y0 - g }, { x1 + g, cy }, { x1 - k + g * 0.5, y1 + g }, { x0 + k - g * 0.5, y1 + g } };
-end
-function C.mb_lerp3(a, b, t) return { a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t }; end
--- ACTION BARS > Bar at the bottom: its designs, drawn as pictures (images\mbar\<id>, cut from the user's sheet of 14:
--- the left end, a key with the bar behind it, the right end, the picked key - gold for Hex link, the bar's own colour
--- for Normal); widths as parts of the bar's height
-C.MBD = {
-    { id = 'hd_circle', name = 'Circle Clean', capl = 0.725, capr = 0.725, key = 0.992, ov = 0.496, hs = 1.15, one = true, hc = true, round = true, tw = 0.62, ltn = { 1.0, 0.72, 0.92 } },
-};
-function C.mb_design()                                               -- (for now one design: Circle Clean, both modes)
-    return C.MBD[1];
-end
-function C.mb_barsize(sc)                                            -- (the Bar's window: width, height)
-    local D = C.mb_design();
-    local Hb = 54 * sc * (D.hs or 1);
-    return (D.capl + D.capr - 2 * (D.ov or 0) + 10 * D.key) * Hb + 30 * sc, Hb + 40 * sc;
-end
--- a macro with several abilities / spells: one row each - its name (short) and its own timer, a fine bar emptying
--- under it; ready ones just their name. at(dx, dy): where a point of the key lands (turned with it).
-function C.mb_rows(dl, at, w, h, list, col, al, fscale, y0)
-    imgui.SetWindowFontScale(fscale);
-    local _, lh = imgui.CalcTextSize('Ag');
-    lh = tonumber(lh) or 8;
-    for i_, e in ipairs(list) do
-        local yy = y0 + (i_ - 1) * (lh + 5);
-        local nm_ = e.nm or '';
-        local maxw = w * 0.80 - (tonumber((imgui.CalcTextSize(C.mb_secstr(e.s or 0)))) or 0) - 4;   -- (cut to the room left by its timer)
-        while #nm_ > 3 and (tonumber((imgui.CalcTextSize(nm_))) or 0) > maxw do nm_ = nm_:sub(1, #nm_ - 2) .. '.'; end
-        local busy = e.f > 0;
-        local x1, y1 = at(-w * 0.40, yy);
-        local tn = { col[1] + (1 - col[1]) * 0.45, col[2] + (1 - col[2]) * 0.45, col[3] + (1 - col[3]) * 0.45 };   -- (its name: a pale tint of the same colour)
-        C.mb_otext(dl, x1, y1 - lh / 2, tn, al * (busy and 0.9 or 1), nm_);
-        if busy then
-            local st = C.mb_secstr(e.s);
-            local sw_ = tonumber((imgui.CalcTextSize(st))) or 0;
-            local x2, y2 = at(w * 0.40, yy);
-            C.mb_otext(dl, x2 - sw_, y2 - lh / 2, col, al, st);
-            local ax, ay = at(-w * 0.40, yy + lh / 2 + 1);
-            local bx, by_ = at(-w * 0.40 + w * 0.80 * e.f, yy + lh / 2 + 1);
-            DL.L(dl, ax - 1, ay, bx + 1, by_, U4(0, 0, 0, 0.7 * al), 4);   -- (outlined: no plate behind)
-            DL.L(dl, ax, ay, bx, by_, U4(col[1], col[2], col[3], 0.95 * al), 2);
-        end
-    end
-end
-function C.mb_timers_on()                                            -- (ACTION BARS > Timers under each macro, on the Sound wave: the recasts are there)
-    return cfg.macrobar ~= false and cfg.mb_timers == true and cfg.target_fx == 'link' and (cfg.mb_style or 'cards') == 'cards';
-end
--- ACTION BARS, Hex link: the Sound wave - the bar is an equaliser of fine gold bars, mirrored round a line, always
--- moving a little; a wave rises where the pick is and glides to it as you move; a run hits its part like a drum; a
--- macro on recast goes dim and flat, its seconds under its name; a weapon skill ready pulses. Under your feet.
--- an ink ring (images/brush/hexink*.png or enso*.png: white, its alpha the ink) drawn only partly: from the top,
--- clockwise, frac of the way round - a macro on recast, painting itself closed as it comes back. half: its half size.
-function C.inkring(dl, t, cx, cy, half, frac, col)
-    if t == nil or frac <= 0 then return; end
-    if frac >= 0.999 then pcall(function() DL.I(dl, t.ptr, cx - half, cy - half, cx + half, cy + half, 0, 0, 1, 1, col); end); return; end
-    local N = math.max(2, math.ceil(48 * frac));
-    local ri, ro = 0.20, 1.0;
-    local function P(a, r) return { cx + math.cos(a) * r * half, cy + math.sin(a) * r * half }; end
-    local function UV(a, r) return { 0.5 + 0.5 * math.cos(a) * r, 0.5 + 0.5 * math.sin(a) * r }; end
-    for q = 0, N - 1 do
-        local a0 = -math.pi / 2 + 2 * math.pi * frac * q / N;
-        local a1 = -math.pi / 2 + 2 * math.pi * frac * (q + 1) / N;
-        pcall(function() dl:AddImageQuad(t.ptr, P(a0, ri), P(a0, ro), P(a1, ro), P(a1, ri), UV(a0, ri), UV(a0, ro), UV(a1, ro), UV(a1, ri), col); end);
-    end
-end
-function C.clip_ybelow(pts, ya)                                      -- (a convex polygon's part under the line y = ya)
-    local out = {};
-    for k = 1, #pts do
-        local a, b = pts[k], pts[k % #pts + 1];
-        local ia, ib = a[2] >= ya, b[2] >= ya;
-        if ia then out[#out + 1] = a; end
-        if ia ~= ib then local t = (ya - a[2]) / (b[2] - a[2]); out[#out + 1] = { a[1] + (b[1] - a[1]) * t, ya }; end
-    end
-    return out;
-end
--- MACRO WAVES, ink rings: every macro a brushed ring with its key inside and its name under it - Hex link a hexagon,
--- Normal a circle (an ensō). On recast the ring is painted only partly (a faint ghost of the rest) and closes as it
--- comes back, its time under the name. The pick in its colour with a faint glass inside; the row not held small and
--- faint under it (MACRO WAVES > Both rows). A run: the ring flashes and pops.
-function C.mb_ink(dl, cx, top, sc, row, sel, now, op, cds, nm)
-    local M = C.MB;
-    local ts = math.max(0.6, math.min(2.5, tonumber(cfg.mb_text) or 1));   -- (MACRO WAVES > Text size)
-    local s_ = sc * ts;
-    local hex = cfg.target_fx == 'link';
-    local AC = hex and (C.GOLDH2 or { 1.0, 0.90, 0.62 }) or { 1.0, 0.45, 0.86 };   -- (the pick: Hex link gold, Normal its neon pink)
-    local LB = hex and (C.GOLDH or { 1.0, 0.76, 0.34 }) or { 0.72, 0.50, 1.00 };   -- (labels: gold / violet)
-    local WH, ORG, DIM, INK = { 1, 1, 1 }, { 1.0, 0.58, 0.26 }, { 0.70, 0.68, 0.66 }, { 0.03, 0.025, 0.03 };
-    if not hex then ORG = { 1.0, 0.55, 0.88 }; end
+-- MACRO WAVES, the recast timeline under the bar: a line that is time, READY at its left end; every ability / spell on
+-- recast rides it as a small hexagon toward READY - the last seconds wide, long recasts packed (log scale) - its name
+-- and time over / under it by turns, a short tail behind it, pulsing in its last 10 s; lights flow along the line.
+-- list: { nm, s (seconds), act (in the row you hold) }; AC lit, ED the line, LB labels.
+function C.mb_tline(dl, lx0, lx1, ty, s_, op, list, AC, ED, LB, ORG, WH)
+    local now = os.clock();
     local function cl01(u) return math.max(0, math.min(1, u)); end
-    local function c32(c, a) return U4(c[1], c[2], c[3], cl01(a)); end
-    local OL = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 }, { 0, 2 }, { 1, 2 }, { -1, 2 }, { 2, 0 }, { -2, 0 }, { 0, -2 } };
-    local function wid(str, px, sp)
-        local k = FIGHT.font(px);
-        local w_ = tonumber((imgui.CalcTextSize(str))) or 0;
-        if sp then w_ = 0; for i = 1, #str do w_ = w_ + (tonumber((imgui.CalcTextSize(str:sub(i, i)))) or 0) + ((i < #str) and sp or 0); end end
-        local h_ = imgui.GetTextLineHeight();
-        FIGHT.unfont(k);
-        return w_, h_;
-    end
-    local function txt(str, px, x_, y_, c, a, sp)                    -- (centred on x_, top at y_; a heavy dark outline: it reads on snow)
-        local w_ = wid(str, px, sp);
-        local k = FIGHT.font(px);
-        x_ = x_ - w_ / 2;
-        local function one(ch, xx)
-            local xi, yi = math.floor(xx + 0.5), math.floor(y_ + 0.5);
-            local oc = U4(0, 0, 0, cl01(a));
-            for _, o in ipairs(OL) do DL.T(dl, xi + o[1], yi + o[2], oc, ch); end
-            DL.T(dl, xi, yi, c32(c, a), ch);
-        end
-        if sp then for i = 1, #str do local ch = str:sub(i, i); one(ch, x_); x_ = x_ + (tonumber((imgui.CalcTextSize(ch))) or 0) + sp; end
-        else one(str, x_); end
-        FIGHT.unfont(k);
-    end
-    local function busyof(k, cdt)
-        local cd = (cdt or cds)[k];
-        local out = {};
-        if cd == nil then return out; end
-        for _, e in ipairs(cd.list or { cd }) do if (e.f or 0) > 0 then out[#out + 1] = e; end end
-        return out;
-    end
-    local function key(k) return (k == 9) and '0' or tostring(k + 1); end
-    do                                                               -- (a macro just run: the bar shakes a moment)
-        local ft0 = 99;
-        for k = 0, 9 do ft0 = math.min(ft0, now - (M.flash[(row - 1) * 10 + k] or -99)); end
-        local u = ft0 / 0.25;
-        if u >= 0 and u < 1 then cx = cx + math.sin(ft0 * 75) * 3 * s_ * (1 - u); end
-    end
-    local img = hex and 'hexink' or 'enso';
-    M.inkb = M.inkb or {}; M.inkr = M.inkr or {};                    -- (each macro: still on recast last frame / when it came back)
-    if M.inksel ~= ((row - 1) * 10 + sel) then M.inksel, M.inksel_t = (row - 1) * 10 + sel, now; end   -- (landed on another: it paints in)
-    local function ease(u) u = cl01(u); return 1 - (1 - u) ^ 3; end
-    -- the top: which row, book and page
-    local lab = ((row == 1) and 'CTRL' or 'ALT') .. (M.book and string.format('  .  BOOK %d  .  PAGE %d', M.book, M.page) or '');
-    local _, lh = wid('A', 8 * s_);
-    txt(lab, 8 * s_, cx, top, LB, op, 1.6 * s_);
-    local step = 64 * s_;
-    local x0 = cx - 4.5 * step;
-    local both = cfg.mb_both ~= false;
-    local function rowdraw(r, y, act)
-        local cdt = cds;
-        if r ~= row then local ok_, cc = pcall(C.mb_cds, r); cdt = (ok_ and type(cc) == 'table') and cc or {}; end
-        local rsel = act and sel or -1;
-        local _, nh = wid('A', (act and 10 or 8) * s_);
-        for k = 0, 9 do
-            local id = (r - 1) * 10 + k;
-            local name = M.names[id] or '';
-            if name == '' then name = '-'; end
-            local pick = (k == rsel);
-            local x = x0 + k * step;
-            local half = (act and (pick and 22 or 19) or 11) * s_;
-            local bl = busyof(k, cdt);
-            local left = 0;                                          -- (the most of it still to come back)
-            for _, e in ipairs(bl) do left = math.max(left, e.f or 0); end
-            local ft = now - (M.flash[id] or -99);
-            local pop = (ft >= 0 and ft < 0.45) and (1 - ft / 0.45) or 0;   -- (run: it pops and flashes)
-            local hz = half * (1 + 0.30 * pop * pop);
-            local t_ = tex('brush/' .. img .. ((k % 3) + 1) .. '.png');
-            local col = pick and AC or INK;
-            local al = act and 0.95 or 0.55;
-            if left > 0 then M.inkb[id] = true; elseif M.inkb[id] then M.inkb[id] = nil; M.inkr[id] = now; end   -- (just came back)
-            local inside = {};                                       -- (its inside: a hexagon or a circle a little inside the ring)
-            if hex then for q = 0, 5 do local a = math.rad(60 * q - 90); inside[#inside + 1] = { x + math.cos(a) * hz * 0.76, y + math.sin(a) * hz * 0.76 }; end
-            else for q = 0, 31 do local a = q / 32 * 6.2832; inside[#inside + 1] = { x + math.cos(a) * hz * 0.72, y + math.sin(a) * hz * 0.72 }; end end
-            if pick and act then                                     -- (the pick: a soft glow of its colour behind it)
-                local gl = 0.55 + 0.45 * ease((now - (M.inksel_t or 0)) / 0.3);
-                local gt = tex('brush/glow_round.png');               -- (one smooth soft glow - rings of circles showed as bands)
-                if gt then pcall(function() DL.I(dl, gt.ptr, x - hz * 1.9, y - hz * 1.9, x + hz * 1.9, y + hz * 1.9, 0, 0, 1, 1, c32(AC, 0.30 * gl * op)); end); end
-            end
-            do                                                       -- (an ink wash inside: on recast it drains, filling back up from the bottom as it returns)
-                local wc = pick and { AC[1] * 0.35, AC[2] * 0.30, AC[3] * 0.25 } or { 0.04, 0.035, 0.05 };
-                pcall(function() dl:AddConvexPolyFilled(inside, c32(wc, (left > 0 and 0.22 or 0.55) * al * op)); end);
-                if left > 0 then
-                    local ys0, ys1 = y - hz * 0.76, y + hz * 0.76;
-                    local lv = C.clip_ybelow(inside, ys1 - (ys1 - ys0) * (1 - left));
-                    if #lv >= 3 then pcall(function() dl:AddConvexPolyFilled(lv, c32(wc, 0.55 * al * op)); end); end
-                end
-            end
-            if left > 0 then C.inkring(dl, t_, x, y, hz, 1, c32(col, 0.18 * al * op)); end   -- (the ghost of the rest)
-            local fr = 1 - left;
-            if pick and act and left <= 0 then fr = ease((now - (M.inksel_t or 0)) / 0.25); end   -- (landed on it: its ring paints itself round)
-            if pick and act and fr < 1 then C.inkring(dl, t_, x, y, hz, 1, c32(INK, 0.5 * op)); end
-            C.inkring(dl, t_, x, y, hz, fr, c32(col, al * op));
-            local rt = now - (M.inkr[id] or -99);                    -- (back from recast: a gold sweep round it and a small splash)
-            if rt >= 0 and rt < 0.9 then
-                local sp_ = tex('brush/splat' .. ((k % 3) + 1) .. '.png');
-                if sp_ and rt < 0.7 then
-                    local z = 1.2 + 0.8 * ease(rt / 0.2);
-                    local sa = 0.55 * (1 - rt / 0.7);
-                    pcall(function() DL.I(dl, sp_.ptr, x - hz * z * 1.3, y - hz * z * 0.8, x + hz * z * 1.3, y + hz * z * 0.8, 0, 0, 1, 1, U4(1, 1, 1, sa * op)); end);
-                end
-                local gc = hex and AC or { 1.0, 0.82, 0.42 };
-                C.inkring(dl, t_, x, y, hz * 1.02, ease(rt / 0.35), c32(hex and (C.GOLDH2 or AC) or gc, op * ((rt < 0.4) and 1 or (1 - (rt - 0.4) / 0.5))));
-            end
-            if pop > 0 then C.inkring(dl, t_, x, y, hz, 1, c32(WH, 0.85 * pop * op)); end   -- (the flash)
-            local kpx = (act and (pick and 14 or 12) or 8) * s_;
-            local _, kh = wid('0', kpx);
-            txt(key(k), kpx, x, y - kh / 2, pick and AC or (act and WH or DIM), op * (act and 1 or 0.7));
-            local npx = (act and (pick and 11 or 10) or 8) * s_;
-            local nmax = step - 4 * s_;                              -- (a long name: a little smaller, then cut)
-            local nw = wid(name, npx);
-            if nw > nmax then npx = npx * math.max(0.75, nmax / nw); nw = wid(name, npx); end
-            local cut_ = false;
-            while #name > 3 and nw > nmax do name = name:sub(1, -2); nw = wid(name .. '.', npx); cut_ = true; end
-            if cut_ then name = name .. '.'; end
-            txt(name, npx, x, y + half + 3 * s_, pick and AC or (act and WH or DIM), op * (act and 1 or 0.7));
-            if #bl > 0 and act then
-                local secs = 0;
-                for _, e in ipairs(bl) do secs = math.max(secs, e.s or 0); end
-                txt(C.mb_secstr(secs), 9 * s_, x, y + half + 4 * s_ + nh, ORG, op);
-            end
-        end
-        local rl = (r == 1) and 'CTRL' or 'ALT';
-        local _, rh = wid('A', 8 * s_);
-        txt(rl, (act and 8 or 7) * s_, x0 - step * 0.75, y - rh / 2, act and LB or DIM, op * (act and 1 or 0.7), 1.2 * s_);
-    end
-    local ya = top + lh + 30 * s_;
-    if both then
-        rowdraw(1, ya, row == 1);                                    -- (Ctrl over Alt, always; the one you hold big)
-        rowdraw(2, ya + ((row == 1) and 76 or 66) * s_, row == 2);   -- (Alt held: room for the small Ctrl row's names over its big rings)
-    else
-        rowdraw(row, ya, true);
-    end
-end
--- MACRO WAVES, the hexagons: Ctrl's ten in a row, Alt's slotted in under them (interlocked), each a plate in Hex link's
--- style (dark glass, a fine gold edge - Normal mode its violet) with its key and name inside; the pick lit with a soft
--- glow. Under them the recast timeline: a line that is time, READY at its left end; every ability / spell on recast
--- leaves its hexagon (it dims) and rides the line as a small hexagon toward READY - the last seconds wide, long recasts
--- packed (log scale); back, it flies home and a light runs round its hexagon.
-function C.mb_comb(dl, cx, top, sc, row, sel, now, op, cds, nm)
-    local M = C.MB;
-    local ts = math.max(0.6, math.min(2.5, tonumber(cfg.mb_text) or 1));   -- (MACRO WAVES > Text size)
-    local s_ = sc * ts;
-    local hex = cfg.target_fx == 'link';
-    local AC = hex and (C.GOLDH2 or { 1.0, 0.90, 0.62 }) or { 1.0, 0.45, 0.86 };   -- (lit: Hex link gold / Normal neon pink)
-    local LB = hex and (C.GOLDH or { 1.0, 0.76, 0.34 }) or { 0.72, 0.50, 1.00 };   -- (labels, edges)
-    local ED = hex and { 0.79, 0.65, 0.35 } or { 0.55, 0.42, 0.85 };
-    local WH, ORG, DIM = { 1, 1, 1 }, hex and { 1.0, 0.58, 0.26 } or { 1.0, 0.55, 0.88 }, { 0.62, 0.60, 0.66 };
-    local function cl01(u) return math.max(0, math.min(1, u)); end
-    local function ease(u) u = cl01(u); return 1 - (1 - u) ^ 3; end
     local function c32(c, a) return U4(c[1], c[2], c[3], cl01(a)); end
     local OL = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } };
-    local function wid(str, px, sp)
+    local function txt(str, px, x_, y_, c, a, sp)                    -- (centred on x_, its middle at y_; a dark outline)
         local k = FIGHT.font(px);
         local w_ = tonumber((imgui.CalcTextSize(str))) or 0;
         if sp then w_ = 0; for i = 1, #str do w_ = w_ + (tonumber((imgui.CalcTextSize(str:sub(i, i)))) or 0) + ((i < #str) and sp or 0); end end
         local h_ = imgui.GetTextLineHeight();
-        FIGHT.unfont(k);
-        return w_, h_;
-    end
-    local function txt(str, px, x_, y_, c, a, sp)                    -- (centred on x_, its middle at y_; a dark outline)
-        local w_, h_ = wid(str, px, sp);
-        local k = FIGHT.font(px);
         x_, y_ = x_ - w_ / 2, y_ - h_ / 2;
         local function one(ch, xx)
             local xi, yi = math.floor(xx + 0.5), math.floor(y_ + 0.5);
@@ -7216,177 +6759,39 @@ function C.mb_comb(dl, cx, top, sc, row, sel, now, op, cds, nm)
         else one(str, x_); end
         FIGHT.unfont(k);
     end
-    local function fit(str, px, room)                                -- (a name for the room: a little smaller, then cut with a dot)
-        local w_ = wid(str, px);
-        if w_ > room then px = px * math.max(0.8, room / w_); w_ = wid(str, px); end
-        local cut_ = false;
-        while #str > 3 and w_ > room do str = str:sub(1, -2); w_ = wid(str .. '.', px); cut_ = true; end
-        return cut_ and (str .. '.') or str, px;
-    end
-    local function key(k) return (k == 9) and '0' or tostring(k + 1); end
     local function hexpts(x, y, r) local p = {}; for q = 0, 5 do local a = math.rad(60 * q - 90); p[#p + 1] = { x + math.cos(a) * r, y + math.sin(a) * r }; end return p; end
-    local function edge(p, col, th) for q = 1, #p do dl:AddLine(p[q], p[q % #p + 1], col, th); end end
-    local function sweep(p, frac, col, th)                           -- (a light run round a hexagon from its top, frac of the way)
-        local n = #p;
-        local tot = frac * n;
-        for q = 0, n - 1 do
-            if tot <= q then break; end
-            local a_, b_ = p[q + 1], p[(q + 1) % n + 1];
-            local u = math.min(1, tot - q);
-            dl:AddLine(a_, { a_[1] + (b_[1] - a_[1]) * u, a_[2] + (b_[2] - a_[2]) * u }, col, th);
-        end
-    end
-    do                                                               -- (a macro just run: the bar shakes a moment)
-        local ft0 = 99;
-        for k = 0, 9 do ft0 = math.min(ft0, now - (M.flash[(row - 1) * 10 + k] or -99)); end
-        local u = ft0 / 0.25;
-        if u >= 0 and u < 1 then cx = cx + math.sin(ft0 * 75) * 3 * s_ * (1 - u); end
-    end
-    M.cb = M.cb or {}; M.cr = M.cr or {}; M.cpos = M.cpos or {};       -- (on recast last frame / when it came back / where its hexagon is)
-    local both = cfg.mb_both ~= false;
-    local R = 30 * s_;
-    local dx = math.sqrt(3) * R;
-    local x0 = cx - 4.75 * dx;
-    -- the top: which row, book and page
-    local lab = ((row == 1) and 'CTRL' or 'ALT') .. (M.book and string.format('  .  BOOK %d  .  PAGE %d', M.book, M.page) or '');
-    txt(lab, 8 * s_, cx, top, LB, op, 1.6 * s_);
-    local y1 = top + 14 * s_ + R;
-    local y2 = y1 + 1.5 * R;
-    local marks = {};                                                -- (what's on recast: one marker each, on the timeline)
-    local function rowdraw(r, y, xo, act)
-        local cdt = cds;
-        if r ~= row then local ok_, cc = pcall(C.mb_cds, r); cdt = (ok_ and type(cc) == 'table') and cc or {}; end
-        local rsel = act and sel or -1;
-        for k = 0, 9 do
-            local id = (r - 1) * 10 + k;
-            local name = M.names[id] or '';
-            if name == '' then name = '-'; end
-            local pick = (k == rsel);
-            local x = x0 + xo + k * dx;
-            M.cpos[id] = { x, y };
-            local cd = cdt[k];
-            local left = 0;
-            if cd then for _, e in ipairs(cd.list or { cd }) do
-                if (e.f or 0) > 0 then
-                    left = math.max(left, e.f);
-                    local nm_ = tostring(e.nm or name);
-                    if not marks[nm_] or (e.s or 0) > marks[nm_].s then marks[nm_] = { s = e.s or 0, nm = nm_, act = act, id = id }; end
-                end
-            end end
-            if left > 0 then M.cb[id] = true; elseif M.cb[id] then M.cb[id] = nil; M.cr[id] = now; end   -- (just came back)
-            local away = left > 0;                                   -- (on recast: its hexagon dims - it's out on the timeline)
-            local ft = now - (M.flash[id] or -99);
-            local pop = (ft >= 0 and ft < 0.4) and (1 - ft / 0.4) or 0;   -- (run: a flash)
-            local ent = ease((M.a or 1) * 1.6 - (k * 0.045 + (r - 1) * 0.12));   -- (opening: the cells pop in one after another)
-            if ent <= 0.01 then goto nextcell; end
-            local br_ = pick and (1.06 + 0.015 * math.sin(now * 3)) or 1;   -- (the pick a touch bigger, breathing)
-            local RR = R * 0.97 * (0.6 + 0.4 * ent) * br_;
-            local pts = hexpts(x, y, RR);
-            local am = (act and 1 or 0.6) * ent;
-            if pick then
-                local gt = tex('brush/glow_round.png');
-                if gt then pcall(function() DL.I(dl, gt.ptr, x - R * 1.9, y - R * 1.9, x + R * 1.9, y + R * 1.9, 0, 0, 1, 1, c32(AC, 0.28 * op)); end); end
-            end
-            pcall(function() dl:AddConvexPolyFilled(pts, pick and U4(0.13, 0.11, 0.10, 0.92 * op) or U4(0.067, 0.059, 0.09, (away and 0.55 or 0.86) * am * op)); end);
-            do                                                       -- (depth: a sheen over its top half, light on its upper edges, shade on its lower ones)
-                local sh = C.clip_ybelow(hexpts(x, y, RR * 0.93), y - RR * 0.93);
-                local top_ = {};
-                for _, q in ipairs(sh) do if q[2] <= y - RR * 0.05 then top_[#top_ + 1] = q; end end
-                local tp = hexpts(x, y, RR * 0.93);
-                local band = { tp[6], tp[1], tp[2], { tp[2][1], y - RR * 0.10 }, { tp[6][1], y - RR * 0.10 } };
-                pcall(function() dl:AddConvexPolyFilled(band, U4(1, 1, 1, (pick and 0.07 or 0.035) * am * op)); end);
-                local ip = hexpts(x, y, RR * 0.90);
-                DL.L(dl, ip[6][1], ip[6][2], ip[1][1], ip[1][2], U4(1, 1, 1, 0.10 * am * op), 1);
-                DL.L(dl, ip[1][1], ip[1][2], ip[2][1], ip[2][2], U4(1, 1, 1, 0.10 * am * op), 1);
-                DL.L(dl, ip[3][1], ip[3][2], ip[4][1], ip[4][2], U4(0, 0, 0, 0.40 * am * op), 1.5);
-                DL.L(dl, ip[4][1], ip[4][2], ip[5][1], ip[5][2], U4(0, 0, 0, 0.40 * am * op), 1.5);
-            end
-            if away then                                             -- (on recast: a glass filling back up from the bottom, and the edge drawing itself round as it returns)
-                local lvl = y + RR * 0.90 - (RR * 1.80) * (1 - left);
-                local fp = C.clip_ybelow(hexpts(x, y, RR * 0.90), lvl);
-                if #fp >= 3 then pcall(function() dl:AddConvexPolyFilled(fp, c32(AC, 0.10 * am * op)); end); end
-                if #fp >= 2 then DL.L(dl, x - RR * 0.78, lvl, x + RR * 0.78, lvl, c32(AC, 0.0), 1); end
-                sweep(pts, 1 - left, c32(AC, 0.55 * am * op), 1.5);
-            end
-            if pick then                                             -- (lit: a gold glass, its top brighter)
-                pcall(function() dl:AddConvexPolyFilled(hexpts(x, y, R * 0.90), c32(AC, 0.10 * op)); end);
-                DL.L(dl, pts[6][1], pts[6][2], pts[1][1], pts[1][2], c32(AC, op), 2);
-                DL.L(dl, pts[1][1], pts[1][2], pts[2][1], pts[2][2], c32(AC, op), 2);
-            end
-            edge(pts, pick and c32(AC, op) or c32(ED, (away and 0.25 or 0.50) * am * op), pick and 1.4 or 1);
-            if pop > 0 then edge(pts, c32(WH, pop * op), 2.5); end
-            if ft >= 0 and ft < 0.6 then                             -- (run: a hexagon ripple running out from it)
-                local u = ft / 0.6;
-                edge(hexpts(x, y, RR * (1 + 0.9 * ease(u))), c32(AC, 0.8 * (1 - u) * op), 2 * (1 - u) + 0.5);
-            end
-            if pick then                                             -- (the pick: a spark running round its edge)
-                local per = (now * 0.55) % 1;
-                local n_ = #pts;
-                local q = math.floor(per * n_);
-                local u = per * n_ - q;
-                local a_, b_ = pts[q + 1], pts[(q + 1) % n_ + 1];
-                local sx, sy = a_[1] + (b_[1] - a_[1]) * u, a_[2] + (b_[2] - a_[2]) * u;
-                local gt = tex('brush/glow_round.png');
-                if gt then pcall(function() DL.I(dl, gt.ptr, sx - 9 * s_, sy - 9 * s_, sx + 9 * s_, sy + 9 * s_, 0, 0, 1, 1, c32(WH, 0.8 * op)); end); end
-                DL.CF(dl, sx, sy, 1.6 * s_, c32(WH, op), 10);
-            end
-            local rt = now - (M.cr[id] or -99);                      -- (back: a light runs round it)
-            if rt >= 0.30 and rt < 1.1 then
-                local u = (rt - 0.30) / 0.35;
-                sweep(pts, ease(u), c32(AC, op * ((rt < 0.75) and 1 or (1 - (rt - 0.75) / 0.35))), 2.2);
-            end
-            local ta = (away and 0.40 or 1) * am * op;
-            txt(key(k), (pick and 9 or 8) * s_, x, y - R * 0.46, pick and AC or { 0.80, 0.76, 0.72 }, ta);
-            local nm2, px = fit(name, (act and (pick and 11 or 10) or 9) * s_, dx * 0.86);
-            txt(nm2, px, x, y + R * 0.04, pick and AC or WH, ta);
-            ::nextcell::
-        end
-        local rl = (r == 1) and 'CTRL' or 'ALT';
-        txt(rl, 8 * s_, x0 + xo - dx * 0.95, y, act and LB or DIM, op * (act and 1 or 0.7), 1.2 * s_);
-    end
-    if both then
-        rowdraw(1, y1, 0, row == 1);
-        rowdraw(2, y2, dx / 2, row == 2);
-    else
-        rowdraw(row, y1, dx / 4, true);
-    end
-    -- the timeline
-    local ty = (both and y2 or y1) + R * 1.55;
-    local lx0, lx1 = x0 - dx * 0.3, x0 + 9.8 * dx;
     local MAXS = 600;
-    for _, m in pairs(marks) do MAXS = math.max(MAXS, m.s); end
+    for _, m in ipairs(list) do MAXS = math.max(MAXS, m.s); end
     local function tx(sec) return lx0 + (lx1 - lx0) * math.log(1 + math.max(0, sec) / 20) / math.log(1 + MAXS / 20); end
-    DL.L(dl, lx0, ty + 1, lx1, ty + 1, U4(0, 0, 0, 0.55 * op), 3);
-    do                                                               -- (the line: brighter toward READY, and lights flowing along it toward READY)
-        local N = 24;
-        for q = 0, N - 1 do
-            local xa, xb = lx0 + (lx1 - lx0) * q / N, lx0 + (lx1 - lx0) * (q + 1) / N;
-            DL.L(dl, xa, ty, xb, ty, c32((q < N * 0.35) and AC or ED, (0.95 - 0.55 * q / N) * op), (q < N * 0.35) and 1.5 or 1);
-        end
-        local gt = tex('brush/glow_round.png');
-        for f = 0, 2 do
-            local ph = 1 - ((now * 0.18 + f / 3) % 1);
-            local fx_ = lx0 + (lx1 - lx0) * ph;
-            local fa = math.sin(ph * math.pi) * 0.55;
-            if gt then pcall(function() DL.I(dl, gt.ptr, fx_ - 14 * s_, ty - 5 * s_, fx_ + 14 * s_, ty + 5 * s_, 0, 0, 1, 1, c32(AC, fa * op)); end); end
-        end
+    ty = math.floor(ty) + 0.5;                                       -- (on the pixel grid: crisp, not smeared over two rows)
+    do                                                               -- (the line: one smooth gradient, bright at READY fading out to the end; a soft shade under it)
+        local y0 = math.floor(ty);
+        local sh0, sh1 = U4(0, 0, 0, 0.30 * op), U4(0, 0, 0, 0);
+        DL.RFM(dl, lx0, y0 - 2, lx1, y0, sh1, sh1, sh0, sh0);       -- (shade above and below, fading away from the line)
+        DL.RFM(dl, lx0, y0 + 1, lx1, y0 + 3, sh0, sh0, sh1, sh1);
+        local cL, cR = c32(AC, 0.95 * op), c32(ED, 0.30 * op);
+        DL.RFM(dl, lx0, y0, lx1, y0 + 1, cL, cR, cR, cL);
+        local hL, hR = c32(AC, 0.25 * op), c32(AC, 0);               -- (a faint bloom over its bright end)
+        DL.RFM(dl, lx0, y0 - 1, lx0 + (lx1 - lx0) * 0.45, y0, hL, hR, hR, hL);
+        DL.RFM(dl, lx0, y0 + 1, lx0 + (lx1 - lx0) * 0.45, y0 + 2, hL, hR, hR, hL);
     end
     for _, tk in ipairs({ { 30, '30s' }, { 60, '1m' }, { 180, '3m' }, { 300, '5m' }, { 600, '10m' } }) do
         if tk[1] <= MAXS then
             local x = tx(tk[1]);
-            DL.L(dl, x, ty - 3 * s_, x, ty + 3 * s_, c32(ED, 0.7 * op), 1);
-            txt(tk[2], 7 * s_, x, ty + 10 * s_, { 0.70, 0.66, 0.60 }, op * 0.85);
+            local xi = math.floor(x);
+            DL.RF(dl, xi, math.floor(ty) - 3, xi + 1, math.floor(ty) + 4, c32(ED, 0.55 * op));   -- (a fine tick, whole pixels)
+            txt(tk[2], 6.5 * s_, xi + 0.5, ty + 9 * s_, { 0.66, 0.63, 0.58 }, op * 0.75);
         end
     end
     do                                                               -- (READY: its end, lit)
         local gt = tex('brush/glow_round.png');
-        local pl = 0.45 + 0.20 * math.sin(now * 2.4);               -- (it breathes)
-        if gt then pcall(function() DL.I(dl, gt.ptr, lx0 - 18 * s_, ty - 18 * s_, lx0 + 18 * s_, ty + 18 * s_, 0, 0, 1, 1, c32(AC, pl * op)); end); end
+        local pl = 0.45;                                             -- (steady: no glow moving on the line)
+        if gt then pcall(function() DL.I(dl, gt.ptr, lx0 - 14 * s_, ty - 14 * s_, lx0 + 14 * s_, ty + 14 * s_, 0, 0, 1, 1, c32(AC, 0.35 * op)); end); end
+        pcall(function() dl:AddConvexPolyFilled(hexpts(lx0, ty, 5.5 * s_), U4(0, 0, 0, 0.65 * op)); end);   -- (a dark rim, then the gold, then a light core)
         pcall(function() dl:AddConvexPolyFilled(hexpts(lx0, ty, 4.5 * s_), c32(AC, op)); end);
+        pcall(function() dl:AddConvexPolyFilled(hexpts(lx0, ty - 0.6 * s_, 2.0 * s_), U4(1, 1, 1, 0.55 * op)); end);
         txt('READY', 7 * s_, lx0 - 24 * s_, ty, LB, op, 1.2 * s_);
     end
-    local list = {};
-    for _, m in pairs(marks) do list[#list + 1] = m; end
     table.sort(list, function(a, b) return a.s < b.s; end);
     for i, m in ipairs(list) do                                      -- (each on recast: a small hexagon on the line, its name and time over / under by turns)
         local x = tx(m.s);
@@ -7408,14 +6813,6 @@ function C.mb_comb(dl, cx, top, sc, row, sel, now, op, cds, nm)
         DL.L(dl, x, ty + (up and -r - 2 or r + 2), x, ny + (up and 5 * s_ or -5 * s_), c32(mc, 0.45 * op), 1);   -- (a fine line to its name)
         txt(m.nm, 8 * s_, x, ny, m.act and WH or { 0.80, 0.78, 0.76 }, op);
         txt(C.mb_secstr(m.s), 7 * s_, x, up and (ny - 10 * s_) or (ny + 10 * s_), ORG, op);
-    end
-    for id, t0 in pairs(M.cr) do                                     -- (just back: its marker flies home from READY)
-        local rt = now - t0;
-        if rt >= 0 and rt < 0.32 and M.cpos[id] then
-            local u = ease(rt / 0.32);
-            local px, py = lx0 + (M.cpos[id][1] - lx0) * u, ty + (M.cpos[id][2] - ty) * u;
-            pcall(function() dl:AddConvexPolyFilled(hexpts(px, py, 5.5 * s_ * (1 - 0.4 * u)), c32(AC, op)); end);
-        end
     end
 end
 -- MACRO WAVES in the skillchain Banner's style (FIGHT.ps_alt): CTRL / BOOK / PAGE small in rose and the key big; the
@@ -7523,10 +6920,6 @@ function C.mb_fan(dl, cx, top, sc, row, sel, now, op, cds, nm)
         for _, R in ipairs(RS) do
             local w1 = wid((R.nm(k) ~= '') and R.nm(k) or '-', ((k == R.sel) and 14 or 12) * s_);   -- (the pick a size up)
             W[k] = math.max(W[k], w1);
-            if both then                                             -- (two rows: a recast's time beside the key, not under it)
-                local bl = busyof(k, R.cds);
-                if #bl > 0 then IW[k] = math.max(IW[k], wid(C.mb_secstr(maxsecs(bl)), 9 * s_) + 4 * s_); end
-            end
         end
         tot = tot + W[k] + 2 * s_ + KW[k] + IW[k] + ((k < 9) and 14 * s_ or 0);   -- (tight: the row stays short)
     end
@@ -7534,14 +6927,17 @@ function C.mb_fan(dl, cx, top, sc, row, sel, now, op, cds, nm)
     if both then
         for k = 0, 9 do for _, R in ipairs(RS) do CW = math.max(CW, wid((R.nm(k) ~= '') and R.nm(k) or '-', 12 * s_)); end end
         CW = math.max(44 * s_, math.min(62 * s_, CW));                -- (narrow: the grid stays packed - longer names shrink to fit)
-        TW = math.max(wid('0', 8 * s_), wid('0:00', 8 * s_));
+        TW = wid('0', 8 * s_);
         GAP = 4 * s_;
         tot = 10 * (CW + 2 * s_ + TW) + 9 * GAP;
     end
     local x00 = cx - tot / 2;
     local echoes = {};                                               -- (a macro just run: its name booms out, bigger and fading)
+    local marks = {};                                                -- (what's on recast, for the timeline)
+    local lasty = y_;
     for ri, R in ipairs(RS) do
         local ry = y_ + (ri - 1) * (nh_ * 1.75);
+        lasty = ry;
         local am = R.act and 1 or 0.55;                              -- (the row not held: dimmer)
         if both then                                                 -- (which row: before it)
             local rl = (R.r == 1) and 'CTRL' or 'ALT';
@@ -7584,25 +6980,11 @@ function C.mb_fan(dl, cx, top, sc, row, sel, now, op, cds, nm)
                 DL.L(dl, x_, uy + 1, x_ + nw_, uy + 1, U4(0, 0, 0, 0.6 * op), 3);
                 DL.L(dl, x_, uy, x_ + nw_, uy, c32(PK, op), 1.6);
             end
-            local bl = busyof(k, R.cds);
-            if both and #bl > 0 then                                 -- (two rows: on recast, its time where the key was)
-                txt(C.mb_secstr(maxsecs(bl)), 8 * s_, x_ + nw_ + 2 * s_, ry + nh_ * 0.42, ORG, op * (R.act and 1 or 0.85), nil, 0.75);
-            else
-                txt(key(k), 8 * s_, x_ + nw_ + 2 * s_, ry + nh_ * 0.42, { 0.80, 0.76, 0.72 }, op * am, nil, 0.75);
-            end
-            if both then
-            else                                                     -- (one row: its abilities / spells on recast, one per line, under it)
-                local yy = ry + nh_ + 3 * s_;
-                for i_, e in ipairs(bl) do
-                    if i_ > 3 then break; end
-                    local en = tostring(e.nm or '');
-                    local es = C.mb_secstr(e.s or 0);
-                    local ew = wid(en, 10 * s_);
-                    local _, eh = wid('A', 10 * s_);
-                    txt(en, 10 * s_, x_, yy, WH, op * 0.92);
-                    txt(es, 10 * s_, x_ + ew + 5 * s_, yy, ORG, op);
-                    yy = yy + eh + 1 * s_;
-                end
+            local bl = busyof(k, R.cds);                             -- (on recast: dimmer here - its time is on the timeline under the bar)
+            txt(key(k), 8 * s_, x_ + nw_ + 2 * s_, ry + nh_ * 0.42, { 0.80, 0.76, 0.72 }, op * am, nil, 0.75);
+            for _, e in ipairs(bl) do
+                local en = tostring(e.nm or name);
+                if not marks[en] or (e.s or 0) > marks[en].s then marks[en] = { nm = en, s = e.s or 0, act = R.act }; end
             end
             x_ = x_ + cw;
             if both then
@@ -7631,885 +7013,12 @@ function C.mb_fan(dl, cx, top, sc, row, sel, now, op, cds, nm)
             if u1 < 1 then at(E.px * (1 + 1.3 * ease(u1)), op * 0.7 * (1 - u1) ^ 2, PK); end   -- (its echo, swelling away)
         end
     end
+    local list = {};                                                 -- (the recast timeline, under the bar)
+    for _, m in pairs(marks) do list[#list + 1] = m; end
+    pcall(C.mb_tline, dl, x00, x00 + tot, lasty + nh_ * 1.6 + 36 * s_, s_, op, list, gold, rose, rose, ORG, WH);   -- (room over the line for the names and times above it)
 
 end
--- MACRO WAVES, Now playing: only the pick, big, with its icon - its neighbours small to each side, fading, sliding as
--- you scroll (a music player's track); under it ten dots for where you are in the row. Under your feet.
-C.MB_BUFFN = nil;
-function C.mb_icon(id)                                               -- (a macro's icon: the buff of the same name as its first action - Sentinel, Phalanx...)
-    local w = C.mb_what(id);
-    local a = w and w.acts and w.acts[1];
-    if a == nil then return nil; end
-    if C.MB_BUFFN == nil then
-        C.MB_BUFFN = {};
-        pcall(function()
-            local rm = AshitaCore:GetResourceManager();
-            for i = 0, 700 do
-                local n = rm:GetString('buffs.names', i);
-                if type(n) == 'string' and n ~= '' then n = n:lower(); if C.MB_BUFFN[n] == nil then C.MB_BUFFN[n] = i; end end
-            end
-        end);
-    end
-    local nm = (a.nm or ''):lower();
-    return C.MB_BUFFN[nm] or C.MB_BUFFN[(nm:gsub('%s+[ivx]+$', ''))];   -- ("Protect V": Protect's)
-end
-function C.mb_np(dl, cx, top, sc, row, sel, now, op, cds, nm)
-    local M = C.MB;
-    local ts = math.max(0.6, math.min(2.5, tonumber(cfg.mb_text) or 1));   -- (MACRO WAVES > Text size)
-    local fs = (FS or 1) * (M.cardz or 1) * ts;
-    local dt = math.min(0.05, imgui.GetIO().DeltaTime or 0.016);
-    local G1, G2 = C.GOLDH2 or { 1.0, 0.90, 0.62 }, C.GOLDH or { 1.0, 0.76, 0.34 };
-    if cfg.mb_wcol == 'azure' then G1, G2 = { 0.70, 0.92, 1.00 }, { 0.35, 0.78, 1.00 }; end
-    if cfg.target_fx ~= 'link' then G1, G2 = { 0.86, 0.74, 1.00 }, { 0.66, 0.46, 1.00 }; end
-    local TN = { 1, 1, 1 };
-    M.wavecol = { G1, G2, TN };
-    local cy = top + 44 * sc;
-    local tp = 0;
-    pcall(function() tp = AshitaCore:GetMemoryManager():GetParty():GetMemberTP(0) or 0; end);
-    -- all ten in a row, each in its own room (as wide as its name - the pick's big, with its icon); the rooms glide
-    local W, X, tot = {}, {}, 0;
-    M.nsw = M.nsw or {};
-    for k = 0, 9 do
-        local name = (nm(k) ~= '') and nm(k) or '-';
-        imgui.SetWindowFontScale(fs * ((k == sel) and 1.15 or 0.68));
-        local w_ = (tonumber((imgui.CalcTextSize(name))) or 0) + 9 * sc * ts;   -- (tight: the row stays short)
-        if k == sel then w_ = w_ + 28 * sc * ts; end                   -- (room for its arrows)
-        w_ = math.max(w_, 30 * sc * ts);
-        M.nsw[k] = M.nsw[k] and (M.nsw[k] + (w_ - M.nsw[k]) * math.min(1, dt * 12)) or w_;
-        W[k] = M.nsw[k]; X[k] = tot; tot = tot + W[k];
-    end
-    local x00 = cx - tot / 2;
-    M.np = M.np and (M.np + (sel - M.np) * math.min(1, dt * 12)) or sel;   -- (how much each one is the pick: grows / shrinks as you move)
-    for k = 0, 9 do
-        local id = (row - 1) * 10 + k;
-        local near = math.max(0, 1 - math.abs(k - M.np));
-        local al = op * (0.88 + 0.12 * near);
-        local cd = cds[k];
-        local busy = cd ~= nil and cd.f > 0;
-        if cd and cd.list then for _, e in ipairs(cd.list) do if e.f > 0 then busy = true; end end end
-        local fl = math.max(0, 1 - (now - (M.flash[id] or -99)) / 0.4);
-        local fz = (0.68 + (1.15 - 0.68) * near) * (1 + 0.12 * fl * near);   -- (a run: a little kick)
-        local name = (nm(k) ~= '') and nm(k) or '-';
-        imgui.SetWindowFontScale(fs * fz);
-        local tw_ = tonumber((imgui.CalcTextSize(name))) or 0;
-        local _, th_ = imgui.CalcTextSize('Ag'); th_ = tonumber(th_) or 12;
-        local bi = nil;                                                -- (no icons: the user's call - names only)
-        local isz = th_ * 1.2;
-        local x = x00 + X[k] + W[k] / 2;
-        local x0 = x - (tw_ + (bi and (isz + 6 * sc) or 0)) / 2;
-        local col = (near > 0.5) and G1 or TN;
-        local ca = al * ((busy and near < 0.5) and 0.55 or 1);       -- (on recast: dimmed - not the pick, it stays bright)
-        if bi then
-            DL.CF(dl, x0 + isz / 2, cy, isz * 0.95, U4(G2[1], G2[2], G2[3], 0.22 * near * al), 24);   -- (a soft glow behind it)
-            local ws = (C.mb_what(id).ws and tp >= 1000 and not busy) and (0.75 + 0.25 * math.sin(now * 6)) or 1;   -- (a weapon skill ready: it breathes)
-            image(dl, buff_icon(bi, isz), x0, cy - isz / 2, x0 + isz, cy + isz / 2, { 1, 1, 1, ca * ws * near });
-            x0 = x0 + isz + 6 * sc;
-        end
-        C.mb_stext(dl, x0, cy - th_ / 2, col, ca, name);
-        imgui.SetWindowFontScale(fs * 0.50);                         -- (its key under it, and its recast)
-        local kl = (k == 9) and '0' or tostring(k + 1);
-        if busy then
-            local secs = cd.s or 0;
-            if cd.list then for _, e in ipairs(cd.list) do if e.f > 0 then secs = math.max(secs, e.s or 0); end end end
-            kl = kl .. '  ' .. C.mb_secstr(secs);
-        end
-        local kw_ = tonumber((imgui.CalcTextSize(kl))) or 0;
-        C.mb_stext(dl, x - kw_ / 2, cy + th_ / 2 + 1, busy and G1 or TN, al * 0.9, kl);
-        if near > 0.5 then M.npw = tw_ + (bi and (isz + 6 * sc) or 0); M.npx = x; end
-    end
-    for sd = -1, 1, 2 do                                             -- (the arrows either side of the pick)
-        local ax = (M.npx or cx) + sd * ((M.npw or 0) / 2 + 8 * sc * ts);
-        local h_ = 5 * sc * ts;
-        DL.L(dl, ax - sd * h_ * 0.6, cy - h_, ax + sd * h_ * 0.4, cy, U4(G1[1], G1[2], G1[3], 0.85 * op), 1.6 * sc);
-        DL.L(dl, ax + sd * h_ * 0.4, cy, ax - sd * h_ * 0.6, cy + h_, U4(G1[1], G1[2], G1[3], 0.85 * op), 1.6 * sc);
-    end
-    imgui.SetWindowFontScale(fs * 0.5);                              -- (the row over its left end, the wave / track over its right)
-    local _, lh_ = imgui.CalcTextSize('A'); lh_ = tonumber(lh_) or 8;
-    local rl = (row == 1) and 'CTRL' or 'ALT';
-    local rw = tonumber((imgui.CalcTextSize(rl))) or 0;
-    local ly = cy - lh_ / 2;                                         -- (on the row's line, just past its ends)
-    C.mb_stext(dl, x00 - 10 * sc - rw, ly, G1, op, rl);
-    if M.book then
-        imgui.SetWindowFontScale(fs * 0.42);
-        local bp = string.format('WAVE %d  -  TRACK %d', M.book, M.page);
-        local bw2 = tonumber((imgui.CalcTextSize(bp))) or 0;
-        local _, lh2 = imgui.CalcTextSize('A'); lh2 = tonumber(lh2) or 7;
-        C.mb_stext(dl, x00 + tot + 10 * sc, cy - lh2 / 2, G1, op * 0.9, bp);
-    end
-    imgui.SetWindowFontScale(FS or 1);
-end
-function C.mb_wave(dl, cx, top, sc, row, sel, now, op, cds, nm)
-    local M = C.MB;
-    local ts = math.max(0.6, math.min(2.5, tonumber(cfg.mb_text) or 1));   -- (MACRO WAVES > Text size)
-    local fs = (FS or 1) * (M.cardz or 1) * ts;
-    local dt = math.min(0.05, imgui.GetIO().DeltaTime or 0.016);
-    local G1, G2, AMB = C.GOLDH2 or { 1.0, 0.90, 0.62 }, C.GOLDH or { 1.0, 0.76, 0.34 }, { 0.95, 0.55, 0.20 };
-    if cfg.mb_wcol == 'azure' then G1, G2, AMB = { 0.70, 0.92, 1.00 }, { 0.35, 0.78, 1.00 }, { 0.20, 0.45, 1.00 }; end   -- (MACRO WAVES > Wave colour: azure, as the MP bar and the map's lines)
-    if cfg.target_fx ~= 'link' then G1, G2, AMB = { 0.86, 0.74, 1.00 }, { 0.66, 0.46, 1.00 }, { 0.82, 0.30, 0.88 }; end   -- (Normal mode: its violet / purple, as its UI)
-    local TN = { G1[1] + (1 - G1[1]) * 0.45, G1[2] + (1 - G1[2]) * 0.45, G1[3] + (1 - G1[3]) * 0.45 };   -- (the other names: a pale tint of the same colour)
-    M.wavecol = { G1, G2, TN };
-    local seg, per = (cfg.mb_timers == true and 66 or 54) * sc * math.max(1, 0.55 + 0.45 * ts), 7   -- (each macro's stretch, its bars)
-    local cy = top + 62 * sc;                                          -- (a little lower: the wave clear of your feet)
-    local tp = 0;
-    pcall(function() tp = AshitaCore:GetMemoryManager():GetParty():GetMemberTP(0) or 0; end);
-    M.wu = M.wu and (M.wu + ((sel + 0.5) - M.wu) * math.min(1, dt * 9)) or (sel + 0.5);   -- (the wave glides to the pick, in macro units)
-    local info = {};
-    for k = 0, 9 do
-        local id = (row - 1) * 10 + k;
-        local cd = cds[k];
-        local busy = cd ~= nil and cd.f > 0;
-        if cd and cd.list then for _, e in ipairs(cd.list) do if e.f > 0 then busy = true; end end end   -- (several: any one on recast)
-        local w = C.mb_what(id);
-        info[k] = { busy = busy, cd = cd, fl = math.max(0, 1 - (now - (M.flash[id] or -99)) / 0.5),
-            ws = w.ws and tp >= 1000 and not busy, ready = cd and cd.ready };
-    end
-    -- MACRO WAVES > Layout: where a point u (0..10, in macros) of the wave goes - x, y, its scale and how solid it is
-    local lay = 'soft';                                                -- (Fixed spots with a gentle swell: the user's pick of the layouts tried)
-    local place;
-    local SW, SX, PK, FZ, WT = {}, {}, {}, {}, 0;                              -- (each macro's room: wide enough for its name and its timers, so none overlap)
-    if lay == 'soft' then                                          -- (every macro in its own spot, all readable; only a gentle swell round the pick)
-        local gap = 12 * sc;
-        local tot = 0;
-        for k = 0, 9 do
-            local sk = 0.82 + 0.33 * math.exp(-((k + 0.5 - M.wu) / 1.1) ^ 2);
-            PK[k] = math.max(0, 1 - math.abs(k + 0.5 - M.wu));       -- (how much it's the pick: grows / shrinks as the pick glides)
-            FZ[k] = (0.56 + 0.42 * PK[k]) * sk;
-            local st = 0.82 + 0.33 * math.exp(-((k - sel) / 1.1) ^ 2);  -- (its room: as wide as its name will be once the wave has settled on the pick -
-            imgui.SetWindowFontScale(fs * ((k == sel) and 0.98 or 0.56) * st);   --  the rooms glide there, so the bar eases instead of twitching)
-            local tw_ = tonumber((imgui.CalcTextSize(nm(k)))) or 0;
-            local cap = seg * 2.6 * st;                                -- (a very long name: shrunk to fit this much)
-            if tw_ > cap then FZ[k] = FZ[k] * math.max(0.6, cap / tw_); tw_ = cap; end
-            local want = math.max(seg * 0.62, tw_ + gap);
-            if info[k].busy and cfg.mb_timers == true then want = math.max(want, seg * 0.85); end   -- (its timers under it need a little more)
-            M.sw = M.sw or {};
-            M.sw[k] = M.sw[k] and (M.sw[k] + (want - M.sw[k]) * math.min(1, dt * 10)) or want;
-            SW[k] = M.sw[k];
-            SX[k] = tot; tot = tot + SW[k];
-        end
-        local x0 = cx - tot / 2;
-        WT = tot;
-        place = function(u)
-            local k = math.max(0, math.min(9, math.floor(u)));
-            local s = 0.82 + 0.33 * math.exp(-((u - M.wu) / 1.1) ^ 2);
-            return x0 + SX[k] + (u - k) * SW[k], cy, s, 0.8 + 0.2 * (s - 0.82) / 0.33;
-        end
-    end
-    -- the bars
-    local wpx, wpy = place(M.wu);                                      -- (where the pick is on screen: the wave rises round it)
-    local bstep = seg * 0.9 / per;                                     -- (the bars evenly spaced along the whole wave, however wide each room is)
-    local k_ = 0;
-    local m0 = math.ceil((-WT / 2) / bstep);                           -- (each bar keeps its spot on screen and its own life while the rooms glide:
-    for j = m0, math.floor((WT / 2) / bstep) do                        --  only the very ends gain or lose one)
-        local px_ = WT / 2 + j * bstep;
-        while k_ < 9 and px_ >= SX[k_] + SW[k_] do k_ = k_ + 1; end
-        local k = k_;
-        local u = math.max(0, math.min(10, k + (px_ - SX[k]) / SW[k]));
-        local I = info[k];
-        local x, y, s, pa = place(u);
-        local stag = math.max(0, math.min(1, op * 1.6 - math.abs(u / 10 - 0.5) * 0.9));   -- (opening: it grows out from the middle)
-        if stag > 0.01 and pa > 0.01 then
-            local idle = 0.5 + 0.5 * math.sin(now * 3.1 + j * 0.7) * math.sin(now * 1.7 + j * 0.31);
-            local e = math.exp(-(math.sqrt((x - wpx) ^ 2 + (y - wpy) ^ 2) / (34 * sc)) ^ 2);
-            local beat = 0.85 + 0.15 * math.sin(now * 7 + j * 1.3);
-            local h = (3 + 4 * idle) * sc + 30 * sc * e * beat;
-            if I.fl > 0 then h = h + 22 * sc * I.fl * (0.6 + 0.4 * math.sin(j * 2.1)); end   -- (a run: a hit)
-            if I.ws then h = h + 8 * sc * (0.5 + 0.5 * math.sin(now * 5 + j)); end          -- (a weapon skill ready: it pulses)
-            if I.ready then h = h + 14 * sc * I.ready; end
-            local t = u / 10;
-            local c = { G1[1] + (AMB[1] - G1[1]) * t, G1[2] + (AMB[2] - G1[2]) * t, G1[3] + (AMB[3] - G1[3]) * t };
-            local a = (0.55 + 0.45 * e) * stag * op * pa;
-            if I.busy then h = h * 0.35; c = { 0.45, 0.40, 0.34 }; a = a * 0.6; end        -- (on recast: dim and flat)
-            h = h * stag * s;
-            local half = bstep * 0.30 * s;
-            if e > 0.3 and not I.busy then DL.RF(dl, x - half - 1.5 * sc, y - h - 1.5 * sc, x + half + 1.5 * sc, y + h + 1.5 * sc, U4(c[1], c[2], c[3], 0.12 * e * a), half + 1.5 * sc); end
-            local ec = (C.lum(c) < 0.42) and U4(0.90, 0.90, 0.95, 0.55 * a) or U4(0, 0, 0, 0.55 * a);   -- (an edge: light round a dark colour, dark round a bright one)
-            DL.RF(dl, x - half - 1, y - h - 1, x + half + 1, y + h + 1, ec, half + 1);
-            DL.RF(dl, x - half, y - h, x + half, y + h, U4(c[1], c[2], c[3], a), half);
-        end
-    end
-    -- the names: small under the wave; the pick's big over its wave
-    local lx0, lx1 = 1e9, -1e9;
-    for k = 0, 9 do
-        local I = info[k];
-        local xc, yk, s, pa = place(k + 0.5);
-        local ycol = yk + 40 * sc * s;                                 -- (where its name goes)
-        local pick = (k == sel);
-        if pa > 0.05 then
-            lx0, lx1 = math.min(lx0, xc - SW[k] / 2), math.max(lx1, xc + SW[k] / 2);
-            local name = nm(k);
-            imgui.SetWindowFontScale(fs * FZ[k]);                     -- (the pick's name big: you always see what you're on; its room made for it)
-            local tw_ = tonumber((imgui.CalcTextSize(name))) or 0;
-            local _, th_ = imgui.CalcTextSize('Ag'); th_ = tonumber(th_) or 8;
-            if name ~= '' then C.mb_stext(dl, xc - tw_ / 2, ycol, pick and G1 or TN, op * pa, name); end
-            imgui.SetWindowFontScale(fs * 0.42 * math.max(0.7, s));
-            local kl = (k == 9) and '0' or tostring(k + 1);
-            local kw_ = tonumber((imgui.CalcTextSize(kl))) or 0;
-            C.mb_stext(dl, xc - kw_ / 2, ycol + ((name ~= '') and (th_ + 1) or 0), I.busy and G1 or TN, op * pa, kl);
-            if I.busy and I.cd and cfg.mb_timers == true then        -- (its timers under it: one row each ability - MACRO WAVES > Timers under each macro)
-                local busyl = {};
-                for _, e in ipairs(I.cd.list or { I.cd }) do if e.f > 0 then busyl[#busyl + 1] = e; end end
-                C.mb_rows(dl, function(dx, dy) return xc + dx, ycol + th_ * 2 + 12 * sc * s + dy; end, math.min(seg * 1.04 * s, SW[k] - 10 * sc), 0, busyl, G1, op * pa, fs * 0.62 * math.max(0.7, s), 0);
-            end
-        end
-        if false then                                                -- (no big name over the wave: it went over your character)
-            imgui.SetWindowFontScale(fs * 1.0);
-            local name = nm(k);
-            local bw_ = tonumber((imgui.CalcTextSize(name))) or 0;
-            local _, bh_ = imgui.CalcTextSize(name); bh_ = tonumber(bh_) or 14;
-            local px_, py_, ps_ = place(M.wu);
-            C.mb_stext(dl, px_ - bw_ / 2, py_ - 44 * sc * ps_ - bh_, G1, op, name);
-        end
-    end
-    imgui.SetWindowFontScale(fs * 0.62);                               -- (which row, the album / track)
-    local _, lh_ = imgui.CalcTextSize('A'); lh_ = tonumber(lh_) or 10;
-    local ly = cy - 16 * sc - lh_;                                     -- (just over the ends of the wave, where it's low)
-    if lx1 < lx0 then lx0, lx1 = cx - 5 * seg, cx + 5 * seg; end
-    C.mb_stext(dl, lx0, ly, G1, op, (row == 1) and 'CTRL' or 'ALT');
-    if M.book then
-        imgui.SetWindowFontScale(fs * 0.46);                           -- (smaller: good to know, not the point)
-        local bp = string.format('WAVE %d   TRACK %d', M.book, M.page);
-        local _, bh2 = imgui.CalcTextSize('A'); ly = ly + lh_ - (tonumber(bh2) or lh_);   -- (on the same baseline as CTRL)
-        local bw2 = tonumber((imgui.CalcTextSize(bp))) or 0;
-        C.mb_stext(dl, lx1 - bw2, ly, G1, op, bp);
-    end
-    imgui.SetWindowFontScale(FS or 1);
-end
-function C.mb_deck_img(dl, ox, oy, sc, row, sel, now, op, cds, nm, key)
-    local M = C.MB;
-    local D = C.mb_design();
-    local fs = FS or 1;
-    local Hb = 54 * sc * (D.hs or 1);                               -- (an HD design's picture has more room round the bar: drawn taller)
-    local base = 'mbar/' .. D.id .. '/';
-    local hx = cfg.target_fx == 'link';
-    local LT = (hx and not D.one) and (C.GOLDH2 or { 1.0, 0.90, 0.62 }) or D.ltn;   -- (an HD design: its own colour, whatever the mode)
-    local MC = LT;
-    local x0 = ox + 15 * sc;
-    local y0 = oy + 26 * sc;
-    local kw = D.key * Hb;
-    local ov = (D.ov or 0) * Hb;                                     -- (the ends reach over the first / last key, fading: drawn after the keys)
-    local kx0 = x0 + D.capl * Hb - ov;
-    local dt = math.min(0.05, imgui.GetIO().DeltaTime or 0.016);
-    local wcol = { 1, 1, 1, op };
-    local tk = tex(base .. 'key.png');
-    M.rz = M.rz or {};
-    local K = {};
-    for k = 0, 9 do
-        local stag = math.max(0, math.min(1, op * 1.5 - math.abs(k - 4.5) * 0.06));
-        local rise = (1 - stag) * (1 - stag) * 10 * sc;
-        local kx = kx0 + k * kw;
-        image(dl, tk, kx, y0 + rise, kx + kw, y0 + Hb + rise, { 1, 1, 1, stag });
-        K[k] = { x = kx, y = y0 + rise, al = stag };
-    end
-    if D.conn then                                                   -- (a connector between keys: its own picture)
-        local tcn, cw_ = tex(base .. 'conn.png'), D.conn * Hb;
-        for k = 1, 9 do
-            local cx_ = kx0 + k * kw;
-            image(dl, tcn, cx_ - cw_ / 2, y0, cx_ + cw_ / 2, y0 + Hb, wcol);
-        end
-    end
-    if not D.nocaps then                                             -- (a design with no ends: just the keys - lighter)
-        image(dl, tex(base .. 'cap_l.png'), x0, y0, x0 + D.capl * Hb, y0 + Hb, wcol);
-        image(dl, tex(base .. 'cap_r.png'), kx0 + 10 * kw - ov, y0, kx0 + 10 * kw - ov + D.capr * Hb, y0 + Hb, wcol);
-    end
-    -- the pick's overlay, sliding to it
-    local tsel = tex(base .. (D.one and 'sel.png' or (hx and 'sel_hex.png' or 'sel_norm.png')));
-    local sw = kw;                                                   -- (the picked key: the same cell, lit)
-    local tx = kx0 + sel * kw - (sw - kw) / 2;
-    M.sx = M.sx and (M.sx + (tx - M.sx) * math.min(1, dt * 18)) or tx;
-    image(dl, tsel, M.sx, y0, M.sx + sw, y0 + Hb, { 1, 1, 1, op * (0.86 + 0.14 * math.sin(now * 2.2)) });   -- (the pick breathes)
-    if D.hc then                                                     -- (the honeycomb lit: a wave of light runs along the bar; the pick's glows, breathing)
-        local thc = tex(base .. 'hc.png');
-        local wave = (now * 0.32) % 1.7 - 0.35;
-        for k = 0, 9 do
-            local f = (k + 0.5) / 10;
-            local a = 0.22 + 0.75 * math.exp(-((f - wave) / 0.11) ^ 2);
-            if k == sel then a = math.max(a, 0.70 + 0.30 * math.sin(now * 2.6)); end
-            local Q = K[k];
-            image(dl, thc, Q.x, Q.y, Q.x + kw, Q.y + Hb, { 1, 1, 1, math.min(1, a) * Q.al });
-        end
-    end
-    for k = 0, 9 do
-        local Q = K[k];
-        local al = Q.al;
-        local cd = cds[k];
-        local busy = cd ~= nil and cd.f > 0;
-        local fl = math.max(0, 1 - (now - (M.flash[(row - 1) * 10 + k] or -99)) / 0.45);
-        M.rz[k] = (M.rz[k] or 0) + (((k == sel) and 1 or 0) - (M.rz[k] or 0)) * math.min(1, dt * 14);
-        local rz = M.rz[k];
-        local cxk = Q.x + kw / 2;
-        local function pulse(a, grow)                                -- (the pick's light flashed over a key, growing a little)
-            local g = grow * kw * 0.5;
-            local px = Q.x - (sw - kw) / 2 - g;
-            image(dl, tsel, px, Q.y - g * 0.4, px + sw + 2 * g, Q.y + Hb + g * 0.4, { 1, 1, 1, a });
-        end
-        if fl > 0 then pulse(fl * 0.9, (1 - fl) * 0.25); end        -- (run: a flash that swells out)
-        if cd ~= nil and cd.ready then pulse(cd.ready * 0.8, (1 - cd.ready) * 0.15); end   -- (ready again)
-        if busy then                                                 -- (on recast: the key darker, a slim line along its foot emptying)
-            if D.round then                                          -- (a round key: the circle holds its recast like a liquid, its level sinking as it runs out)
-                local ccx, ccy, rr = Q.x + kw / 2, Q.y + Hb / 2, Hb * 0.345;
-                local lvl = ccy + rr - 2 * rr * cd.f;                -- (the surface: full at the start, down to the bottom when ready)
-                local pts = {};
-                for q = 0, 48 do
-                    local an = 2 * math.pi * q / 48;
-                    local px, py = ccx + rr * math.cos(an), ccy + rr * math.sin(an);
-                    if py >= lvl then pts[#pts + 1] = { px, py }; end
-                end
-                if #pts >= 2 and cd.f > 0.01 then
-                    local hw = math.sqrt(math.max(0, rr * rr - (lvl - ccy) ^ 2));
-                    local as = math.atan2(lvl - ccy, hw);            -- (round from the surface's right end, through the bottom, to its left end)
-                    local function ang(p_) return (math.atan2(p_[2] - ccy, p_[1] - ccx) - as) % (2 * math.pi); end
-                    table.sort(pts, function(p_, q_) return ang(p_) < ang(q_); end);
-                    local poly = { { ccx + hw, lvl } };
-                    for _, q_ in ipairs(pts) do poly[#poly + 1] = q_; end
-                    poly[#poly + 1] = { ccx - hw, lvl };
-                    pcall(function() dl:AddConvexPolyFilled(poly, U4(MC[1], MC[2], MC[3], 0.30 * al)); end);
-                    local wv = math.sin(now * 3) * 1.2;              -- (its surface, bright, a slight ripple)
-                    DL.L(dl, ccx - hw, lvl + wv, ccx + hw, lvl - wv, U4(LT[1], LT[2], LT[3], 0.85 * al), 1.5);
-                end
-            else
-                DL.RF(dl, Q.x + kw * 0.10, Q.y + Hb * 0.24, Q.x + kw * 0.90, Q.y + Hb * 0.76, U4(0, 0, 0, 0.35 * al), Hb * 0.12);
-                local la, lb, ly = Q.x + kw * 0.22, Q.x + kw * 0.78, Q.y + Hb * 0.76;
-                DL.L(dl, la, ly, lb, ly, U4(MC[1], MC[2], MC[3], 0.25 * al), 2);
-                DL.L(dl, la, ly, la + (lb - la) * cd.f, ly, U4(LT[1], LT[2], LT[3], 0.95 * al), 2);
-            end
-        end
-        local top = busy and C.mb_secstr(cd.s) or ((k == 9) and '10' or tostring(k + 1));
-        local tq = Hb / (54 * sc);                                   -- (the text grows and shrinks with the bar)
-        imgui.SetWindowFontScale(fs * 0.60 * tq);
-        local nw_, nh_ = imgui.CalcTextSize(top);
-        nw_, nh_ = tonumber(nw_) or 0, tonumber(nh_) or 8;
-        local numc = (busy or rz > 0.5) and U4(LT[1], LT[2], LT[3], al) or U4(0.68, 0.68, 0.74, 0.9 * al);
-        DL.T(dl, cxk - nw_ / 2, Q.y + Hb * 0.36 - nh_ / 2, numc, top);
-        local name = nm(k);
-        if name ~= '' then
-            local nw2, nh2 = C.mb_fitname(name, kw * (D.tw or 0.70), 0.98 * tq);
-            local nc = (rz > 0.5) and U4(LT[1], LT[2], LT[3], al) or U4(0.94, 0.94, 0.97, (busy and 0.6 or 0.96) * al);
-            DL.T(dl, cxk - nw2 / 2 + 1, Q.y + Hb * 0.60 - nh2 / 2 + 1, U4(0, 0, 0, 0.7 * al), name);
-            DL.T(dl, cxk - nw2 / 2, Q.y + Hb * 0.60 - nh2 / 2, nc, name);
-        end
-    end
-    do                                                               -- (a small caret over the pick, bobbing gently)
-        local cxp = M.sx + sw / 2;
-        local by = y0 + Hb * 0.10 - 3 * sc - math.sin(now * 3) * 1.2 * sc;
-        local cw = 5 * sc;
-        DL.L(dl, cxp - cw, by + 1, cxp, by - cw * 0.8 + 1, U4(0, 0, 0, 0.6 * op), 2.6);
-        DL.L(dl, cxp, by - cw * 0.8 + 1, cxp + cw, by + 1, U4(0, 0, 0, 0.6 * op), 2.6);
-        DL.L(dl, cxp - cw, by, cxp, by - cw * 0.8, U4(LT[1], LT[2], LT[3], op), 1.7);
-        DL.L(dl, cxp, by - cw * 0.8, cxp + cw, by, U4(LT[1], LT[2], LT[3], op), 1.7);
-    end
-    imgui.SetWindowFontScale(fs * 0.62);
-    local lx0, lx1, ly = kx0, kx0 + 10 * kw, oy + 2 * sc;
-    if D.round then                                                  -- (round keys: the labels sit just over the first / last circle)
-        local _, th_ = imgui.CalcTextSize('ALT');
-        th_ = tonumber(th_) or 8;
-        lx0, lx1 = kx0 + kw / 2 - Hb * 0.36, kx0 + 9.5 * kw + Hb * 0.36;
-        ly = y0 + Hb * 0.14 - th_ - 2 * sc;
-    end
-    C.mb_otext(dl, lx0, ly, LT, op, (row == 1) and 'CTRL' or 'ALT');
-    if M.book then
-        local bp = string.format('BOOK %d   PAGE %d', M.book, M.page);
-        local bw_ = tonumber((imgui.CalcTextSize(bp))) or 0;
-        C.mb_otext(dl, lx1 - bw_, ly, LT, op, bp);
-    end
-    imgui.SetWindowFontScale(fs);
-end
--- the Bar at the bottom, by design: 'wave' (Normal), 'honey' / 'chevron' (Hex link)
-function C.mb_deck2(dl, ox, oy, sc, row, sel, now, op, cds, nm, key, design)
-    local M = C.MB;
-    local fs = FS or 1;
-    local hexd = design ~= 'wave';
-    local A = hexd and (C.GOLDH or { 1.0, 0.76, 0.34 }) or { 0.42, 0.62, 1.0 };     -- (gold / blue)
-    local A2 = hexd and (C.GOLDH2 or { 1.0, 0.90, 0.62 }) or { 0.80, 0.74, 1.0 };   -- (pale gold / violet-white)
-    local V = { 0.72, 0.45, 1.0 };                                   -- (Normal's violet, the bar's right half)
-    local w, h, gap, pad, cap = 88 * sc, 44 * sc, 6 * sc, 6 * sc, 34 * sc;
-    local kx0 = ox + 14 * sc + cap + pad;
-    local ky0 = oy + 26 * sc;
-    local total = 10 * w + 9 * gap;
-    local hx0, hx1, hy0, hy1 = kx0 - pad, kx0 + total + pad, ky0 - pad, ky0 + h + pad;
-    local cy = (hy0 + hy1) / 2;
-    local dt = math.min(0.05, imgui.GetIO().DeltaTime or 0.016);
-    local function keypts(a0, b0, a1, b1, g)
-        if hexd then return C.mb_hexkey(a0, b0, a1, b1, (b1 - b0) * 0.32, g); end
-        return C.mb_rpara(a0, b0, a1, b1, 0, 10 * sc, g);
-    end
-    -- the housing
-    if design == 'chevron' then
-        local Hh = C.mb_hexkey(hx0, hy0, hx1, hy1, (hy1 - hy0) * 0.5);
-        C.mb_poly(dl, C.mb_hexkey(hx0 + 1, hy0 + 3, hx1 + 1, hy1 + 3, (hy1 - hy0) * 0.5), U4(0, 0, 0, 0.45 * op));
-        C.mb_poly(dl, Hh, U4(0.035, 0.033, 0.045, 0.94 * op));
-        C.mb_outline(dl, Hh, U4(A[1], A[2], A[3], 0.75 * op), 1.4);
-        C.mb_outline(dl, C.mb_hexkey(hx0, hy0, hx1, hy1, (hy1 - hy0) * 0.5, -3 * sc), U4(A[1], A[2], A[3], 0.22 * op), 1);
-        for sd = -1, 1, 2 do                                         -- (gold double chevrons pointing out, swaying a little)
-            local sw = math.sin(now * 2.6) * 0.5 + 0.5;
-            for c_ = 0, 1 do
-                local tipx = ((sd < 0) and hx0 or hx1) + sd * (8 + c_ * 9 + 2 * sw) * sc;
-                local hh = (hy1 - hy0) * (0.42 - c_ * 0.08);
-                local ca = (c_ == 0) and 1 or 0.55;
-                for g = 2, 1, -1 do
-                    DL.L(dl, tipx - sd * hh * 0.55, cy - hh, tipx, cy, U4(A[1], A[2], A[3], 0.10 * ca * op), (2 + g * 2.5) * sc);
-                    DL.L(dl, tipx, cy, tipx - sd * hh * 0.55, cy + hh, U4(A[1], A[2], A[3], 0.10 * ca * op), (2 + g * 2.5) * sc);
-                end
-                DL.L(dl, tipx - sd * hh * 0.55, cy - hh, tipx, cy, U4(A2[1], A2[2], A2[3], ca * op), 2 * sc);
-                DL.L(dl, tipx, cy, tipx - sd * hh * 0.55, cy + hh, U4(A2[1], A2[2], A2[3], ca * op), 2 * sc);
-            end
-            for i = 0, 11 do                                         -- (a fine gold dust inside the ends)
-                local ex = ((sd < 0) and (hx0 + 14 * sc) or (hx1 - 14 * sc)) - sd * (i % 4) * 4 * sc;
-                local ey = cy + (math.floor(i / 4) - 1) * 6 * sc + ((i % 2) * 2 - 1) * sc;
-                DL.CF(dl, ex, ey, 0.9 * sc, U4(A[1], A[2], A[3], (0.25 + 0.2 * math.sin(now * 2 + i)) * op), 6);
-            end
-        end
-    else
-        local r = (design == 'wave') and (hy1 - hy0) / 2 or 12 * sc;
-        DL.RF(dl, hx0 + 1, hy0 + 3, hx1 + 1, hy1 + 3, U4(0, 0, 0, 0.45 * op), r);
-        DL.RF(dl, hx0, hy0, hx1, hy1, U4(0.03, 0.032, 0.05, 0.94 * op), r);
-        local t0, t1 = U4(1, 1, 1, 0.04 * op), U4(1, 1, 1, 0);
-        DL.RFM(dl, hx0 + r, hy0, hx1 - r, cy, t0, t0, t1, t1);
-        if design == 'honey' then
-            DL.R(dl, hx0, hy0, hx1, hy1, U4(A[1], A[2], A[3], 0.55 * op), r, C.rall, 1.2);
-        else
-            DL.R(dl, hx0, hy0, hx1, hy1, U4(A[1], A[2], A[3], 0.22 * op), r, C.rall, 1);
-        end
-    end
-    if design == 'honey' then                                        -- (a cluster of gold glass hexagons at each end)
-        local cells = { { 0, 0, 1.0 }, { -1, -0.5, 0.8 }, { -1, 0.5, 0.8 }, { 1, -0.5, 0.7 }, { 1, 0.5, 0.7 }, { -2, 0, 0.6 }, { 0, -1, 0.55 }, { 0, 1, 0.55 } };
-        for sd = -1, 1, 2 do
-            local bx = (sd < 0) and (hx0 - 4 * sc) or (hx1 + 4 * sc);
-            local R = 7.5 * sc;
-            for i, c in ipairs(cells) do
-                local x = bx + sd * c[1] * R * 1.5 * (-1);
-                local y = cy + c[2] * R * 1.73;
-                local tw = 0.5 + 0.5 * math.sin(now * 1.8 + i * 1.3);
-                C.hexdot(dl, x + 1, y + 2, R, U4(0, 0, 0, 0.45 * op));
-                C.hexdot(dl, x, y, R, U4(0.10, 0.075, 0.03, 0.95 * op));
-                C.hexdot(dl, x, y, R * 0.78, U4(A[1], A[2], A[3], (0.20 + 0.25 * c[3] + 0.12 * tw) * op));
-                C.mb_poly(dl, { { x, y - R * 0.78 }, { x + R * 0.67, y - R * 0.39 }, { x - R * 0.67, y - R * 0.39 } }, U4(1, 1, 1, (0.12 + 0.10 * tw) * op));
-                pcall(C.hexring, dl, x, y, R, U4(A2[1], A2[2], A2[3], (0.55 + 0.35 * c[3]) * op), 1.2);
-            end
-        end
-    elseif design == 'wave' then                                     -- (crystal wings: blue at the left, violet at the right)
-        for sd = -1, 1, 2 do
-            local col = (sd < 0) and A or V;
-            local bx = (sd < 0) and (hx0 + 10 * sc) or (hx1 - 10 * sc);
-            local shards = { { 1.0, -0.55 }, { 1.25, -0.15 }, { 1.15, 0.2 }, { 0.85, 0.55 } };
-            for i, sh in ipairs(shards) do
-                local tipx, tipy = bx + sd * cap * sh[1], cy + (hy1 - hy0) * sh[2];
-                local bw = 2.6 * sc;
-                local pts = { { bx, cy - bw }, { tipx, tipy }, { bx, cy + bw } };
-                for g = 2, 1, -1 do DL.L(dl, bx, cy, tipx, tipy, U4(col[1], col[2], col[3], 0.10 * op), (3 + g * 3) * sc); end
-                C.mb_poly(dl, pts, U4(col[1] * 0.6 + 0.4, col[2] * 0.6 + 0.4, col[3] * 0.6 + 0.4, (0.75 + 0.2 * math.sin(now * 2 + i)) * op));
-            end
-        end
-    end
-    -- the pick's glow slides to it
-    local tx = kx0 + sel * (w + gap);
-    M.sx = M.sx and (M.sx + (tx - M.sx) * math.min(1, dt * 18)) or tx;
-    for g = 3, 1, -1 do C.mb_poly(dl, keypts(M.sx, ky0, M.sx + w, ky0 + h, g * 2.2 * sc), U4(A[1], A[2], A[3], 0.08 * op)); end
-    M.rz = M.rz or {};
-    local keys = {};
-    for k = 0, 9 do                                                  -- (the keys)
-        local pick = (k == sel);
-        local stag = math.max(0, math.min(1, op * 1.5 - math.abs(k - 4.5) * 0.06));
-        local fl = math.max(0, 1 - (now - (M.flash[(row - 1) * 10 + k] or -99)) / 0.45);
-        M.rz[k] = (M.rz[k] or 0) + ((pick and 1 or 0) - (M.rz[k] or 0)) * math.min(1, dt * 14);
-        local rz = M.rz[k];
-        local rise = (1 - stag) * (1 - stag) * 10 * sc;
-        local zz = 1 + 0.06 * fl * fl;
-        local x0 = kx0 + k * (w + gap);
-        local cxk, cyk = x0 + w / 2, ky0 + h / 2 + rise;
-        local kw_, kh_ = w * zz, h * zz;
-        local a0, b0, a1, b1 = cxk - kw_ / 2, cyk - kh_ / 2, cxk + kw_ / 2, cyk + kh_ / 2;
-        local P = keypts(a0, b0, a1, b1);
-        local fill = (design == 'wave') and U4(0.06, 0.065, 0.10, 0.80 * stag) or U4(0.065, 0.06, 0.075, 0.96 * stag);
-        C.mb_poly(dl, P, fill);
-        if hexd then C.mb_poly(dl, keypts(a0 + kw_ * 0.1, b0, a1 - kw_ * 0.1, b0 + kh_ * 0.48), U4(1, 1, 1, 0.045 * stag)); end   -- (glass: light on the top half)
-        keys[k] = { P = P, a0 = a0, b0 = b0, a1 = a1, b1 = b1, cx = cxk, kh = kh_, kw = kw_, al = stag, rz = rz, fl = fl, zz = zz };
-    end
-    if design == 'wave' then                                         -- (two ribbons weaving over and under the keys, crossing between them; light runs along them)
-        local per = w + gap;
-        local amp = h * 0.52;
-        local xa, xb = hx0 + 8 * sc, hx1 - 8 * sc;
-        local N = 220;
-        for pass = 1, 2 do
-            for rb = -1, 1, 2 do
-                local px, py;
-                for q = 0, N do
-                    local x = xa + (xb - xa) * q / N;
-                    local ph = math.pi * (x - (kx0 - gap / 2)) / per;
-                    local y = cy + rb * amp * math.sin(ph);
-                    if px then
-                        local t = (x - xa) / (xb - xa);
-                        local c = C.mb_lerp3(A, V, t);
-                        local run = 0.55 + 0.45 * math.max(0, math.cos((x - xa) / (xb - xa) * 6.28 * 2 - now * 1.6 + rb));
-                        local e = math.min(1, math.min(q, N - q) / (N * 0.04));
-                        if pass == 1 then DL.L(dl, px, py, x, y, U4(c[1], c[2], c[3], 0.12 * run * e * op), 5 * sc);
-                        else DL.L(dl, px, py, x, y, U4(c[1] * 0.5 + 0.5, c[2] * 0.5 + 0.5, c[3] * 0.5 + 0.5, 0.85 * run * e * op), 1.3); end
-                    end
-                    px, py = x, y;
-                end
-            end
-        end
-    end
-    for k = 0, 9 do                                                  -- (edges, light, text)
-        local K = keys[k];
-        local al, rz = K.al, K.rz;
-        local cd = cds[k];
-        local busy = cd ~= nil and cd.f > 0;
-        if busy then C.mb_poly(dl, K.P, U4(0, 0, 0, 0.30 * al)); end
-        C.mb_outline(dl, K.P, hexd and U4(A[1], A[2], A[3], 0.38 * al) or U4(0.75, 0.80, 1, 0.14 * al), 1);
-        if rz > 0.01 then                                            -- (the pick: lit)
-            C.mb_outline(dl, K.P, U4(A2[1], A2[2], A2[3], rz * al), 1.8);
-            C.mb_outline(dl, keypts(K.a0, K.b0, K.a1, K.b1, 1.6), U4(A[1], A[2], A[3], 0.35 * rz * al), 1.5);
-            for q = 0, 15 do
-                local e = 1 - math.abs((q + 0.5) / 16 - 0.5) * 2;
-                local xx = K.a0 + 14 * sc + (K.a1 - K.a0 - 28 * sc) * q / 16;
-                DL.L(dl, xx, K.b1 - 1, xx + (K.a1 - K.a0 - 28 * sc) / 16, K.b1 - 1, U4(A2[1], A2[2], A2[3], 0.9 * e * rz * al), 2);
-            end
-        end
-        if K.fl > 0 then C.mb_outline(dl, keypts(K.a0, K.b0, K.a1, K.b1, (1 - K.fl) * 12 * sc), U4(A2[1], A2[2], A2[3], K.fl * 0.9 * al), 1.5); end
-        if cd ~= nil and cd.ready then C.mb_outline(dl, keypts(K.a0, K.b0, K.a1, K.b1, (1 - cd.ready) * 8 * sc), U4(A2[1], A2[2], A2[3], cd.ready * al), 2); end
-        local top = busy and C.mb_secstr(cd.s) or key(k);
-        imgui.SetWindowFontScale(fs * 0.58 * K.zz);
-        local nw_, nh_ = imgui.CalcTextSize(top);
-        nw_, nh_ = tonumber(nw_) or 0, tonumber(nh_) or 8;
-        local numc = (busy or rz > 0.5) and U4(A2[1], A2[2], A2[3], al) or U4(0.66, 0.66, 0.74, 0.9 * al);
-        DL.T(dl, K.cx - nw_ / 2, K.b0 + K.kh * 0.12, numc, top);
-        local name = nm(k);
-        if name ~= '' then
-            local nw2, nh2 = C.mb_fitname(name, K.kw - (hexd and K.kh * 0.7 or 16 * sc), 0.84 * K.zz);
-            local nc = (rz > 0.5) and U4(A2[1], A2[2], A2[3], al) or U4(0.93, 0.93, 0.97, (busy and 0.6 or 0.95) * al);
-            DL.T(dl, K.cx - nw2 / 2 + 1, K.b0 + K.kh * 0.46 + 1, U4(0, 0, 0, 0.6 * al), name);
-            DL.T(dl, K.cx - nw2 / 2, K.b0 + K.kh * 0.46, nc, name);
-        end
-        if busy then
-            local la, lb, ly = K.a0 + K.kh * 0.4, K.a1 - K.kh * 0.4, K.b1 - 4 * sc;
-            DL.L(dl, la, ly, lb, ly, U4(A[1], A[2], A[3], 0.2 * al), 2);
-            DL.L(dl, la, ly, la + (lb - la) * cd.f, ly, U4(A2[1], A2[2], A2[3], 0.95 * al), 2);
-        end
-    end
-    do                                                               -- (a small caret over the pick, bobbing gently)
-        local cxp = M.sx + w / 2;
-        local by = hy0 - 5 * sc - math.sin(now * 3) * 1.2 * sc;
-        local cw = 5 * sc;
-        DL.L(dl, cxp - cw, by + 1, cxp, by - cw * 0.8 + 1, U4(0, 0, 0, 0.5 * op), 2.4);
-        DL.L(dl, cxp, by - cw * 0.8 + 1, cxp + cw, by + 1, U4(0, 0, 0, 0.5 * op), 2.4);
-        DL.L(dl, cxp - cw, by, cxp, by - cw * 0.8, U4(A2[1], A2[2], A2[3], op), 1.6);
-        DL.L(dl, cxp, by - cw * 0.8, cxp + cw, by, U4(A2[1], A2[2], A2[3], op), 1.6);
-    end
-    imgui.SetWindowFontScale(fs * 0.62);
-    C.mb_otext(dl, hx0, oy + 2 * sc, A2, op, (row == 1) and 'CTRL' or 'ALT');
-    if M.book then
-        local bp = string.format('BOOK %d   PAGE %d', M.book, M.page);
-        local bw_ = tonumber((imgui.CalcTextSize(bp))) or 0;
-        C.mb_otext(dl, hx1 - bw_, oy + 2 * sc, A2, op, bp);
-    end
-    imgui.SetWindowFontScale(fs);
-end
--- the Bar at the bottom: one dark housing, ten slanted glass keys
-function C.mb_deck(dl, ox, oy, sc, row, sel, now, op, A, A2, cds, nm, key)
-    local M = C.MB;
-    local fs = FS or 1;
-    local w, h, gap, sl, pad, cap = 88 * sc, 44 * sc, 5 * sc, 7 * sc, 6 * sc, 24 * sc;
-    local kx0 = ox + 16 * sc + cap + pad;                           -- (the first key's left)
-    local ky0 = oy + 26 * sc;
-    local total = 10 * w + 9 * gap;
-    local hx0, hx1, hy0, hy1 = kx0 - pad, kx0 + total + pad, ky0 - pad, ky0 + h + pad;
-    -- the housing: wider at its foot, its ends slanted out
-    local H = { { hx0, hy0 }, { hx1, hy0 }, { hx1 + cap, hy1 }, { hx0 - cap, hy1 } };
-    C.mb_poly(dl, { { H[1][1], H[1][2] + 3 }, { H[2][1], H[2][2] + 3 }, { H[3][1] + 2, H[3][2] + 4 }, { H[4][1] - 2, H[4][2] + 4 } }, U4(0, 0, 0, 0.45 * op));   -- (its shadow)
-    C.mb_poly(dl, H, U4(0.035, 0.035, 0.05, 0.93 * op));
-    local t0, t1 = U4(1, 1, 1, 0.05 * op), U4(1, 1, 1, 0);
-    DL.RFM(dl, hx0, hy0, hx1, (hy0 + hy1) / 2, t0, t0, t1, t1);     -- (a little light on its top half)
-    DL.L(dl, hx0, hy0 + 0.5, hx1, hy0 + 0.5, U4(1, 1, 1, 0.10 * op), 1);
-    do                                                               -- (its foot: gold, bright at the ends, fading to the middle)
-        local N = 60;
-        for q = 0, N - 1 do
-            local u = (q + 0.5) / N;
-            local e = math.abs(u - 0.5) * 2;
-            local xa = (hx0 - cap) + (hx1 + cap - (hx0 - cap)) * q / N;
-            DL.L(dl, xa, hy1 - 0.5, xa + (hx1 + cap - (hx0 - cap)) / N, hy1 - 0.5, U4(A[1], A[2], A[3], (0.12 + 0.6 * e ^ 3) * op), 1.2);
-        end
-    end
-    for sd = -1, 1, 2 do                                             -- (the ends: a glowing gold edge)
-        local ta = (sd < 0) and H[1] or H[2];
-        local tb = (sd < 0) and H[4] or H[3];
-        for g = 3, 1, -1 do DL.L(dl, ta[1], ta[2], tb[1], tb[2], U4(A[1], A[2], A[3], 0.10 * op), (2 + g * 2.5) * sc); end
-        DL.L(dl, ta[1], ta[2], tb[1], tb[2], U4(A2[1], A2[2], A2[3], 0.95 * op), 1.8 * sc);
-        local ix = (sd < 0) and (hx0 + 4 * sc) or (hx1 - 4 * sc);    -- (and an inner one, thinner)
-        DL.L(dl, ix, hy0 + 4 * sc, ix + sd * (cap - 6 * sc), hy1 - 4 * sc, U4(A[1], A[2], A[3], 0.55 * op), 1);
-    end
-    -- the pick's glow slides to it
-    local dt = math.min(0.05, imgui.GetIO().DeltaTime or 0.016);
-    local tx = kx0 + sel * (w + gap);
-    M.sx = M.sx and (M.sx + (tx - M.sx) * math.min(1, dt * 18)) or tx;
-    for g = 3, 1, -1 do C.mb_poly(dl, C.mb_rpara(M.sx, ky0, M.sx + w, ky0 + h, sl, 7 * sc, g * 2.2 * sc), U4(A[1], A[2], A[3], 0.07 * op)); end
-    M.rz = M.rz or {};
-    for k = 0, 9 do
-        local pick = (k == sel);
-        local stag = math.max(0, math.min(1, op * 1.5 - math.abs(k - 4.5) * 0.06));
-        local fl = math.max(0, 1 - (now - (M.flash[(row - 1) * 10 + k] or -99)) / 0.45);
-        M.rz[k] = (M.rz[k] or 0) + ((pick and 1 or 0) - (M.rz[k] or 0)) * math.min(1, dt * 14);
-        local rz = M.rz[k];
-        local rise = (1 - stag) * (1 - stag) * 10 * sc;
-        local zz = 1 + 0.06 * fl * fl;                               -- (run: a pop)
-        local x0 = kx0 + k * (w + gap);
-        local cxk, cyk = x0 + w / 2, ky0 + h / 2 + rise;
-        local kw_, kh_ = w * zz, h * zz;
-        local a0, b0, a1, b1 = cxk - kw_ / 2, cyk - kh_ / 2, cxk + kw_ / 2, cyk + kh_ / 2;
-        local al = stag;
-        local cd = cds[k];
-        local busy = cd ~= nil and cd.f > 0;
-        local P = C.mb_rpara(a0, b0, a1, b1, sl, 7 * sc);
-        C.mb_poly(dl, P, U4(0.07, 0.07, 0.095, 0.97 * al));        -- (the key: dark glass)
-        C.mb_poly(dl, C.mb_rpara(a0 + sl * 0.5, b0, a1 - sl * 0.5, b0 + kh_ * 0.48, 0, 6 * sc), U4(1, 1, 1, 0.045 * al));   -- (light on its top half)
-        if busy then C.mb_poly(dl, P, U4(0, 0, 0, 0.30 * al)); end
-        C.mb_outline(dl, P, U4(1, 1, 1, 0.10 * al), 1);              -- (a fine light edge)
-        DL.L(dl, a0 + sl + 7 * sc, b0 + 1, a1 - 7 * sc, b0 + 1, U4(1, 1, 1, 0.16 * al), 1);   -- (its top catching the light)
-        if rz > 0.01 then                                            -- (the pick: glowing gold)
-            C.mb_outline(dl, P, U4(A2[1], A2[2], A2[3], rz * al), 1.8);
-            C.mb_outline(dl, C.mb_rpara(a0, b0, a1, b1, sl, 7 * sc, 1.5), U4(A[1], A[2], A[3], 0.35 * rz * al), 1.5);
-            local ty = b1 - 1;                                       -- (a light along its foot)
-            for q = 0, 15 do
-                local e = 1 - math.abs((q + 0.5) / 16 - 0.5) * 2;
-                local xa = a0 + 10 * sc + (a1 - a0 - 20 * sc - sl) * q / 16;
-                DL.L(dl, xa, ty, xa + (a1 - a0 - 20 * sc - sl) / 16, ty, U4(A2[1], A2[2], A2[3], 0.9 * e * rz * al), 2);
-            end
-        end
-        if k < 9 then                                                -- (a fine gold divider to the next key)
-            local dx = x0 + w + gap / 2;
-            DL.L(dl, dx + sl * 0.5, ky0 + 4 * sc, dx - sl * 0.5, ky0 + h - 4 * sc, U4(A[1], A[2], A[3], 0.45 * op), 1.2);
-        end
-        if fl > 0 then C.mb_outline(dl, C.mb_rpara(a0, b0, a1, b1, sl, 7 * sc, (1 - fl) * 12 * sc), U4(A2[1], A2[2], A2[3], fl * 0.9 * al), 1.5); end   -- (run: a ripple)
-        if cd ~= nil and cd.ready then C.mb_outline(dl, C.mb_rpara(a0, b0, a1, b1, sl, 7 * sc, (1 - cd.ready) * 8 * sc), U4(A2[1], A2[2], A2[3], cd.ready * al), 2); end   -- (ready again)
-        local mid = cxk - sl * 0.0;
-        local top = busy and C.mb_secstr(cd.s) or key(k);           -- (its number on top - on recast, its seconds)
-        imgui.SetWindowFontScale(fs * 0.58 * zz);
-        local nw_, nh_ = imgui.CalcTextSize(top);
-        nw_, nh_ = tonumber(nw_) or 0, tonumber(nh_) or 8;
-        local numc = (busy or rz > 0.5) and U4(A2[1], A2[2], A2[3], al) or U4(0.62, 0.62, 0.68, 0.9 * al);
-        DL.T(dl, mid - nw_ / 2, b0 + kh_ * 0.14, numc, top);
-        local name = nm(k);
-        if name ~= '' then
-            local nw2, nh2 = C.mb_fitname(name, kw_ - sl - 14 * sc, 0.84 * zz);
-            local nc = (rz > 0.5) and U4(A2[1], A2[2], A2[3], al) or U4(0.93, 0.93, 0.96, (busy and 0.6 or 0.95) * al);
-            DL.T(dl, mid - nw2 / 2 + 1, b0 + kh_ * 0.47 + 1, U4(0, 0, 0, 0.6 * al), name);
-            DL.T(dl, mid - nw2 / 2, b0 + kh_ * 0.47, nc, name);
-        end
-        if busy then                                                 -- (its recast: a slim gold line along its foot, emptying)
-            local la, lb, ly = a0 + 10 * sc, a1 - sl - 8 * sc, b1 - 4 * sc;
-            DL.L(dl, la, ly, lb, ly, U4(A[1], A[2], A[3], 0.2 * al), 2);
-            DL.L(dl, la, ly, la + (lb - la) * cd.f, ly, U4(A2[1], A2[2], A2[3], 0.95 * al), 2);
-        end
-    end
-    do                                                               -- (a small gold caret over the pick, bobbing gently)
-        local cxp = M.sx + w / 2 + sl * 0.5;
-        local by = hy0 - 5 * sc - math.sin(now * 3) * 1.2 * sc;
-        local cw = 5 * sc;
-        DL.L(dl, cxp - cw, by + 1, cxp, by - cw * 0.8 + 1, U4(0, 0, 0, 0.5 * op), 2.4);
-        DL.L(dl, cxp, by - cw * 0.8 + 1, cxp + cw, by + 1, U4(0, 0, 0, 0.5 * op), 2.4);
-        DL.L(dl, cxp - cw, by, cxp, by - cw * 0.8, U4(A2[1], A2[2], A2[3], op), 1.6);
-        DL.L(dl, cxp, by - cw * 0.8, cxp + cw, by, U4(A2[1], A2[2], A2[3], op), 1.6);
-    end
-    imgui.SetWindowFontScale(fs * 0.62);                             -- (which row, small, over its left end)
-    C.mb_otext(dl, hx0, oy + 2 * sc, A2, op, (row == 1) and 'CTRL' or 'ALT');
-    if M.book then                                                   -- (the macro book and page, at its top right)
-        local bp = string.format('BOOK %d   PAGE %d', M.book, M.page);
-        local bw_ = tonumber((imgui.CalcTextSize(bp))) or 0;
-        C.mb_otext(dl, hx1 - bw_, oy + 2 * sc, A2, op, bp);
-    end
-    imgui.SetWindowFontScale(fs);
-end
-function C.mb_fitname(name, room, fsz)                               -- (a name's size: one for the whole row - the longest name sets it)
-    local fs = FS or 1;
-    imgui.SetWindowFontScale(fs * fsz);
-    local nw, nh = imgui.CalcTextSize(name);
-    nw, nh = tonumber(nw) or 0, tonumber(nh) or 10;
-    if nw > 0 then
-        C.MB.fq_next = math.min(C.MB.fq_next or 1, room / nw);
-        local q = math.max(0.5, math.min(1, C.MB.fq or 1));          -- (a long name in a small key: smaller still, kept inside)
-        if q < 0.999 then
-            imgui.SetWindowFontScale(fs * fsz * q);
-            nw, nh = imgui.CalcTextSize(name);
-            nw, nh = tonumber(nw) or 0, tonumber(nh) or 10;
-        end
-    end
-    return nw, nh;
-end
 function C.mb_secstr(s_) return (s_ >= 60) and string.format('%d:%02d', math.floor(s_ / 60), math.floor(s_ % 60)) or tostring(math.ceil(s_)); end
--- the Carousel's macro: a Gem - the key in a gold diamond, the name beside it, no box
-function C.mb_gem(dl, cx, cy, w, h, name, key, pick, al, fsz, A, A2, cd)
-    local fs = FS or 1;
-    local busy = cd ~= nil and cd.f > 0;
-    local r = h * 0.62;
-    imgui.SetWindowFontScale(fs * fsz);
-    local nw, nh = imgui.CalcTextSize(name);
-    nw, nh = tonumber(nw) or 0, tonumber(nh) or 10;
-    local gap = h * 0.28;
-    local gx = cx - (2 * r + gap + nw) / 2 + r;                      -- (the gem and its name centred together)
-    if pick then                                                     -- (the pick: no glow - a fine diamond frame round its gem)
-        local rr = r * (busy and 1.55 or 1.32);
-        local f = { { gx, cy - rr }, { gx + rr, cy }, { gx, cy + rr }, { gx - rr, cy } };
-        for i = 1, 4 do dl:AddLine(f[i], f[i % 4 + 1], U4(A2[1], A2[2], A2[3], 0.75 * al), 1); end
-    end
-    if cd ~= nil and cd.ready then for g = 3, 1, -1 do DL.CF(dl, gx, cy, r + g * r * 0.3 * cd.ready, U4(A2[1], A2[2], A2[3], 0.08 * cd.ready * al), 24); end end
-    local function dia(rr, ox, oy) return { { gx + ox, cy - rr + oy }, { gx + rr + ox, cy + oy }, { gx + ox, cy + rr + oy }, { gx - rr + ox, cy + oy } }; end
-    C.mb_poly(dl, dia(r + 1.5, 1, 2), U4(0, 0, 0, 0.45 * al));      -- (its shadow)
-    C.mb_poly(dl, dia(r, 0, 0), U4(0.075, 0.055, 0.10, 0.92 * al));
-    local ic = busy and U4(A[1] * 0.45, A[2] * 0.45, A[3] * 0.45, 0.85 * al) or (pick and U4(A2[1], A2[2], A2[3], al) or U4(A[1], A[2], A[3], 0.88 * al));
-    C.mb_poly(dl, dia(r * 0.78, 0, 0), ic);                          -- (the gold gem; dim on recast)
-    local gl = 0;                                                    -- (a glint over its top facets: the pick every few seconds, any one as its recast ends)
-    if cd ~= nil and cd.ready then gl = cd.ready;
-    elseif pick then local t = (os.clock() * 0.42) % 1.6; if t < 0.5 then gl = math.sin(t / 0.5 * math.pi); end end
-    C.mb_poly(dl, { { gx, cy - r * 0.78 }, { gx + r * 0.78, cy }, { gx - r * 0.78, cy } }, U4(1, 1, 1, ((busy and 0.05 or 0.18) + 0.35 * gl) * al));   -- (light on its top facets)
-    if gl > 0.05 then                                                -- (and a small four-point star on its tip)
-        local sx_, sy_, sr = gx + r * 0.28, cy - r * 0.5, r * 0.55 * gl;
-        DL.L(dl, sx_ - sr, sy_, sx_ + sr, sy_, U4(1, 1, 1, 0.9 * gl * al), 1.2);
-        DL.L(dl, sx_, sy_ - sr, sx_, sy_ + sr, U4(1, 1, 1, 0.9 * gl * al), 1.2);
-    end
-    local o = dia(r, 0, 0);
-    local ec = pick and U4(A2[1], A2[2], A2[3], al) or U4(A[1], A[2], A[3], 0.8 * al);
-    for i = 1, 4 do dl:AddLine(o[i], o[i % 4 + 1], ec, pick and 1.5 or 1.1); end
-    local rf = C.MB.fx_fl or 0;
-    if rf > 0 then                                                   -- (just run: a diamond ripple out of it)
-        local rp = dia(r * (1 + (1 - rf) * 1.4), 0, 0);
-        for i = 1, 4 do dl:AddLine(rp[i], rp[i % 4 + 1], U4(A2[1], A2[2], A2[3], rf * 0.9 * al), 1.5); end
-    end
-    local lab = busy and C.mb_secstr(cd.s) or key;                   -- (on recast: its seconds in the gem)
-    imgui.SetWindowFontScale(fs * fsz * (busy and (#lab > 2 and 0.5 or 0.62) or 0.7));
-    local kw, kh = imgui.CalcTextSize(lab);
-    kw, kh = tonumber(kw) or 0, tonumber(kh) or 8;
-    if busy then C.mb_otext(dl, gx - kw / 2, cy - kh / 2, A2, al, lab);
-    else DL.T(dl, gx - kw / 2, cy - kh / 2, U4(0.10, 0.06, 0.02, al), lab); end
-    if busy then                                                     -- (a ring round the gem, emptying)
-        local rr, N = r * 1.32, 40;
-        for q = 0, N - 1 do
-            local t0, t1 = -math.pi / 2 + 2 * math.pi * q / N, -math.pi / 2 + 2 * math.pi * (q + 1) / N;
-            local on = (q + 1) / N <= cd.f + 0.0001;
-            DL.L(dl, gx + rr * math.cos(t0), cy + rr * math.sin(t0), gx + rr * math.cos(t1), cy + rr * math.sin(t1),
-                on and U4(A2[1], A2[2], A2[3], 0.95 * al) or U4(A[1], A[2], A[3], 0.18 * al), on and 1.8 or 1);
-        end
-    end
-    if name ~= '' then
-        imgui.SetWindowFontScale(fs * fsz);
-        local tx, ty = gx + r + gap, cy - nh / 2;
-        C.mb_otext(dl, tx, ty, { 1, 1, 1 }, (pick and 1 or 0.9) * al * (busy and 0.75 or 1), name);
-    end
-    imgui.SetWindowFontScale(fs);
-end
--- the Bar's macro: a Blade - a slanted dark plate, a gold stripe down its left edge, the key by it, the name
-function C.mb_blade(dl, cx, cy, w, h, name, key, pick, al, fsz, A, A2, cd)
-    local fs = FS or 1;
-    local busy = cd ~= nil and cd.f > 0;
-    local sl = h * 0.42;
-    local x0, x1, y0, y1 = cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2;
-    local function plate(p, ox, oy) return { { x0 + sl - p + ox, y0 - p + oy }, { x1 + p + ox, y0 - p + oy }, { x1 - sl + p + ox, y1 + p + oy }, { x0 - p + ox, y1 + p + oy } }; end
-    if pick then for g = 3, 1, -1 do C.mb_poly(dl, plate(g * 2.2, 0, 0), U4(A[1], A[2], A[3], 0.09 * al)); end end
-    if cd ~= nil and cd.ready then for g = 2, 1, -1 do C.mb_poly(dl, plate(g * 3 * cd.ready, 0, 0), U4(A2[1], A2[2], A2[3], 0.16 * cd.ready * al)); end end
-    C.mb_poly(dl, plate(0, 1, 2), U4(0, 0, 0, 0.40 * al));           -- (its shadow)
-    C.mb_poly(dl, plate(0, 0, 0), U4(0.075, 0.055, 0.10, (pick and 0.93 or 0.86) * al));
-    C.mb_poly(dl, { { x0 + sl, y0 }, { x1, y0 }, { x1 - sl * 0.5, cy }, { x0 + sl * 0.5, cy } }, U4(1, 1, 1, 0.06 * al));   -- (glass: light on its top half)
-    do                                                               -- (a light band sweeping across it: the pick every few seconds, any one as its recast ends)
-        local t = nil;
-        if cd ~= nil and cd.ready then t = 1 - cd.ready;
-        elseif pick then t = ((os.clock() * 0.42) % 1.6) / 0.9; end
-        if t ~= nil and t >= 0 and t <= 1 then
-            local bw = h * 0.55;
-            local bx = x0 + (x1 - sl - bw - x0) * t;                 -- (its own slant: it stays inside the plate)
-            local fa = math.sin(t * math.pi) * ((cd ~= nil and cd.ready) and 0.40 or 0.16) * al;
-            C.mb_poly(dl, { { bx + sl, y0 }, { bx + sl + bw, y0 }, { bx + bw, y1 }, { bx, y1 } }, U4(1, 1, 1, fa));
-        end
-    end
-    local sw = math.max(2, h * 0.16);                                -- (the gold stripe down its left edge)
-    C.mb_poly(dl, { { x0 + sl, y0 }, { x0 + sl + sw, y0 }, { x0 + sw, y1 }, { x0, y1 } }, pick and U4(A2[1], A2[2], A2[3], al) or U4(A[1], A[2], A[3], 0.85 * al));
-    local o = plate(0, 0, 0);
-    if pick then for i = 1, 4 do dl:AddLine(o[i], o[i % 4 + 1], U4(A2[1], A2[2], A2[3], al), 1.5); end
-    else DL.L(dl, o[1][1], o[1][2], o[2][1], o[2][2], U4(A[1], A[2], A[3], 0.5 * al), 1); end   -- (the rest: a fine gold top edge)
-    local rf = C.MB.fx_fl or 0;
-    if rf > 0 then                                                   -- (just run: a ripple out of it)
-        local rp = plate((1 - rf) * h * 0.7, 0, 0);
-        for i = 1, 4 do dl:AddLine(rp[i], rp[i % 4 + 1], U4(A2[1], A2[2], A2[3], rf * 0.9 * al), 1.5); end
-    end
-    imgui.SetWindowFontScale(fs * fsz * 0.66);
-    local kw, kh = imgui.CalcTextSize(key);
-    kw, kh = tonumber(kw) or 0, tonumber(kh) or 8;
-    local kx = x0 + sl * 0.5 + sw + h * 0.28;
-    C.mb_otext(dl, kx - kw / 2, cy - kh / 2, A, (pick and 1 or 0.9) * al, key);
-    if busy then                                                     -- (its recast: a slim gold line along the foot, emptying)
-        local la, lb = x0 + sw + h * 0.15, x1 - sl - h * 0.15;
-        local ly = y1 - math.max(2, h * 0.14);
-        DL.L(dl, la, ly, lb, ly, U4(A[1], A[2], A[3], 0.22 * al), 2);
-        DL.L(dl, la, ly, la + (lb - la) * cd.f, ly, U4(A2[1], A2[2], A2[3], 0.95 * al), 2);
-    end
-    if name ~= '' then
-        local left, right = kx + kw / 2 + h * 0.25, x1 - sl * 0.6;
-        local nw, nh = C.mb_fitname(name, right - left, fsz);
-        local tx = left + math.max(0, (right - left - nw) / 2);
-        local ny = cy - nh / 2 - (busy and h * 0.07 or 0);
-        DL.T(dl, tx + 1, ny + 1, U4(0, 0, 0, 0.6 * al), name);
-        DL.T(dl, tx, ny, U4(1, 1, 1, (pick and 1 or 0.92) * al * (busy and 0.8 or 1)), name);
-    end
-    if busy then                                                     -- (the seconds: a small slanted tag on its top edge)
-        local lab = C.mb_secstr(cd.s);
-        imgui.SetWindowFontScale(fs * fsz * 0.72);
-        local sw_, sh_ = imgui.CalcTextSize(lab);
-        sw_, sh_ = tonumber(sw_) or 0, tonumber(sh_) or 8;
-        local bh = sh_ + 4;
-        local bw = sw_ + bh * 1.6;
-        local tsl = bh * 0.42;
-        local bx0, by0 = cx + sl * 0.5 - bw / 2, y0 - bh * 0.62;
-        local tg = { { bx0 + tsl, by0 }, { bx0 + bw, by0 }, { bx0 + bw - tsl, by0 + bh }, { bx0, by0 + bh } };
-        C.mb_poly(dl, tg, U4(0.075, 0.055, 0.10, 0.95 * al));
-        for i = 1, 4 do dl:AddLine(tg[i], tg[i % 4 + 1], U4(A[1], A[2], A[3], 0.9 * al), 1); end
-        DL.T(dl, bx0 + (bw - sw_) / 2, by0 + (bh - sh_) / 2, U4(A2[1], A2[2], A2[3], al), lab);
-    end
-    imgui.SetWindowFontScale(fs);
-end
-function C.mb_capsule(dl, cx, cy, w, h, name, key, pick, al, fsz, A, A2, cd)   -- (one macro: a glass capsule, its key small at the left, its name; cd: its recast)
-    if C.MB.shape == 'gem' then return C.mb_gem(dl, cx, cy, w, h, name, key, pick, al, fsz, A, A2, cd); end
-    if C.MB.shape == 'blade' then return C.mb_blade(dl, cx, cy, w, h, name, key, pick, al, fsz, A, A2, cd); end
-    if cfg.target_fx == 'link' then return C.mb_prism(dl, cx, cy, w, h, name, key, pick, al, fsz, A, A2, cd); end
-    local x0, y0, x1, y1 = cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2;
-    local r = h / 2;
-    if pick then
-        for g = 3, 1, -1 do DL.RF(dl, x0 - g * 2, y0 - g * 2, x1 + g * 2, y1 + g * 2, U4(A[1], A[2], A[3], 0.09 * al), r + g * 2); end
-    end
-    DL.RF(dl, x0 + 1, y0 + 2, x1 + 1, y1 + 2, U4(0, 0, 0, 0.35 * al), r);   -- (a soft shadow: it reads on snow too)
-    DL.RF(dl, x0, y0, x1, y1, U4(0.055, 0.045, 0.07, (pick and 0.92 or 0.84) * al), r);
-    local busy = cd ~= nil and cd.f > 0;
-    if busy then                                                     -- (its recast: a bar inside that empties as it runs out)
-        local bw = math.max(h * 0.9, w * cd.f);
-        DL.RF(dl, x0 + 1, y0 + 1, x0 + bw - 1, y1 - 1, U4(A[1], A[2], A[3], 0.30 * al), r - 1);
-        DL.L(dl, x0 + r * 0.6, y1 - 2, x0 + math.max(r * 0.6, bw - r * 0.6), y1 - 2, U4(A2[1], A2[2], A2[3], 0.9 * al), 1.5);
-    end
-    if cd ~= nil and cd.ready then                                   -- (ready again: a quick bright pulse)
-        local q = cd.ready;
-        for g = 2, 1, -1 do DL.RF(dl, x0 - g * 3 * q, y0 - g * 3 * q, x1 + g * 3 * q, y1 + g * 3 * q, U4(A2[1], A2[2], A2[3], 0.18 * q * al), r + g * 3 * q); end
-    end
-    DL.R(dl, x0, y0, x1, y1, pick and U4(A2[1], A2[2], A2[3], al) or U4(A[1], A[2], A[3], 0.75 * al), r, C.rall, pick and 1.8 or 1.2);
-    local fs = FS or 1;
-    imgui.SetWindowFontScale(fs * fsz * 0.72);
-    local kw, kh = imgui.CalcTextSize(key);
-    kw, kh = tonumber(kw) or 0, tonumber(kh) or 8;
-    DL.T(dl, x0 + r - kw / 2, cy - kh / 2, U4(A[1], A[2], A[3], (pick and 1 or 0.85) * al), key);
-    if name ~= '' then
-        imgui.SetWindowFontScale(fs * fsz);
-        local nw, nh = imgui.CalcTextSize(name);
-        nw, nh = tonumber(nw) or 0, tonumber(nh) or 10;
-        local left, right = x0 + r * 1.7, x1 - r * 0.7;
-        if nw > 0 then                                               -- (one size for every name in the row: the longest one sets it)
-            C.MB.fq_next = math.min(C.MB.fq_next or 1, (right - left) / nw);
-            local q = math.max(0.65, math.min(1, C.MB.fq or 1));
-            if q < 0.999 then
-                imgui.SetWindowFontScale(fs * fsz * q);
-                nw, nh = imgui.CalcTextSize(name);
-                nw, nh = tonumber(nw) or 0, tonumber(nh) or 10;
-            end
-        end
-        local tx = left + math.max(0, (right - left - nw) / 2);
-        DL.T(dl, tx, cy - nh / 2, U4(1, 1, 1, (pick and 1 or 0.92) * al * (busy and 0.8 or 1)), name);
-    end
-    if busy then C.mb_secs(dl, cx, y0, h, cd, al, fsz, A, A2, false); end
-    imgui.SetWindowFontScale(fs);
-end
 -- a macro's recast: its first /ma (a spell) or /ja /pet (an ability) line, looked up once per macro text; the full
 -- length is the first value seen (as the timers do); a pulse when it comes back
 C.MB_CD = { what = {}, full = {}, was = {}, back = {} };
@@ -8587,66 +7096,24 @@ function C.mb_cds(row)                                               -- (k -> { 
     end
     return out;
 end
-function C.mb_even(rx, ry, a0, a1)                                   -- (10 angles evenly spaced along an ellipse's arc, kept)
-    local K = C.MB_EVEN;
-    if K and K[1] == rx and K[2] == ry and K[3] == a0 and K[4] == a1 then return K[5]; end
-    local steps, tab = 600, { 0 };
-    for q = 1, steps do
-        local t0, t1 = a0 + (a1 - a0) * (q - 1) / steps, a0 + (a1 - a0) * q / steps;
-        tab[q + 1] = tab[q] + math.sqrt((rx * (math.cos(t1) - math.cos(t0))) ^ 2 + (ry * (math.sin(t1) - math.sin(t0))) ^ 2);
-    end
-    local out, q = {}, 1;
-    for i = 0, 9 do
-        local want = tab[steps + 1] * i / 9;
-        while q < steps + 1 and tab[q] < want do q = q + 1; end
-        out[i] = a0 + (a1 - a0) * (q - 1) / steps;
-    end
-    C.MB_EVEN = { rx, ry, a0, a1, out };
-    return out;
-end
-function C.mblook(style, held, always, now)                          -- (Look: pills / carousel / strip)
+function C.mblook(held, always, now)                                 -- (MACRO WAVES: pinned low in the middle of the screen - drag it in Edit Mode or with its tab open)
     local M = C.MB;
     local row = (held ~= 0) and held or (M.ringrow or 1);
     M.ringrow = row;
-    local hex = cfg.target_fx == 'link';
-    local A = hex and (C.GOLDH or { 1.0, 0.76, 0.34 }) or { 1.0, 0.45, 0.85 };
-    local A2 = hex and (C.GOLDH2 or { 1.0, 0.90, 0.62 }) or { 0.80, 0.70, 1.0 };
+    local A2 = (cfg.target_fx == 'link') and (C.GOLDH2 or { 1.0, 0.90, 0.62 }) or { 0.80, 0.70, 1.0 };
     local sc = (tonumber(cfg.scale) or 1) * math.max(0.5, math.min(2.5, tonumber(cfg.mb_scale) or 1));
     local op = M.a;
     local sel = M.sel or 0;
     local SW, SH = C.screen();
-    local fx, fy;
-    local pin = (style == 'cards');                                  -- (Now playing: pinned to the screen - low in the middle, drag it in Edit Mode)
-    if style ~= 'strip' and not pin then                             -- (round the feet / under them)
-        local mm = AshitaCore:GetMemoryManager();
-        local me = mm:GetParty():GetMemberTargetIndex(0) or 0;
-        if me == 0 then return; end
-        local ap = mm:GetEntity():GetActorPointer(me);
-        if ap == nil or ap == 0 then return; end
-        local px, py, pz = ashita.memory.read_float(ap + 0x678), ashita.memory.read_float(ap + 0x680), ashita.memory.read_float(ap + 0x67C);
-        fx, fy = C.w2s(px, pz, py);
-        if fx == nil then return; end
-        local _, hy_ = C.w2s(px, pz - 2.2, py);                     -- (how tall you stand on the screen: the camera's zoom)
-        if hy_ then
-            local SWz, SHz = C.screen();
-            local z = math.max(0.40, math.min(1.30, (fy - hy_) / (170 * math.max(0.6, SHz / 1080))));
-            M.zs = M.zs and (M.zs + (z - M.zs) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 8)) or z;
-        end
-    end
-    local function key(k) return (k == 9) and '0' or tostring(k + 1); end
     local function nm(k) return M.names[(row - 1) * 10 + k] or ''; end
     local okc, cds = pcall(C.mb_cds, row);
-    M.fq, M.fq_next = M.fq_next or M.fq or 1, 9;                    -- (the row's name size: last frame's longest name)
-    M.shape = (style == 'carousel') and 'gem' or ((style == 'strip') and 'blade' or nil);   -- (the Carousel: Gems; the Bar: Blades)
     if not okc then cds = {}; end
-    local kx, ky, ox, oy, dl;
-    local drag = pin and (EDIT.on or M.tabopen);                   -- (ui is declared further down the file: its tab read in C.macrobar)
-    local PW, PH = 900 * sc, 230 * sc;                                -- (Now playing's box: what's dragged)
-    if pin then
-        if (tonumber(cfg.mbn_x) or -1) < 0 then cfg.mbn_x, cfg.mbn_y = math.floor(SW / 2 - PW / 2), math.floor(SH * 0.80 - PH / 2); end
-        fx, fy = (tonumber(cfg.mbn_x) or 0) + PW / 2, tonumber(cfg.mbn_y) or 0;
-    end
-    if style ~= 'strip' and not drag then                            -- (round you / under you: drawn over the whole screen, taking no input)
+    local drag = EDIT.on or M.tabopen;                               -- (ui is declared further down the file: its tab read in C.macrobar)
+    local PW, PH = 900 * sc, 230 * sc;                               -- (its box: what's dragged)
+    if (tonumber(cfg.mbn_x) or -1) < 0 then cfg.mbn_x, cfg.mbn_y = math.floor(SW / 2 - PW / 2), math.floor(SH * 0.80 - PH / 2); end
+    local fx, fy = (tonumber(cfg.mbn_x) or 0) + PW / 2, tonumber(cfg.mbn_y) or 0;
+    local dl;
+    if not drag then                                                 -- (drawn over the whole screen, taking no input)
         imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
         imgui.SetNextWindowSize({ SW, SH }, ImGuiCond_Always);
         local fl_ = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoMove, ImGuiWindowFlags_NoScrollbar,
@@ -8654,133 +7121,18 @@ function C.mblook(style, held, always, now)                          -- (Look: p
             ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoInputs or 0);
         if not imgui.Begin('##yui_mlook', { true }, fl_) then imgui.End(); return; end
         dl = imgui.GetBackgroundDrawList();
-    else                                                             -- (the Bar: a window of its own - drag it anywhere)
-        local BW, BH;
-        kx, ky = 'mbs_x', 'mbs_y';
-        BW, BH = C.mb_barsize(sc);
-        if pin then kx, ky, BW, BH = 'mbn_x', 'mbn_y', PW, PH; end
-        if (tonumber(cfg[kx]) or -1) < 0 then                         -- (first time: centred, low on the screen / under the middle)
-            cfg[kx] = math.floor(SW / 2 - BW / 2);
-            cfg[ky] = math.floor((style == 'strip') and (SH - 30 * sc - BH) or (SH * 0.64));
-        end
-        if not plain_window('YunaUI Macro Bar##yui_mb_' .. style, kx, ky) then end_plain(kx, ky); return; end
-        dl = imgui.GetWindowDrawList();
-        ox, oy = imgui.GetCursorScreenPos();
-        imgui.Dummy({ BW, BH });
-        if pin then                                                  -- (being placed: a faint frame to grab, drawn where it really is)
-            fx, fy = ox + PW / 2, oy;
-            dl = imgui.GetBackgroundDrawList();
-            DL.R(dl, ox, oy, ox + PW, oy + PH, U4(A2[1], A2[2], A2[3], 0.35), 6 * sc, 0, 1);
-        end
+    else                                                             -- (being placed: a window of its own, a faint frame to grab)
+        if not plain_window('YunaUI Macro Bar##yui_mb_cards', 'mbn_x', 'mbn_y') then end_plain('mbn_x', 'mbn_y'); return; end
+        local ox, oy = imgui.GetCursorScreenPos();
+        imgui.Dummy({ PW, PH });
+        fx, fy = ox + PW / 2, oy;
+        dl = imgui.GetBackgroundDrawList();
+        DL.R(dl, ox, oy, ox + PW, oy + PH, U4(A2[1], A2[2], A2[3], 0.35), 6 * sc, 0, 1);
     end
-    do
-        local pushed = sized('chat', 14 * sc);
-        if style == 'pills' then
-            -- depth: the far end (round your back) small, dim and fading away, the near part (before your feet) big and bright
-            local cx, cy, rx, ry = fx, fy - 10 * sc, 220 * sc, 100 * sc;
-            local a0, a1 = math.rad(232), math.rad(-52);
-            local function pt(t) return cx + rx * math.cos(t), cy + ry * math.sin(t); end
-            local function depth(t) return (math.sin(t) + 1) / 2; end       -- (0 the far side, 1 right before you)
-            local N = 96;
-            for pass = 1, 2 do                                       -- (the arc: a soft glow, then a fine line - both fade into the distance)
-                for q = 0, N - 1 do
-                    local t0, t1 = a0 + (a1 - a0) * q / N, a0 + (a1 - a0) * (q + 1) / N;
-                    local x0, y0 = pt(t0);
-                    local x1, y1 = pt(t1);
-                    local dp = depth((t0 + t1) / 2);
-                    local e = math.min(1, math.min(q, N - 1 - q) / (N * 0.12));
-                    local f = e * (0.35 + 0.65 * dp);
-                    if pass == 1 then DL.L(dl, x0, y0 + 1, x1, y1 + 1, U4(0, 0, 0, 0.35 * op * f), (1.5 + 1.5 * dp) * sc);   -- (a dark under-line: it reads on snow)
-                        DL.L(dl, x0, y0, x1, y1, U4(A[1], A[2], A[3], 0.16 * op * f), (2 + 5 * dp) * sc);
-                    else DL.L(dl, x0, y0, x1, y1, U4(A2[1], A2[2], A2[3], 0.85 * op * f), 1 + 1.2 * dp); end
-                end
-            end
-            local spots = C.mb_even(rx, ry, a0, a1);
-            local order = {};
-            for k = 0, 9 do order[#order + 1] = k; end
-            table.sort(order, function(p, q)                         -- (far ones first, the pick last: near ones over them)
-                if p == sel then return false; end
-                if q == sel then return true; end
-                return depth(spots[p]) < depth(spots[q]);
-            end);
-            for _, k in ipairs(order) do
-                local pick = (k == sel);
-                local dp = depth(spots[k]);
-                local stag = math.max(0, math.min(1, op * 1.5 - math.abs(k - 4.5) * 0.06));
-                local al = stag * (pick and 1 or (0.55 + 0.45 * dp));       -- (the far ones a little dimmer, never hard to read)
-                local fl = math.max(0, 1 - (now - (M.flash[(row - 1) * 10 + k] or -99)) / 0.3);
-                local x, y = pt(spots[k]);
-                local z = (0.80 + 0.28 * dp) * ((pick and 1.14 or 1) + 0.06 * fl);
-                C.mb_capsule(dl, x, y, (pick and 78 or 68) * sc * z, (pick and 21 or 18) * sc * z, nm(k), key(k), pick, al, (pick and 0.74 or 0.62) * z, A, A2, cds[k]);
-            end
-        elseif style == 'cards' then                                 -- (the hand of cards, centred under your feet)
-            do
-                local zs = pin and 1 or (M.zs or 1);
-                local scz = sc * (0.55 + 0.45 * zs);                 -- (sized with the camera's zoom, but only partly: far out it stays readable)
-                M.cardz, M.cardclip, M.cardslit = math.max(0.9, 0.75 + 0.25 * zs) / (0.55 + 0.45 * zs), nil, nil;   -- (its text: nearly the same size at any zoom)
-                C.mb_comb(dl, fx, fy + (pin and 0 or 18 * scz), scz, row, sel, now, op, cds, nm);   -- (the hexagons and the recast timeline; ink rings kept in C.mb_ink, the Banner in C.mb_fan)   -- (the skillchain Banner's style; Now playing kept in C.mb_np)   -- (Now playing, both modes - Hex link gold / azure, Normal violet; the Sound wave kept in C.mb_wave)
-            end
-        elseif style == 'carousel' then
-            local cx, cy = fx, fy + 52 * sc;                         -- (floating under your feet, wherever you go)
-            local N = 60;
-            for q = 0, N - 1 do                                      -- (a soft line under it, brightest in the middle)
-                local x0 = cx - 230 * sc + 460 * sc * q / N;              -- (under the gems)
-                local e = 1 - math.abs((q + 0.5) / N - 0.5) * 2;
-                DL.L(dl, x0, cy + 22 * sc, x0 + 460 * sc / N, cy + 22 * sc, U4(A[1], A[2], A[3], 0.45 * e * op), 1);
-            end
-            -- (the slide: the pick eases into the middle)
-            M.cpos = M.cpos or sel;
-            local d = sel - M.cpos;
-            if d > 5 then d = d - 10; elseif d < -5 then d = d + 10; end
-            M.cpos = (M.cpos + d * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 14)) % 10;
-            local items = {};
-            for off = -3, 3 do
-                local k = (math.floor(M.cpos + 0.5) + off) % 10;
-                local rel = off - ((M.cpos - math.floor(M.cpos + 0.5)));
-                items[#items + 1] = { k = k, rel = rel };
-            end
-            table.sort(items, function(p, q) return math.abs(p.rel) > math.abs(q.rel); end);
-            for _, it in ipairs(items) do
-                local ar = math.abs(it.rel);
-                if ar < 2.6 then
-                    local sz = math.max(0.6, 1 - 0.2 * ar);
-                    local al = math.max(0, math.min(1, 1 - 0.32 * ar)) * op;
-                    if ar > 2 then al = al * (2.6 - ar) / 0.6; end
-                    local pick = (it.k == sel);
-                    local fl = math.max(0, 1 - (now - (M.flash[(row - 1) * 10 + it.k] or -99)) / 0.45);
-                    local x = cx + it.rel * 112 * sc + ((it.rel > 0) and 8 or ((it.rel < 0) and -8 or 0)) * sc * math.min(1, ar);
-                    local rise = math.max(0, math.min(1, op * 1.6 - ar * 0.22));   -- (opening: they rise into place, the middle first)
-                    local y = cy + ar * 3 * sc + (1 - rise) * (1 - rise) * 14 * sc;
-                    local z = sz * (1 + 0.14 * fl * fl);                     -- (run: a pop)
-                    C.MB.fx_fl = fl;
-                    C.mb_capsule(dl, x, y, 88 * sc * z, 25 * sc * z, nm(it.k), key(it.k), pick, al, 0.85 * sz, A, A2, cds[it.k]);
-                end
-            end
-            local fs = FS or 1;
-            imgui.SetWindowFontScale(fs * 0.62);
-            for sx = -1, 1, 2 do                                     -- (the arrows: gold chevrons swaying gently outward - there is more each side)
-                local sw_ = math.sin(now * 3.2) * 0.5 + 0.5;
-                local ax = cx + sx * (282 + 4 * sw_) * sc;
-                local ah = 6 * sc;
-                for c_ = 0, 1 do
-                    local bx = ax + sx * c_ * 6 * sc;
-                    local ca = (c_ == 0 and 0.95 or 0.45) * op;
-                    DL.L(dl, bx - sx * ah * 0.6 + 1, cy - ah + 1, bx + 1, cy + 1, U4(0, 0, 0, 0.6 * ca), 2.4);
-                    DL.L(dl, bx + 1, cy + 1, bx - sx * ah * 0.6 + 1, cy + ah + 1, U4(0, 0, 0, 0.6 * ca), 2.4);
-                    DL.L(dl, bx - sx * ah * 0.6, cy - ah, bx, cy, U4(A2[1], A2[2], A2[3], ca), 1.6);
-                    DL.L(dl, bx, cy, bx - sx * ah * 0.6, cy + ah, U4(A2[1], A2[2], A2[3], ca), 1.6);
-                end
-            end
-            local lab = ((row == 1) and 'CTRL' or 'ALT') .. '  ' .. key(sel) .. (M.book and string.format('     BOOK %d   PAGE %d', M.book, M.page) or '');
-            local lw = tonumber((imgui.CalcTextSize(lab))) or 0;
-            C.mb_otext(dl, cx - lw / 2, cy + 27 * sc, A2, op, lab);
-            imgui.SetWindowFontScale(fs);
-        else                                                         -- strip: one dark housing, ten slanted glass keys
-            C.mb_deck_img(dl, ox, oy, sc, row, sel, now, op, cds, nm, key);
-        end
-        unsized(pushed);
-    end
-    if kx then end_plain(kx, ky); else imgui.End(); end
+    local pushed = sized('chat', 14 * sc);
+    pcall(C.mb_fan, dl, fx, fy, sc, row, sel, now, op, cds, nm);   -- (the Banner look with the brush strokes, the recast timeline under it)
+    unsized(pushed);
+    if drag then end_plain('mbn_x', 'mbn_y'); else imgui.End(); end
 end
 function C.hideown_sync()
     local on = C.head_bars_on();
@@ -9768,6 +8120,28 @@ function C.feed_draw(dl, x, y, e, a, lh, measure, notime, row)
             tick();
             if named then cx = cx + sp * 0.3; txt(r.who, { 0.88, 0.87, 0.94 }); end
         end
+    end
+    if f.kind == 'melee' then                                        -- (CHAT > Melee rounds: who > target, then the round's hits, damage, crits, misses)
+        if (row or 1) > 1 then return 0; end
+        if part ~= 'tail' then
+            if e.tpre and not notime then txt(e.tpre, C.ts_col(), 0.85); end
+            txt(f.actor, { 0.97, 0.96, 1.0 });
+            cx = cx + sp * 0.5; chev({ 0.70, 0.68, 0.80 }); cx = cx + sp * 0.5;
+            txt(f.target or '', { 0.88, 0.87, 0.94 });
+            if part == 'head' then return cx - x; end
+            cx = cx + sp * 1.2;
+        else
+            cx = cx + sp * 2;                                        -- (the second half, indented)
+        end
+        local hits = tonumber(f.hits) or 0;
+        txt(hits .. ((hits == 1) and ' hit' or ' hits'), { 0.80, 0.79, 0.88 });
+        if (tonumber(f.dmg) or 0) > 0 then
+            local ds, k = tostring(f.dmg); repeat ds, k = ds:gsub('^(%d+)(%d%d%d)', '%1,%2'); until k == 0   -- (1,245)
+            cx = cx + sp; txt(ds, { 1.0, 0.62, 0.32 });
+        end
+        if (tonumber(f.crit) or 0) > 0 then cx = cx + sp; txt(f.crit .. ' crit', { 1.0, 0.86, 0.40 }); end
+        if (tonumber(f.miss) or 0) > 0 then cx = cx + sp; txt(f.miss .. ' miss', { 1.0, 0.40, 0.45 }); end
+        return cx - x;
     end
     if row and row > 1 then                                          -- a further target: indented, a dim chevron, then it
         local r = f.res[row];
@@ -12498,8 +10872,8 @@ function PET.draw(dt)
     end
 end
 
-local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 'DAMAGE METER', 'MINIMAP', 'TREASURE POOL', 'MACRO WAVES' };
--- the public version (public.flag in YunaUI's folder): Normal mode only, no Macro Waves - what's still to come stays off
+local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 'DAMAGE METER', 'MINIMAP', 'TREASURE POOL', 'ACTION BARS' };
+-- the public version (public.flag in YunaUI's folder): Normal mode only, no Action Bars - what's still to come stays off
 YUI_PUBLIC = (function() local f = io.open((addon.path or '') .. 'public.flag', 'r'); if f then f:close(); return true; end return false; end)();
 if YUI_PUBLIC then TABS[#TABS] = nil; end
 -- Layouts (GENERAL > LAYOUT): one click puts every piece of the UI in its place for your screen size.
@@ -14417,13 +12791,12 @@ local function draw_window()
             end
         elseif tab == 11 then
             ------------------------------------------------------------------ ACTION BARS
-            section('MACRO WAVES');
-            row_switch('##yui_mbon', 'Show', 'macrobar', "On: YunaUI's own macro bar in place of the game's - your macros as they are, Ctrl and Alt rows. Click a slot to run it.");
+            section('ACTION BARS');
+            row_switch('##yui_mbon', 'Show', 'macrobar', "On: YunaUI's own macro bar in place of the game's - your macros as they are, Ctrl and Alt rows.");
             if cfg.macrobar ~= false then
                 local wv_ = true;                                    -- (the wave's own settings: both modes)
                 row_switch('##yui_mbboth', 'Both rows', 'mb_both', 'On: Ctrl and Alt rows one over the other, the row you hold bright. Off: only the row you hold.');
                 if wv_ then row_slider('##yui_mbtx', 'Text size', 'mb_text', 0.6, 2.5, 0.05, '%.2fx'); end
-                if wv_ then row_switch('##yui_mbtm', 'Timers under each macro', 'mb_timers', 'On: under every macro on recast, its timers - one row for each ability or spell in it. The TIMERS window stays as it is (not every recast is in a macro).'); end
                 row_switch('##yui_mbsn', 'Scroll sound', 'mb_sound', 'On: a short tick each time the pick moves.', nil, function()
                     if cfg.mb_sound ~= false then C.mp3_play('mb_scroll', 'mb_snd_vol'); end
                     save();
@@ -14975,91 +13348,7 @@ function C.macrobar()
     local want = (always or (held ~= 0 and not early) or EDIT.on or M.tabopen or recent) and 1 or 0;   -- (shown too while its tab is open)
     M.a = M.a + (want - M.a) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 10);
     if M.a < 0.02 then M.ringrow = nil; return; end   -- (the cards going back into the chat: drawn till they're in)
-    if cfg.mb_look ~= 'strip' then cfg.mb_look = 'strip'; end       -- (for now one look only: Bar at the bottom - the Arc and the Carousel are put away)
-    if cfg.mb_style ~= 'cards' then cfg.mb_style = 'cards'; end     -- (one design per mode: Normal the cards, Hex link the Sound wave - Circle Clean taken out)
-    if cfg.mb_look == 'strip' and (cfg.mb_style or 'cards') == 'cards' then pcall(C.mblook, 'cards', held, always, now); return; end   -- (the cards: under your feet, following you)
-    if cfg.mb_look == 'carousel' or cfg.mb_look == 'strip' then pcall(C.mblook, cfg.mb_look, held, always, now); return; end
-    if cfg.mb_look ~= 'bar' then pcall(C.macroring, held, always, now); return; end   -- (ACTION BARS > Look: Ring)
-    local hex = cfg.target_fx == 'link';
-    local sc = (tonumber(cfg.scale) or 1) * math.max(0.5, math.min(2.5, tonumber(cfg.mb_scale) or 1));
-    local sw, sh, gap = math.floor(80 * sc), math.floor(32 * sc), math.floor(4 * sc);
-    local lab = math.floor(34 * sc);
-    local W = lab + 10 * sw + 9 * gap;
-    first_place('mb_x', 'mb_y', -W / 2, -230 * sc);
-    if not plain_window('YunaUI Macros##yui_mb', 'mb_x', 'mb_y') then end_plain('mb_x', 'mb_y'); return; end
-    local dl = imgui.GetWindowDrawList();
-    local x0, y0 = imgui.GetCursorScreenPos();
-    local pushed = sized('chat', 13 * sc);
-    local fs = FS or 1;
-    local G1, G2 = C.GOLDH or { 1, 0.76, 0.34 }, C.GOLDH2 or { 1, 0.9, 0.62 };
-    local P1, P2 = { 1.0, 0.45, 0.85 }, { 0.62, 0.45, 1.0 };
-    local mx, my = imgui.GetMousePos();
-    for row = 1, 2 do
-        local y = y0 + (row - 1) * (sh + gap);
-        local lit = (held == row) or always;
-        local ra = M.a * ((held == 0 or held == row) and 1 or 0.45);
-        imgui.SetWindowFontScale(fs * 0.62);
-        local lc = hex and G2 or P1;
-        text(dl, x0, y + sh / 2 - 6 * sc, (row == 1) and 'CTRL' or 'ALT', { lc[1], lc[2], lc[3], 0.85 * ra });
-        imgui.SetWindowFontScale(fs);
-        for k = 0, 9 do
-            local id = (row - 1) * 10 + k;
-            local x = x0 + lab + k * (sw + gap);
-            local nm = M.names[id] or '';
-            local fl = math.max(0, 1 - (now - (M.flash[id] or -99)) / 0.45);
-            local over = mx >= x and mx < x + sw and my >= y and my < y + sh;
-            local picked = M.padrow == row and (M.sel or 0) == k;     -- (the controller's highlight)
-            if picked then over = true; end
-            local tin = math.min(1, (now - (M.turned or -9)) / 0.18);  -- (a new page: fading in, left to right)
-            tin = math.max(0, math.min(1, tin * 1.6 - k * 0.06));
-            local ra = ra * (0.25 + 0.75 * tin);
-            local bga = (0.72 + 0.18 * (over and 1 or 0)) * ra;
-            if hex then                                              -- (gold cut-corner plates)
-                local c = 5 * sc;
-                local pts = { { x + c, y }, { x + sw, y }, { x + sw, y + sh - c }, { x + sw - c, y + sh }, { x, y + sh }, { x, y + c } };
-                pcall(function() dl:AddConvexPolyFilled(pts, U4(0.06, 0.05, 0.08, bga)); end);
-                if fl > 0 then pcall(function() dl:AddConvexPolyFilled(pts, U4(G1[1], G1[2], G1[3], 0.45 * fl * ra)); end); end
-                if picked then                                       -- (picked: a bright gold fill, a thick cream edge)
-                    local pb = 0.30 + 0.10 * math.sin(now * 6);
-                    pcall(function() dl:AddConvexPolyFilled(pts, U4(G1[1], G1[2], G1[3], pb * ra)); end);
-                    for q = 1, 6 do dl:AddLine(pts[q], pts[q % 6 + 1], U4(G2[1], G2[2], G2[3], ra), 2.6); end
-                end
-                local ec = (lit and nm ~= '') and G1 or { 0.55, 0.48, 0.36 };
-                for q = 1, 6 do dl:AddLine(pts[q], pts[q % 6 + 1], U4(ec[1], ec[2], ec[3], (lit and 0.85 or 0.4) * ra), (over or fl > 0) and 1.6 or 1); end
-            else                                                     -- (pink / violet glass)
-                DL.RF(dl, x, y, x + sw, y + sh, U4(0.07, 0.05, 0.10, bga), 5 * sc);
-                if fl > 0 then DL.RF(dl, x, y, x + sw, y + sh, U4(P1[1], P1[2], P1[3], 0.40 * fl * ra), 5 * sc); end
-                if picked then                                       -- (picked: a bright fill, a thick white edge)
-                    DL.RF(dl, x, y, x + sw, y + sh, U4(P1[1], P1[2], P1[3], (0.30 + 0.10 * math.sin(now * 6)) * ra), 5 * sc);
-                    DL.R(dl, x, y, x + sw, y + sh, U4(1, 1, 1, 0.95 * ra), 5 * sc, C.rall, 2.4);
-                end
-                pcall(function() DL.RFM(dl, x + 4 * sc, y + sh - 2, x + sw - 4 * sc, y + sh, U4(P1[1], P1[2], P1[3], (lit and 0.9 or 0.35) * ra), U4(P2[1], P2[2], P2[3], (lit and 0.9 or 0.35) * ra), U4(P2[1], P2[2], P2[3], (lit and 0.9 or 0.35) * ra), U4(P1[1], P1[2], P1[3], (lit and 0.9 or 0.35) * ra)); end);
-                if over then DL.R(dl, x, y, x + sw, y + sh, U4(1, 1, 1, 0.35 * ra), 5 * sc, C.rall, 1); end
-            end
-            if picked then                                           -- (a pointer over the picked slot)
-                local pc = hex and G1 or P1;
-                local tx_, ty_ = x + sw / 2, y - 3 * sc;
-                pcall(function() dl:AddTriangleFilled({ tx_ - 6 * sc, ty_ - 7 * sc }, { tx_ + 6 * sc, ty_ - 7 * sc }, { tx_, ty_ }, U4(pc[1], pc[2], pc[3], ra)); end);
-            end
-            imgui.SetWindowFontScale(fs * 0.55);                     -- the key, small, top left
-            local kc = hex and G2 or P2;                             -- (its key, as the game's bar shows it: bottom right)
-            local kl = ((row == 1) and 'Ctrl' or 'Alt') .. ((k == 9) and '0' or tostring(k + 1));
-            local kw, kh = imgui.CalcTextSize(kl);
-            kw, kh = tonumber(kw) or 0, tonumber(kh) or 8;
-            text(dl, x + sw - kw - 5 * sc, y + sh - kh - 2 * sc, kl, { kc[1], kc[2], kc[3], 0.85 * ra });
-            imgui.SetWindowFontScale(fs * 0.8);                      -- the macro's name, top left
-            if nm ~= '' then
-                text(dl, x + 6 * sc, y + 3 * sc, nm, { 1, 1, 1, ((lit or picked) and 1 or 0.7) * ra });
-            end
-            imgui.SetWindowFontScale(fs);
-            imgui.SetCursorScreenPos({ x, y });
-            if imgui.InvisibleButton('##yui_mb' .. id, { sw, sh }) and nm ~= '' then M.flash[id] = now; C.mb_run(row, k); end
-        end
-    end
-    unsized(pushed);
-    imgui.SetCursorScreenPos({ x0, y0 });
-    imgui.Dummy({ W, 2 * sh + gap });
-    end_plain('mb_x', 'mb_y');
+    pcall(C.mblook, held, always, now);                              -- (MACRO WAVES: the hexagons and the recast timeline - every other look taken out)
 end
 ashita.events.register('unload', 'yui_unload', function()
     pcall(function() local v = rawget(_G, 'vana'); if v and v.gameui then v.gameui.image('target_arrow'); end end);   -- (the game's arrow back - VanaCore does it too)
