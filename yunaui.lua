@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.72';
+addon.version = '1.0.73';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -3273,7 +3273,7 @@ local function draw_subtarget(dt)
     local hang = cfg.target_fx == 'link' and TB and os.clock() - TB[4] < 0.3 and not EDIT.on;   --  at 80% of its size)
     if cfg.target_fx == 'link' and not hang then return; end         -- (Hex link: only hung off the target bar, never floating on its own - not even in Edit Mode)
     local ND = FIGHT.ndemo;                                          -- (the chooser's Normal demo: under the target bar, centred)
-    local nd = (not hang) and cfg.target_fx ~= 'link' and ND and os.clock() - ND[4] < 0.3;   -- (Normal mode: always under the target bar)
+    local nd = (not hang) and cfg.target_fx ~= 'link' and ND and os.clock() - ND[4] < 0.3 and C.MD and C.MD.on;   -- (only the style chooser's demo: in Normal mode it goes where you place it)
     if nd then
         cfg._sbx, cfg._sby = math.floor(ND[1] + ND[3] / 2 - w / 2), math.floor(ND[2] + 6);
         skx, sky = '_sbx', '_sby';
@@ -6393,6 +6393,21 @@ function C.feed_text(e)                                              -- (its pla
     if #none > 0 then t = t .. '  no effect on ' .. table.concat(none, ', ') .. (f.more and (' +' .. f.more) or ''); end
     return t;
 end
+function C.pgrp(name)                                               -- (which party of the alliance someone is in: 0 yours, 1, 2 - nil if not in it)
+    if name == nil then return nil; end
+    local G = C.PGRP;
+    if G == nil or os.clock() - G.t > 1 then
+        G = { t = os.clock(), by = {} };
+        pcall(function()
+            local pm = AshitaCore:GetMemoryManager():GetParty();
+            for i = 0, 17 do
+                if pm:GetMemberIsActive(i) == 1 then local n = pm:GetMemberName(i); if n and n ~= '' then G.by[n:lower()] = math.floor(i / 6); end end
+            end
+        end);
+        C.PGRP = G;
+    end
+    return G.by[(name:gsub('^[Tt]he ', '')):lower()];
+end
 function C.feed_take(log, line, mode, only)
     -- only: a line the COMBAT LOG filters hide - it may still finish a feed line already showing (its "casts", its
     -- damage), never start one; a hidden spell's own results then don't land on the line before it
@@ -6408,6 +6423,9 @@ function C.feed_take(log, line, mode, only)
         e.text = C.feed_text(e);
         CHATLOG.add(log, e);
         F.last, F.last_t = e, now;
+        F.recent = F.recent or {};
+        table.insert(F.recent, 1, e);
+        if #F.recent > 8 then F.recent[9] = nil; end
         return 'new';
     end
     local function grow(e)
@@ -6501,6 +6519,24 @@ function C.feed_take(log, line, mode, only)
         if not r then w, x = sl:match('^(.-) recovers (%d+) HP%.$'); if w then r = { who = w, heal = x }; end end
         if not r then w = sl:match('^(.-) resists the spell%.$') or sl:match('^.- misses (.-)%.$'); if w then r = { who = w, miss = true }; end end
         if r then
+            -- an alliance: several casting at once, the lines don't say whose effect it is - it goes onto a line of someone
+            -- in that person's own party (party songs and rolls reach only the caster's party); none there: onto the last
+            -- line only as its first result (a single-target spell on someone in another party), otherwise on its own
+            local tg, ag = C.pgrp(r.who), C.pgrp(L.feed.actor);
+            if tg ~= nil and ag ~= nil and tg ~= ag then
+                local T = nil;
+                for _, e in ipairs(F.recent or {}) do
+                    if e ~= L and e.feed and e.feed.state == 'done' and e.feed.kind ~= 'melee' and now - (e.t or 0) < 2.5 and C.pgrp(e.feed.actor) == tg then T = e; break; end
+                end
+                if T then
+                    if #T.feed.res < 12 then T.feed.res[#T.feed.res + 1] = r; end
+                    local keep, kt = F.last, F.last_t;
+                    grow(T);
+                    F.last, F.last_t = keep, kt;                     -- (the newest line stays the one results go to first)
+                    return 'merged';
+                end
+                if #L.feed.res > 0 then return nil; end
+            end
             if #L.feed.res < 12 then L.feed.res[#L.feed.res + 1] = r; end
             return grow(L);
         end
