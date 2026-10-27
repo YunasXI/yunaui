@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.73';
+addon.version = '1.0.74';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -25,6 +25,56 @@ local settings = require('settings');
 local chat     = require('chat');
 local ffi      = require('ffi');
 local d3d      = require('d3d8');
+
+-- The game in Japanese (its text is Shift-JIS, in Japanese): YunaUI turns it into UTF-8 where it draws or measures
+-- text, and merges a Japanese font into its own (load_fonts). A japanese.flag file in YunaUI's folder forces it.
+YUI_JP = false;
+pcall(function()
+    local z = vana.ashita.string('zones.names', 230, 0) or '';      -- (Southern San d'Oria: in Japanese, not ASCII)
+    YUI_JP = z:find('[\128-\255]') ~= nil;
+end);
+pcall(function() local f = io.open(addon.path .. '/japanese.flag', 'rb'); if f then f:close(); YUI_JP = true; end end);
+YUI_U8C, YUI_U8N = {}, 0;
+function YUI_U8OK(s)                                                 -- (already UTF-8: YunaUI's own text, or text turned once)
+    local i, n = 1, #s;
+    while i <= n do
+        local c = s:byte(i);
+        if c < 0x80 then i = i + 1;
+        elseif c >= 0xC2 and c <= 0xDF then
+            local d = s:byte(i + 1);
+            if not d or d < 0x80 or d > 0xBF then return false; end
+            i = i + 2;
+        elseif c >= 0xE0 and c <= 0xEF then
+            local d, e = s:byte(i + 1, i + 2);
+            if not e or d < 0x80 or d > 0xBF or e < 0x80 or e > 0xBF then return false; end
+            i = i + 3;
+        else return false; end
+    end
+    return true;
+end
+function YUI_U8(s)                                                   -- (the game's Shift-JIS text as UTF-8; anything else as it is)
+    if not YUI_JP or type(s) ~= 'string' or not s:find('[\128-\255]') then return s; end
+    local c = YUI_U8C[s];
+    if c then return c; end
+    c = s;
+    if not YUI_U8OK(s) then
+        local ok, r = pcall(vana.encoding.from_shift_jis, s);
+        if ok and type(r) == 'string' then c = r; end
+    end
+    if YUI_U8N > 4000 then YUI_U8C, YUI_U8N = {}, 0; end
+    YUI_U8C[s], YUI_U8N = c, YUI_U8N + 1;
+    return c;
+end
+if YUI_JP then                                                       -- (ImGui's own text calls: the same)
+    local base = imgui;
+    imgui = setmetatable({
+        CalcTextSize = function(t, ...) return base.CalcTextSize(YUI_U8(t), ...); end,
+        Text = function(t, ...) return base.Text(YUI_U8(t), ...); end,
+        TextUnformatted = function(t, ...) return base.TextUnformatted(YUI_U8(t), ...); end,
+        TextWrapped = function(t, ...) return base.TextWrapped(YUI_U8(t), ...); end,
+        TextColored = function(col, t, ...) return base.TextColored(col, YUI_U8(t), ...); end,
+    }, { __index = base });
+end
 
 -- Is this font able to be pushed at any size (VanaCore's ImGui)? Asked once per font, safely.
 YUI_FONTNEW = YUI_FONTNEW or setmetatable({}, { __mode = 'k' });
@@ -62,7 +112,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', party_buff_row = 8, exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, tarrow = true, macrobar = true, mb_show = 'hold', mb_always = false, mb_pad = 'hold', mb_scale = 1.0, mb_look = 'strip', mb_style = 'cards', hp_by_job = false, mb_timers = true, mb_wave = 'bars', mb_text = 1.0, mb_both = true, mb_brush = 'all', mb_layout = 'lens', mb_wcol = 'gold', mb_nstyle = 'wave', mb_wavecol = 'job', mb_sound = true, mb_snd_vol = 0.6, mb_cards_at = 'feet', mb_dn = 'hd_circle', mb_dh = 'hd_sigil', mb_x = -1, mb_y = -1, mbs_x = -1, mbs_y = -1, mbc_x = -1, mbc_y = -1, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', party_buff_row = 8, exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_lines = 'hp', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, tarrow = true, macrobar = true, mb_show = 'hold', mb_always = false, mb_pad = 'hold', mb_scale = 1.0, mb_look = 'strip', mb_style = 'cards', hp_by_job = false, mb_timers = true, mb_wave = 'bars', mb_text = 1.0, mb_both = true, mb_brush = 'all', mb_layout = 'lens', mb_wcol = 'gold', mb_nstyle = 'wave', mb_wavecol = 'job', mb_sound = true, mb_snd_vol = 0.6, mb_cards_at = 'feet', mb_dn = 'hd_circle', mb_dh = 'hd_sigil', mb_x = -1, mb_y = -1, mbs_x = -1, mbs_y = -1, mbc_x = -1, mbc_y = -1, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -163,7 +213,7 @@ do
     function DL.RFM(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRectFilledMultiColor(P1, P2, ...); end
     function DL.C(d, a, b, ...) P1[1], P1[2] = a, b; return d:AddCircle(P1, ...); end
     function DL.CF(d, a, b, ...) P1[1], P1[2] = a, b; return d:AddCircleFilled(P1, ...); end
-    function DL.T(d, a, b, ...) P1[1], P1[2] = a, b; return d:AddText(P1, ...); end
+    function DL.T(d, a, b, col, t, ...) P1[1], P1[2] = a, b; return d:AddText(P1, col, YUI_U8(t), ...); end
     function DL.TF(d, a, b, c, e, f, g, ...) P1[1], P1[2], P2[1], P2[2], P3[1], P3[2] = a, b, c, e, f, g; return d:AddTriangleFilled(P1, P2, P3, ...); end
     function DL.I(d, t, a, b, c, e, f, g, h, k, ...) P1[1], P1[2], P2[1], P2[2], P3[1], P3[2], P4[1], P4[2] = a, b, c, e, f, g, h, k; return d:AddImage(t, P1, P2, P3, P4, ...); end
     function DL.I2(d, t, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddImage(t, P1, P2, ...); end
@@ -263,6 +313,14 @@ local function load_fonts()
         local f = io.open(fdir .. n, 'rb');
         if f then f:close(); file = fdir .. n; fonts.chat_name = n; break; end
     end
+    local jp = nil;                                                  -- (the game in Japanese: a Japanese font merged into each, for its characters)
+    if YUI_JP then
+        for _, n in ipairs({ 'YuGothM.ttc', 'meiryo.ttc', 'msgothic.ttc' }) do
+            local f = io.open(dir .. n, 'rb');
+            if f then f:close(); jp = dir .. n; break; end
+        end
+    end
+    fonts.jpcfg = {};
     for _, px in ipairs({ 13, 16, 20, 26, 34 }) do
         local font = nil;
         if file then
@@ -271,6 +329,16 @@ local function load_fonts()
         end
         font = font or add('GOTHIC.TTF', px) or add('segoeui.ttf', px);
         if font then table.insert(fonts.sized.chat, { font, px }); end
+        if font and jp then
+            pcall(function()
+                local T_ = (imgui.types or vana.imgui.types).ImFontConfig;
+                local c = T_.new();
+                c.MergeMode = true;
+                pcall(function() c.DstFont = font; end);
+                fonts.jpcfg[#fonts.jpcfg + 1] = c;                   -- (kept while the font lives)
+                imgui.AddFontFromFileTTF(jp, px, c);
+            end);
+        end
     end
     fonts.chat = fonts.sized.chat[2] and fonts.sized.chat[2][1] or fonts.main;
     YUI_FONTS = fonts;                                              -- (the Damage Meter uses these: no font of its own)
@@ -6202,7 +6270,13 @@ local function clean(s)
     s = s:gsub('\239\39', '{'):gsub('\239%(', '}');                 -- auto-translate brackets
     s = s:gsub('}%(', '}');                                         -- a stray "(" the game leaves after some phrases
     s = s:gsub('[\30\31\127].', '');                                -- colour / control codes (2 bytes each)
-    s = s:gsub('[\129-\159\224-\252].', function(c) return SJIS[c] or ''; end);    -- Shift-JIS symbols
+    if YUI_JP then                                                   -- (the game in Japanese: its text kept, as UTF-8)
+        s = s:gsub('[\129-\159\224-\252].', function(c) return SJIS[c]; end);
+        local ok, r = pcall(vana.encoding.from_shift_jis, s);
+        if ok and type(r) == 'string' then s = r; end
+    else
+        s = s:gsub('[\129-\159\224-\252].', function(c) return SJIS[c] or ''; end);    -- Shift-JIS symbols
+    end
     s = s:gsub('[%z\1-\6\8\9\11-\31]', '');
     s = ((' ' .. s):gsub('([%s>])%?(%u)', '%1%2')):sub(2);           -- (a monster's marker symbol, as "?": "The ?Banshee")
     -- auto-translate phrases: their brackets become marks (\1 open, \2 close) drawn as the game's green / red icons
@@ -7702,21 +7776,27 @@ function C.wear_skip(line)
 end
 function C.cf_sets()                                                 -- (players near you outside your party, and your party, by name)
     local K = C.CF;
-    if K.sets_at and os.clock() - K.sets_at < 2 then return K.outs, K.ins; end
-    local outs, ins = {}, {};
+    if K.sets_at and os.clock() - K.sets_at < 2 then return K.outs, K.ins, K.multi; end
+    local outs, ins, multi = {}, {}, {};
     pcall(function()
         local p = AshitaCore:GetMemoryManager():GetParty();
         for i = 0, 17 do if p:GetMemberIsActive(i) ~= 0 then ins[p:GetMemberName(i) or ''] = true; end end
         local ent = AshitaCore:GetMemoryManager():GetEntity();
-        for i = 0x400, 0x8FF do                                      -- (players, and from 0x700 their pets)
+        local me = p:GetMemberTargetIndex(0) or 0;                   -- (your own pet: yours, never someone else's)
+        local pi = (me > 0) and ent:GetPetTargetIndex(me) or 0;
+        if pi and pi > 0 then ins[ent:GetName(pi) or ''] = true; end
+        for i = 0x400, 0x8FF do                                      -- (players, and from 0x700 their pets and trusts)
             if ent:GetRawEntity(i) ~= nil then
                 local nm = ent:GetName(i);
-                if nm and nm ~= '' and not ins[nm] and (i >= 0x700 or bit.band(ent:GetSpawnFlags(i) or 0, 0x01) ~= 0) then outs[nm] = true; end
+                local fl = ent:GetSpawnFlags(i) or 0;
+                if nm and nm ~= '' and not ins[nm] and bit.band(fl, 0x10) == 0 and (i >= 0x700 or bit.band(fl, 0x01) ~= 0) then outs[nm] = true; end
             end
         end
     end);
-    K.outs, K.ins, K.sets_at = outs, ins, os.clock();
-    return outs, ins;
+    for nm in pairs(ins) do if nm ~= '' and nm:find('[^%w]') then multi[#multi + 1] = { nm, true }; end end
+    for nm in pairs(outs) do if nm:find('[^%w]') then multi[#multi + 1] = { nm, false }; end end
+    K.outs, K.ins, K.multi, K.sets_at = outs, ins, multi, os.clock();
+    return outs, ins, multi;
 end
 function C.combat_skip(line)                                         -- (true: this battle line is filtered out)
     local sl = line:gsub('[\1\2]', '');
@@ -7738,15 +7818,18 @@ function C.combat_skip(line)                                         -- (true: t
     local who = sl:match('^(.-) hits .- for %d+ points? of damage%.$') or sl:match('^(.-) misses .-%.$')
              or sl:match('^(.-) scores a critical hit!$');
     local melee = who ~= nil;
-    who = who or sl:match('^([%w%-]+)[ \']');                         -- (anything else: its first word, the one who did it)
+    who = who or sl:gsub('^%[%d+%] ', ''):match('^%[(.-)%]') or sl:match('^([%w%-]+)[ \']');   -- (anything else: its first word, the one who did it - or simplelog's "[Name]")
     if who == nil then return false; end
     local kind = C.actor_kind(who);
     local skip = false;
     if not skip and cfg.chat_f_others == false then                  -- (a player outside your party in it - doing it or having it done - and
-        local outs, ins = C.cf_sets();                               --  none of yours: what they do to you or your party still shows)
+        local outs, ins, multi = C.cf_sets();                        --  none of yours: what they do to you or your party still shows)
         local out_, in_ = kind == 'outsider', false;
         for w in sl:gmatch('%u[%w]*') do
             if ins[w] then in_ = true; elseif outs[w] then out_ = true; end
+        end
+        for _, m in ipairs(multi or {}) do                           -- (names with a space or brackets: "Shantotto II", "Ayame (UC)")
+            if sl:find(m[1], 1, true) then if m[2] then in_ = true; else out_ = true; end end
         end
         if out_ and not in_ then skip = true; end
     end
@@ -8399,6 +8482,10 @@ function C.big_help(dl, rx, ty)
     unsized(tp);
 end
 function legacy.pad_tick()
+    for _, k in ipairs({ 'pad_log', 'pad_big' }) do                  -- (a stick learned as a button by mistake: forgotten)
+        local v = cfg[k];
+        if type(v) == 'string' and v:sub(1, 1) == 'd' and (tonumber(v:sub(2)) or 0) < 48 then cfg[k] = nil; pcall(save); end
+    end
     local ok, _, _, name = pcall(legacy.menu_ptrs);
     legacy.pad.menu = (ok and name) or '';
     do                                                               -- the game's Map ("map0", then "mapframe" while open): YunaUI's big map
@@ -10947,7 +11034,7 @@ function C.loot_read()
                 local key = slot .. ':' .. id .. ':' .. tostring(it.DropTime or 0);
                 L.first[key] = L.first[key] or os.time();            -- (when it was first seen: the 5 minutes count from there)
                 local mine = tonumber(it.Lot) or 0;
-                pool[slot] = { slot = slot, id = id, key = key, at = L.first[key], mine = (mine >= 65535) and -1 or ((mine > 0) and mine or nil),
+                pool[slot] = { slot = slot, id = id, key = key, at = L.first[key], dt = tonumber(it.DropTime) or 0, mine = (mine >= 65535) and -1 or ((mine > 0) and mine or nil),
                                win = tonumber(it.WinningLot) or 0, winner = tostring(it.WinningEntityName or '') };
                 n = n + 1;
             end
@@ -10959,6 +11046,15 @@ function C.loot_read()
     end
     if n == 0 then L.lots = {}; L.first = {}; end
     L.pool, L.n = pool, n;
+    local ord = {};                                                  -- (the items newest first, as XIUI lists them: the game reuses free slots,
+    for slot = 0, 9 do if pool[slot] then ord[#ord + 1] = slot; end end   --  so slot order isn't drop order)
+    table.sort(ord, function(a, b)
+        local pa, pb = pool[a], pool[b];
+        if pa.dt ~= pb.dt then return pa.dt > pb.dt; end
+        if pa.at ~= pb.at then return pa.at > pb.at; end
+        return a < b;
+    end);
+    L.ord = ord;
     if L.pick and pool[L.pick] == nil then L.pick = nil; end
 end
 -- The game's own treasure pool window, when it's the one in use: which item its cursor is on (nil if it isn't open)
@@ -10976,13 +11072,8 @@ function C.loot_menu()
         local lp = ashita.memory.read_uint32(obj + 0x0C);
         if lp and lp ~= 0 then idx = ashita.memory.read_uint16(lp + 0x30) or idx; end
     end);
-    local k = 0;
-    for slot = 0, 9 do
-        if L.pool[slot] then
-            if k == idx then return slot; end
-            k = k + 1;
-        end
-    end
+    local slot = (L.ord or {})[idx + 1];                             -- (its row in the same order: newest first)
+    if slot and L.pool[slot] then return slot; end
     return nil;
 end
 function C.loot_tick()
@@ -11318,7 +11409,7 @@ function C.loot_win()
     if fake then
         for k, f in ipairs(L.FAKE) do items[#items + 1] = { slot = k - 1, id = f[1], name = f[2], at = os.time() - k * 70, fake = true }; end
     else
-        for slot = 0, 9 do
+        for _, slot in ipairs(L.ord or {}) do                         -- (newest first)
             local p = L.pool[slot];
             if p and not (L.hold[slot] and now < L.hold[slot]) then items[#items + 1] = p; end   -- (still flying in: not yet)
         end
@@ -12818,6 +12909,9 @@ local function draw_window()
             row_switch('##yui_mm3f', 'Turn with you', 'map3d_follow', 'The minimap turns as you do, looking the way you face. Off: north stays up.');
             row_switch('##yui_mmtilt', 'Tilt the map', 'map_tilt', 'On: in zones with no 3D shape (most of the open country) the map lies on the ground under you, seen from behind you like the cities\' 3D look. Off: the flat map from above.');
             row_switch('##yui_mmm', 'Monsters', 'map_mobs', 'On: monsters near you show as red dots.');
+            if cfg.target_fx ~= 'link' then                          -- (Normal mode: the lines in your HP bar's colour, or white)
+                row_pick('##yui_mml', 'Lines', 'map_lines', { { 'hp', 'As your HP bar' }, { 'white', 'White' } });
+            end
             row_pick('##yui_mma', 'Your arrow', 'map_arrow_color', { { 'lines', 'As the lines' }, { 'white', 'White' }, { 'pink', 'Pink' },
                 { 'violet', 'Violet' }, { 'cyan', 'Cyan' }, { 'gold', 'Gold' }, { 'green', 'Green' } });
             if accent_button('PLAY THE ZONE NAME##yui_mmt_play', { ROW_W, 0 }) then YMAP.tt = os.clock(); end
@@ -13582,6 +13676,7 @@ function YMAP.linecol()                                              -- the map'
     local jc = C.myjobcol and C.myjobcol();
     if jc then return { 1, 1, 1 }; end                               -- (BARS > HP colour by job: white lines in the red frame)
     if YUI_HEX then return C.HEXMP[1]; end
+    if cfg.map_lines == 'white' then return YMAP.COLS.white; end     -- (MINIMAP > Lines: White)
     local h = (type(YUI_HP_COL) == 'table' and type(YUI_HP_COL[1]) == 'table') and YUI_HP_COL[1] or YMAP.COLS.pink;
     return h;
 end
@@ -16276,7 +16371,7 @@ ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStati
         end
     end
     local id = 'd' .. b;
-    if b ~= 32 and st >= 128 then legacy.pad_press('d', b); end
+    if b >= 48 and st >= 128 then legacy.pad_press('d', b); end      -- (buttons only: a stick's position isn't a press)
     if id == cfg.pad_log and cfg.chat and cfg.hide_game_chat and (legacy.pad.big or legacy.pad.mine) then   -- the log button: the game's (its log, a 2nd press your buffs), but the next tab in the big chat
         if st >= 128 and legacy.pad_once('log') then
             if legacy.pad.big then legacy.pad_tab(1); else legacy.pad_toggle(not legacy.pad.mine); end
