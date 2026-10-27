@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.74';
+addon.version = '1.0.75';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -11046,14 +11046,8 @@ function C.loot_read()
     end
     if n == 0 then L.lots = {}; L.first = {}; end
     L.pool, L.n = pool, n;
-    local ord = {};                                                  -- (the items newest first, as XIUI lists them: the game reuses free slots,
-    for slot = 0, 9 do if pool[slot] then ord[#ord + 1] = slot; end end   --  so slot order isn't drop order)
-    table.sort(ord, function(a, b)
-        local pa, pb = pool[a], pool[b];
-        if pa.dt ~= pb.dt then return pa.dt > pb.dt; end
-        if pa.at ~= pb.at then return pa.at > pb.at; end
-        return a < b;
-    end);
+    local ord = {};                                                  -- (the items in the game's own order: by slot, as its pool menu lists them)
+    for slot = 0, 9 do if pool[slot] then ord[#ord + 1] = slot; end end
     L.ord = ord;
     if L.pick and pool[L.pick] == nil then L.pick = nil; end
 end
@@ -11067,15 +11061,22 @@ function C.loot_menu()
     local hit = false;
     for _, k in ipairs(L.MENUS) do if low:find(k, 1, true) then hit = true; break; end end
     if not hit then return nil; end
-    local idx = (ashita.memory.read_uint8(obj + 0x4C) or 1) - 1;     -- (its cursor: the row, from 1)
-    pcall(function()                                                 -- (a list: its own count from the top, from 0)
-        local lp = ashita.memory.read_uint32(obj + 0x0C);
-        if lp and lp ~= 0 then idx = ashita.memory.read_uint16(lp + 0x30) or idx; end
-    end);
-    local slot = (L.ord or {})[idx + 1];                             -- (its row in the same order: newest first)
+    local slot = nil;
+    if L.mcur and low:find('loot', 1, true) then slot = L.mcur - 1;  -- (VanaCore's menu events: the row the cursor is on, from 1 = slot 0)
+    else
+        local idx = (ashita.memory.read_uint8(obj + 0x4C) or 1) - 1; -- (its cursor: the row, from 1)
+        pcall(function()                                             -- (a list: its own count from the top, from 0)
+            local lp = ashita.memory.read_uint32(obj + 0x0C);
+            if lp and lp ~= 0 then idx = ashita.memory.read_uint16(lp + 0x30) or idx; end
+        end);
+        slot = idx;                                                  -- (its rows are the slots: an empty slot is an empty row)
+    end
     if slot and L.pool[slot] then return slot; end
     return nil;
 end
+pcall(function()                                                     -- (the game's pool menu, 'loot': each move, select or open gives its row)
+    vana.gameui.on('loot', '*', function(e) local r = tonumber(e.item); if r and r >= 1 and r <= 10 then C.LOOT.mcur = r; end end);
+end);
 function C.loot_tick()
     local L = C.LOOT;
     if os.clock() - L.t < 0.05 then return; end
