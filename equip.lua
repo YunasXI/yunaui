@@ -2840,7 +2840,7 @@ function JOBS.statbar(key, value, v, lag, pct)
         d[2], d[3], d[4] = YUI_MP_COL[1], YUI_MP_COL[2], YUI_MP_COL[3];
     end
     local kx, ky = key .. 'bar_x', key .. 'bar_y';
-    local sc = math.max(0.5, math.min(2.5, (tonumber(cfg.sb_scale) or 1) * (tonumber(cfg['sb_' .. key .. '_size']) or 1)));
+    local sc = math.max(0.5, math.min(2.5, (tonumber(cfg.sb_scale) or 1) * (tonumber(cfg['sb_' .. key .. '_size']) or 1))) * (YUI_GS and YUI_GS() or 1);   -- (YunaUI's Size of everything)
     if not cfg.sb_num_v1 then                                        -- (once: the text keeps the size it had with each bar's size)
         for _, k_ in ipairs({ 'hp', 'mp', 'tp' }) do
             cfg['sb_' .. k_ .. '_num'] = math.max(0.5, math.min(2.5, (tonumber(cfg['sb_' .. k_ .. '_size']) or 1) * (tonumber(cfg['sb_' .. k_ .. '_num']) or 1)));
@@ -2879,7 +2879,7 @@ function JOBS.statbar(key, value, v, lag, pct)
             warn = JOBS.low_beat(pct, now, d[5] * 0.37 + 0.2) * 1.6;      -- breathes faster as it gets lower
         end
         -- the stat's name in its colour (small), the number in white beside it (BARS > HP / MP / TP text size: these only, not the bar)
-        local ns = math.max(0.5, math.min(2.5, tonumber(cfg.sb_scale) or 1)) * math.max(0.5, math.min(2.5, tonumber(cfg['sb_' .. key .. '_num']) or 1));   -- (not the bar's size)
+        local ns = math.max(0.5, math.min(2.5, tonumber(cfg.sb_scale) or 1)) * math.max(0.5, math.min(2.5, tonumber(cfg['sb_' .. key .. '_num']) or 1)) * (YUI_GS and YUI_GS() or 1);   -- (not the bar's size)
         local pushed, fsc = JOBS.yfont(13 * ns);
         imgui.SetWindowFontScale(fsc);
         local lw, lh = imgui.CalcTextSize(d[1]);

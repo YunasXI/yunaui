@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.76';
+addon.version = '1.0.77';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -225,6 +225,7 @@ function C.screen()
     local ds = imgui.GetIO().DisplaySize;
     return math.floor((ds and tonumber(ds.x)) or 1920), math.floor((ds and tonumber(ds.y)) or 1080);
 end
+function YUI_GS() return math.max(0.5, math.min(4, tonumber(cfg.scale) or 1)); end   -- GENERAL > Size of everything (equip.lua's bars too)
 function C.cliprect(a, b)
     local w, h = C.screen();
     local x1 = math.floor(math.max(0, math.min(w - 1, a[1])));
@@ -355,6 +356,10 @@ local function sized(kind, size)
     if list == nil or #list == 0 then FS = 1; return false; end
     local pick = list[#list];
     for _, e in ipairs(list) do if e[2] >= size - 0.5 then pick = e; break; end end
+    if size > pick[2] + 0.5 and YUI_NEWFONT(pick[1]) then            -- (bigger than the biggest made: drawn at its own size, sharp -
+        local ok = push_font(pick[1], size);                         --  Size of everything on a 4K screen)
+        if ok then FS = 1; imgui.SetWindowFontScale(1); return true; end
+    end
     local pushed = push_font(pick[1], pick[2]);
     FS = pushed and (size / pick[2]) or (size / 17);
     imgui.SetWindowFontScale(FS);
@@ -8012,10 +8017,32 @@ function C.trust_line(s)
     if C.TRN[nm] == nil then
         C.TRN[nm] = false;
         pcall(function()
-            local rm = AshitaCore:GetResourceManager();
-            for _, n in ipairs({ nm, nm .. ' (UC)', nm .. ' II' }) do
-                local sp = rm:GetSpellByName(n, 0);
-                if sp and (tonumber(sp.Type) == 8 or (tonumber(sp.Index) or 0) >= 896) then C.TRN[nm] = true; return; end
+            if not C.TRK then                                        -- (every trust spell's name, without its (UC) / II / [S], spaces
+                local K, rm = {}, AshitaCore:GetResourceManager();   --  and dots: "Shikaree Z" talks as "ShikareeZ", "AAEV" as "ArkEV")
+                for i = 896, 1023 do
+                    local sp = rm:GetSpellById(i);
+                    local sn = sp and sp.Name and sp.Name[1];
+                    if sn and #sn > 1 then
+                        local k = sn:gsub('%s*%b()', ''):gsub('%s*%b[]', ''):gsub(' II$', ''):gsub('[^%w]', ''):lower():gsub('^aa', 'ark');
+                        K[k] = true;
+                    end
+                end
+                C.TRK = K;
+            end
+            local key = nm:gsub('[^%w]', ''):lower();
+            if C.TRK[key] then C.TRN[nm] = true; return; end
+            if #key >= 4 then                                        -- (a trust talking by a short name: "Mihli" for Mihli Aliapoh)
+                for k in pairs(C.TRK) do
+                    if k:sub(1, #key) == key then C.TRN[nm] = true; return; end
+                end
+            end
+        end);
+    end
+    if not C.TRN[nm] then                                            -- (any other special trust: a trust in your party by that name -
+        pcall(function()                                             --  remembered, so its goodbye after it left is a party line too)
+            local p = AshitaCore:GetMemoryManager():GetParty();
+            for i = 1, 5 do
+                if p:GetMemberIsActive(i) ~= 0 and (p:GetMemberServerId(i) or 0) >= 0x01000000 and p:GetMemberName(i) == nm then C.TRN[nm] = true; return; end
             end
         end);
     end
@@ -9208,7 +9235,7 @@ local function draw_chat(n)
         pcall(C.items_index);                                         -- (the game's item names, read a little each frame until done)
         local itip = nil;                                            -- (an item icon under the mouse: its card, after the text)
         -- the text, from the bottom up
-        local size = tonumber(cfg.chat_size) or 16;
+        local size = (tonumber(cfg.chat_size) or 16) * YUI_GS();   -- (CHAT > Size, times GENERAL > Size of everything)
         local pushed = sized('chat', size);
         local lh = imgui.GetTextLineHeight() + math.max(0, math.min(16, tonumber(cfg.chat_gap) or 6));   -- CHAT > Line spacing
         local pad = 12;
@@ -12614,6 +12641,24 @@ local function draw_window()
                 if imgui.IsItemHovered() then YUI_TIP('Shows every piece with a grid; drag them and they snap into line\nAlso: /yui edit'); end
                 hint(LAYOUT.msg or 'One click moves every piece of the UI for your screen size. Move anything afterwards as you like.');
             end
+            section('SIZE');                                         -- every piece at once (each one's own Size on top of it)
+            row_slider('##yui_gscale', 'Size of everything', 'scale', 0.5, 4.0, 0.05, '%.2fx');
+            do
+                local bw5 = math.floor((ROW_W - 32) / 5);
+                for i, pr in ipairs({ { '1x', 1.0, '1080p' }, { '1.5x', 1.5, '1440p' }, { '2x', 2.0, '4K' }, { '3x', 3.0, 'a big 4K TV, or sitting far away' } }) do
+                    if i > 1 then imgui.SameLine(0, 8); end
+                    if accent_button(pr[1] .. '##yui_gsp' .. i, { bw5, 0 }, math.abs((tonumber(cfg.scale) or 1) - pr[2]) > 0.01, true) then cfg.scale = pr[2]; save(); end
+                    if imgui.IsItemHovered() then YUI_TIP('Everything at ' .. pr[1] .. ' - for ' .. pr[3]); end
+                end
+                imgui.SameLine(0, 8);
+                if accent_button('FIT##yui_gsfit', { bw5, 0 }, false, true) then
+                    local _, sh = C.screen();
+                    cfg.scale = math.max(0.5, math.min(4, math.floor(sh / 1080 / 0.05 + 0.5) * 0.05));
+                    save();
+                end
+                if imgui.IsItemHovered() then YUI_TIP('Fit my screen: the size for your resolution\n(1080p 1x, 1440p 1.35x, 4K 2x)'); end
+            end
+            hint('Makes every piece bigger or smaller at once - after a new monitor or resolution, one click. Each piece\'s own Size still works on top of it.');
             section('MY LAYOUTS');                                   -- five of your own, each with a name
             pcall(LAYOUT.mine_rows);
             hint('Give it a name, SAVE keeps where everything is now and every size (sizes, lengths, thickness, the chat and the Damage Meter too), LOAD puts it all back. Colours, looks and on / off are not changed.');
