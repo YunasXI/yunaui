@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.77';
+addon.version = '1.0.78';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -689,8 +689,9 @@ local function plain_window(name, kx, ky, force)
         local W, H = C.screen();                                     --  Ashita a window partly off the screen for even one frame hides the
         local sz = WATCH.size and WATCH.size[kx];                    --  windows drawn after it, the settings panel flickered)
         local sw, sh = (sz and sz[1]) or 1, (sz and sz[2]) or 1;
-        local nx = math.max(0, math.min(W - math.min(sw, W), px));
-        local ny = math.max(0, math.min(H - math.min(sh, H), py));
+        local KEEP = 120;                                            -- (only this much of it must stay on screen: its measured box can be wider than
+        local nx = math.max(0, math.min(W - math.min(sw, KEEP, W), px));   --  what it draws - at a big Size of everything on 4K - and it pushed the
+        local ny = math.max(0, math.min(H - math.min(sh, KEEP, H), py));   --  window away from the right edge by about its own width)
         if nx ~= px or ny ~= py then px, py, one = nx, ny, one or 1; cfg[kx], cfg[ky] = nx, ny; end
     end
     imgui.SetNextWindowPos({ px, py }, (WATCH.move > 0 or force or one) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
@@ -710,8 +711,9 @@ function YUI_ONSCREEN(wx, wy, sw, sh)
     local ds = imgui.GetIO().DisplaySize;
     local W, H = ds and tonumber(ds.x), ds and tonumber(ds.y);
     if not W or W < 200 or not H or H < 200 then return wx, wy, false; end
-    local nx = math.max(0, math.min(W - math.min(sw, W), wx));
-    local ny = math.max(0, math.min(H - math.min(sh, H), wy));
+    local KEEP = 120;                                                -- (as plain_window: only this much of it must stay on screen)
+    local nx = math.max(0, math.min(W - math.min(sw, KEEP, W), wx));
+    local ny = math.max(0, math.min(H - math.min(sh, KEEP, H), wy));
     if math.abs(nx - wx) > 1 or math.abs(ny - wy) > 1 then return math.floor(nx), math.floor(ny), true; end
     return wx, wy, false;
 end
