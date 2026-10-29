@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.84';
+addon.version = '1.0.85';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -8996,6 +8996,22 @@ function C.cf_col(t)                                                 -- (CHAT > 
     for _, w in ipairs(C.CF_WHAT) do if w[1] == t then return w[3]; end end
     return nil;
 end
+C.ML = {};                                                           -- (the two logs as one, in time order - remade only when either changes)
+function C.merge_logs(a, b)
+    local M = C.ML;
+    if M.a == a[#a] and M.b == b[#b] and M.na == #a and M.nb == #b then return M.out; end
+    local out, i, j = {}, 1, 1;
+    local function first(x, y)                                       -- (by the clock time; the same second: by when YunaUI had it)
+        if (x.ts or 0) ~= (y.ts or 0) then return (x.ts or 0) < (y.ts or 0); end
+        return (x.t0 or x.t or 0) <= (y.t0 or y.t or 0);
+    end
+    while i <= #a or j <= #b do
+        if j > #b or (i <= #a and first(a[i], b[j])) then out[#out + 1] = a[i]; i = i + 1;
+        else out[#out + 1] = b[j]; j = j + 1; end
+    end
+    M.a, M.b, M.na, M.nb, M.out = a[#a], b[#b], #a, #b, out;
+    return out;
+end
 C.RL = { n = 0, t = {} };                                            -- (the lines of the last few seconds, by text)
 function C.seen_line(line, stamped)                                  -- (true: a time-stamped copy of a line YunaUI just had)
     local R, now = C.RL, os.clock();
@@ -9014,6 +9030,8 @@ function C.npc_dup(mode, line, combat)
     local win = C.NPCMODE[mode] and 2.5 or 2;                        -- (short: a menu's copies come within a second or two; a chest
                                                                      --  peered into again, or another with the same words, still shows)
     if combat or (mode >= 1 and mode <= 15) or mode == 213 or mode == 214 then return false; end   -- (talk and battle: never)
+    local sl = line:gsub('[\1\2]', '');                              -- (loot: three of the same item from the pool are three lines, each one counts)
+    if sl:find(' obtains? ') or sl:find('^You find ') or sl:find('falls to the ground') or sl:find('Obtained') then return false; end
     local R, now = C.NPCSEEN, os.clock();
     local dup = R.t[line] ~= nil and now - R.t[line] < win;
     if R.n > 200 then R.t, R.n = {}, 0; end
@@ -10318,7 +10336,8 @@ local function draw_chat(n)
             if legacy.pad.combat then
                 if cfg.chat_split then log = logs[2]; else only = 'combat'; end
                 tab = 1;
-            elseif not cfg.chat_split then only = 'talk'; end
+            elseif not cfg.chat_split then only = 'talk';
+            elseif logs[2] then log = C.merge_logs(logs[1], logs[2]); end   -- (its All: everything - the combat log's lines in among the rest)
         end
         local CL;                                                    -- (clear look: the time column, the indent, the space between messages)
         if C.clear_on() then
