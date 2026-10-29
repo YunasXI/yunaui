@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.86';
+addon.version = '1.0.87';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -11595,7 +11595,7 @@ local function draw_strip()
     if bp then WATCH.move = WATCH.move - 1; cfg._sx, cfg._sy = nil, nil; end
     local hxf = YUI_HEX and not bp;                                  -- (Hex link, on its own: in Hex link's frame, GEAR on its edge)
     local orig = hxf;                                                -- (the Original frame only)              -- (EQUIP > Frame > Original: the first Hex link frame, GEAR on its edge)
-    local top_ = hxf and math.floor((orig and 10 or 30) * sc) or 0;  -- (the glass card: room at its top)
+    local top_ = hxf and math.floor((orig and 10 or 30) * sc) or (not YUI_HEX and math.floor(6 * sc) or 0);   -- (the glass card: room at its top; Vex: room for its card's edge)
     if open then
         local dl = imgui.GetWindowDrawList();
         local x, y = imgui.GetCursorScreenPos();
@@ -11629,6 +11629,13 @@ local function draw_strip()
                 { a = a, s = sc, title = (DOLL.why and since < hold + 0.8) and string.upper(DOLL.why.label) or 'GEAR',
                   tcol = (DOLL.why and since < hold + 0.8) and DOLL.why_col(DOLL.why.kind) or nil,
                   t = now - (DOLL.t0 or 0), glint = YUI_HEXGLINT(DOLL.t0), gs = 0.6 });
+        elseif not YUI_HEX then                                      -- (Vex: a black card with a rounded violet edge and a soft violet glow)
+            local m_ = math.floor(6 * sc);
+            local x0, y0, x1, y1 = x - pad - m_, y - pad - m_, x + W + pad + m_, y + H + pad + m_;
+            local rr = math.floor(12 * sc);
+            DL.RF(dl, x0, y0, x1, y1, U4(0.02, 0.015, 0.03, 0.82 * a), rr, C.rall);
+            for g = 3, 1, -1 do DL.R(dl, x0 - g, y0 - g, x1 + g, y1 + g, U4(0.66, 0.48, 1.0, 0.07 * a), rr + g, C.rall, 2); end
+            DL.R(dl, x0, y0, x1, y1, U4(0.74, 0.58, 1.0, 0.90 * a), rr, C.rall, math.max(1, 1.4 * sc));
         end
         local mx, my = imgui.GetMousePos();
         DOLL.hover = imgui.IsWindowHovered() or (mx >= x and mx <= x + W and my >= y and my <= y + H);
@@ -11689,6 +11696,23 @@ local function draw_strip()
                 local m = hv and -2 or 0;                            -- the one under the mouse grows a touch
                 if t and t < 0.3 then m = m - S * 0.14 * (1 - t / 0.3); end   -- a new piece pops in, then settles
                 image(dl, ic, sx + m, sy + m, sx + S - m, sy + S - m, { 1, 1, 1, a * ca });
+                if type(name) == 'string' and name:find('%+%d+$') then   -- (an HQ piece - "+1", "+2"...: a gold accent, a fine edge and its corner)
+                    local ga = a * ca;                               -- (the game's own item box, in gold: square, lit top / left, shaded bottom / right)
+                    local o_ = math.max(1, math.floor(1.5 * sc + 0.5));
+                    local x0_, y0_, x1_, y1_ = math.floor(sx) - o_, math.floor(sy) - o_, math.floor(sx + S) + o_, math.floor(sy + S) + o_;
+                    local lit_, mid_, dk_ = U4(1.00, 0.95, 0.72, 0.95 * ga), U4(0.92, 0.72, 0.30, 0.95 * ga), U4(0.55, 0.38, 0.10, 0.95 * ga);
+                    if cfg.target_fx ~= 'link' then                  -- (Vex: softer - a fine rounded white line with a faint glow, no bevel)
+                        local rr_ = math.max(3, 5 * sc);
+                        for g = 3, 1, -1 do DL.R(dl, sx - g, sy - g, sx + S + g, sy + S + g, U4(1, 1, 1, 0.12 * ga), rr_ + g, allc, 2); end
+                        DL.R(dl, sx, sy, sx + S, sy + S, U4(1, 1, 1, 1.0 * ga), rr_, allc, math.max(1.5, 1.6 * sc));
+                    else
+                        DL.RF(dl, x0_, y0_, x1_, y0_ + o_, lit_);    -- top
+                        DL.RF(dl, x0_, y0_, x0_ + o_, y1_, lit_);    -- left
+                        DL.RF(dl, x0_, y1_ - o_, x1_, y1_, dk_);     -- bottom
+                        DL.RF(dl, x1_ - o_, y0_ + o_, x1_, y1_, dk_);   -- right
+                        DL.R(dl, x0_ - 1, y0_ - 1, x1_ + 1, y1_ + 1, mid_, 0, allc, 1);   -- (a gold line round it all)
+                    end
+                end
             end
             if sw and not sw.behind then swap_clip(); end
             if t and sfx == 'line' then                              -- the swap, drawn like the HP / MP bars: a thin pink-to-violet
@@ -11719,6 +11743,7 @@ local function draw_strip()
         end
         if DOLL.gf then imgui.Dummy({ DOLL.bw, DOLL.bh });
         elseif orig then imgui.Dummy({ W + 16 + pad * 2 + 6 * sc, H + 6 + pad * 2 + top_ + 8 * sc });
+        elseif not YUI_HEX then imgui.Dummy({ W + 16 + pad * 2 + 4 * sc, H + 6 + pad * 2 + top_ + 12 * sc });   -- (Vex: its card's edge all round)
         else imgui.Dummy({ W + 16 + pad * 2 + (hxf and 42 * sc or 0), H + 6 + pad * 2 + (hxf and (top_ + 44 * sc) or 0) }); end
         if bp then imgui.End(); imgui.PopStyleVar(2); else end_plain('strip_x', 'strip_y'); end
     else
@@ -11863,11 +11888,7 @@ local function equip_tab()
         row_slider('##yui_sti', 'Icon size', 'strip_icon', 16, 48, 1, '%d px');   -- (Sits under and Swap effect are gone: always dragged anywhere, no effect)
         row_switch('##yui_sts', 'Only show on gear change', 'strip_swap_only', 'On: hidden until you swap gear, then it shows for a moment.');
         if not cfg.strip_swap_only then row_slider('##yui_std', 'Brightness when idle', 'strip_dim', 0.05, 1.0, 0.05, '%.2f'); end
-        imgui.TextColored(C.muted, 'Lights up when you swap gear. Hover an icon for its name.');
-        imgui.Spacing();
-        imgui.TextColored(C.muted, "Note: the white boxes that mark HQ gear are not shown here yet.");
-        imgui.TextColored(C.muted, "That part is still being reworked to match the rest of YunaUI.");
-        imgui.TextColored(C.muted, "Don't worry: your HQ gear is still HQ :)");
+        imgui.TextColored(C.muted, 'Lights up when you swap gear. Hover an icon for its name. HQ pieces (+1, +2...) are framed.');
     end
     if YUI_EQ_SETTINGS then YUI_EQ_SETTINGS();
     else imgui.TextColored({ 1, 0.5, 0.6, 1 }, 'YunaEquip did not load (equip.lua).'); end
