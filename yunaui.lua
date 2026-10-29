@@ -12315,7 +12315,8 @@ end
 
 local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 'DAMAGE METER', 'MINIMAP', 'TREASURE POOL', 'SOUND ALERTS', 'ACTION BARS' };
 -- the public version (public.flag in YunaUI's folder): Normal mode only, no Action Bars - what's still to come stays off
-YUI_PUBLIC = (function() local f = io.open((addon.path or '') .. 'public.flag', 'r'); if f then f:close(); return true; end return false; end)();
+YUI_PUBLIC = false;                                                  -- (since 1.0.79 everyone has the full YunaUI: a public.flag left by 1.0.71-1.0.78 - unzipping
+pcall(os.remove, (addon.path or '') .. 'public.flag');               --  over the old folder keeps it - hid the mode switch, Hex link and the Action Bars; removed)
 if YUI_PUBLIC then TABS[#TABS] = nil; end
 -- Layouts (GENERAL > LAYOUT): one click puts every piece of the UI in its place for your screen size.
 -- Built-in: Classic (bars bottom middle, party top right, timers left), Raid (party top left, bars stacked bottom
