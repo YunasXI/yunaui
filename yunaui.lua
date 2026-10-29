@@ -15468,6 +15468,10 @@ function C.macrobar()
         if down and not M.kbk[vk] then
             if M.dbg then msg(string.format('[mb] key %02X held=%d mine=%s ok=%s hid=%s sel=%s', vk, held, tostring(C.mb_mine()), tostring(M.ok), tostring(M.hid), tostring(M.sel))); end
             if C.mb_mine() and not C.mb_free() then local okk, er = pcall(C.mb_kbact, w, held); if not okk and M.dbg then msg('[mb] error: ' .. tostring(er)); end end
+            M.krep = M.krep or {}; M.krep[vk] = C.mb_now() + 0.35;     -- (left / right held: after a moment the pick keeps going, as the game's palette)
+        elseif down and w ~= 'run' and M.krep and M.krep[vk] and C.mb_now() >= M.krep[vk] then
+            M.krep[vk] = C.mb_now() + 0.09;
+            if C.mb_mine() and not C.mb_free() then pcall(C.mb_kbact, w, held); end
         end
         M.kbk[vk] = down;
     end
@@ -16344,6 +16348,24 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
             ALLY.poly(dl, { { ax, ay }, { rx_, ry_ }, { cx_, cy2 } }, wc);
             ALLY.poly(dl, { { ax, ay }, { cx_, cy2 }, { lx_, ly_ } }, wc);
         end
+    end
+    do                                                               -- (Widescan > Track: the 3D minimap too - it was only on the flat one)
+        local function tomap(wx, wy)                                 -- (behind the camera: brought closer till it shows - the way to it, at the edge)
+            for _ = 1, 12 do
+                local sx_, sy_ = proj(wx, th, wy);
+                if sx_ then return sx_, sy_; end
+                wx, wy = X + (wx - X) / 2, Y + (wy - Y) / 2;
+            end
+            return -9999, -9999;
+        end
+        local function inside(sx_, sy_)
+            if sx_ < x0 + 2 or sx_ > x1 - 2 or sy_ < y0 + 2 or sy_ > y1 - 2 then return false; end
+            if not soft then return true; end
+            local ex, ey = (sx_ - cxs) / (W / 2), (sy_ - cys) / (H / 2);
+            return ex * ex + ey * ey <= 0.80;
+        end
+        local px_, py_ = proj(X, th, Y);
+        if px_ then pcall(YMAP.track_draw, dl, ent, tomap, sc, inside, px_, py_); end
     end
     dl:PopClipRect();
 end
