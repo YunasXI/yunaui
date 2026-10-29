@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.79';
+addon.version = '1.0.80';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -15932,6 +15932,57 @@ function YMAP.mobs_near(ent)                                         -- monsters
     YMAP.mobs = out;
     return out;
 end
+-- Widescan > Track: the game sends the tracked monster's place every few seconds (0x0F5: x, height, north, its index,
+-- 1 while tracking); its name comes from the Widescan list (0x0F4). On the map: a pulsing ring and its name - off the
+-- map, at the map's edge on the way to it. Gone when tracking stops, after 15 s with no news, or on zoning.
+YMAP.ws_names = {};
+function YMAP.ws_list(e)
+    local d = e.data;
+    local idx = struct.unpack('H', d, 0x04 + 1);
+    local nm = d:sub(0x0C + 1, 0x0C + 16):gsub('%z.*$', '');
+    if idx and nm ~= '' then YMAP.ws_names[idx] = nm; end
+end
+function YMAP.ws_track(e)
+    local d = e.data;
+    local x, h, y = struct.unpack('f', d, 0x04 + 1), struct.unpack('f', d, 0x08 + 1), struct.unpack('f', d, 0x0C + 1);
+    local idx, st = struct.unpack('H', d, 0x12 + 1), struct.unpack('B', d, 0x14 + 1);
+    if st ~= 1 then YMAP.track = nil; return; end
+    YMAP.track = { idx = idx, x = x, y = y, z = h, t = os.clock() };
+end
+function YMAP.track_draw(dl, ent, tomap, sc, inside, px, py)
+    local T = YMAP.track;
+    if not T then return; end
+    if os.clock() - T.t > 15 then YMAP.track = nil; return; end
+    local wx, wy = T.x, T.y;
+    pcall(function()                                                 -- (in range: where it is now, not where it was)
+        if (ent:GetRenderFlags0(T.idx) or 0) ~= 0 and (ent:GetHPPercent(T.idx) or 0) > 0 then wx, wy = ent:GetLocalPositionX(T.idx), ent:GetLocalPositionY(T.idx); end
+    end);
+    local sx, sy = tomap(wx, wy);
+    local edge = not inside(sx, sy);
+    if edge then                                                     -- (off the map: as far toward it as the map goes)
+        local lo, hi = 0, 1;
+        for _ = 1, 14 do
+            local m = (lo + hi) / 2;
+            if inside(px + (sx - px) * m, py + (sy - py) * m) then lo = m; else hi = m; end
+        end
+        local k = math.max(0, lo - 0.02);
+        sx, sy = px + (sx - px) * k, py + (sy - py) * k;
+    end
+    local c = { 0.40, 0.95, 1.00 };
+    local p = (math.sin(os.clock() * 4) + 1) / 2;
+    DL.CF(dl, sx, sy, 3.2 * sc + 1.2, U4(0, 0, 0, 0.85), 12);
+    DL.CF(dl, sx, sy, 3.2 * sc, U4(c[1], c[2], c[3], 1), 12);
+    DL.C(dl, sx, sy, (6 + 3 * p) * sc, U4(c[1], c[2], c[3], 0.9 - 0.5 * p), 20, 1.6);
+    local nm = YMAP.ws_names[T.idx];
+    if not nm then pcall(function() nm = ent:GetName(T.idx); end); end
+    if nm and nm ~= '' then
+        local tw_ = tonumber((imgui.CalcTextSize(nm))) or 0;
+        local tx_ = sx - tw_ / 2;
+        local ty_ = sy - (12 * sc) - imgui.GetTextLineHeight();
+        for _, o in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }) do DL.T(dl, tx_ + o[1], ty_ + o[2], U4(0, 0, 0, 0.9), nm); end
+        DL.T(dl, tx_, ty_, U4(c[1], c[2], c[3], 1), nm);
+    end
+end
 -- What sits on the map: monsters, the party in their role colours, the target, and you (the glowing arrow)
 function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
     local tidx = target_index() or 0;
@@ -15967,6 +16018,7 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
         end
     end
     local px, py = tomap(ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0);
+    pcall(YMAP.track_draw, dl, ent, tomap, sc, inside, px, py);     -- (Widescan > Track: the monster you track)
     local yaw = 0;
     pcall(function() yaw = ent:GetLocalPositionYaw(me) or 0; end);
     local fx, fy = math.cos(yaw), math.sin(yaw);
@@ -18579,7 +18631,9 @@ ashita.events.register('packet_in', 'yui_packet', function(e)
     elseif e.id == 0x0D2 then pcall(C.loot_drop, e);               -- (an item fell in the pool: it flies in from the monster)              -- (a lot or a pass on a treasure pool item)
     elseif e.id == 0x00E then pcall(read_claim, e);
     elseif e.id == 0x057 then pcall(C.weather_packet, e);
-    elseif e.id == 0x00A then enemies = {}; ENGAGED = {}; LASTHIT = {}; FIGHT.casts = {}; FIGHT.sc = {}; FIGHT.mine_at = nil; pcall(C.weather_packet, e);
+    elseif e.id == 0x0F4 then pcall(YMAP.ws_list, e);               -- (Widescan: a monster in its list - its name)
+    elseif e.id == 0x0F5 then pcall(YMAP.ws_track, e);              -- (Widescan > Track: where the tracked one is)
+    elseif e.id == 0x00A then YMAP.track, YMAP.ws_names = nil, {}; enemies = {}; ENGAGED = {}; LASTHIT = {}; FIGHT.casts = {}; FIGHT.sc = {}; FIGHT.mine_at = nil; pcall(C.weather_packet, e);
         pcall(C.party_buffs_clear);                                  -- (a new zone: party members' buffs from before it gone - the next 0x076 says what's left)
     elseif e.id == 0x0AC then FIGHT.mine_at = nil; end                -- (your weapon skills changed)
 end);
