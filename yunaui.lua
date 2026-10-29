@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.80';
+addon.version = '1.0.82';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -15496,7 +15496,7 @@ function C.macrobar()
             local vk = (k == 9) and 0x30 or (0x31 + k);
             local down = C.mb_key(vk);
             local id = (held - 1) * 10 + k;
-            if down and not M.keys[id] then M.flash[id] = now; M.sel = k; M.lastsel[held] = k; end   -- (the ring turns to it)
+            if down and not M.keys[id] then M.flash[id] = now; end   -- (it flashes; the pick stays where it was, as the game's palette)
             M.keys[id] = down;
         end
     end
@@ -18906,7 +18906,7 @@ C.MB_DIK = { [0x02] = 0, [0x03] = 1, [0x04] = 2, [0x05] = 3, [0x06] = 4, [0x07] 
 function C.mb_kbrun(row, slot)
     local M = C.MB;
     local id = (row - 1) * 10 + slot;
-    M.flash[id], M.sel, M.lastsel[row] = os.clock(), slot, slot;
+    M.flash[id] = os.clock();                                        -- (the pick stays where it was: a number key runs its macro, it doesn't move the highlight)
     if M.dbg then msg(string.format('[mb] run %s %d (keyboard)', (row == 1) and 'Ctrl' or 'Alt', (slot + 1) % 10)); end
     C.mb_run(row, slot);
     if C.mb_hasst(row, slot) then M.free_until = os.clock() + 0.8; end
