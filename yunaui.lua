@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.83';
+addon.version = '1.0.84';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -14763,6 +14763,7 @@ local function draw_window()
             row_switch('##yui_mm3f', 'Turn with you', 'map3d_follow', 'The minimap turns as you do, looking the way you face. Off: north stays up.');
             row_switch('##yui_mmtilt', 'Tilt the map', 'map_tilt', 'On: in zones with no 3D shape (most of the open country) the map lies on the ground under you, seen from behind you like the cities\' 3D look. Off: the flat map from above.');
             row_switch('##yui_mmm', 'Monsters', 'map_mobs', 'On: monsters near you show as red dots.');
+            row_switch('##yui_mmx', 'Zone exits', 'map_exits', 'On: the way out of the zone shows as a gold line, with the name of the zone it leads to.');
             if cfg.target_fx ~= 'link' then                          -- (Normal mode: the lines in your HP bar's colour, or white)
                 row_pick('##yui_mml', 'Lines', 'map_lines', { { 'hp', 'As your HP bar' }, { 'white', 'White' } });
             end
@@ -15987,6 +15988,62 @@ function YMAP.track_draw(dl, ent, tomap, sc, inside, px, py)
         DL.T(dl, tx_, ty_, U4(c[1], c[2], c[3], 1), nm);
     end
 end
+-- MINIMAP > Zone exits: every zone line (exits.lua - placed as the game's zone files have them, the zone it leads to from
+-- LandSandBoat's list) as a gold line across the way out, with "> the next zone" over it. P(x, north, height) -> the screen.
+YMAP.exit_names = {};
+function YMAP.exits(zid)
+    if YMAP.exit_all == nil then
+        YMAP.exit_all = false;
+        local ok, t = pcall(dofile, (addon.path:gsub('[\\/]+$', '')) .. '\\exits.lua');
+        if ok and type(t) == 'table' then YMAP.exit_all = t; end
+    end
+    return YMAP.exit_all and YMAP.exit_all[zid] or nil;
+end
+function YMAP.exits_draw(dl, zid, P, sc, inside, myz)
+    if cfg.map_exits == false then return; end
+    local L = YMAP.exits(zid);
+    if not L then return; end
+    local c = { 1.00, 0.80, 0.42 };
+    local placed = {};                                               -- (two exits close together: their names stacked, not on top of each other)
+    for _, ex in ipairs(L) do
+        local fa = 1;
+        if myz then fa = 1 - math.max(0, math.min(1, (math.abs(ex[3] - myz) - 8) / 6)); end   -- (on another floor: faded, gone past 14 yalms)
+        local cx, cy = P(ex[1], ex[2], ex[3]);
+        if fa > 0.05 and cx and inside(cx, cy) then
+            local dx, dy;                                            -- (across the way out: the zone line's box along its longer side)
+            if ex[5] >= ex[6] then local hw = math.max(3, ex[5] / 2); dx, dy = math.cos(ex[4]) * hw, -math.sin(ex[4]) * hw;
+            else local hw = math.max(3, ex[6] / 2); dx, dy = math.sin(ex[4]) * hw, math.cos(ex[4]) * hw; end
+            local ax, ay = P(ex[1] - dx, ex[2] - dy, ex[3]);
+            local bx, by = P(ex[1] + dx, ex[2] + dy, ex[3]);
+            if ax and bx then
+                DL.L(dl, ax, ay, bx, by, U4(0, 0, 0, 0.8 * fa), 4.5);
+                DL.L(dl, ax, ay, bx, by, U4(c[1], c[2], c[3], fa), 2.5);
+            end
+            local nm = YMAP.exit_names[ex[7]];
+            if nm == nil then
+                nm = '';
+                pcall(function() nm = AshitaCore:GetResourceManager():GetString('zones.names', ex[7]) or ''; end);
+                YMAP.exit_names[ex[7]] = nm;
+            end
+            if nm ~= '' then
+                local t_ = nm;
+                local tw_ = tonumber((imgui.CalcTextSize(t_))) or 0;
+                local lh_ = imgui.GetTextLineHeight();
+                local tx_, ty_ = math.floor(cx - tw_ / 2), math.floor(cy - 8 * sc - lh_);
+                local moved = true;
+                while moved do
+                    moved = false;
+                    for _, r in ipairs(placed) do
+                        if tx_ < r[3] and tx_ + tw_ > r[1] and ty_ < r[4] and ty_ + lh_ > r[2] then ty_ = r[2] - lh_ - 1; moved = true; end
+                    end
+                end
+                placed[#placed + 1] = { tx_, ty_, tx_ + tw_, ty_ + lh_ };
+                for _, o in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }) do DL.T(dl, tx_ + o[1], ty_ + o[2], U4(0, 0, 0, 0.9 * fa), t_); end
+                DL.T(dl, tx_, ty_, U4(c[1], c[2], c[3], fa), t_);
+            end
+        end
+    end
+end
 -- What sits on the map: monsters, the party in their role colours, the target, and you (the glowing arrow)
 function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
     local tidx = target_index() or 0;
@@ -16022,6 +16079,7 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
         end
     end
     local px, py = tomap(ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0);
+    pcall(YMAP.exits_draw, dl, zid, function(wx, wy) return tomap(wx, wy); end, sc, inside, ent:GetLocalPositionZ(me));   -- (MINIMAP > Zone exits)
     pcall(YMAP.track_draw, dl, ent, tomap, sc, inside, px, py);     -- (Widescan > Track: the monster you track)
     local yaw = 0;
     pcall(function() yaw = ent:GetLocalPositionYaw(me) or 0; end);
@@ -16364,6 +16422,7 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
             local ex, ey = (sx_ - cxs) / (W / 2), (sy_ - cys) / (H / 2);
             return ex * ex + ey * ey <= 0.80;
         end
+        pcall(YMAP.exits_draw, dl, zid, function(wx, wy, wz) local a_, b_ = proj(wx, wz * hs, wy); return a_, b_; end, sc, inside, Z);   -- (MINIMAP > Zone exits)
         local px_, py_ = proj(X, th, Y);
         if px_ then pcall(YMAP.track_draw, dl, ent, tomap, sc, inside, px_, py_); end
     end
