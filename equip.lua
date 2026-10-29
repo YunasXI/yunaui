@@ -2918,10 +2918,11 @@ function JOBS.statbar(key, value, v, lag, pct)
         if (key == 'hp' or key == 'mp') and YUI_BAR_OUTLINE then YUI_BAR_OUTLINE(dl, x, by, w, bh); end   -- (the thin black edge, HP and MP)
         YUI_EQ_BARPOS = YUI_EQ_BARPOS or {};                         -- where this bar is (YunaUI's gear strip sits under one)
         YUI_EQ_BARPOS[key] = { x, by + bh, w, now, sc, tonumber(cfg.sb_anchor) or 0 };   -- (6: how the bars are anchored)
+        if key == 'tp' and YUI_TP_FX then pcall(YUI_TP_FX, x, by, w, bh, v, tonumber(value) or 0); end   -- (YunaUI's TP bar effect, Vex mode)
         if key == 'tp' then                                          -- marks at 1000 and 2000
             for m = 1, 2 do
                 local mx = x + w * m / 3;
-                DL.L(dl, mx, by - 2, mx, by + bh + 2, U4(0, 0, 0, 0.6), 1.5);
+                DL.L(dl, mx, by + 1, mx, by + bh - 1, U4(0, 0, 0, 0.6), 1.5);   -- (inside the bar: they stuck out over its round edge)
             end
         end
         imgui.Dummy({ w + 16, by + bh - y + 12 });

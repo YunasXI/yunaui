@@ -62,6 +62,11 @@ YunaUI uses the game's own item and buff icons. For sharper HD ones, install the
 - Minimap: 2D maps restyled from remapster HD maps (remapster.com, by spalose), the ffxi-maps 1024x1024 map pack, and
   Vana'diel Atlas / ffxi-atlas.com maps, used with permission; 3D zone shapes from LandSandBoat's xiNavmeshOBJs (GPL-3.0);
   map table and floor reading after boussole by loonsies. FINAL FANTASY XI map art (c) SQUARE ENIX.
+- Job ability voice ("Berserk up"): the Amy voice for Piper (rhasspy/piper-voices, en_US-amy-medium; see its model card,
+  github.com/MycroftAI/mimic3-voices).
+- Sounds from Pixabay (Pixabay Content License): "Item Pickup" by Yodguard (item won), "UI Sound" 95 by juniorsoundays
+  (action bars scroll), "Soft luxury air whoosh #8" by Sdanezis and "Sci-Fi UI Click Sound" by SoundShelfStudio (mode
+  switch), "Interface" by Universfield (party invite). All other sounds were made for YunaUI.
 
 ## Using YunaUI in your own work
 

@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.78';
+addon.version = '1.0.79';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -99,7 +99,7 @@ local defaults = T{
     party = true, party_x = 1600, party_y = 450, buffs_left = false,
     alliance = true, alliance_x = 40, alliance_y = 250, ally2_x = 330, ally2_y = 250, ally1_scale = 0.75, ally2_scale = 0.75, party_cols = 1, ally1_cols = 1, ally2_cols = 1, party_gap = 0,
     barfx = 'none', barfx_target = 'same', barfx_party = 'same', barfx_alliance = 'same', barfx_equip = 'same', barfx_pet = 'same', barfx_alpha = 1.0, barfx_size = 0.6,
-    strip_under = 'mp', strip_fx = 'muzzle', strip_fit = true, strip_cols = 8, strip_icon = 26, strip_dim = 0.35, strip_swap_only = false, strip_x = -1, strip_y = -1,
+    map_frame = 'glass', strip_under = 'free', strip_fx = 'none', strip_fit = true, strip_cols = 4, strip_icon = 26, strip_dim = 0.35, strip_swap_only = false, strip_x = -1, strip_y = -1,
     equip_look = 'strip', doll_x = -1, doll_y = -1, doll_scale = 1.0, doll_slot = 34, doll_alpha = 0.85, ring_radius = 175, center_size = 1.3, portal_strength = 1.0,
     buffs = true, job_icons = 'hats', icon_scale = 1.0, arrow_scale = 1.0, target_mark = 'flare', flare_try = false, glow_style = 4, glow_anim = 'still', inferno_try = false, glow_bright = 1.3, glow_len = 1.0, buff_set = 'XIView_Elemental', crisp_try = false, tets_pick = false, pixel_try = false, remaster_try = false, elem_try = false, hat_anim = 'float', bar_fx = 'still',
     subtarget = true, sub_x = 560, sub_y = 140, sub_w = 300, sub_scale = 1.0,
@@ -112,7 +112,7 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', party_buff_row = 8, exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_lines = 'hp', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, tarrow = true, macrobar = true, mb_show = 'hold', mb_always = false, mb_pad = 'hold', mb_scale = 1.0, mb_look = 'strip', mb_style = 'cards', hp_by_job = false, mb_timers = true, mb_wave = 'bars', mb_text = 1.0, mb_both = true, mb_brush = 'all', mb_layout = 'lens', mb_wcol = 'gold', mb_nstyle = 'wave', mb_wavecol = 'job', mb_sound = true, mb_snd_vol = 0.6, mb_cards_at = 'feet', mb_dn = 'hd_circle', mb_dh = 'hd_sigil', mb_x = -1, mb_y = -1, mbs_x = -1, mbs_y = -1, mbc_x = -1, mbc_y = -1, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', party_buff_row = 8, exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_lines = 'hp', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_fight = false, head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, tarrow = true, macrobar = true, mb_show = 'hold', mb_always = false, mb_pad = 'hold', mb_btn = 'l2', mb_scale = 1.0, mb_look = 'strip', mb_style = 'cards', hp_by_job = false, mb_timers = true, mb_wave = 'bars', mb_text = 1.0, mb_both = true, mb_frame = 'arc', mb_view = 'pills', mbp_x = -1, mbp_y = -1, mb_brush = 'all', mb_layout = 'lens', mb_wcol = 'gold', mb_nstyle = 'wave', mb_wavecol = 'job', mb_sound = true, mb_snd_vol = 0.6, mb_voice = true, mb_voice_vol = 0.8, mb_cards_at = 'feet', mb_dn = 'hd_circle', mb_dh = 'hd_sigil', mb_x = -1, mb_y = -1, mbs_x = -1, mbs_y = -1, mbc_x = -1, mbc_y = -1, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -687,11 +687,10 @@ local function plain_window(name, kx, ky, force)
     local px, py = tonumber(cfg[kx]) or 100, tonumber(cfg[ky]) or 100;
     if px > -1000 and py > -1000 then                                -- (kept on the screen before it's drawn, by its last size: on plain
         local W, H = C.screen();                                     --  Ashita a window partly off the screen for even one frame hides the
-        local sz = WATCH.size and WATCH.size[kx];                    --  windows drawn after it, the settings panel flickered)
+        local sz = (WATCH.calm and WATCH.calm[kx]) or (WATCH.size and WATCH.size[kx]);   --  windows drawn after it, the settings panel flickered - its settled size)
         local sw, sh = (sz and sz[1]) or 1, (sz and sz[2]) or 1;
-        local KEEP = 120;                                            -- (only this much of it must stay on screen: its measured box can be wider than
-        local nx = math.max(0, math.min(W - math.min(sw, KEEP, W), px));   --  what it draws - at a big Size of everything on 4K - and it pushed the
-        local ny = math.max(0, math.min(H - math.min(sh, KEEP, H), py));   --  window away from the right edge by about its own width)
+        local nx = math.max(0, math.min(W - math.min(sw, W), px));   -- (the whole window on the screen - never partly off it)
+        local ny = math.max(0, math.min(H - math.min(sh, H), py));
         if nx ~= px or ny ~= py then px, py, one = nx, ny, one or 1; cfg[kx], cfg[ky] = nx, ny; end
     end
     imgui.SetNextWindowPos({ px, py }, (WATCH.move > 0 or force or one) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
@@ -711,16 +710,21 @@ function YUI_ONSCREEN(wx, wy, sw, sh)
     local ds = imgui.GetIO().DisplaySize;
     local W, H = ds and tonumber(ds.x), ds and tonumber(ds.y);
     if not W or W < 200 or not H or H < 200 then return wx, wy, false; end
-    local KEEP = 120;                                                -- (as plain_window: only this much of it must stay on screen)
-    local nx = math.max(0, math.min(W - math.min(sw, KEEP, W), wx));
-    local ny = math.max(0, math.min(H - math.min(sh, KEEP, H), wy));
+    local nx = math.max(0, math.min(W - math.min(sw, W), wx));      -- (the whole window on the screen, as plain_window)
+    local ny = math.max(0, math.min(H - math.min(sh, H), wy));
     if math.abs(nx - wx) > 1 or math.abs(ny - wy) > 1 then return math.floor(nx), math.floor(ny), true; end
     return wx, wy, false;
 end
 local function end_plain(kx, ky)
     local wx, wy = imgui.GetWindowPos();
     local sw, sh = imgui.GetWindowSize();                             -- (its size, for GENERAL > LAYOUT)
-    if type(sw) == 'number' and type(sh) == 'number' then WATCH.size = WATCH.size or {}; WATCH.size[kx] = { sw, sh }; end
+    if type(sw) == 'number' and type(sh) == 'number' then
+        WATCH.size = WATCH.size or {}; WATCH.size[kx] = { sw, sh };
+        WATCH.calm = WATCH.calm or {};                               -- (its settled size: the smallest over the last second - a frame or two
+        local c_, now_ = WATCH.calm[kx], os.clock();                 --  wider, cards sliding in, never pushes it off its place)
+        if c_ == nil or now_ - c_[3] > 1 then c_ = { sw, sh, now_ }; WATCH.calm[kx] = c_;
+        else c_[1], c_[2] = math.min(c_[1], sw), math.min(c_[2], sh); end   -- (each second it starts again from now: a real grow is seen)
+    end
     if math.abs(wx - (tonumber(cfg[kx]) or 0)) > 0.5 or math.abs(wy - (tonumber(cfg[ky]) or 0)) > 0.5 then
         cfg[kx], cfg[ky] = wx, wy;
         if EDIT.on then EDIT.drag = kx; end                           -- (Edit Mode: this one is being dragged)
@@ -736,7 +740,8 @@ local function end_plain(kx, ky)
             save();
         end
     end
-    local nx, ny, moved = YUI_ONSCREEN(wx, wy, sw, sh);              -- (always on the screen)
+    local cz = WATCH.calm and WATCH.calm[kx];
+    local nx, ny, moved = YUI_ONSCREEN(wx, wy, cz and cz[1] or sw, cz and cz[2] or sh);   -- (always on the screen - by its settled size)
     if moved then                                                    -- only this window goes back (moving all of them made the whole UI
         cfg[kx], cfg[ky] = nx, ny;                                   --  tremble while one was growing, e.g. the pet bar popping in);
         WATCH.one = WATCH.one or {};                                 --  saved at most once a second
@@ -1011,6 +1016,31 @@ end
 -- the same for YunaEquip's own HP bar ('Separate bars'), which lives in equip.lua
 YUI_HIDE_STATBARS = function() return cfg.target_fx == 'link' and (cfg.head_bars or 'fixed') == 'head'; end   -- (equip.lua: BARS > Where = Over your head - Hex link mode only)
 YUI_BAR_OVERLAY = function(x, y, fw, h, seed) bar_overlay(x, y, fw, h, bar_fx_for('equip'), seed or 1, C.fxtint(cfg.my_hp_color or cfg.hp_color or 'pink')); end
+-- BARS > TP bar effect (Vex mode): from 1000 TP your TP bar crackles like the target bar, in gold (images/dd2tp) -
+-- stronger at 2000, strongest at 3000, a short flash as each step is reached
+C.TPFX = { tier = 0 };
+YUI_TP_FX = function(x, y, w, h, v, tp)
+    local T = C.TPFX;
+    local tier = math.min(3, math.floor((tonumber(tp) or 0) / 1000));
+    if tier > T.tier then T.t0 = os.clock(); end
+    T.tier = tier;
+    if YUI_HEX or cfg.tp_fx == false or tier < 1 or C.bigchat then return; end
+    local fw = w * math.max(0, math.min(1, v or 0));
+    if fw < 2 then return; end
+    local t = tex(string.format('dd2tp/%02d.png', math.floor(os.clock() * 24) % 48));
+    if t == nil then return; end
+    local fl = nil;
+    pcall(function() fl = imgui.GetForegroundDrawList(); end);       -- (on top, so its glow isn't cut by the bar's small window)
+    if fl == nil then return; end
+    local v0, v1 = 0.36, 0.64;                                       -- (only the frame's band - the bar's own height, no glow round it:
+    local bh = h * 1.15;                                             --  the crackling white core runs inside the TP bar)
+    local k = bh / ((v1 - v0) * 48);
+    local u1 = math.min(1, fw / (1024 * k));                         -- (the frame at its own scale, as much as the TP covers)
+    local fa = T.t0 and math.max(0, 1 - (os.clock() - T.t0) / 0.6) or 0;   -- (a short brightening as a step is reached)
+    local a = math.min(1, ({ 0.70, 0.85, 1.0 })[tier] + 0.3 * fa);
+    local cy = y + h / 2;
+    pcall(function() DL.I(fl, t.ptr, x, cy - bh / 2, x + fw, cy + bh / 2, 0, v0, u1, v1, U4(1, 1, 1, a)); end);
+end
 
 ----------------------------------------------------------------------------------------------------
 -- Game data
@@ -3280,7 +3310,12 @@ local function draw_target(dt)
             FIGHT.anc.co = link and { x + w + (FIGHT.pctw or 0) - 200 * csc, FIGHT.pcty or (by + h), 200 * csc, 22 * csc } or { x, by + h + 5 * sc, w, math.max(ch, 18 * csc) };
             if cdx ~= 0 or cdy ~= 0 then ch = 0; end                -- (moved away: the buffs keep their place)
         end
-        if link then FIGHT.tbar = { x + w + (FIGHT.pctw or 0), math.max(by + h + 6 * sc, (FIGHT.castb or 0) + 2 * sc), w, os.clock(), sc, x + w, by + h / 2, y }; FIGHT.castb = nil; end
+        if link then
+            local cob = 0;                                           -- (the enemy cast drawn just now - its own record, the preview's too: the target of target goes under it)
+            local CO = FIGHT.drawn and FIGHT.drawn.co;
+            if CO and os.clock() - (CO[5] or 0) < 0.1 then cob = CO[2] + CO[4] + 4 * sc; end
+            FIGHT.tbar = { x + w + (FIGHT.pctw or 0), math.max(by + h + 6 * sc, (FIGHT.castb or 0) + 2 * sc, cob), w, os.clock(), sc, x + w, by + h / 2, y }; FIGHT.castb = nil;
+        end
         if not link then FIGHT.ndemo = { x, by + h + 10 * sc + ch, w, os.clock() }; end   -- (Normal mode: the target of target hangs under it)
         if link then FIGHT.drawn.tb = { x - 34 * sc, top_ - 2, w + (FIGHT.pctw or 0) + 40 * sc, (by + h) - top_ + 8 * sc, os.clock() }; end   -- (for the guide's box)   -- (the chooser's Normal demo: the target of target goes under it)   -- (Hex link: the target of target under the bar's right end, out to the HP %'s end, below the cast)
         local bh2 = 0;
@@ -3356,35 +3391,20 @@ local function draw_subtarget(dt)
     end
     if hang then
         sc = TB[5] * math.max(0.3, math.min(2.0, tonumber(cfg.hl_tot) or 0.8));                                             -- (TARGET > Target of target size in Hex link mode, a share of the target bar)
-        w, h = math.min((tonumber(cfg.sub_w) or 300) * sc, TB[3] * 0.6), math.max(2, math.floor(3 * sc));
-        local toth = 15 * sc * 1.25 + h + 16;                         -- (about its height)
-        local wy_ = TB[8] and (TB[8] - toth - 2 * sc) or TB[2];      -- (over the name's row, popping up from the bar's end)
-        cfg._sbx, cfg._sby = math.floor(TB[1] - w - 6 + 0.5), math.floor(wy_ + 0.5);
+        w, h = math.min((tonumber(cfg.sub_w) or 300) * sc, 150 * sc), math.max(2, math.floor(3 * sc));   -- (compact; wide enough for its label)
+        local lab_h, nm_h = 8.5 * sc * 1.25 + 1 * sc, 15 * sc * 1.25;   -- (its label's and name's rows: its bar level with the target bar's)
+        cfg._sbx, cfg._sby = math.floor(TB[1] + 10 * sc + 0.5), math.floor((TB[7] or TB[2]) - (4 + lab_h + nm_h + 5 + h / 2) + 7 * sc + 0.5);   -- (right of the target's HP %)
         skx, sky = '_sbx', '_sby';
         WATCH.move = WATCH.move + 1;
     end
     local sopen = plain_window('YunaUI Subtarget##yui_sub', skx, sky);
     if hang or nd then WATCH.move = WATCH.move - 1; end
     local slide = 0;
-    if hang and sopen and TB[6] then                                  -- (Hex link: a thin line from the bar's end up into it)
+    if hang and sopen then                                           -- (Hex link: a new one slides down into place and fades in - no line to the bar)
         local A = C.TOTA or {};
         C.TOTA = A;
-        if A.idx ~= (idx or 0) or A.t0 == nil then A.idx, A.t0 = idx or 0, os.clock(); end   -- (a new one - or the preview's: the line grows up, then it rises in from it)
-        local g = FIGHT.fx_eo((os.clock() - A.t0) / 0.22);
-        local ex, ey = TB[6], TB[7];
-        local wx, wy = imgui.GetCursorScreenPos();
-        local ty_ = wy + 4 + 15 * sc * 1.25 + 5 + 1.5 * sc;            -- (up to its own bar)
-        local ly = (ey - h) + (ty_ - (ey - h)) * g;
-        local fgd = nil;
-        pcall(function() fgd = imgui.GetForegroundDrawList(); end);
-        if fgd then
-            DL.L(fgd, ex, ey - h, ex, ly, U4(0, 0, 0, 0.6), 3);
-            DL.L(fgd, ex, ey - h, ex, ly, U4(0.55, 0.85, 1.0, 0.95), 1.4);
-            DL.CF(fgd, ex, ey, 2.2 * sc, U4(0.85, 0.96, 1.0, 1), 10);   -- (where it hangs from)
-            if g < 1 then DL.CF(fgd, ex, ly, 2 * sc, U4(1, 1, 1, 0.95), 10); end
-        end
-        slide = (1 - FIGHT.fx_eo((os.clock() - A.t0 - 0.15) / 0.22)) * 10 * sc;
-        if os.clock() - A.t0 < 0.15 then sopen = 'line'; end           -- (the bar waits for the line)
+        if A.idx ~= (idx or 0) or A.t0 == nil then A.idx, A.t0 = idx or 0, os.clock(); end
+        slide = -(1 - FIGHT.fx_eo((os.clock() - A.t0) / 0.25)) * 8 * sc;
     end
     if sopen == 'line' then
         imgui.Dummy({ w + 12, 10 });
@@ -3392,14 +3412,30 @@ local function draw_subtarget(dt)
     elseif sopen then
         local dl = imgui.GetWindowDrawList();
         local x, y = imgui.GetCursorScreenPos();
-        x, y = x + 6, y + 4 + slide;                                  -- (Hex link: rising in from the line)
+        x, y = x + 6, y + 4 + slide;                                  -- (Hex link: sliding into place)
+        local top0 = y;
+        if hang then                                                  -- (Hex link: a small gold label over it - TARGET OF TARGET, or SUB TARGET while you pick one)
+            local lab = (tag == 'SUB') and 'SUB TARGET' or 'TARGET OF TARGET';
+            local pl = sized('chat', 8.5 * sc);
+            local G = C.GOLDH or { 1.0, 0.76, 0.34 };
+            spaced(dl, x, y, lab, U4(G[1], G[2], G[3], 0.95), 1.5 * sc);
+            y = y + imgui.GetTextLineHeight() + 1 * sc;
+            unsized(pl);
+        end
         local pushed = sized('semi', 15 * sc);
         local nw, nh = imgui.CalcTextSize(name);
         local fs = FS;
         imgui.SetWindowFontScale(fs * 0.7);
-        local label = (tag == 'SUB') and 'SUB ' or '> ';
+        local label = hang and '' or ((tag == 'SUB') and 'SUB ' or '> ');
         local tw = imgui.CalcTextSize(label);
-        text(dl, x, y + nh * 0.18, label, { 0.55, 0.85, 1, 0.9 });
+        if hang then                                                  -- (Hex link: a gold chevron before the name)
+            local G = C.GOLDH or { 1.0, 0.76, 0.34 };
+            local cy_, cs = y + nh / 2, nh * 0.22;
+            pcall(function() dl:AddConvexPolyFilled({ { x, cy_ - cs }, { x + cs, cy_ }, { x, cy_ + cs }, { x + cs * 0.45, cy_ } }, U4(G[1], G[2], G[3], 1)); end);
+            tw = cs + 6 * sc;
+        else
+            text(dl, x, y + nh * 0.18, label, { 0.55, 0.85, 1, 0.9 });
+        end
         imgui.SetWindowFontScale(fs);
         text(dl, x + tw, y, name, { 1, 1, 1, 1 });
         local pct = string.format('%d%%', math.floor(hpp * 100 + 0.5));
@@ -3412,8 +3448,8 @@ local function draw_subtarget(dt)
         else
             glow_bar(dl, x, by, w, h, hpp, lagged('sub' .. tostring(idx), hpp, dt), { 0.80, 0.96, 1.00 }, { 0.35, 0.65, 1.00 }, 4.4);
         end
-        FIGHT.drawn.tot = { x - 2, y - 2, w + 4, nh + h + 10, os.clock() };   -- (for the guide's box)
-        imgui.Dummy({ w + 12, nh + h + 16 });
+        FIGHT.drawn.tot = { x - 2, top0 - 2, w + 4, (y - top0) + nh + h + 10, os.clock() };   -- (for the guide's box)
+        imgui.Dummy({ w + 12, (y - top0) + nh + h + 16 });
         end_plain(skx, sky);
     else
         imgui.End(); imgui.PopStyleVar(2);
@@ -5319,7 +5355,8 @@ function ALLY.backbar(dl, x0, x2, ya, yb, lab, cur, frac, col, fs0, sc, a, DK, c
     local nw; nw, nh = imgui.CalcTextSize(cs); nw, nh = tonumber(nw) or 0, tonumber(nh) or 10;
     imgui.SetWindowFontScale(fs0 * 0.90 * k_);
     local lw, lh = imgui.CalcTextSize(lab); lw, lh = tonumber(lw) or 0, tonumber(lh) or 7;
-    local cy = ya + h / 2 + (slope and h * 0.12 or 0);                -- (Normal's leaning bars: the text a touch lower, centred by eye)
+    local cy = ya + h / 2 + (slope and h * 0.12 or nh * 0.14);       -- (centred by eye: the font's line keeps room under it for g / p / y -
+                                                                     --  digits and capitals sat high; Normal's leaning bars a touch lower still)
     local tx = x0 + (slope and K * 0.5 or K) + 3 * sc;
     local function ot(x, y, str, al, c)                              -- (outlined: reads on the bright fill and on the dark)
         for _, d in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }) do text(dl, x + d[1], y + d[2], str, { 0.12, 0.07, 0.02, 0.45 * al }); end   -- (a soft warm edge, not a black one)
@@ -6727,6 +6764,36 @@ function C.head_bars_on()                                           -- (over you
     local w = cfg.head_bars or 'fixed';
     return w == 'head' or w == 'both';
 end
+function C.aggro()                                                   -- (a monster on you or your party: the enemy list's, alive and in sight)
+    local A = C.AGG or { t = -9, on = false };
+    C.AGG = A;
+    if os.clock() - A.t < 0.25 then return A.on; end
+    A.t, A.on = os.clock(), false;
+    pcall(function()
+        local ent = AshitaCore:GetMemoryManager():GetEntity();
+        for idx in pairs(ENGAGED) do
+            local rf = ent:GetRenderFlags0(idx) or 0;
+            if bit.band(rf, 0x200) == 0x200 and bit.band(rf, 0x4000) == 0 and (ent:GetHPPercent(idx) or 0) > 0
+               and bit.band(ent:GetSpawnFlags(idx) or 0, 0x10) ~= 0 then A.on = true; return; end
+        end
+    end);
+    return A.on;
+end
+function C.head_bars_show()                                          -- (on, and - BARS > Show - in a fight, or with aggro)
+    if not C.head_bars_on() then return false; end
+    local when = cfg.head_when or (cfg.head_fight == true and 'engaged') or 'always';
+    if when == 'always' then return true; end
+    local st = 0;
+    pcall(function()
+        local mm = AshitaCore:GetMemoryManager();
+        local me = mm:GetParty():GetMemberTargetIndex(0) or 0;
+        if me ~= 0 then st = mm:GetEntity():GetStatus(me) or 0; end
+    end);
+    local on = st == 1 or (when == 'aggro' and C.aggro());
+    local H = C.HB;
+    if on then H.fight_t = os.clock(); return true; end
+    return os.clock() - (H.fight_t or -99) < 3;                      -- (3 s after it ends: no flicker between monsters)
+end
 -- each race's height over the ground for the bars (yalms): Hume m/f, Elvaan m/f, Tarutaru m/f, Mithra, Galka
 C.HB_RACE = { [1] = 2.25, [2] = 2.15, [3] = 2.45, [4] = 2.35, [5] = 1.35, [6] = 1.35, [7] = 2.1, [8] = 2.5 };
 -- VanaCore's own setting [graphics] nameplates.hideown (/vana > Options > Nameplates > Hide own nameplate): on while the
@@ -6757,8 +6824,12 @@ function C.gu_set(gu, el, on)
     if ok or not on then C.GUH[el] = on; end
 end
 function C.gu_sync()                                                 -- (the party / alliance lists, the Target window, the network window)
-    -- (vana.ui.game_on_top - the game's windows drawn over YunaUI's - is NOT asked: VanaCore then also put the game's bottom
-    --  strip (its chat line's place, the whole width) over YunaUI's chat and map, a thin band with a line across the screen)
+    if not C.GOTOP then                                              -- (the game's menus drawn over YunaUI's windows where they meet - the
+        C.GOTOP = true;                                              --  player's [client] menus.ontop=0 turns it off; on again for Vekien's
+        local want = true;                                           --  fix of a just-closed menu cutting the minimap)
+        pcall(function() local vc = C.vana_cfg(); if vc then local x = vc.get('client', 'menus.ontop'); if x ~= nil and tostring(x) == '0' then want = false; end end end);
+        pcall(function() local v = rawget(_G, 'vana'); if v and v.ui and v.ui.game_on_top then v.ui.game_on_top(want); end end);
+    end
     local gu = C.gameui();
     if gu == nil then return; end
     C.gu_set(gu, 'network_window', true);                            -- (always, while YunaUI is loaded)
@@ -6816,13 +6887,8 @@ function C.tarrow_sync()
     local gu = type(v) == 'table' and v.gameui or nil;
     if type(gu) ~= 'table' or type(gu.image) ~= 'function' then return; end
     local want = (cfg.tarrow ~= false) and ((cfg.target_fx == 'link') and 'hex' or 'normal') or 'off';
-    if want == 'hex' then                                            -- (Hex link: no arrow - its banner, line and icon show the target; you on
-        want = 'none';                                               --  yourself: the gold prism, where the game's arrow goes)
-        pcall(function()
-            local idx = target_index() or 0;
-            if idx ~= 0 and idx == (AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0) or 0) then want = 'prism'; end
-            if idx ~= 0 and C.tkind(idx, AshitaCore:GetMemoryManager():GetEntity(), false) == 'npc' then want = 'prism'; end   -- (an NPC or object - a ???, hieroglyphics: the prism marks it on the floor)
-        end);
+    if want == 'hex' then                                            -- (Hex link: the white prism where the game's arrow goes, over whatever
+        want = 'prism';                                              --  you target - a monster, a player, you, an NPC or object)
     end
     if want == 'normal' then want = 'off'; end                       -- (Normal: the game's standard arrow, for now)
     if want ~= 'off' then                                            -- (picking a sub target - <st>, <stal>, <stnpc>: the game's own arrow shows who, or nothing would)
@@ -6948,6 +7014,843 @@ function C.mb_tline(dl, lx0, lx1, ty, s_, op, list, AC, ED, LB, ORG, WH)
         DL.L(dl, x, ty + (up and -r - 2 or r + 2), x, ny + (up and 5 * s_ or -5 * s_), c32(mc, 0.45 * op), 1);   -- (a fine line to its name)
         txt(m.nm, 8 * s_, x, ny, m.act and WH or { 0.80, 0.78, 0.76 }, op);
         txt(C.mb_secstr(m.s), 7 * s_, x, up and (ny - 10 * s_) or (ny + 10 * s_), ORG, op);
+    end
+end
+-- ACTION BARS: what a macro does, for its icon (images/mbicons/<kind>.png): from its first action line - a weapon
+-- skill, a job ability, a pet command, a ranged attack, an item, or magic (healing, a song, ninjutsu, or another spell
+-- with its element); multisend's "/mst Name /ja ..." looked through. Kept per macro text.
+C.MB_KIND = {};
+C.MB_ELCOL = { [0] = { 1.0, 0.55, 0.45 }, { 0.70, 0.90, 1.0 }, { 0.62, 0.95, 0.66 }, { 0.92, 0.80, 0.55 }, { 0.86, 0.68, 1.0 }, { 0.55, 0.76, 1.0 }, { 1.0, 0.97, 0.86 }, { 0.72, 0.62, 0.90 } };
+function C.mb_kind(id)
+    local M = C.MB;
+    local sig = M.names[id] or '';
+    local K = C.MB_KIND[id];
+    if K and K.sig == sig and os.clock() - K.at < 5 then return K.k, K.el; end
+    local k, el = (sig == '') and 'empty' or 'cmd', nil;
+    local rm = AshitaCore:GetResourceManager();
+    for l = 0, 5 do
+        local ok, ln = pcall(C.mb_pline, id, l);
+        if ok and type(ln) == 'string' and ln:match('%S') then
+            local verb, rest = ln:match('^%s*/(%a+)%s*(.*)$');
+            verb, rest = (verb or ''):lower(), rest or '';
+            if verb == 'mst' or verb == 'ms' or verb == 'mss' then       -- (multisend: the command it sends)
+                local v2, r2 = rest:match('/(%a+)%s*(.*)$');
+                if v2 then verb, rest = v2:lower(), r2 or ''; end
+            end
+            local nm = rest:match('^"([^"]+)"') or (rest:gsub('%s*<[^>]*>.*$', ''):gsub('%s+$', ''));
+            if verb == 'ws' or verb == 'weaponskill' then k = 'ws'; break;
+            elseif verb == 'ja' or verb == 'jobability' then k = 'ja'; break;
+            elseif verb == 'pet' then k = 'pet'; break;
+            elseif verb == 'ra' or verb == 'range' or verb == 'shoot' then k = 'ranged'; break;
+            elseif verb == 'item' then k = 'item'; break;
+            elseif verb == 'song' or verb == 'sing' then k = 'song'; break;
+            elseif verb == 'ni' or verb == 'ninjutsu' then k = 'ninja'; break;
+            elseif verb == 'ma' or verb == 'magic' then
+                k = 'spell';
+                pcall(function()
+                    local sp = rm:GetSpellByName(nm, 0);
+                    if sp == nil then return; end
+                    local sk = tonumber(sp.Skill) or 0;              -- (33 healing, 39 ninjutsu, 40 singing)
+                    el = tonumber(sp.Element);
+                    if sk == 40 then k = 'song'; elseif sk == 39 then k = 'ninja';
+                    elseif sk == 33 or nm:match('^Cur') or nm:match('^Regen') or nm:match('^Raise') then k = 'heal'; end
+                end);
+                break;
+            end
+        end
+    end
+    C.MB_KIND[id] = { sig = sig, at = os.clock(), k = k, el = el };
+    return k, el;
+end
+-- ACTION BARS, the strip: the held row's ten in one slim line at the top of the screen, in the middle - where your eyes
+-- already go for your target. Each slot: its key small over its icon, its name under it; a macro on recast dims, its
+-- time under its name. The pick: lifted a little, a soft gold light behind it, its icon gold, a fine gold line under
+-- it. Opening, the slots drop in from above one after another from the middle out; hiding, they rise away and fade. A
+-- run: the slot punches down and back, its icon flashing white and a ring of light running out of it.
+function C.mb_strip(dl, cx, top, sc, row, sel, now, op, cds, nm)
+    local M = C.MB;
+    local ts = math.max(0.6, math.min(2.5, tonumber(cfg.mb_text) or 1));   -- (ACTION BARS > Text size)
+    local s_ = sc;
+    local hex = cfg.target_fx == 'link';
+    local AC = hex and (C.GOLDH or { 1.0, 0.76, 0.34 }) or { 0.72, 0.50, 1.00 };
+    local AL = hex and (C.GOLDH2 or { 1.0, 0.90, 0.62 }) or { 0.90, 0.80, 1.00 };
+    local ORG = hex and { 1.0, 0.66, 0.24 } or { 1.0, 0.55, 0.88 };
+    local WH, DIM = { 1, 1, 1 }, { 0.70, 0.70, 0.74 };
+    local function cl01(u) return math.max(0, math.min(1, u)); end
+    local function ease(u) u = cl01(u); return 1 - (1 - u) ^ 3; end
+    local function c32(c, a) return U4(c[1], c[2], c[3], cl01(a)); end
+    local OL = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+    local SH = {};
+    for q = 0, 11 do local an = q / 12 * 6.2832; SH[#SH + 1] = { math.cos(an) * 2.2, math.sin(an) * 2.2 + 1 }; end
+    for q = 0, 5 do local an = q / 6 * 6.2832 + 0.5; SH[#SH + 1] = { math.cos(an) * 3.6, math.sin(an) * 3.6 + 1.5 }; end
+    local function wid(str, px)
+        local k = FIGHT.font(px);
+        local w_ = tonumber((imgui.CalcTextSize(str))) or 0;
+        local h_ = imgui.GetTextLineHeight();
+        FIGHT.unfont(k);
+        return w_, h_;
+    end
+    local function txt(str, px, x_, y_, c, a)                        -- (centred on x_, its middle at y_; a soft shadow and a light edge)
+        local w_, h_ = wid(str, px);
+        local k = FIGHT.font(px);
+        local xi, yi = math.floor(x_ - w_ / 2 + 0.5), math.floor(y_ - h_ / 2 + 0.5);
+        local sc_ = U4(0, 0, 0, 0.16 * cl01(a));
+        for _, o in ipairs(SH) do DL.T(dl, xi + o[1], yi + o[2], sc_, str); end
+        local oc = U4(0, 0, 0, 0.55 * cl01(a));
+        for _, o in ipairs(OL) do DL.T(dl, xi + o[1], yi + o[2], oc, str); end
+        DL.T(dl, xi, yi, c32(c, a), str);
+        FIGHT.unfont(k);
+    end
+    local function key(k) return (k == 9) and '0' or tostring(k + 1); end
+    local e = ease(op);
+    local CW = 92 * s_ * math.max(0.9, ts);                          -- (a slot's width)
+    local x0 = cx - 5 * CW;
+    do                                                               -- (behind it: one soft dark shade, feathered all round - it reads on bright sky)
+        local gt = tex('brush/vignette.png');
+        if gt then pcall(function() DL.I(dl, gt.ptr, x0 - 70 * s_, top - 40 * s_, x0 + 10 * CW + 70 * s_, top + 110 * s_, 0, 0, 1, 1, U4(0, 0, 0, 0.45 * e)); end); end
+    end
+    do                                                               -- (which row, book and page: small, over its left end)
+        local lab = ((row == 1) and 'CTRL' or 'ALT') .. (M.book and string.format('  .  BOOK %d  .  PAGE %d', M.book, M.page) or '');
+        local lw = wid(lab, 9 * s_);
+        txt(lab, 9 * s_, x0 + lw / 2 + 6 * s_, top - 6 * s_ - (1 - e) * 10 * s_, AC, e * 0.9);
+    end
+    M.stx = M.stx and (M.stx + ((x0 + (sel + 0.5) * CW) - M.stx) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 16)) or (x0 + (sel + 0.5) * CW);   -- (the light behind the pick glides)
+    for k = 0, 9 do
+        local id = (row - 1) * 10 + k;
+        local name = nm(k);
+        if name == '' then name = '-'; end
+        local pick = (k == sel);
+        local ek = ease(op * 1.6 - math.abs(k - 4.5) / 4.5 * 0.6);    -- (each slot on its own: the middle first)
+        if ek <= 0.01 then goto nextslot; end
+        local xc = x0 + (k + 0.5) * CW;
+        local ft = now - (M.flash[id] or -99);
+        local punch = (ft >= 0 and ft < 0.35) and (math.exp(-ft * 11) * math.cos(ft * 26)) or 0;
+        local flash = (ft >= 0 and ft < 0.30) and (1 - ft / 0.30) or 0;
+        local yc = top + 22 * s_ - (1 - ek) * 18 * s_ - (pick and 3 * s_ or 0) + punch * 6 * s_;   -- (dropping in; the pick lifted; a run punching down)
+        local cd = cds[k];
+        local secs, busy = 0, false;
+        if cd then for _, e_ in ipairs(cd.list or { cd }) do if (e_.f or 0) > 0 then busy = true; secs = math.max(secs, e_.s or 0); end end end
+        local a = ek * (busy and 0.55 or 1);
+        if pick then                                                 -- (a soft gold light behind it, gliding to it)
+            local gt = tex('brush/glow_round.png');
+            if gt then pcall(function() DL.I(dl, gt.ptr, M.stx - CW * 0.75, yc - 34 * s_, M.stx + CW * 0.75, yc + 46 * s_, 0, 0, 1, 1, c32(AC, (0.40 + 0.35 * flash) * ek)); end); end
+        end
+        txt(key(k), (pick and 10.5 or 9) * s_, xc, yc - 17 * s_, pick and AL or AC, ek * (pick and 1 or 0.85));
+        do                                                           -- (its icon)
+            local kd, el = C.mb_kind(id);
+            local it = tex('mbicons/' .. kd .. '.png');
+            local isz = (pick and 24 or 19) * s_ * (1 + 0.25 * math.max(0, punch));
+            local ic = pick and AL or ((kd == 'spell' and el and C.MB_ELCOL[el]) or ((kd == 'empty') and DIM or WH));
+            if flash > 0 then ic = { ic[1] + (1 - ic[1]) * flash, ic[2] + (1 - ic[2]) * flash, ic[3] + (1 - ic[3]) * flash }; end
+            local ia = (kd == 'empty') and 0.45 * ek or a;
+            if it then pcall(function()
+                for _, o in ipairs({ { 0, 1.5 }, { 1, 1 }, { -1, 1 } }) do DL.I(dl, it.ptr, xc - isz / 2 + o[1], yc - isz / 2 + o[2], xc + isz / 2 + o[1], yc + isz / 2 + o[2], 0, 0, 1, 1, U4(0, 0, 0, 0.35 * ia)); end
+                DL.I(dl, it.ptr, xc - isz / 2, yc - isz / 2, xc + isz / 2, yc + isz / 2, 0, 0, 1, 1, c32(ic, ia));
+            end); end
+            if flash > 0 then                                        -- (run: a ring of light running out of it)
+                local rr = isz * (0.7 + 1.6 * (1 - flash));
+                pcall(function() dl:AddCircle({ xc, yc }, rr, c32(AL, flash * ek), 32, 2); end);
+            end
+        end
+        local npx = (pick and 12.5 or 11) * s_ * ts;
+        local nw = wid(name, npx);
+        if nw > CW - 8 * s_ then npx = npx * math.max(0.72, (CW - 8 * s_) / nw); end
+        txt(name, npx, xc, yc + 21 * s_, pick and WH or (busy and DIM or WH), pick and ek or a * 0.95);
+        if pick then                                                 -- (a fine gold line under it, fading at its ends)
+            local lw2 = math.min(CW - 10 * s_, wid(name, npx) + 18 * s_);
+            local ly = math.floor(yc + 31 * s_) + 0.5;
+            local c0, c1 = c32(AL, 0), c32(AL, ek);
+            DL.RFM(dl, xc - lw2 / 2, ly - 0.5, xc, ly + 0.5, c0, c1, c1, c0);
+            DL.RFM(dl, xc, ly - 0.5, xc + lw2 / 2, ly + 0.5, c1, c0, c0, c1);
+        end
+        if busy then txt(C.mb_secstr(secs), 9.5 * s_, xc, yc + 36 * s_, ORG, ek); end
+        ::nextslot::
+    end
+end
+-- ACTION BARS, the cockpit: two clean lists either side of your character - Ctrl on the left, Alt on the right -
+-- each row its key, its name and (on recast) its time on one line, the keys on the outside, facing you. No boxes: the
+-- text alone with a dark edge, so it reads on any ground; only the pick gets a slim glass plate with a glowing gold
+-- edge. Drawn in a simple 3D projection (C.mb_cockpit's P): each side turned a little toward you; opening, the rows come
+-- from far back toward their places, the middle ones first, and hiding they recede into the distance, closing in on
+-- you (the vanishing point); the pick sits a little nearer, a run pushes its plate out and back (~180 ms).
+-- ACTION BARS knows the fight (YunaUI's skillchain tracking, FIGHT.sc): while a skillchain is open on your target, each
+-- macro whose weapon skill would close it lights up in the colour of what it makes, its name over it ("FUSION"); once a
+-- chain is made, each macro whose spell bursts on it glows in its element's colour, "BURST" over it.
+C.MB_ELNAME = { [0] = 'Fire', [1] = 'Ice', [2] = 'Wind', [3] = 'Earth', [4] = 'Thunder', [5] = 'Water', [6] = 'Light', [7] = 'Dark' };
+function C.mb_wsname(id)                                             -- (the weapon skill a macro uses, if any - read from its lines, kept while it's unchanged)
+    local M = C.MB;
+    M.wsn = M.wsn or {};
+    local sig = M.names[id] or '';
+    local c = M.wsn[id];
+    if c and c.sig == sig and os.clock() - c.at < 5 then return c.nm; end
+    local nm = nil;
+    for l = 0, 5 do
+        local ok, ln = pcall(C.mb_pline, id, l);
+        if ok and type(ln) == 'string' then
+            local verb, rest = ln:match('^%s*/(%a+)%s+(.*)$');
+            verb = (verb or ''):lower();
+            if verb == 'mst' or verb == 'ms' or verb == 'mss' then local v2, r2 = (rest or ''):match('/(%a+)%s*(.*)$'); if v2 then verb, rest = v2:lower(), r2; end end
+            if verb == 'ws' or verb == 'weaponskill' then
+                nm = (rest:match('^"([^"]+)"') or rest:gsub('%s*<[^>]*>.*$', '')):gsub('^%s+', ''):gsub('%s+$', '');
+                break;
+            end
+        end
+    end
+    M.wsn[id] = { sig = sig, at = os.clock(), nm = nm };
+    return nm;
+end
+function C.mb_fight(now)                                             -- (what's open on your target now: { close = { ws lower -> { result, level } }, burst = { element -> true }, go })
+    local M = C.MB;
+    if M.fakesc and now - M.fakesc.ts < M.fakesc.dur then return M.fakesc; end
+    local st = nil;
+    pcall(function()
+        local mm = AshitaCore:GetMemoryManager();
+        local idx = mm:GetTarget():GetTargetIndex(0) or 0;
+        if idx ~= 0 then st = FIGHT.sc[mm:GetEntity():GetServerId(idx)]; end
+    end);
+    if not st then return nil; end
+    local t = now - (st.ts or now);
+    if t < 0 or t > (st.dur or 0) then return nil; end
+    local out = { close = {}, burst = {}, go = t >= (st.wait or 0) };
+    if not st.closed and cfg.show_fan ~= false then
+        local ok, opts = pcall(FIGHT.options, st);
+        if ok and type(opts) == 'table' then for _, o in ipairs(opts) do out.close[tostring(o[1]):lower()] = { o[2], o[3] }; end end
+    end
+    if st.chain then for _, e in ipairs(st.elems or {}) do out.burst[e] = true; end end
+    return out;
+end
+-- Normal mode's bright outline: round a closed outline a soft glow and a clean bright line in the target bar's pink to
+-- violet (cA at its left, cB at its right); w: its thickness; al: its strength.
+function C.neon_rr(dl, x0, y0, x1, y1, r, cA, cB, al, w)             -- (a capsule's bright outline, perfectly smooth (ImGui's own rounded rect): a soft glow
+    if al <= 0.01 then return; end                                   --  and a clean bright line, cA at its left blending to cB at its right - drawn in thin
+    local N = 12;                                                    --  upright strips, each clipped, so the colour runs smoothly across)
+    local allc = C.rall or 15;
+    for j = 0, N - 1 do
+        local sx0 = math.floor(x0 - 8 * w + (x1 - x0 + 16 * w) * j / N + 0.5);       -- (on whole pixels: strips that met mid-pixel drew that
+        local sx1 = math.floor(x0 - 8 * w + (x1 - x0 + 16 * w) * (j + 1) / N + 0.5); --  column twice - small bright marks along the line)
+        local u = (j + 0.5) / N;
+        local c = { cA[1] + (cB[1] - cA[1]) * u, cA[2] + (cB[2] - cA[2]) * u, cA[3] + (cB[3] - cA[3]) * u };
+        local cc = { c[1] + (1 - c[1]) * 0.25, c[2] + (1 - c[2]) * 0.25, c[3] + (1 - c[3]) * 0.25 };
+        pcall(function()
+            dl:PushClipRect({ sx0, y0 - 10 * w }, { sx1, y1 + 10 * w }, true);
+            DL.R(dl, x0, y0, x1, y1, U4(c[1], c[2], c[3], math.min(1, 0.16 * al)), r, allc, 5 * w);
+            DL.R(dl, x0, y0, x1, y1, U4(cc[1], cc[2], cc[3], math.min(1, al)), r, allc, 1.8 * w);
+            dl:PopClipRect();
+        end);
+    end
+end
+function C.neon_path(dl, pts, x0, x1, cA, cB, al, w, seed)
+    local n = #pts;
+    if n < 2 or al <= 0.01 then return; end
+    local function c4(c, a) return U4(c[1], c[2], c[3], math.max(0, math.min(1, a))); end
+    for q = 1, n do                                                  -- (clean: a soft glow, then the bright line - no core, no crackle)
+        local a1, b1 = pts[q], pts[q % n + 1];
+        local u = math.max(0, math.min(1, ((a1[1] + b1[1]) / 2 - x0) / math.max(1, x1 - x0)));
+        local c = { cA[1] + (cB[1] - cA[1]) * u, cA[2] + (cB[2] - cA[2]) * u, cA[3] + (cB[3] - cA[3]) * u };
+        DL.L(dl, a1[1], a1[2], b1[1], b1[2], c4(c, 0.16 * al), 5 * w);
+    end
+    for q = 1, n do
+        local a1, b1 = pts[q], pts[q % n + 1];
+        local u = math.max(0, math.min(1, ((a1[1] + b1[1]) / 2 - x0) / math.max(1, x1 - x0)));
+        local c = { cA[1] + (cB[1] - cA[1]) * u, cA[2] + (cB[2] - cA[2]) * u, cA[3] + (cB[3] - cA[3]) * u };
+        local cc = { c[1] + (1 - c[1]) * 0.25, c[2] + (1 - c[2]) * 0.25, c[3] + (1 - c[3]) * 0.25 };   -- (bright)
+        DL.L(dl, a1[1], a1[2], b1[1], b1[2], c4(cc, al), 1.8 * w);
+        DL.CF(dl, a1[1], a1[2], 0.9 * w, c4(cc, al), 8);            -- (a join exactly as thick as the line: smooth, no bump)
+    end
+end
+-- ACTION BARS > Look > Pills (the default): Ctrl's ten and Alt's ten in two lines, in the skillchain fan's style - each a
+-- slanted dark pill, its key big in gold, its name under it; BOOK / PAGE small over them, CTRL / ALT at each line's left.
+-- The row you hold is bright, the other dimmer. The pick lifts a little, edged gold; a macro on recast is edged amber with
+-- a line under it refilling; a run flashes its pill and its echo rings out of it (C.mb_reverb - still after the bar
+-- closes); a macro coming off recast pops gold. Its own window: drag it in Edit Mode.
+function C.mb_pillbar(row, sel, now, op, cds, nm, sc)
+    local M = C.MB;
+    local ts = math.max(0.6, math.min(2.5, tonumber(cfg.mb_text) or 1));   -- (ACTION BARS > Text size)
+    local s_ = sc;
+    local hex = true;                                                -- (both modes: Hex link's slanted buttons and layout - Vex mode in black and white)
+    local GOLD, GL, DK = { 1.0, 0.82, 0.42 }, { 1.0, 0.90, 0.62 }, { 0.79, 0.65, 0.35 };
+    local CDC = { 1.0, 0.62, 0.22 };                                 -- (a macro on recast: amber - no pink in YunaUI's gold)
+    if cfg.target_fx ~= 'link' then GOLD, GL, DK, CDC = { 0.90, 0.90, 0.93 }, { 1.00, 1.00, 1.00 }, { 0.46, 0.46, 0.52 }, { 0.68, 0.68, 0.74 }; end   -- (Vex mode: white, light and dark grey - the gold's places)
+    local ACC = (cfg.target_fx ~= 'link') and { 1.00, 0.34, 0.68 } or GOLD;   -- (the pick and the held row: Vex mode's deep pink, as the HP bar - gold in Hex link)
+    local NP, NV = { 1.00, 0.36, 0.62 }, { 0.66, 0.30, 1.00 };       -- (Normal mode's neon: the target bar's pink to violet)
+    local function capsule(xc_, yc_, hw_, hh_)                       -- (Normal mode's pill: upright, its ends round - clockwise from its foot's left)
+        local pts, r = {}, hh_;
+        local cl_, cr_ = xc_ - hw_ + r, xc_ + hw_ - r;
+        for i = 0, 24 do local t = 1.5708 + i / 24 * 3.1416; pts[#pts + 1] = { cl_ + math.cos(t) * r, yc_ + math.sin(t) * r }; end
+        for i = 0, 24 do local t = -1.5708 + i / 24 * 3.1416; pts[#pts + 1] = { cr_ + math.cos(t) * r, yc_ + math.sin(t) * r }; end
+        return pts;
+    end
+    local VIO = hex and GOLD or { 0.62, 0.40, 1.00 };                -- (the gradient's foot: gold in Hex link, violet in Normal mode)
+    local DOT = (cfg.target_fx ~= 'link') and { 0.55, 0.82, 1.00 } or GOLD;   -- (the ready dot: gold in Hex link, Vex mode's lucent blue as its edges)
+    local function mix(c1, c2, u) return { c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u }; end
+    local WH, DIM = { 1, 1, 1 }, { 0.70, 0.70, 0.74 };
+    local function cl01(u) return math.max(0, math.min(1, u)); end
+    local function ease(u) u = cl01(u); return 1 - (1 - u) ^ 3; end
+    local function c32(c, a) return U4(c[1], c[2], c[3], cl01(a)); end
+    local OL = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 }, { 0, 2 }, { 1, 2 } };
+    local SW, SH = C.screen();
+    local STEP, HW, HH, SL = (hex and 86 or 74) * s_, 38 * s_, 22 * s_, 8 * s_;   -- (Normal mode: the vortexes closer together)
+    local LBL = 56 * s_;                                             -- (room at the left for CTRL / ALT)
+    local both = cfg.mb_both ~= false;
+    local GAPR = (hex and 62 or 86) * s_;                           -- (from one line to the next - Normal mode's vortexes need more room)
+    local TOPV = hex and 0 or 22 * s_;                               -- (Normal mode: the first line a little lower, clear of BOOK / PAGE)
+    local BW, BH = LBL + 10 * STEP + 2 * SL + 20 * s_, ((both and 150 or 88) * s_) + (hex and 0 or (both and 64 or 30) * s_);
+    if (tonumber(cfg.mbp_x) or -1) < 0 then cfg.mbp_x, cfg.mbp_y = math.floor(SW / 2 - BW / 2), math.floor(SH * 0.66); end
+    if not plain_window('YunaUI Action Bar##yui_mbp', 'mbp_x', 'mbp_y') then imgui.End(); imgui.PopStyleVar(2); return; end
+    local okd, erd = pcall(function()                               -- (drawn safely: the window is always closed)
+    local dl = imgui.GetWindowDrawList();
+    pcall(function() dl:PushClipRectFullScreen(); end);              -- (its glow - Normal mode's vortexes - never cut off at the window's edge)
+    local wx, wy = imgui.GetCursorScreenPos();
+    local top = wy;
+    local x0 = wx + LBL;
+    local e = ease(op);
+    local function wid(str, px)
+        local k = FIGHT.font(px);
+        local w_ = tonumber((imgui.CalcTextSize(str))) or 0;
+        FIGHT.unfont(k);
+        return w_;
+    end
+    local function txt(str, px, x_, y_, c, a, sp, al)                -- (al 0.5 centred on x_ - 1 its right at x_; its middle at y_; a full dark outline)
+        local k = FIGHT.font(px);
+        local w_ = 0;
+        if sp then for i = 1, #str do w_ = w_ + (tonumber((imgui.CalcTextSize(str:sub(i, i)))) or 0) + ((i < #str) and sp or 0); end
+        else w_ = tonumber((imgui.CalcTextSize(str))) or 0; end
+        local h_ = imgui.GetTextLineHeight();
+        local xi, yi = math.floor(x_ - w_ * (al or 0.5) + 0.5), math.floor(y_ - h_ / 2 + 0.5);
+        local oc = U4(0, 0, 0, 0.88 * cl01(a));
+        local function one(ch, xx)
+            for _, o in ipairs(OL) do DL.T(dl, xx + o[1], yi + o[2], oc, ch); end
+            DL.T(dl, xx, yi, c32(c, a), ch);
+        end
+        if sp then
+            for i = 1, #str do local ch = str:sub(i, i); one(ch, xi); xi = xi + (tonumber((imgui.CalcTextSize(ch))) or 0) + sp; end
+        else one(str, xi); end
+        FIGHT.unfont(k);
+    end
+    if M.book then                                                   -- (the book and page, over the lines)
+        txt(string.format('BOOK %d  .  PAGE %d', M.book, M.page), 11.5 * s_, x0 + 5 * STEP, top + 10 * s_ - (1 - e) * 6 * s_, hex and GOLD or { 0.92, 0.91, 0.97 }, e, 2 * s_);   -- (Normal mode: a light near-white - readable)
+    end
+    M.pb, M.pr, M.pgeo = M.pb or {}, M.pr or {}, M.pgeo or {};
+    local FS_ = nil;                                                 -- (the skillchain / Magic Burst on your target, for the macros that answer it)
+    pcall(function() FS_ = C.mb_fight(now); end);
+    M.pkx = M.pkx and (M.pkx + (sel - M.pkx) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 16)) or sel;   -- (the lift glides to the pick)
+    if M.pksel ~= sel or M.pkrow ~= row then M.pksel, M.pkrow, M.pkt = sel, row, now; end   -- (a new pick: a light runs once round its neon)
+    for r = 1, 2 do
+        if not both and r ~= row then goto nextrow; end
+        local act = (r == row);
+        local cdt = cds;
+        if not act then local ok_, cc = pcall(C.mb_cds, r); cdt = (ok_ and type(cc) == 'table') and cc or {}; end
+        local ymid = top + 46 * s_ + TOPV + ((both and r == 2) and GAPR or 0);
+        local ra = act and 1 or (hex and 0.62 or 0.55);              -- (the row you're not holding: dimmer)
+        M.rsz = M.rsz or {};                                         -- (Normal mode: the row you're not holding smaller too - the two swap smoothly)
+        local rt_ = (hex or act) and 1 or 0.62;
+        M.rsz[r] = M.rsz[r] and (M.rsz[r] + (rt_ - M.rsz[r]) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 10)) or rt_;
+        local rsz = M.rsz[r];
+        txt((r == 1) and 'CTRL' or 'ALT', 11.5 * s_, x0 - 14 * s_, ymid, act and ACC or { 0.80, 0.79, 0.86 }, e * (act and 1 or 0.85), 2 * s_, 1);   -- (readable: the held row's label pink, the other light grey)
+        for k = 0, 9 do
+            local id = (r - 1) * 10 + k;
+            local name = M.names[id] or '';
+            if name == '' then name = '-'; end
+            local pick = act and (k == sel);
+            local ek = ease(op * 1.7 - math.abs(k - 4.5) / 4.5 * 0.7 - (act and 0 or 0.15));   -- (each pill on its own: the middle first, the other line a beat after)
+            if ek <= 0.01 then goto nextpill; end
+            local lift = act and math.exp(-((k - M.pkx) ^ 2) / 0.30) or 0;
+            local ft = now - (M.flash[id] or -99);
+            local punch = (ft >= 0 and ft < 0.35) and (math.exp(-ft * 11) * math.cos(ft * 26)) or 0;
+            local flash = (ft >= 0 and ft < 0.30) and (1 - ft / 0.30) or 0;
+            local cd = cdt[k];
+            local left, secs = 0, 0;
+            if cd then for _, e_ in ipairs(cd.list or { cd }) do if (e_.f or 0) > 0 then left = math.max(left, e_.f); secs = math.max(secs, e_.s or 0); end end end
+            local fk = M.fake and M.fake[id];                       -- (/yui mbtest: a pretend recast, to see the effects)
+            if fk and now < fk[2] then left = math.max(left, (fk[2] - now) / (fk[2] - fk[1])); end
+            local busy = left > 0;
+            if M.pb[id] and not busy then M.pr[id] = now; end        -- (its recast just ended: ready again - it pops)
+            M.pb[id] = busy;
+            local rt = now - (M.pr[id] or -99);
+            local rdy = (rt >= 0 and rt < 0.6) and (1 - rt / 0.6) or 0;
+            local xc = x0 + (k + 0.5) * STEP;
+            local yc = ymid - lift * 8 * s_ + (1 - ek) * 16 * s_ + punch * 5 * s_;
+            local sk = 1 + 0.06 * math.max(0, punch) + 0.06 * rdy;
+            if not hex then sk = sk * (1 + 0.22 * lift) * rsz; end   -- (Normal mode: the pick's orb grows - round shapes stand out less than blades)
+            local hw, hh, sl = HW * sk, HH * sk, SL * sk;
+            M.pgeo[id] = { xc, yc, HW, HH, SL };                     -- (where it is: its echo rings out of it there, even once the bar has closed)
+            if op > 0.6 and imgui.IsMouseClicked(1) then               -- (right-click it: edit it)
+                local mx_, my_ = imgui.GetMousePos();
+                if mx_ >= xc - hw - sl and mx_ <= xc + hw + sl and my_ >= yc - hh and my_ <= yc + hh then pcall(C.mb_edit_open, id); end
+            end
+            local hlc, hlab, hgo = nil, nil, true;                  -- (it closes the open skillchain, or bursts on the one just made)
+            if FS_ and name ~= '-' then
+                local wn = C.mb_wsname(id);
+                if FS_.fake then
+                    if wn then hlc, hlab = FIGHT.PCOL.Fusion or GOLD, 'FUSION'; end
+                elseif wn and FS_.close[wn:lower()] then
+                    local o = FS_.close[wn:lower()];
+                    hlc, hlab, hgo = FIGHT.PCOL[o[1]] or GOLD, tostring(o[1]):upper(), FS_.go;
+                end
+                if not hlc then
+                    local okw, w = pcall(C.mb_what, id);
+                    local en = okw and w and w.kind == 'ma' and w.elem and C.MB_ELNAME[w.elem];
+                    if en and (FS_.burst[en] or (FS_.fake and true)) then hlc, hlab = FIGHT.ELEM[en] or GOLD, 'BURST'; end
+                end
+            end
+            if hlc and not hex then hlc = { 0.55, 0.72, 1.00 }; end   -- (Normal mode: closers / bursts in its own MP blue, not the result's colour)
+            local yt, yb = math.floor(yc - hh) + 0.5, math.floor(yc + hh) + 0.5;   -- (its top and foot on pixel centres: 1 px lines stay sharp)
+            local p = { { xc - hw + sl, yt }, { xc + hw + sl, yt }, { xc + hw - sl, yb }, { xc - hw - sl, yb } };
+            local shp = hex and p or capsule(xc, yc, hw, hh);        -- (Hex link: a blade; Normal mode: a capsule)
+            local a = ek * ra;
+            if rdy > 0 then                                          -- (a soft light round a macro just ready - the pick: its edge alone)
+                local gt = tex('brush/glow_round.png');
+                local ga = 0.5 * rdy + 0.3 * flash;
+                if gt then pcall(function() DL.I(dl, gt.ptr, xc - hw * 1.5, yc - hh * 2.2, xc + hw * 1.5, yc + hh * 2.2, 0, 0, 1, 1, c32(GOLD, ga * a)); end); end
+            end
+            local hb = 0;
+            if hlc then                                              -- (a closer / a burst: its colour glowing round it, breathing - softer till the chain can close)
+                hb = (hgo and 1 or 0.45) * (0.65 + 0.35 * math.sin(now * 5 + k));
+                local gt = tex('brush/glow_round.png');
+                if gt then pcall(function() DL.I(dl, gt.ptr, xc - hw * 1.7, yc - hh * 2.6, xc + hw * 1.7, yc + hh * 2.6, 0, 0, 1, 1, c32(hlc, 0.55 * hb * ek)); end); end
+            end
+            if hex then
+                pcall(function() dl:AddConvexPolyFilled(shp, U4(0.04, 0.035, 0.055, 0.93 * ek)); end);   -- (solid on both rows - snow and sand; the held row stands out by its words and edge)
+                if hlc then pcall(function() dl:AddConvexPolyFilled(shp, c32(hlc, 0.12 * hb * ek)); end); end
+            else                                                     -- (Normal mode: a vortex - the user's void ring picture spinning round a dark void
+                local VR = 0.2131;                                   --  that holds the words; tools\yunaui-macrobar\voidring_from_ref.py)
+                local rh = hw * 0.80;                                -- (the void's radius: the key and the name fit in it)
+                local vk = 1;                                        -- (on recast: dissolved to a small orb that grows back into the vortex as it recovers)
+                if busy then
+                    local tgt = 0.55 + 0.45 * (1 - left) ^ 1.3;   -- (no smaller than about half: the words still sit on it)
+                    local dz = cl01(1 - ft / 0.35);                  -- (just used: shrinking down to it, not jumping)
+                    vk = tgt + (1 - tgt) * dz * dz;
+                end
+                local half = rh * vk / VR / 2;                       -- (half the picture's side)
+                DL.CF(dl, xc, yc, rh * vk * 1.02, U4(0.015, 0.005, 0.03, 0.95 * ek), 48);   -- (the void - shrinking with its ring, never bigger than it; solid on both rows: snow, sand)
+                local gi = C.mip('glass/voidtight', half * 2 / 512);   -- (the ring pulled in: tools/yunaui-macrobar/voidring_tight.py)
+                if gi then
+                    local sp = (pick and 0.55 or 0.22) * (hlc and 1.6 or 1) * (busy and 1.8 or 1);   -- (it turns slowly - the pick, and a small orb, a little faster)
+                    local an = now * sp + id * 0.83;
+                    local ca, sa = math.cos(an) * half, math.sin(an) * half;
+                    local function R_(px, py) return { xc + px * ca - py * sa, yc + px * sa + py * ca }; end
+                    local tint = hlc and { hlc[1], hlc[2], hlc[3] } or (pick and { 1.00, 0.34, 0.68 } or { 0.94, 0.80, 0.98 });   -- (the pick: Vex mode's deep pink, as the HP bar - a pastel one vanished on bright ground)   -- (soft white with a touch of pink-violet - a closer / burst tinted in its colour)
+                    local gw = C.mip('glass/voidtight_w', half * 2 / 512) or gi;
+                    local al_ = hlc and (0.7 + 0.3 * hb) * ek or (pick and a or a * 0.48);   -- (soft: a bright white everywhere tires the eye)
+                    if busy then al_ = al_ * (0.55 + 0.45 * vk); end   -- (the small orb a little dimmer, brightening as it grows)
+                    pcall(function()
+                        local sa_ = math.min(0.42, al_ * 0.6);       -- (its dark shadow first, soft: two faint layers fading outward, close to it -
+                        for _, S_ in ipairs({ 1.025, 1.05 }) do      --  the swirl keeps an edge on bright ground, never a band)
+                            dl:AddImageQuad(gw.ptr, R_(-S_, -S_), R_(S_, -S_), R_(S_, S_), R_(-S_, S_), { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, U4(0.05, 0.02, 0.09, sa_ * ((S_ < 1.04) and 1 or 0.5)));
+                        end
+                        dl:AddImageQuad(gw.ptr, R_(-1, -1), R_(1, -1), R_(1, 1), R_(-1, 1), { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, c32(tint, al_));   -- (the white ring)
+                        if pick then dl:AddImageQuad(gw.ptr, R_(-1, -1), R_(1, -1), R_(1, 1), R_(-1, 1), { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, c32(tint, 0.55 * a)); end   -- (the pick: brighter)
+                    end);
+                end
+            end
+            local ec, ea, ew = DK, 0.45, 1;
+            local vexo = cfg.target_fx ~= 'link';
+            if vexo then                                             -- (Vex mode: lucent blue edges - a light running along the bar now and then)
+                local wave = math.max(0, math.sin(now * 1.4 - k * 0.45)) ^ 6;
+                ec, ea = { 0.42 + 0.40 * wave, 0.74 + 0.18 * wave, 1.00 }, 0.70 + 0.30 * wave;
+            end
+            if pick then ec, ea, ew = ACC, 1, 1; end    -- (the pick: its edge alone, 1 px - a fractional width blurs it)
+            if rdy > 0 then ec = { ec[1] + (GL[1] - ec[1]) * rdy, ec[2] + (GL[2] - ec[2]) * rdy, ec[3] + (GL[3] - ec[3]) * rdy }; ea = math.max(ea, rdy); ew = math.max(ew, 1.6 * s_); end
+            if hlc then ec, ea, ew = hlc, 0.55 + 0.45 * hb, 1; end
+            if flash > 0 then ec = { 1, 1, 1 }; ea = math.max(ea, flash); end
+            local ea_ = hlc and ea * ek or ea * a;                   -- (a closer / a burst reads full, even on the row you aren't holding)
+            local neon = false;                                      -- (Normal mode: the vortex itself shows the pick and a closer / burst)
+            if not neon then
+                if hex then
+                    local n_ = #shp;
+                    if vexo and not pick and not hlc then            -- (Vex mode: a soft blue glow just round the edge)
+                        for q = 1, n_ do dl:AddLine(shp[q], shp[q % n_ + 1], c32(ec, ea_ * 0.20), 3.4 * s_); end
+                    end
+                    for q = 1, n_ do dl:AddLine(shp[q], shp[q % n_ + 1], c32(ec, ea_), ew); end
+                end                                                  -- (Normal mode: the picture has its own edge)
+            else
+                local n_ = #shp;
+                local br = 0.85 + 0.15 * math.sin(now * 2.5);
+                local al = (hlc and (0.55 + 0.45 * hb) * ek or a) * br;
+                local run = (now - (M.pkt or -9)) / 0.7;            -- (a light running once round it, on a new pick)
+                C.neon_rr(dl, xc - hw, yc - hh, xc + hw, yc + hh, hh, hlc and { 0.55, 0.72, 1.00 } or NP, hlc and { 0.66, 0.40, 1.00 } or NV, al, s_);   -- (a closer / burst: MP blue to violet)   -- (a clean bright outline in the target bar's pink to violet)
+            end
+            if pick and not hlc and hex then                         -- (the pick: a crisp edge with a fine soft halo just outside it - no fill; in Hex link its
+                for d, al_ in ipairs({ 0.38, 0.14 }) do              --  top edge catching the light, bright in its middle, fading to its ends)
+                    local q_ = { { p[1][1] - d, p[1][2] - d }, { p[2][1] + d, p[2][2] - d }, { p[3][1] + d, p[3][2] + d }, { p[4][1] - d, p[4][2] + d } };
+                    for q = 1, 4 do dl:AddLine(q_[q], q_[q % 4 + 1], c32(ACC, al_ * a), 1); end
+                end
+                if hex then
+                    local ty = math.floor(yc - hh);
+                    local xa, xb = p[1][1] + 3, p[2][1] - 3;
+                    local xm = (xa + xb) / 2;
+                    local tl = (cfg.target_fx ~= 'link') and { 1.00, 0.62, 0.82 } or { 1, 0.97, 0.86 };   -- (its top light: pink-white in Vex mode, cream in Hex link)
+                    local c0, c1 = U4(tl[1], tl[2], tl[3], 0), U4(tl[1], tl[2], tl[3], 0.95 * a);
+                    DL.RFM(dl, xa, ty, xm, ty + 1, c0, c1, c1, c0);
+                    DL.RFM(dl, xm, ty, xb, ty + 1, c1, c0, c0, c1);
+                end
+            end
+            if hlc then txt(hlab, 8.5 * s_, xc - sl * 0.5, yb + 8 * s_, hlc, ek * (hgo and 1 or 0.7), 1.5 * s_); end   -- (under it: over it ran into BOOK / PAGE)
+            if name ~= '-' and hex then                              -- (Hex link: its cooldown: a gold dot in the top corner of every macro - Normal mode's vortex shows it itself - on recast a dark dot with a gold ring
+                local dx, dy = p[2][1] - 9 * s_, p[2][2] + 7 * s_;  --  growing round it; ready, solid gold and gently pulsing)
+                if not hex then dx, dy = xc + hw * 0.62, yc - hw * 0.62; end   -- (on the vortex's edge, top right)
+                local R = 3.2 * s_;
+                if busy then                                         -- (charging: a small dim gold point growing to the full dot as its recast runs out)
+                    local fr = 1 - left;
+                    DL.CF(dl, dx, dy, R + 0.8 * s_, U4(0, 0, 0, 0.45 * a), 14);
+                    DL.CF(dl, dx, dy, R * (0.35 + 0.65 * fr), c32(DOT, (0.35 + 0.45 * fr) * a), 14);
+                else
+                    local pu = 0.5 + 0.5 * math.sin(now * 3.2 + k * 0.7);
+                    local gt = tex('brush/glow_round.png');
+                    if gt then pcall(function() local gr = R * (3 + 1.5 * pu + 3 * rdy); DL.I(dl, gt.ptr, dx - gr, dy - gr, dx + gr, dy + gr, 0, 0, 1, 1, c32(DOT, (0.25 + 0.30 * pu + 0.5 * rdy) * a)); end); end
+                    DL.CF(dl, dx, dy, R + 0.8 * s_, U4(0, 0, 0, 0.55 * a), 14);
+                    DL.CF(dl, dx, dy, R * (1 + 0.12 * pu + 0.4 * rdy), c32(DOT, a), 14);
+                    DL.CF(dl, dx - R * 0.3, dy - R * 0.3, R * 0.35, U4(1, 0.97, 0.88, 0.85 * a), 8);
+                end
+            end
+            local tk = hex and 1 or rsz;                             -- (Normal mode on recast: the words shrink with the orb, so they stay inside it)
+            if not hex and busy then
+                local tgt = 0.55 + 0.45 * (1 - left) ^ 1.3;
+                local dz = cl01(1 - ft / 0.35);
+                tk = rsz * (0.62 + 0.38 * (tgt + (1 - tgt) * dz * dz));
+            end
+            txt(tostring((k == 9) and 0 or k + 1), (pick and 15 or 13) * s_ * ts * tk, xc, yc - 6 * s_ * tk, (hex and (pick and GL or GOLD)) or WH, a);   -- (Normal mode: every number white)
+            local npx = (pick and 10 or 9.2) * s_ * ts * tk;
+            local nw = wid(name, npx);
+            local room = (hex and (2 * hw - 10 * s_)) or (2 * hw * 0.80 * tk * 1.15);   -- (Normal mode: inside the orb)
+            if nw > room then npx = npx * math.max(0.7, room / nw); end
+            local nc = busy and DIM or WH;
+            if rdy > 0 then nc = { 1 + (GL[1] - 1) * rdy, 1 + (GL[2] - 1) * rdy, 1 + (GL[3] - 1) * rdy }; end
+            txt(name, npx, xc, yc + 11 * s_ * tk, nc, a * (busy and 0.85 or 1));
+            ::nextpill::
+        end
+        ::nextrow::
+    end
+    end);
+    pcall(function() imgui.GetWindowDrawList():PopClipRect(); end);
+    if not okd then YUI_ERRLOG('mbpills', erd); end
+    imgui.Dummy({ BW, BH });
+    end_plain('mbp_x', 'mbp_y');
+end
+function C.mb_reverb(now)                                            -- (a macro you ran: its pill's outline rings out of it - three echoes
+    if cfg.mb_view == 'sides' then return; end                       --  growing and fading, gold, over everything; drawn whether or not
+    local M = C.MB;                                                  --  the bar is still open, so it plays out after it closes)
+    if not M.pgeo then return; end
+    local fg = nil;
+    pcall(function() fg = imgui.GetForegroundDrawList(); end);
+    if fg == nil then return; end
+    local hex = cfg.target_fx == 'link';
+    local GO = hex and { 1.0, 0.82, 0.42 } or { 1.00, 0.36, 0.62 };   -- (Normal mode: the target bar's neon pink)
+    for id, t0 in pairs(M.flash or {}) do
+        local ft = now - t0;
+        local g = M.pgeo[id];
+        if g and ft >= 0 and ft < 0.75 and not hex then              -- (Normal mode: a void - the vortex swallows inward, spinning fast, a dark pulse, then
+            local gi = C.mip('glass/voidring_w', 0.5);               --  a ring of energy bursts out - white, as the vortexes)
+            local xc, yc = g[1], g[2];
+            local rh = g[3] * 0.80;
+            local half = rh / 0.2131 / 2;
+            local u = ft / 0.75;
+            local suck = math.min(1, u / 0.45);
+            local ea = 1 - (1 - suck) ^ 3;
+            if u < 0.55 and gi then
+                local k = 1.9 - 1.0 * ea;                            -- (from wide down onto itself)
+                local an = now * 9 + id;
+                local h_ = half * k;
+                local ca, sa = math.cos(an) * h_, math.sin(an) * h_;
+                local function R_(px, py) return { xc + px * ca - py * sa, yc + px * sa + py * ca }; end
+                local al = math.sin(math.min(1, u / 0.55) * math.pi) * 0.95;
+                pcall(function() fg:AddImageQuad(gi.ptr, R_(-1, -1), R_(1, -1), R_(1, 1), R_(-1, 1), { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, U4(1, 1, 1, al)); end);
+            end
+            local pd = math.sin(math.min(1, u / 0.5) * math.pi);       -- (the void: darker and a little bigger for a moment)
+            if pd > 0 then DL.CF(fg, xc, yc, rh * (1 + 0.18 * pd), U4(0.02, 0, 0.05, 0.55 * pd), 48); end
+        elseif g and ft >= 0 and ft < 0.75 then
+            for q = 0, 2 do
+                local u = (ft - q * 0.10) / 0.55;
+                if u > 0 and u < 1 then
+                    local k = 1 + 0.9 * (1 - (1 - u) ^ 2);
+                    local hw, hh, sl = g[3] * k, g[4] * (1 + (k - 1) * 0.8), g[5] * k;
+                    local xc, yc = g[1], g[2];
+                    local p = { { xc - hw + sl, yc - hh }, { xc + hw + sl, yc - hh }, { xc + hw - sl, yc + hh }, { xc - hw - sl, yc + hh } };
+                    if not hex then                                  -- (Normal mode: capsule rings)
+                        p = {};
+                        local r = hh;
+                        for i = 0, 24 do local t = 1.5708 + i / 24 * 3.1416; p[#p + 1] = { xc - hw + r + math.cos(t) * r, yc + math.sin(t) * r }; end
+                        for i = 0, 24 do local t = -1.5708 + i / 24 * 3.1416; p[#p + 1] = { xc + hw - r + math.cos(t) * r, yc + math.sin(t) * r }; end
+                    end
+                    local al = (1 - u) ^ 1.5 * (1 - q * 0.25);
+                    local n_ = #p;
+                    if not hex then                                  -- (Normal mode: violet rings opening out of the vortex)
+                        local rr_ = g[3] * 0.95 * k;
+                        DL.C(fg, xc, yc, rr_, U4(0.70, 0.30, 1.00, 0.30 * al), 48, 5);
+                        DL.C(fg, xc, yc, rr_, U4(0.92, 0.75, 1.00, 0.90 * al), 48, 1.6);
+                    else
+                        for e = 1, n_ do
+                            fg:AddLine(p[e], p[e % n_ + 1], U4(GO[1], GO[2], GO[3], 0.25 * al), 5);
+                            fg:AddLine(p[e], p[e % n_ + 1], U4(1, 0.95, 0.80, 0.9 * al), 1.6);
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+function C.mb_cockpit(dl, cx, ymid, sc, row, sel, now, op, cds, nm)
+    local M = C.MB;
+    local ts = math.max(0.6, math.min(2.5, tonumber(cfg.mb_text) or 1));   -- (ACTION BARS > Text size)
+    local s_ = sc;
+    local hex = cfg.target_fx == 'link';
+    local AC = hex and (C.GOLDH or { 1.0, 0.76, 0.34 }) or { 0.72, 0.50, 1.00 };   -- (Hex link gold / Normal violet)
+    local AL = hex and (C.GOLDH2 or { 1.0, 0.90, 0.62 }) or { 0.90, 0.80, 1.00 };  -- (lit)
+    local ORG = hex and { 1.0, 0.66, 0.24 } or { 1.0, 0.55, 0.88 };
+    local WH, DIM = { 1, 1, 1 }, { 0.70, 0.70, 0.74 };
+    local function cl01(u) return math.max(0, math.min(1, u)); end
+    local function ease(u) u = cl01(u); return 1 - (1 - u) ^ 3; end
+    local function c32(c, a) return U4(c[1], c[2], c[3], cl01(a)); end
+    local OL = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+    local OL8 = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } };
+    local SH = {};                                                   -- (a soft shadow: the text spread round in a small ring, faint each, a little down)
+    for q = 0, 11 do local an = q / 12 * 6.2832; SH[#SH + 1] = { math.cos(an) * 2.2, math.sin(an) * 2.2 + 1 }; end
+    for q = 0, 5 do local an = q / 6 * 6.2832 + 0.5; SH[#SH + 1] = { math.cos(an) * 3.6, math.sin(an) * 3.6 + 1.5 }; end
+    local function wid(str, px)
+        local k = FIGHT.font(px);
+        local w_ = tonumber((imgui.CalcTextSize(str))) or 0;
+        local h_ = imgui.GetTextLineHeight();
+        FIGHT.unfont(k);
+        return w_, h_;
+    end
+    local function txt(str, px, x_, y_, c, a, al)                    -- (al: 0 its left at x_, 1 its right; its middle at y_)
+        local w_, h_ = wid(str, px);
+        local k = FIGHT.font(px);
+        local xi, yi = math.floor(x_ - w_ * (al or 0) + 0.5), math.floor(y_ - h_ / 2 + 0.5);
+        local oc = U4(0, 0, 0, 0.90 * cl01(a));                      -- (a firm dark outline all round: it reads on bright floors and sunlight)
+        for _, o in ipairs(OL8) do DL.T(dl, xi + o[1], yi + o[2], oc, str); end
+        DL.T(dl, xi, yi, c32(c, a), str);
+        FIGHT.unfont(k);
+    end
+    local function poly(p, col) if #p >= 3 then pcall(function() dl:AddConvexPolyFilled(p, col); end); end end
+    local function gline(a_, b_, col, a)
+        DL.L(dl, a_[1], a_[2], b_[1], b_[2], c32(col, 0.08 * a), 6);
+        DL.L(dl, a_[1], a_[2], b_[1], b_[2], c32(col, 0.20 * a), 3);
+        DL.L(dl, a_[1], a_[2], b_[1], b_[2], c32(col, a), 1.3);
+    end
+    local function key(k) return (k == 9) and '0' or tostring(k + 1); end
+    local e = ease(op);
+    if (M.ck_was or 0) < 0.05 and op >= 0.05 then M.ck_open = now; end   -- (just opening: a light runs over the pick's plate)
+    M.ck_was = op;
+    local both = cfg.mb_both ~= false;
+    local dt = math.min(0.05, imgui.GetIO().DeltaTime or 0.016);
+    M.ckpos = M.ckpos or {};
+    M.ckpos.at = M.ckpos.at and (M.ckpos.at + (sel - M.ckpos.at) * math.min(1, dt * 12)) or sel;
+    local RH = 26 * s_ * math.max(0.9, ts);                          -- (a row's step)
+    local W = 190 * s_ * math.max(0.9, ts);                          -- (a list's width)
+    local GAP = 240 * s_;                                            -- (the middle: your character)
+    local H = 10 * RH;
+    for side = -1, 1, 2 do                                           -- (-1 Ctrl on the left, 1 Alt on the right)
+        local r = (side < 0) and 1 or 2;
+        if not both and r ~= row then goto nextside; end
+        local act = (r == row);
+        local cdt = cds;
+        if r ~= row then local ok_, cc = pcall(C.mb_cds, r); cdt = (ok_ and type(cc) == 'table') and cc or {}; end
+        local rsel = act and sel or -1;
+        -- a drum: the rows on a wheel turning on its axis - the pick in front at your middle, the rows above and below it
+        -- curving away into depth; it turns as you move the pick
+        local pos = act and M.ckpos.at or -99;                       -- (only the held side follows the pick - the other stays still)
+        local STEP = math.rad(15);
+        local RD = RH / STEP;                                        -- (its radius: the rows in front a row apart)
+        local inner = cx + side * GAP / 2;
+        local outer = inner + side * W;
+        local pcx = (inner + outer) / 2;
+        local th = math.rad(5 + 16 * (1 - e));                       -- (turned a little toward you - more while it travels; still at rest)
+        local Dp = 900 * s_;
+        local zg = -(1 - e) * 420 * s_ - (act and 0 or 30 * s_);
+        local gs = 0.80 + 0.20 * e;
+        local function P(x, y, ez)                                   -- (turned round the list's middle, then seen from in front of you)
+            local u = (x - pcx) / (W / 2) * (-side);                 -- (+1 at the inner side)
+            local xr = pcx + (x - pcx) * math.cos(th);
+            local z = u * math.sin(th) * (W / 2) + zg + (ez or 0);
+            local f = Dp / (Dp - z);
+            return { cx + (xr - cx) * f * gs, ymid + (y - ymid) * f * gs }, f * gs;
+        end
+        local amb = (act and 1 or 0.88) * cl01(op * 1.4);             -- (the side you're not holding: nearly as clear - it must read on bright ground too)
+        do                                                           -- (which row: over its keys)
+            local lp, lf = P(outer - side * 4 * s_ - side * 55 * s_, ymid - 5.4 * RH, -RD * 0.6);
+            txt((r == 1) and 'CTRL' or 'ALT', 9.5 * s_ * lf, lp[1], lp[2], act and AC or DIM, 0.8 * amb, (side < 0) and 0 or 1);
+        end
+        local dir = -side;                                           -- (from its key toward you)
+        if cfg.mb_frame == 'party' then                              -- (ACTION BARS > Frame > Party frame: the party plate's own ends round the list - Ctrl the
+            local reach = ease(op * 1.3);                            --  plate's left end (its top corner cut), Alt its right end (its foot corner cut); the
+            local xo = outer + side * 16 * s_;                       --  picked plate's cream edge over its soft gold glow, as your target's in the party)
+            local yt, yb = ymid - 5.25 * RH * reach, ymid + 5.25 * RH * reach;
+            local K, arm = 12 * s_, 34 * s_;
+            local pts;
+            if side < 0 then
+                pts = { { xo + arm, yt }, { xo + K, yt }, { xo, yt + K }, { xo, yb }, { xo + arm, yb } };
+            else
+                pts = { { xo - arm, yt }, { xo, yt }, { xo, yb - K }, { xo - K, yb }, { xo - arm, yb } };
+            end
+            local pp = {};
+            for q, p_ in ipairs(pts) do pp[q] = P(p_[1], p_[2], 0); end
+            local al = amb * reach;
+            for q = 1, #pp - 1 do
+                local a_, b_ = pp[q], pp[q + 1];
+                local ea = (q == 1 or q == #pp - 1) and 0.85 or 1;   -- (its short arms a touch softer)
+                dl:AddLine(a_, b_, U4(1, 0.80, 0.43, 0.22 * al * ea), 4 * s_);
+                dl:AddLine(a_, b_, U4(1, 0.94, 0.78, 0.95 * al * ea), 1.4 * s_);
+            end
+        else do                                                      -- (round the list, outside its keys: a gold half circle - "(" for Ctrl, ")" for Alt - in
+            local H1 = YUI_HEX and C.HEXHP[1] or ((type(YUI_HP_COL) == 'table' and type(YUI_HP_COL[1]) == 'table') and YUI_HP_COL[1] or AC);   --  the HP bar's colours, alive:
+            local H2 = YUI_HEX and C.HEXHP[2] or ((type(YUI_HP_COL) == 'table' and type(YUI_HP_COL[2]) == 'table') and YUI_HP_COL[2] or AL);   --  drawn out from its middle as it
+            local reach = ease(op * 1.3);                            --  opens, a light running along it, breathing)
+            local N = 40;
+            local T0 = 5.7;
+            local pts, ts_ = {}, {};
+            for q = 0, N do
+                local t = (q / N * 2 - 1) * T0 * reach;
+                local qq = (t / 4.5) ^ 2;
+                local p_ = P(outer + side * 14 * s_ - side * qq * 55 * s_, ymid + t * RH, -qq * RD * 0.6);
+                pts[#pts + 1], ts_[#ts_ + 1] = p_, t;
+            end
+            local run = ((now * 0.45 + (side > 0 and 0.5 or 0)) % 1.4) / 1.4 * 2.6 - 1.3;   -- (the light: from top to bottom, then again)
+            local br = 0.90 + 0.10 * math.sin(now * 2.1 + side);
+            for q = 1, N do
+                local p, n_ = pts[q], pts[q + 1];
+                local tm = (ts_[q] + ts_[q + 1]) / 2 / T0;           -- (-1 .. 1 along it)
+                local endf = math.max(0, 1 - math.abs(tm)) ^ 0.6;    -- (fading at its ends)
+                local u = (tm + 1) / 2;
+                local c = { H1[1] + (H2[1] - H1[1]) * u, H1[2] + (H2[2] - H1[2]) * u, H1[3] + (H2[3] - H1[3]) * u };
+                local lit = math.exp(-((tm - run) ^ 2) / 0.02);
+                local al = amb * endf * br;
+                DL.L(dl, p[1], p[2], n_[1], n_[2], c32(c, al), 2.6 * s_);   -- (crisp: no glow band or shadow under it - they read as a washed-out haze)
+                DL.L(dl, p[1], p[2], n_[1], n_[2], U4(1, 0.95, 0.80, 0.45 * al), 1 * s_);
+                if lit > 0.05 then DL.L(dl, p[1], p[2], n_[1], n_[2], U4(1, 0.97, 0.88, 0.9 * lit * al), 1.2 * s_); end
+            end
+        end end
+        for i = 0, 9 do
+            local id = (r - 1) * 10 + i;
+            local name = M.names[id] or '';
+            if name == '' then name = '-'; end
+            local pick = (i == rsel);
+            local ang = (i - pos) * STEP;                            -- (its place on the drum)
+            local yc = ymid + (i - 4.5) * RH;                        -- (every row in its own place: the bracket stays still, the pick moves along it)
+            local q_ = ((i - 4.5) / 4.5) ^ 2;                        -- (0 in the middle, 1 at its ends)
+            local ca = 1 - q_ * 0.45;                                -- (its ends a little fainter)
+            local lens = math.exp(-((i - pos) ^ 2) / 0.35);          -- (the pick comes forward, gliding as you scroll - only it)
+            local dz = -q_ * RD * 0.6 + lens * 34 * s_;              -- (the bracket's gentle curve back)
+            local ei = ease(op * 1.7 - (math.abs(i - 4.5) / 4.5) * 0.7);   -- (each row on its own: the middle first, the ends dissolving last in - first out)
+            local am = amb * ei * (pick and 1 or (0.75 + 0.25 * ca));   -- (the far ones a touch fainter - never hard to read, never the pick)
+            if am <= 0.01 then if M.ckb then M.ckb[id] = nil; end goto nextrow; end   -- (hidden: forget its recast, so opening never pops)
+            local ft = now - (M.flash[id] or -99);
+            local press = (ft >= 0 and ft < 0.35) and (math.exp(-ft * 11) * math.cos(ft * 26)) or 0;   -- (run: a punch - out hard, a small rebound, settled by ~350 ms)
+            local flash = (ft >= 0 and ft < 0.30) and (1 - ft / 0.30) or 0;
+            local ez = dz + 60 * s_ * press - (1 - ei) * 900 * s_;
+            local cd = cdt[i];
+            local left, secs = 0, 0;
+            if cd then for _, e_ in ipairs(cd.list or { cd }) do if (e_.f or 0) > 0 then left = math.max(left, e_.f); secs = math.max(secs, e_.s or 0); end end end
+            local busy = left > 0;
+            M.ckb, M.ckr = M.ckb or {}, M.ckr or {};
+            if M.ckb[id] and not busy then M.ckr[id] = now; end      -- (its recast just ended: ready again - it pops)
+            M.ckb[id] = busy;
+            local rt = now - (M.ckr[id] or -99);
+            local rdy = (rt >= 0 and rt < 0.6) and (1 - rt / 0.6) or 0;
+            local rpop = (rt >= 0 and rt < 0.45) and (math.exp(-rt * 9) * math.cos(rt * 20)) or 0;   -- (out, a small rebound, settled)
+            ez = ez + 45 * s_ * rpop;
+            local bend = q_ * 55 * s_;                               -- (a soft round bracket round you: ( you ))
+            local kp, kf = P(outer - side * 4 * s_ - side * bend, yc, ez);   -- (its key's place: the outer column)
+            local kpx = (pick and 15 or 11) * s_ * kf;
+            local npx = (pick and 17 or 13) * s_ * ts * kf * (1 + 0.18 * math.max(0, press) + 0.22 * math.max(0, rpop));
+            local tpx = 10.5 * s_ * kf;
+            local ks, ts_ = key(i), busy and C.mb_secstr(secs) or nil;
+            local kw = wid(ks, kpx);
+            local nw, nhh = wid(name, npx);
+            local room = (W - 70 * s_) * kf;                         -- (a long name: a little smaller)
+            if nw > room then npx = npx * math.max(0.75, room / nw); nw = wid(name, npx); end
+            local tw = ts_ and wid(ts_, tpx) or 0;
+            local g1, g2 = 7 * s_ * kf, 8 * s_ * kf;
+            local xk = kp[1];
+            local isz = math.floor((nhh or 14) * 1.05 + 0.5);         -- (its icon: between the key and the name, the text's height)
+            local xi = xk + dir * (kw + g1);
+            local xn = xi;                                           -- (no icons: key and name only)
+            local xt = xn + dir * (nw + g2);
+            local yy = kp[2];
+            if pick then                                             -- (the pick, as a car's menu: a smoked band fading away from a bright gold bar on its outer side)
+                local hh = 14 * s_ * kf;
+                local x0 = xk - dir * 12 * s_ * kf;                  -- (the bar's place, just outside the key)
+                local x1 = (ts_ and (xt + dir * tw) or (xn + dir * nw)) + dir * 40 * s_ * kf;   -- (the band runs past the text, fading)
+                local yt, yb = math.floor(yy - hh), math.floor(yy + hh);
+                local lx, rx = math.min(x0, x1), math.max(x0, x1);
+                local dk, d0 = U4(0.02, 0.02, 0.03, 0.88 * am), U4(0.02, 0.02, 0.03, 0);
+                local gk, g0 = c32(AC, 0.25 * flash * am), c32(AC, 0);   -- (no gold wash at rest: it muddied the text - only a run tints it)
+                if dir > 0 then
+                    DL.RFM(dl, lx, yt, rx, yb, dk, d0, d0, dk);
+                    DL.RFM(dl, lx, yt, lx + (rx - lx) * 0.6, yb, gk, g0, g0, gk);   -- (its colour bleeding in from the bar)
+                else
+                    DL.RFM(dl, lx, yt, rx, yb, d0, dk, dk, d0);
+                    DL.RFM(dl, rx - (rx - lx) * 0.6, yt, rx, yb, g0, gk, gk, g0);
+                end
+                local h1, h0 = c32(AL, 0.9 * am), c32(AL, 0);         -- (hairlines on its top and foot, fading with it)
+                if dir > 0 then
+                    DL.RFM(dl, lx, yt - 1, rx, yt, h1, h0, h0, h1); DL.RFM(dl, lx, yb, rx, yb + 1, h1, h0, h0, h1);
+                else
+                    DL.RFM(dl, lx, yt - 1, rx, yt, h0, h1, h1, h0); DL.RFM(dl, lx, yb, rx, yb + 1, h0, h1, h1, h0);
+                end
+                local bx = (dir > 0) and math.floor(lx) or (math.floor(rx) - 3);   -- (the gold bar: slim, rounded, a bright core, a clean glow)
+                local gt = tex('brush/glow_round.png');
+                if gt then pcall(function() DL.I(dl, gt.ptr, bx - 9 * s_, yt - 6 * s_, bx + 12 * s_, yb + 6 * s_, 0, 0, 1, 1, c32(AL, 0.45 * am)); end); end
+                local ym_ = (yt + yb) / 2;
+                DL.RF(dl, bx - 0.5, yt - 1.5, bx + 3.5, yb + 1.5, U4(0, 0, 0, 0.5 * am), 2);   -- (a dark hairline round it: crisp on any ground)
+                DL.RFM(dl, bx, yt - 1, bx + 3, ym_, c32(AC, am), c32(AC, am), c32({ 1, 0.97, 0.85 }, am), c32({ 1, 0.97, 0.85 }, am));   -- (gold at its ends, near white in its middle)
+                DL.RFM(dl, bx, ym_, bx + 3, yb + 1, c32({ 1, 0.97, 0.85 }, am), c32({ 1, 0.97, 0.85 }, am), c32(AC, am), c32(AC, am));
+                DL.L(dl, bx + 1.5, yt + 1, bx + 1.5, yb - 1, U4(1, 1, 1, 0.55 * am), 1);   -- (a bright core)
+                if flash > 0 then                                    -- (run: a flare bursting from the bar, light racing out along the band both ways)
+                    if gt then pcall(function() DL.I(dl, gt.ptr, bx - 60 * s_ * flash, yy - 40 * s_ * flash, bx + 60 * s_ * flash, yy + 40 * s_ * flash, 0, 0, 1, 1, c32(AL, 0.9 * flash * am)); end); end
+                    local run = (1 - flash) * (rx - lx) * 1.4;
+                    local rxp = (dir > 0) and (lx + run) or (rx - run);
+                    DL.RFM(dl, math.min(bx, rxp), yt, math.max(bx, rxp), yb, U4(1, 1, 1, 0.35 * flash * am), U4(1, 1, 1, 0.35 * flash * am), U4(1, 1, 1, 0.35 * flash * am), U4(1, 1, 1, 0.35 * flash * am));
+                    DL.L(dl, lx, yt - 1, rx, yt - 1, c32(AL, flash * am), 2);
+                    DL.L(dl, lx, yb + 1, rx, yb + 1, c32(AL, flash * am), 2);
+                end
+                local sw = (now - (M.ck_open or -99)) / 0.5;         -- (opening: a light runs along the band)
+                if sw >= 0 and sw < 1 then
+                    local lxp = (dir > 0) and (lx + (rx - lx) * sw) or (rx - (rx - lx) * sw);
+                    DL.RFM(dl, lxp - 16 * s_, yt, lxp, yb, U4(1, 1, 1, 0), U4(1, 1, 1, 0.20 * am), U4(1, 1, 1, 0.20 * am), U4(1, 1, 1, 0));
+                    DL.RFM(dl, lxp, yt, lxp + 16 * s_, yb, U4(1, 1, 1, 0.20 * am), U4(1, 1, 1, 0), U4(1, 1, 1, 0), U4(1, 1, 1, 0.20 * am));
+                end
+            end
+            local al = (dir > 0) and 0 or 1;
+            local na = pick and 1 or (busy and 0.60 or 0.95);
+            local nc = pick and WH or (busy and DIM or WH);         -- (the pick pure white on its dark band: sharpest contrast)
+            if flash > 0 then
+                nc = { nc[1] + (1 - nc[1]) * flash, nc[2] + (1 - nc[2]) * flash, nc[3] + (1 - nc[3]) * flash };
+                txt(name, npx * (1 + 0.6 * (1 - flash)), xn + dir * 4 * s_ * (1 - flash), yy, AL, am * 0.6 * flash, al);   -- (a gold ghost of it, swelling away)
+            end
+            if rdy > 0 then                                          -- (ready again: a gold glow behind it, a gold ghost swelling away, the name lit gold)
+                local gt = tex('brush/glow_round.png');
+                local gx = xn + dir * nw / 2;
+                local gw = nw / 2 + 34 * s_ * kf;
+                if gt then pcall(function() DL.I(dl, gt.ptr, gx - gw, yy - 24 * s_ * kf, gx + gw, yy + 24 * s_ * kf, 0, 0, 1, 1, c32(AC, 0.55 * rdy * am)); end); end
+                local gpx = npx * (1 + 0.7 * (1 - rdy));
+                local gnw = wid(name, gpx);
+                txt(name, gpx, xn - dir * (gnw - nw) / 2, yy, AL, am * 0.65 * rdy, al);
+                local k_ = rdy * rdy;
+                nc = { nc[1] + (AL[1] - nc[1]) * k_, nc[2] + (AL[2] - nc[2]) * k_, nc[3] + (AL[3] - nc[3]) * k_ };
+            end
+            txt(ks, kpx, xk, yy, (pick or rdy > 0.3) and AL or AC, am * ((pick or rdy > 0) and 1 or 0.9), al);
+            do                                                       -- (its icon: white line art - the pick's gold, a spell's its element's colour)
+                local kd, el = C.mb_kind(id);
+                local it = tex('mbicons/' .. kd .. '.png');
+                if it and false then
+                    local ic = pick and AL or ((kd == 'spell' and el and C.MB_ELCOL[el]) or ((kd == 'empty') and DIM or WH));
+                    local ia = am * (pick and 1 or ((kd == 'empty') and 0.5 or na));
+                    local ix0 = (dir > 0) and xi or (xi - isz);
+                    local iy0 = math.floor(yy - isz / 2 + 0.5);
+                    pcall(function()
+                        for _, o in ipairs({ { 0, 1.5 }, { 1, 1 }, { -1, 1 }, { 0, -0.5 } }) do   -- (a soft shadow under it)
+                            DL.I(dl, it.ptr, ix0 + o[1], iy0 + o[2], ix0 + isz + o[1], iy0 + isz + o[2], 0, 0, 1, 1, U4(0, 0, 0, 0.35 * ia));
+                        end
+                        DL.I(dl, it.ptr, ix0, iy0, ix0 + isz, iy0 + isz, 0, 0, 1, 1, c32(ic, ia));
+                    end);
+                end
+            end
+            txt(name, npx, xn, yy, nc, am * na, al);
+            if ts_ then txt(ts_, tpx, xt, yy, ORG, am, al); end
+            ::nextrow::
+        end
+        ::nextside::
     end
 end
 -- MACRO WAVES in the skillchain Banner's style (FIGHT.ps_alt): CTRL / BOOK / PAGE small in rose and the key big; the
@@ -7165,7 +8068,7 @@ function C.mb_what(id)
     w = { sig = sig, at = os.clock() };
     local rm = AshitaCore:GetResourceManager();
     for l = 0, 5 do
-        local ok, ln = pcall(C.mb_line, id, l);
+        local ok, ln = pcall(C.mb_pline, id, l);
         if ok and type(ln) == 'string' then
             local verb, rest = ln:match('^%s*/(%a+)%s+(.*)$');
             verb = (verb or ''):lower();
@@ -7231,11 +8134,10 @@ function C.mb_cds(row)                                               -- (k -> { 
     end
     return out;
 end
-function C.mblook(held, always, now)                                 -- (MACRO WAVES: pinned low in the middle of the screen - drag it in Edit Mode or with its tab open)
+function C.mblook(held, always, now)                                 -- (ACTION BARS: the two panels either side of your character, following you)
     local M = C.MB;
     local row = (held ~= 0) and held or (M.ringrow or 1);
     M.ringrow = row;
-    local A2 = (cfg.target_fx == 'link') and (C.GOLDH2 or { 1.0, 0.90, 0.62 }) or { 0.80, 0.70, 1.0 };
     local sc = (tonumber(cfg.scale) or 1) * math.max(0.5, math.min(2.5, tonumber(cfg.mb_scale) or 1));
     local op = M.a;
     local sel = M.sel or 0;
@@ -7243,34 +8145,42 @@ function C.mblook(held, always, now)                                 -- (MACRO W
     local function nm(k) return M.names[(row - 1) * 10 + k] or ''; end
     local okc, cds = pcall(C.mb_cds, row);
     if not okc then cds = {}; end
-    local drag = EDIT.on or M.tabopen;                               -- (ui is declared further down the file: its tab read in C.macrobar)
-    local PW, PH = 900 * sc, 230 * sc;                               -- (its box: what's dragged)
-    if (tonumber(cfg.mbn_x) or -1) < 0 then cfg.mbn_x, cfg.mbn_y = math.floor(SW / 2 - PW / 2), math.floor(SH * 0.80 - PH / 2); end
-    local fx, fy = (tonumber(cfg.mbn_x) or 0) + PW / 2, tonumber(cfg.mbn_y) or 0;
-    local dl;
-    if not drag then                                                 -- (drawn over the whole screen, taking no input)
-        imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
-        imgui.SetNextWindowSize({ SW, SH }, ImGuiCond_Always);
-        local fl_ = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoMove, ImGuiWindowFlags_NoScrollbar,
-            ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing,
-            ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoInputs or 0);
-        if not imgui.Begin('##yui_mlook', { true }, fl_) then imgui.End(); return; end
-        dl = imgui.GetBackgroundDrawList();
-    else                                                             -- (being placed: a window of its own, a faint frame to grab)
-        if not plain_window('YunaUI Macro Bar##yui_mb_cards', 'mbn_x', 'mbn_y') then end_plain('mbn_x', 'mbn_y'); return; end
-        local ox, oy = imgui.GetCursorScreenPos();
-        imgui.Dummy({ PW, PH });
-        fx, fy = ox + PW / 2, oy;
-        dl = imgui.GetBackgroundDrawList();
-        DL.R(dl, ox, oy, ox + PW, oy + PH, U4(A2[1], A2[2], A2[3], 0.35), 6 * sc, 0, 1);
+    cfg.mb_view = 'pills';                                           -- (the only look now: Either side of you is gone, in both modes)
+    if cfg.mb_view ~= 'sides' then                                   -- (ACTION BARS: the pills - one line of ten per row, their own window)
+        local okp, er = pcall(C.mb_pillbar, row, sel, now, op, cds, nm, sc);   -- (no font pushed out here, before its window: ImGui opened a "Debug" window for it)
+        if not okp then YUI_ERRLOG('mbpills', er); end
+        return;
     end
+    local fx, fy = SW / 2, SH * 0.55;                                -- (where you are on the screen: your body's middle)
+    pcall(function()
+        local mm = AshitaCore:GetMemoryManager();
+        local me = mm:GetParty():GetMemberTargetIndex(0) or 0;
+        if me == 0 then return; end
+        local ap = mm:GetEntity():GetActorPointer(me);
+        if ap == nil or ap == 0 then return; end
+        local px, py, pz = ashita.memory.read_float(ap + 0x678), ashita.memory.read_float(ap + 0x680), ashita.memory.read_float(ap + 0x67C);
+        local x1, y1 = C.w2s(px, pz, py);
+        local x2, y2 = C.w2s(px, pz - 1.6, py);
+        if x1 and x2 then fx, fy = (x1 + x2) / 2, (y1 + y2) / 2; end
+    end);
+    local kk = 1 - math.exp(-math.min(0.05, imgui.GetIO().DeltaTime or 0.016) * 9);   -- (smoothed by time: steady, no jitter as you or the camera move)
+    if M.ckx and math.abs(fx - M.ckx) < 1.5 and math.abs(fy - M.cky) < 1.5 then kk = kk * 0.3; end   -- (tiny wobbles barely followed)
+    M.ckx = M.ckx and (M.ckx + (fx - M.ckx) * kk) or fx;
+    M.cky = M.cky and (M.cky + (fy - M.cky) * kk) or fy;
+    imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
+    imgui.SetNextWindowSize({ SW, SH }, ImGuiCond_Always);
+    local fl_ = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoMove, ImGuiWindowFlags_NoScrollbar,
+        ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing,
+        ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoInputs or 0);
+    if not imgui.Begin('##yui_mlook', { true }, fl_) then imgui.End(); return; end
+    local dl = imgui.GetBackgroundDrawList();
     local pushed = sized('chat', 14 * sc);
-    pcall(C.mb_fan, dl, fx, fy, sc, row, sel, now, op, cds, nm);   -- (the Banner look with the brush strokes, the recast timeline under it)
+    pcall(C.mb_cockpit, dl, M.ckx, M.cky, sc, row, sel, now, op, cds, nm);
     unsized(pushed);
-    if drag then end_plain('mbn_x', 'mbn_y'); else imgui.End(); end
+    imgui.End();
 end
 function C.hideown_sync()
-    local on = C.head_bars_on();
+    local on = C.head_bars_show();                                   -- (Only in a fight: your name back while you're not engaged)
     if C.HB.own == on then return; end
     C.HB.own = on;
     local vc = C.vana_cfg();
@@ -7297,6 +8207,10 @@ end
 function C.head_bars()
     pcall(C.hideown_sync);                                           -- (your own name over your head: hidden while the bars are there)
     if not C.head_bars_on() or YUI_MAPCOVER or (YMAP and YMAP.big) then C.HB.x = nil; return; end
+    if not C.head_bars_show() and not (C.GST and C.GST.hb) and not (EDIT and EDIT.on) then   -- (Only in a fight, not engaged: your name shows,
+        C.HB.x, C.HB.seen = nil, -99;                                --  the bars come in with their entrance as you engage)
+        return;
+    end
     local ds = imgui.GetIO().DisplaySize;
     imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
     imgui.SetNextWindowSize({ ds.x, ds.y }, ImGuiCond_Always);
@@ -7404,6 +8318,55 @@ function C.mp3_play(name, volkey)
         S.winmm.mciSendStringA('play ' .. al .. ' from 0', nil, 0, nil);
     end);
 end
+-- ACTION BARS > Voice: when a job ability you used comes off a recast of 30 s or more, a soft voice says it - "Berserk up"
+-- (sounds\jav\<ability id>.mp3, Amy's voice made with Piper - tools\yunaui-voice\make_all.py). One at a time, in turn.
+C.JAV = { used = {}, was = {}, full = {}, queue = {}, busy = 0 };
+function C.jav_used(aid)                                            -- (you used this job ability: its recast's voice is its name)
+    local a = AshitaCore:GetResourceManager():GetAbilityById(aid);
+    if a and a.RecastTimerId then C.JAV.used[a.RecastTimerId] = aid; end
+end
+function C.jav_say(aid, preview)
+    local S = C.SND;
+    if S.winmm == nil then local ok, lib = pcall(ffi.load, 'winmm'); S.winmm = ok and lib or false; end
+    if not S.winmm then return; end
+    local vol = math.max(0, math.min(1.5, tonumber(cfg.mb_voice_vol) or 0.8));
+    if vol <= 0.001 then return; end
+    local path = (addon.path .. '/sounds/' .. (preview or ('jav/' .. tostring(aid))) .. '.mp3'):gsub('/', string.char(92));   -- (preview: another file - a voice to try)
+    pcall(function()
+        S.winmm.mciSendStringA('close yui_jav', nil, 0, nil);
+        if S.winmm.mciSendStringA('open "' .. path .. '" type mpegvideo alias yui_jav', nil, 0, nil) ~= 0 then return; end
+        S.winmm.mciSendStringA('setaudio yui_jav volume to ' .. math.floor(math.min(1000, vol * 1000 / 1.5)), nil, 0, nil);
+        S.winmm.mciSendStringA('play yui_jav from 0', nil, 0, nil);
+    end);
+end
+function C.jav_tick()
+    local J = C.JAV;
+    local now = os.clock();
+    if now >= (J.next or 0) then
+        J.next = now + 0.2;
+        local cur = {};
+        pcall(function()
+            local rc = AshitaCore:GetMemoryManager():GetRecast();
+            for i = 0, 31 do
+                local id, t = rc:GetAbilityTimerId(i), rc:GetAbilityTimer(i) or 0;
+                if (id ~= 0 or i == 0) and t > 0 then cur[id] = t; end
+            end
+        end);
+        for rid, t in pairs(cur) do if t > (J.full[rid] or 0) then J.full[rid] = t; end end
+        for rid, t in pairs(J.was) do
+            if t > 0 and not cur[rid] then                           -- (its recast just ended)
+                if (J.full[rid] or 0) >= 30 * 60 and J.used[rid] and cfg.mb_voice ~= false then J.queue[#J.queue + 1] = J.used[rid]; end
+                J.full[rid] = nil;
+            end
+        end
+        J.was = cur;
+    end
+    if #J.queue > 0 and now >= J.busy then                           -- (one at a time)
+        local aid = table.remove(J.queue, 1);
+        C.jav_say(aid);
+        J.busy = now + 1.6;
+    end
+end
 function C.tp_sound()
     local tp = 0;
     pcall(function() tp = AshitaCore:GetMemoryManager():GetParty():GetMemberTP(0) or 0; end);
@@ -7411,6 +8374,7 @@ function C.tp_sound()
     local S = C.SND;
     if not S.init then S.init = true; S.last = tier; return; end     -- (a reload with TP already up: no chime)
     if tier > S.last and cfg.tp_sound ~= false and YUI_HEX then C.snd_play('tp' .. tier); end   -- (Hex link mode only)
+    if tier > S.last and cfg.tp_vex_snd ~= false and not YUI_HEX then C.snd_play('tp_vex' .. tier, 'tp_vex_vol'); end   -- (Vex mode: a softer Surge, higher each 1000)
     S.last = tier;
 end
 function C.head_bars_()                                             -- (the bars themselves, inside that window)
@@ -7517,11 +8481,27 @@ function C.head_bars_()                                             -- (the bars
     local intro = ae < 1.6;
     local function clamp01(v) return math.max(0, math.min(1, v)); end
     local function back(u) u = u - 1; return 1 + 2.70158 * u ^ 3 + 1.70158 * u ^ 2; end   -- (eases in, overshooting a touch)
-    local uh = intro and clamp01(ae / 0.28) or 1;
-    local um = intro and clamp01((ae - 0.3) / 0.28) or 1;
-    if uh > 0 then bar(y0, hh, H.hp, h1, h2, x0 - (1 - back(uh)) * 26 * sc, W, uh, { lag = H.hl, lead = hpp }); end
+    local uh = intro and clamp01(ae / 0.30) or 1;
+    local um = intro and clamp01((ae - 0.3) / 0.30) or 1;
+    local function slide(u, t1, y, h, v, c1, c2, dir, ex)            -- (from 80 px out, overshooting a touch: a fading trail behind it, a flash as it lands)
+        if u <= 0 then return; end
+        if u < 1 then
+            for k = 2, 1, -1 do
+                local gu = clamp01(u - 0.14 * k);
+                bar(y, h, v, c1, c2, x0 + (1 - back(gu)) * 80 * sc * dir, W, u * 0.24 / k);
+            end
+        end
+        bar(y, h, v, c1, c2, x0 + (1 - back(u)) * 80 * sc * dir, W, u, ex);
+        local la = intro and clamp01(1 - (ae - t1) / 0.30) or 0;     -- (landed: a light round it, opening out and fading)
+        if u >= 1 and la > 0 then
+            local gw = (1 - la) * 5 * sc;
+            DL.RF(dl, x0 - 2 - gw, y - 2 - gw, x0 + W + 2 + gw, y + h + 2 + gw, U4(c1[1], c1[2], c1[3], 0.35 * la), (h + 4) / 2 + gw);
+            DL.RF(dl, x0, y, x0 + W, y + h, U4(1, 1, 1, 0.45 * la * la), h / 2);
+        end
+    end
+    slide(uh, 0.30, y0, hh, H.hp, h1, h2, -1, { lag = H.hl, lead = hpp });
     local mc_ = (type(YUI_MP_COL) == 'table') and YUI_MP_COL or C.MPCOL;
-    if um > 0 then bar(y0 + hh + g, mh, H.mp, mc_[1], mc_[2], x0 + (1 - back(um)) * 26 * sc, W, um, { lag = H.ml, lead = mpp }); end
+    slide(um, 0.60, y0 + hh + g, mh, H.mp, mc_[1], mc_[2], 1, { lag = H.ml, lead = mpp });
     local function sweep(y, h, t0, v)                                -- a light running along one bar once, inside its filled part only (clear of its round ends)
         local q = (ae - t0) / 0.42;
         if not intro or q <= 0 or q >= 1 then return; end
@@ -7626,7 +8606,8 @@ function C.head_bars_()                                             -- (the bars
     -- TP: an outline while empty, a dim dot growing in it while it fills, gold when full (a weapon skill ready), a ring
     -- of light opening from one as it fills
     if hmir then                                                     -- (Hex link: the TP bar under MP, not the dots)
-        C.head_tp(dl, H, x0, y0, W, hh, mh, g, sc, tp, intro and clamp01((ae - 0.62) / 0.25) or 1, now);
+        local ut = intro and clamp01((ae - 0.62) / 0.28) or 1;        -- (the TP bar comes up from below, as the others slide in)
+        C.head_tp(dl, H, x0, y0 + (1 - back(ut)) * 22 * sc, W, hh, mh, g, sc, tp, ut, now);
         return;
     end
     local fl = math.max(0, 1 - (now - H.flash) / 0.7);
@@ -7849,14 +8830,18 @@ function C.combat_skip(line)                                         -- (true: t
     local skip = false;
     if not skip and cfg.chat_f_others == false then                  -- (a player outside your party in it - doing it or having it done - and
         local outs, ins, multi = C.cf_sets();                        --  none of yours: what they do to you or your party still shows)
-        local out_, in_ = kind == 'outsider', false;
-        for w in sl:gmatch('%u[%w]*') do
+        local all = (F.whole or sl):gsub('[\1\2]', '');             -- (the whole message: "X casts Fire IV." and its "The Goblin takes
+        local out_, in_ = kind == 'outsider', false;                 --  500 points of damage." are one - its second line names no one)
+        for w in all:gmatch('%u[%w]*') do
             if ins[w] then in_ = true; elseif outs[w] then out_ = true; end
         end
         for _, m in ipairs(multi or {}) do                           -- (names with a space or brackets: "Shantotto II", "Ayame (UC)")
-            if sl:find(m[1], 1, true) then if m[2] then in_ = true; else out_ = true; end end
+            if all:find(m[1], 1, true) then if m[2] then in_ = true; else out_ = true; end end
         end
-        if out_ and not in_ then skip = true; end
+        if out_ and not in_ then skip = true; F.oskip = os.clock();
+        elseif not out_ and not in_ and F.oskip and os.clock() - F.oskip < 0.05 and not C.cf_starts(sl) then
+            skip = true;                                             -- (a left-out area action's further targets: "The Bat takes 480...")
+        elseif C.cf_starts(sl) then F.oskip = nil; end
     end
     if skip and sl:find('critical hit!$') then F.skipnext = os.clock(); end   -- (its damage comes on the next line)
     return skip;
@@ -8060,6 +9045,8 @@ local function chat_add(mode, raw)
         return clean(m);
     end);
     if not ok or s == nil then return; end
+    C.CF.whole = s;                                                  -- (CHAT > COMBAT LOG > Other players judges the whole message)
+    if mode >= 120 and mode <= 130 then pcall(C.got_chat, s); end   -- (TREASURE POOL > Item popup: "Yunas obtains ...")
     if mode ~= 5 and mode ~= 13 then                                 -- (a trust's goodbye: a party line, like its hello)
         local okt, tr = pcall(C.trust_line, s);
         if okt and tr then mode = 5; end
@@ -9116,6 +10103,13 @@ local function draw_chat(n)
         st.wasbig = true;
     else
         if st.wasbig then st.wasbig, st.relink = nil, true; end      -- (back to its own size and place)
+        do                                                           -- (kept whole on the screen: dragged past the bottom, its tabs were hidden)
+            local SW_, SH_ = C.screen();
+            local ox_, oy_ = tonumber(cfg[p .. 'x']) or 20, tonumber(cfg[p .. 'y']) or 700;
+            local nx_ = math.max(0, math.min(SW_ - w, ox_));
+            local ny_ = math.max(0, math.min(SH_ - h, oy_));
+            if nx_ ~= ox_ or ny_ ~= oy_ then cfg[p .. 'x'], cfg[p .. 'y'] = math.floor(nx_), math.floor(ny_); st.relink = true; end
+        end
         imgui.SetNextWindowPos({ tonumber(cfg[p .. 'x']) or 20, tonumber(cfg[p .. 'y']) or 700 }, (WATCH.move > 0 or st.relink) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
     end
     st.relink = false;                                               -- (resized by its linked twin: placed again, its bottom kept)
@@ -10214,7 +11208,188 @@ function YUI_HEXGLINT(t0)                                            -- (the idl
     if ph < 1 then return ph; end
     return nil;
 end
-function DOLL.cell(dl, x0, y0, x1, y1, a, lit, s)                    -- (Hex link: a gear slot - a small cut-corner cell)
+-- The glass card (the minimap and the gear card): smoked black glass with rounded corners, the gold not a frame round it
+-- but light inside the glass - a soft champagne haze gathered in its corners and along parts of its edges, uneven as a
+-- real reflection, breathing very slowly; no gold edge, only a barely-there lip; a faint sheen on its top;
+-- and now and then a tiny gold spark drifting out of its edge.   o: a (alpha), s (scale), r (corner radius), key (its sparks)
+C.GLS = {};
+function C.glass(dl, x0, y0, x1, y1, o)
+    o = o or {};
+    local a, s = o.a or 1, o.s or 1;
+    if a <= 0.01 then return; end
+    local GO = { 1.0, 0.82, 0.52 };                                  -- (champagne gold)
+    local W, H = x1 - x0, y1 - y0;
+    local r = math.min(o.r or 12 * s, W * 0.3, H * 0.3);
+    local now = os.clock();
+    local allc = C.rall or ImDrawFlags_RoundCornersAll or 15;
+    local function g(c, al) return U4(c[1], c[2], c[3], math.max(0, math.min(1, al * a))); end
+    local gt9 = tex('glass/panel.png');                              -- (the frame picture, 9-sliced: tools\yunaui-macrobar\glass_gen.py)
+    if gt9 then
+        local k = o.k or 0.5 * s;                                    -- (drawn at 2x: a texture pixel is half a screen pixel at scale 1)
+        local E, B = 40 * k, 120 * k;                                -- (its glow margin outside the glass, its corner slice)
+        local X = { x0 - E, x0 - E + B, x1 + E - B, x1 + E };
+        local Yv = { y0 - E, y0 - E + B, y1 + E - B, y1 + E };
+        if X[2] > X[3] then local m_ = (X[1] + X[4]) / 2; X[2], X[3] = m_, m_; end
+        if Yv[2] > Yv[3] then local m_ = (Yv[1] + Yv[4]) / 2; Yv[2], Yv[3] = m_, m_; end
+        local U = { 0, 120 / 320, 200 / 320, 1 };
+        local col = U4(1, 1, 1, a);
+        pcall(function()
+            for i = 1, 3 do for j = 1, 3 do
+                if X[i + 1] > X[i] and Yv[j + 1] > Yv[j] then DL.I(dl, gt9.ptr, X[i], Yv[j], X[i + 1], Yv[j + 1], U[i], U[j], U[i + 1], U[j + 1], col); end
+            end end
+        end);
+    end
+    if o.key and o.sparks == true then                               -- (tiny gold sparks drifting out of its edge: off - only when asked for)
+        local st = C.GLS[o.key] or { list = {}, t = now };
+        C.GLS[o.key] = st;
+        local dt = math.min(0.1, now - st.t);
+        st.t = now;
+        if math.random() < dt * 2.6 * a then
+            local per = 2 * (W + H);
+            local d = math.random() * per;
+            local px, py, nx, ny;
+            if d < W then px, py, nx, ny = x0 + d, y0, 0, -1;
+            elseif d < W + H then px, py, nx, ny = x1, y0 + (d - W), 1, 0;
+            elseif d < 2 * W + H then px, py, nx, ny = x1 - (d - W - H), y1, 0, 1;
+            else px, py, nx, ny = x0, y1 - (d - 2 * W - H), -1, 0; end
+            st.list[#st.list + 1] = { u = (px - x0) / W, v = (py - y0) / H, nx = nx, ny = ny, t0 = now, life = 1.3 + math.random() * 1.2,
+                                      sp = (8 + math.random() * 12), sz = 0.7 + math.random() * 0.8, w = math.random() * 6.28 };
+        end
+        for i = #st.list, 1, -1 do
+            local p = st.list[i];
+            local t = now - p.t0;
+            if t > p.life then table.remove(st.list, i);
+            else
+                local q = t / p.life;
+                local dd = p.sp * t * s;
+                local sx = x0 + p.u * W + p.nx * dd + math.sin(t * 2.2 + p.w) * 2 * s;
+                local sy = y0 + p.v * H + p.ny * dd - t * 6 * s;
+                local fa = math.sin(q * math.pi) * a;
+                DL.CF(dl, sx, sy, 3.2 * s * p.sz, U4(GO[1], GO[2], GO[3], 0.10 * fa), 10);
+                DL.CF(dl, sx, sy, 1.1 * s * p.sz, U4(1, 0.93, 0.75, 0.75 * fa), 8);
+            end
+        end
+    end
+end
+function C.rail(dl, x0, x1, y, a, s)                                -- (a fine gold line of light across a glass card, brightest in its middle)
+    a = a or 1;
+    local GO, GL = { 1.0, 0.77, 0.38 }, { 1.0, 0.88, 0.62 };
+    local mx = (x0 + x1) / 2;
+    y = math.floor(y) + 0.5;
+    local g0, g1 = U4(GO[1], GO[2], GO[3], 0), U4(GO[1], GO[2], GO[3], 0.13 * a);
+    DL.RFM(dl, x0, y - 2.5 * s, mx, y + 2.5 * s, g0, g1, g1, g0); DL.RFM(dl, mx, y - 2.5 * s, x1, y + 2.5 * s, g1, g0, g0, g1);
+    local l0, l1 = U4(GL[1], GL[2], GL[3], 0.12 * a), U4(GL[1], GL[2], GL[3], 0.75 * a);
+    DL.RFM(dl, x0, y - 0.5, mx, y + 0.5, l0, l1, l1, l0); DL.RFM(dl, mx, y - 0.5, x1, y + 0.5, l1, l0, l0, l1);
+end
+function C.rrline(dl, x0, y0, x1, y1, rs)                           -- (a thin gold line round a box, each corner its own round: top left, top right,
+    local pts = {};                                                  --  bottom right, bottom left; a soft glow under it)
+    local C4 = { { x0 + rs[1], y0 + rs[1], math.pi }, { x1 - rs[2], y0 + rs[2], -1.5708 }, { x1 - rs[3], y1 - rs[3], 0 }, { x0 + rs[4], y1 - rs[4], 1.5708 } };
+    for k = 1, 4 do
+        local c, r = C4[k], rs[k];
+        for i = 0, 10 do local t = c[3] + i / 10 * 1.5708; pts[#pts + 1] = { c[1] + math.cos(t) * r, c[2] + math.sin(t) * r }; end
+    end
+    local GO, CH = { 1.0, 0.76, 0.36 }, { 1.0, 0.86, 0.55 };
+    local n = #pts;
+    for i = 1, n do
+        local p, q = pts[i], pts[i % n + 1];
+        DL.L(dl, p[1], p[2], q[1], q[2], U4(0, 0, 0, 0.35), 3.5);
+        DL.L(dl, p[1], p[2], q[1], q[2], U4(GO[1], GO[2], GO[3], 0.16), 4);
+        DL.L(dl, p[1], p[2], q[1], q[2], U4(CH[1], CH[2], CH[3], 0.95), 1.5);
+    end
+end
+function C.mip(name, f)                                              -- (a card picture at about its drawn size: the game shrinks pictures without
+    local suf = (f <= 0.27) and '_q' or ((f <= 0.37) and '_t' or ((f <= 0.6) and '_h' or ''));   --  smoothing, so
+    return tex(name .. suf .. '.png') or tex(name .. '.png');         --  card_from_ref.py saves smoothly shrunk copies)
+end
+function C.breath(ph)                                                -- (the glass cards' slow glow: 0..1, a long breath with a little unevenness)
+    local t = os.clock();
+    return math.max(0, math.min(1, 0.5 + 0.42 * math.sin(t * 1.8 + (ph or 0)) + 0.08 * math.sin(t * 0.6 + 1.7 + (ph or 0))));   -- (~3.5 s)
+end
+function C.nine(dl, t, X0, Y0, X1, Y1, k, TW, TH, SX, SY, col)       -- (a picture 9-sliced: its corners SX x SY of its TW x TH px kept, drawn at k)
+    local bx, by = SX * k, SY * k;
+    local X = { X0, X0 + bx, X1 - bx, X1 };
+    local Yv = { Y0, Y0 + by, Y1 - by, Y1 };
+    local U = { 0, SX / TW, 1 - SX / TW, 1 };
+    local V = { 0, SY / TH, 1 - SY / TH, 1 };
+    pcall(function()
+        for i = 1, 3 do for j = 1, 3 do
+            if X[i + 1] > X[i] and Yv[j + 1] > Yv[j] then DL.I(dl, t.ptr, X[i], Yv[j], X[i + 1], Yv[j + 1], U[i], V[j], U[i + 1], V[j + 1], col); end
+        end end
+    end);
+end
+function C.cardcorners(dl, x0, y0, x1, y1, r, run, a)              -- (a card picture's four round corners drawn crisp over it: a fine champagne
+    a = a or 1;                                                      --  line with a soft glow and a dark hair outside, fading along the sides)
+    local CH, GO = { 1.0, 0.92, 0.70 }, { 1.0, 0.76, 0.36 };
+    local function seg(p, q, al)
+        DL.L(dl, p[1], p[2], q[1], q[2], U4(GO[1], GO[2], GO[3], 0.18 * al * a), 3.5);
+        DL.L(dl, p[1], p[2], q[1], q[2], U4(CH[1], CH[2], CH[3], 0.85 * al * a), 1.2);
+    end
+    local function corner(cx, cy, a0, sx, sy)                        -- (sx, sy: which way its two straight runs go)
+        local n = 12;
+        local pts = {};
+        for i = 0, n do local t = a0 + i / n * 1.5708; pts[#pts + 1] = { cx + math.cos(t) * r, cy + math.sin(t) * r }; end
+        for i = 1, n do
+            local p, q = pts[i], pts[i + 1];
+            DL.L(dl, p[1] - (p[1] - cx) / r * -1.2, p[2] - (p[2] - cy) / r * -1.2, q[1] - (q[1] - cx) / r * -1.2, q[2] - (q[2] - cy) / r * -1.2, U4(0, 0, 0, 0.45 * a), 1);
+        end
+        for i = 1, n do seg(pts[i], pts[i + 1], 1); end
+        local e1, e2 = pts[1], pts[n + 1];                           -- (the runs out along the sides, fading)
+        local q = 6;
+        for i = 0, q - 1 do
+            local u0, u1 = i / q, (i + 1) / q;
+            local al = 1 - (i + 0.5) / q;
+            seg({ e1[1] + sx[1] * run * u0, e1[2] + sx[2] * run * u0 }, { e1[1] + sx[1] * run * u1, e1[2] + sx[2] * run * u1 }, al);
+            seg({ e2[1] + sy[1] * run * u0, e2[2] + sy[2] * run * u0 }, { e2[1] + sy[1] * run * u1, e2[2] + sy[2] * run * u1 }, al);
+        end
+    end
+    corner(x0 + r, y0 + r, math.pi, { 0, 1 }, { 1, 0 });             -- (top left: from the left side round to the top)
+    corner(x1 - r, y0 + r, -1.5708, { -1, 0 }, { 0, 1 });           -- (top right)
+    corner(x1 - r, y1 - r, 0, { 0, -1 }, { -1, 0 });                -- (bottom right)
+    corner(x0 + r, y1 - r, 1.5708, { 1, 0 }, { 0, -1 });            -- (bottom left)
+end
+function C.sheet(dl, x0, x1, y, r, a, s, fall, mid)                      -- (a sheet of glass laid on the card from y down: a soft warm light under
+    a = a or 1;                                                      --  its top, its gold top edge curving down into its sides and fading)
+    fall = fall or 50 * s;
+    local GO, GL = { 1.0, 0.77, 0.38 }, { 1.0, 0.88, 0.62 };
+    local w0, w1 = U4(GO[1], GO[2], GO[3], 0.07 * a), U4(GO[1], GO[2], GO[3], 0);
+    DL.RFM(dl, x0 + r * 0.6, y, x1 - r * 0.6, y + 14 * s, w0, w0, w1, w1);
+    local pts = {};
+    for i = 0, 6 do local t = math.pi + i / 6 * 1.5708; pts[#pts + 1] = { x0 + r + math.cos(t) * r, y + r + math.sin(t) * r }; end
+    for i = 0, 6 do local t = -1.5708 + i / 6 * 1.5708; pts[#pts + 1] = { x1 - r + math.cos(t) * r, y + r + math.sin(t) * r }; end
+    local n = #pts;
+    local function seg(p, q, al)
+        DL.L(dl, p[1], p[2], q[1], q[2], U4(GO[1], GO[2], GO[3], 0.14 * al * a), 4 * s);
+        DL.L(dl, p[1], p[2], q[1], q[2], U4(GL[1], GL[2], GL[3], 0.75 * al * a), 1);
+    end
+    for i = 1, n - 1 do
+        if i == 7 and mid then                                       -- (its top edge fading toward its middle: only its ends show)
+            local q_ = 10;
+            for j = 0, q_ - 1 do
+                local u0, u1 = j / q_, (j + 1) / q_;
+                local um = (u0 + u1) / 2;
+                local al = mid + (1 - mid) * (math.abs(um - 0.5) * 2) ^ 2;
+                seg({ pts[7][1] + (pts[8][1] - pts[7][1]) * u0, pts[7][2] }, { pts[7][1] + (pts[8][1] - pts[7][1]) * u1, pts[7][2] }, al);
+            end
+        else seg(pts[i], pts[i + 1], 1); end
+    end
+    local q = 6;                                                     -- (down its sides, fading)
+    for i = 0, q - 1 do
+        local y0_, y1_ = y + r + fall * i / q, y + r + fall * (i + 1) / q;
+        local al = 1 - (i + 0.5) / q;
+        seg({ x0, y0_ }, { x0, y1_ }, al); seg({ x1, y0_ }, { x1, y1_ }, al);
+    end
+end
+function C.plate(dl, x0, y0, x1, y1, sl, sr, a)                      -- (a dark plate on a glass card; sl / sr: its ends' slant - more than 0 cuts
+    a = a or 1;                                                      --  its top corner in, less than 0 its bottom corner)
+    local p = { { x0 + math.max(sl, 0), y0 }, { x1 - math.max(sr, 0), y0 }, { x1 + math.min(sr, 0), y1 }, { x0 - math.min(sl, 0), y1 } };
+    pcall(function() dl:AddConvexPolyFilled(p, U4(0.02, 0.018, 0.016, 0.38 * a)); end);
+    local GO = { 1.0, 0.77, 0.38 };
+    dl:AddLine(p[1], p[2], U4(GO[1], GO[2], GO[3], 0.30 * a), 1);
+    if sr ~= 0 then dl:AddLine(p[2], p[3], U4(GO[1], GO[2], GO[3], 0.30 * a), 1); end
+    if sl ~= 0 then dl:AddLine(p[4], p[1], U4(GO[1], GO[2], GO[3], 0.30 * a), 1); end
+    dl:AddLine(p[4], p[3], U4(GO[1], GO[2], GO[3], 0.14 * a), 1);
+end
+function DOLL.cellx(dl, x0, y0, x1, y1, a, lit, s)                   -- (the first Hex link gear slot - a small cut-corner cell)
     local kc = (y1 - y0) * 0.22;
     local p = { { x0 + kc, y0 }, { x1, y0 }, { x1, y1 - kc }, { x1 - kc, y1 }, { x0, y1 }, { x0, y0 + kc } };
     pcall(function() dl:AddConvexPolyFilled(p, U4(0.05, 0.06, 0.09, 0.70 * a)); end);
@@ -10223,6 +11398,17 @@ function DOLL.cell(dl, x0, y0, x1, y1, a, lit, s)                    -- (Hex lin
     local c = lit > 0 and AZ or GO;
     local ea = lit > 0 and (0.35 + 0.6 * lit) or 0.22;
     for i = 1, #p do dl:AddLine(p[i], p[i % #p + 1], U4(c[1], c[2], c[3], ea * a), (lit > 0) and 1.4 * s or 1); end
+end
+function DOLL.cell(dl, x0, y0, x1, y1, a, lit, s)                    -- (a gear slot: a small rounded dark well in the glass; azure when it changes)
+    do return DOLL.cellx(dl, x0, y0, x1, y1, a, lit, s); end         -- (EQUIP: the Original frame only - Glass taken out)
+    local rr = math.max(3, 5 * s);
+    local allc = C.rall or ImDrawFlags_RoundCornersAll or 15;
+    DL.RF(dl, x0, y0, x1, y1, U4(0.03, 0.03, 0.04, 0.55 * a), rr, allc);
+    DL.R(dl, x0, y0, x1, y1, U4(1, 1, 1, 0.06 * a), rr, allc, 1);
+    if lit > 0 then
+        local AZ = (C.HEXMP and C.HEXMP[1]) or { 0.35, 0.80, 1.00 };
+        DL.R(dl, x0, y0, x1, y1, U4(AZ[1], AZ[2], AZ[3], (0.35 + 0.6 * lit) * a), rr, allc, 1.4 * s);
+    end
 end
 -- What caused a swap (Hex link: the grid's title as it comes up): the action you just sent - a weapon skill, a spell, an
 -- ability - names the swaps right after it; otherwise your status (ENGAGED, IDLE...).
@@ -10234,7 +11420,7 @@ function DOLL.on_out(e)                                              -- (packet_
     local label, kind = nil, nil;
     if cat == 3 then local r = rm:GetSpellById(p_); label, kind = r and r.Name and r.Name[1], 'spell';
     elseif cat == 7 then local r = rm:GetAbilityById(p_); label, kind = r and r.Name and r.Name[1], 'ws';
-    elseif cat == 9 then local r = rm:GetAbilityById(p_ + 512); label, kind = r and r.Name and r.Name[1], 'ja';
+    elseif cat == 9 then local r = rm:GetAbilityById(p_ + 512); label, kind = r and r.Name and r.Name[1], 'ja'; pcall(C.jav_used, p_ + 512);
     elseif cat == 16 then label, kind = 'Ranged attack', 'ws';
     elseif cat == 2 then label, kind = 'Engaged', 'state';
     elseif cat == 4 then label, kind = 'Idle', 'state'; end
@@ -10272,7 +11458,7 @@ local function draw_strip()
         if id then DOLL.prev[slot] = id; end
     end
     if look then DOLL.at = now + (YUI_HEX and 0.1 or 0.5); end       -- (Hex link: quick, so the swap is matched to what caused it)
-    local per = math.floor(tonumber(cfg.strip_cols) or 8);           -- icons in a row: 8 (2 rows), 16 (1 row), 4 (4 rows)
+    local per = YUI_HEX and 4 or math.floor(tonumber(cfg.strip_cols) or 4);   -- icons in a row: 8 (2 rows), 16 (1 row), 4 (4 rows) - Hex link always 4 x 4
     local sc = tonumber(cfg.scale) or 1;
     local S = math.floor((tonumber(cfg.strip_icon) or 26) * sc);
     local pad = math.max(2, math.floor(3 * sc));                     -- (room for the violet outline round a piece)
@@ -10312,13 +11498,36 @@ local function draw_strip()
     local open = plain_window('YunaUI Strip##yui_strip', kx, ky);
     if bp then WATCH.move = WATCH.move - 1; cfg._sx, cfg._sy = nil, nil; end
     local hxf = YUI_HEX and not bp;                                  -- (Hex link, on its own: in Hex link's frame, GEAR on its edge)
-    local top_ = hxf and math.floor(10 * sc) or 0;
+    local orig = hxf;                                                -- (the Original frame only)              -- (EQUIP > Frame > Original: the first Hex link frame, GEAR on its edge)
+    local top_ = hxf and math.floor((orig and 10 or 30) * sc) or 0;  -- (the glass card: room at its top)
     if open then
         local dl = imgui.GetWindowDrawList();
         local x, y = imgui.GetCursorScreenPos();
-        x, y = x + 8 + pad, y + 2 + pad + top_;
-        if YUI_HEX then DOLL.rect = { x - pad - 6 * sc, y - pad - 16 * sc, x + W + pad + 6 * sc, y + H + pad + 6 * sc }; end
-        if hxf then
+        local wx_, wy_ = x, y;
+        local G_ = (hxf and not orig) and math.floor(18 * sc) or 0;  -- (room round the glass card for its glow)
+        x, y = x + 8 + pad + G_, y + 2 + pad + top_ + G_;
+        if YUI_HEX then DOLL.rect = orig and { x - pad - 6 * sc, y - pad - 16 * sc, x + W + pad + 6 * sc, y + H + pad + 6 * sc } or { x - pad - 9 * sc, y - pad - 30 * sc, x + W + pad + 9 * sc, y + H + pad + 9 * sc }; end
+        DOLL.gf = nil;
+        local gf_ = S / 90;                                          -- (the reference's gear card: an icon of S is 90 of its px)
+        local gimg = (hxf and per == 4 and not orig) and C.mip('glass/gearframe', gf_) or nil;
+        if gimg then                                                 -- (its frame 9-sliced snug round the grid, one of its cells per slot)
+            local f = gf_;
+            DOLL.gf, DOLL.gx, DOLL.gy = f, wx_ + 4 + 38 * f, wy_ + 2 + 51 * f;   -- (the grid's top left: 468 x 489 of its px)
+            local te = math.min(1, (now - (DOLL.t0 or 0)) / 0.35);
+            local cx0, cy0, cx1, cy1 = DOLL.gx - 22 * f, DOLL.gy - 22 * f, DOLL.gx + 490 * f, DOLL.gy + 511 * f;   -- (the card: 22 px round the grid)
+            C.nine(dl, gimg, cx0 - 16 * f, cy0 - 29 * f, cx1 + 29 * f, cy1 + 30 * f, f, 558, 664, 90, 100, U4(1, 1, 1, a * te));
+            local gg = C.mip('glass/gearframe_glow', f);             -- (alive: its gold glowing a little brighter and back, slowly)
+            if gg then C.nine(dl, gg, cx0 - 16 * f, cy0 - 29 * f, cx1 + 29 * f, cy1 + 30 * f, f, 558, 664, 90, 100, U4(1, 1, 1, a * te * (0.04 + 0.56 * C.breath(2.2)))); end
+            local cimg = C.mip('glass/gearcell', f);
+            if cimg then pcall(function()
+                for c = 0, 3 do for r = 0, 3 do
+                    local qx, qy = DOLL.gx + c * 116.7 * f, DOLL.gy + r * 122.3 * f;
+                    DL.I(dl, cimg.ptr, qx, qy, qx + 118 * f, qy + 122 * f, 0, 0, 1, 1, U4(1, 1, 1, a * te));
+                end end
+            end); end
+            DOLL.rect = { cx0, cy0, cx1, cy1 };
+            DOLL.bw, DOLL.bh = cx1 + 29 * f - wx_ + 6, cy1 + 30 * f - wy_ + 4;
+        elseif hxf then                                              -- (the first Hex link frame: cut corners, GEAR - or what changed it - on its edge)
             local m_ = 6 * sc;
             YUI_HEXFRAME(dl, x - pad - m_, y - pad - m_, x + W + pad + m_, y + H + pad + m_,
                 { a = a, s = sc, title = (DOLL.why and since < hold + 0.8) and string.upper(DOLL.why.label) or 'GEAR',
@@ -10331,6 +11540,7 @@ local function draw_strip()
         for k, slot in ipairs(DOLL.STRIP) do
             local c, r = (k - 1) % per, math.floor((k - 1) / per);
             local sx, sy = x + c * (S + gap), y + r * (S + gap);
+            if DOLL.gf then sx, sy = DOLL.gx + (59 + c * 116.7) * DOLL.gf - S / 2, DOLL.gy + (61 + r * 122.3) * DOLL.gf - S / 2; end   -- (in the picture's cells)
             local id, name = (DOLL.items[slot] or {})[1], (DOLL.items[slot] or {})[2];
             local cx_, cy_ = sx + S / 2, sy + S / 2;
             local ca, wave = 1, 0;                                   -- (Hex link: as it comes up, the pieces come in one after another,
@@ -10359,7 +11569,14 @@ local function draw_strip()
             if YUI_HEX then                                          -- (Hex link: every piece in its own small cell; azure when it changes)
                 local hv_ = DOLL.hover and mx >= sx and mx < sx + S and my >= sy and my < sy + S;
                 local lit = hv_ and 1 or ((t and t < 1.2) and math.max(0, 1 - t / 1.2) or 0);
-                DOLL.cell(dl, sx - pad, sy - pad, sx + S + pad, sy + S + pad, a * ca, math.max(lit, wave), sc);
+                if DOLL.gf then                                      -- (the picture's cells: only lit azure when it changes)
+                    local L_ = math.max(lit, wave);
+                    if L_ > 0 then
+                        local AZ = (C.HEXMP and C.HEXMP[1]) or { 0.35, 0.80, 1.00 };
+                        local hx, hy = 56 * DOLL.gf, 58 * DOLL.gf;
+                        DL.R(dl, sx + S / 2 - hx, sy + S / 2 - hy, sx + S / 2 + hx, sy + S / 2 + hy, U4(AZ[1], AZ[2], AZ[3], (0.35 + 0.6 * L_) * a * ca), 10 * DOLL.gf, C.rall, 1.4 * sc);
+                    end
+                else DOLL.cell(dl, sx - pad, sy - pad, sx + S + pad, sy + S + pad, a * ca, math.max(lit, wave), sc); end
             else                                                     -- no slot behind it (clean); a violet glowing outline only
                 local hv_ = DOLL.hover and mx >= sx and mx < sx + S and my >= sy and my < sy + S;   -- under the mouse or just swapped
                 if hv_ or (t and t < 1.2) then
@@ -10404,7 +11621,9 @@ local function draw_strip()
                 DL.CF(dl, cx_, cy_, math.max(1.5, S * 0.06), U4(1, 1, 1, 0.25 * a), 8);
             end
         end
-        imgui.Dummy({ W + 16 + pad * 2 + (hxf and 6 * sc or 0), H + 6 + pad * 2 + (hxf and (top_ + 8 * sc) or 0) });
+        if DOLL.gf then imgui.Dummy({ DOLL.bw, DOLL.bh });
+        elseif orig then imgui.Dummy({ W + 16 + pad * 2 + 6 * sc, H + 6 + pad * 2 + top_ + 8 * sc });
+        else imgui.Dummy({ W + 16 + pad * 2 + (hxf and 42 * sc or 0), H + 6 + pad * 2 + (hxf and (top_ + 44 * sc) or 0) }); end
         if bp then imgui.End(); imgui.PopStyleVar(2); else end_plain('strip_x', 'strip_y'); end
     else
         imgui.End(); imgui.PopStyleVar(2);
@@ -10544,16 +11763,8 @@ local function equip_tab()
     section('GEAR STRIP');
     do
         row_switch('##yui_stshow', 'Show', 'strip_show', 'On: the gear you are wearing shows as a strip of icons (under your bars, or anywhere). Off: hidden.');
-        row_pick('##yui_stu', 'Sits under', 'strip_under', { { 'mp', 'MP bar' }, { 'hp', 'HP bar' }, { 'tp', 'TP bar' }, { 'free', 'Anywhere (drag it)' } });
-        if cfg.strip_under ~= 'free' then row_switch('##yui_stf', 'As wide as the bar', 'strip_fit', 'On: the icons spread out to the width of the bar.'); end
-        row_pick('##yui_stc', 'Rows', 'strip_cols', { { 8, '2 rows' }, { 16, '1 row' }, { 4, '4 rows' } });
-        row_slider('##yui_sti', 'Icon size', 'strip_icon', 16, 48, 1, '%d px');
-        row_pick('##yui_stx', 'Swap effect', 'strip_fx', { { 'muzzle', 'Muzzle flash' }, { 'spell9', 'Magic spell' }, { 'none', 'None' } });
-        if accent_button('TRY THE SWAP EFFECT', { ROW_W, 0 }) then          -- plays it on every slot, to compare them
-            local now = os.clock();
-            for _, sl in ipairs(DOLL.STRIP) do DOLL.hit[sl] = now; end
-            DOLL.lit = now;
-        end
+        if not YUI_HEX then row_pick('##yui_stc', 'Rows', 'strip_cols', { { 8, '2 rows' }, { 16, '1 row' }, { 4, '4 rows' } }); end   -- (Normal mode only: Hex link is always the 4 x 4 glass card)
+        row_slider('##yui_sti', 'Icon size', 'strip_icon', 16, 48, 1, '%d px');   -- (Sits under and Swap effect are gone: always dragged anywhere, no effect)
         row_switch('##yui_sts', 'Only show on gear change', 'strip_swap_only', 'On: hidden until you swap gear, then it shows for a moment.');
         if not cfg.strip_swap_only then row_slider('##yui_std', 'Brightness when idle', 'strip_dim', 0.05, 1.0, 0.05, '%.2f'); end
         imgui.TextColored(C.muted, 'Lights up when you swap gear. Hover an icon for its name.');
@@ -11042,7 +12253,7 @@ function PET.draw(dt)
     end
 end
 
-local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 'DAMAGE METER', 'MINIMAP', 'TREASURE POOL', 'ACTION BARS' };
+local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 'DAMAGE METER', 'MINIMAP', 'TREASURE POOL', 'SOUND ALERTS', 'ACTION BARS' };
 -- the public version (public.flag in YunaUI's folder): Normal mode only, no Action Bars - what's still to come stays off
 YUI_PUBLIC = (function() local f = io.open((addon.path or '') .. 'public.flag', 'r'); if f then f:close(); return true; end return false; end)();
 if YUI_PUBLIC then TABS[#TABS] = nil; end
@@ -11153,6 +12364,11 @@ function C.loot_packet(e)
     if slot == nil or slot > 9 then return; end
     if (judge or 0) >= 1 then                                        -- (it went to someone, or nobody wanted it)
         L.lots[slot] = nil;
+        pcall(function()                                             -- (to you: TREASURE POOL > Item popup)
+            local me = AshitaCore:GetMemoryManager():GetParty():GetMemberName(0) or '';
+            local p = L.pool[slot];
+            if (wid or 0) > 0 and me ~= '' and wname == me and p then C.got_add(p.id); end
+        end);
         if (wid or 0) > 0 and cfg.loot_voice ~= false then           -- (to you: the item sound - once for a burst of items)
             local me = '';
             pcall(function() me = AshitaCore:GetMemoryManager():GetParty():GetMemberName(0) or ''; end);
@@ -11291,6 +12507,7 @@ function C.loot_drop(e)
     local old = struct.unpack('B', d, 0x15 + 1) or 0;                -- (already there when you came in: no flight)
     if slot == nil or slot > 9 or id == 0 or old ~= 0 then return; end
     if idx == 0 and sid > 0 then idx = bit.band(sid, 0xFFF); end
+    do return; end                                                   -- (the coin flying from the monster into the pool: removed - the item just slides into the pool)
     C.loot_fly(slot, id, idx);
 end
 function C.loot_fly(slot, id, idx)
@@ -11402,14 +12619,15 @@ function C.loot_wait_card(w, sc)
     if y + Hc > SH - 4 then y = SH - 4 - Hc; end
     for k = 3, 1, -1 do DL.RF(fg, x - k * 2, y - k * 2 + 3, x + Wc + k * 2, y + Hc + k * 2 + 3, U4(0, 0, 0, 0.10), 10 * sc + k * 2); end
     DL.RF(fg, x, y, x + Wc, y + Hc, U4(0.035, 0.03, 0.05, 0.95), 9 * sc);
-    DL.R(fg, x, y, x + Wc, y + Hc, U4(1.0, 0.66, 0.28, 0.35), 9 * sc, C.rall, 1);
-    DL.RF(fg, x + 9 * sc, y, x + Wc - 9 * sc, y + 1.5 * sc, U4(1.0, 0.70, 0.32, 0.85));   -- (a fine amber line along its top)
+    local AM = YUI_HEX and { 1.0, 0.68, 0.30 } or { 1.0, 0.62, 0.86 };   -- (amber in Hex link; white-pink in Vex mode)
+    DL.R(fg, x, y, x + Wc, y + Hc, U4(AM[1], AM[2], AM[3], 0.35), 9 * sc, C.rall, 1);
+    DL.RF(fg, x + 9 * sc, y, x + Wc - 9 * sc, y + 1.5 * sc, U4(AM[1], AM[2], AM[3], 0.85));   -- (a fine line along its top)
     local q = 0.75 + 0.25 * math.sin(os.clock() * 3);
-    DL.CF(fg, x + pad + 3 * sc, y + pad + lh / 2, 2.6 * sc, U4(1.0, 0.66, 0.26, q), 10);
+    DL.CF(fg, x + pad + 3 * sc, y + pad + lh / 2, 2.6 * sc, U4(AM[1], AM[2], AM[3], q), 10);
     local hx = x + pad + 12 * sc;
     for i = 1, #htxt do
         local ch = htxt:sub(i, i);
-        text(fg, hx, y + pad, ch, { 1.0, 0.74, 0.38, 1 });
+        text(fg, hx, y + pad, ch, YUI_HEX and { 1.0, 0.74, 0.38, 1 } or { 1.0, 0.72, 0.90, 1 });
         hx = hx + imgui.CalcTextSize(ch) + 1.6 * sc;
     end
     DL.L(fg, x + pad, y + pad + head - 4 * sc, x + Wc - pad, y + pad + head - 4 * sc, U4(1, 1, 1, 0.08), 1);
@@ -11432,12 +12650,18 @@ function C.loot_btn(dl, id, x, y, w, h, label, kind, on, lit)
     local pink = kind == 'lot';
     local s = h * 0.30;
     local up = hov and 1.5 * C.ps or 0;
-    local f = pink and { 0.97, 0.76, 0.30 } or { 0.40, 0.38, 0.54 };   -- (LOT: gold - it's loot)
+    local f = pink and (YUI_HEX and { 0.97, 0.76, 0.30 } or { 0.90, 0.89, 0.93 }) or { 0.40, 0.38, 0.54 };   -- (LOT: gold in Hex link - Normal mode: white)
     if hov then f = { math.min(1, f[1] + 0.06), math.min(1, f[2] + 0.10), math.min(1, f[3] + 0.08) }; end
-    local ink = pink and { 0.28, 0.16, 0.02 } or { 0.96, 0.95, 1.0 };
+    local ink = pink and (YUI_HEX and { 0.28, 0.16, 0.02 } or { 0.08, 0.06, 0.10 }) or { 0.96, 0.95, 1.0 };   -- (Normal mode's white LOT: black letters)
     local a = on and 1 or 0.45;
-    local pts = { { x + s, y - up }, { x + w, y - up }, { x + w - s, y + h - up }, { x, y + h - up } };
-    ALLY.poly(dl, pts, U4(f[1], f[2], f[3], a));
+    if YUI_HEX then
+        local pts = { { x + s, y - up }, { x + w, y - up }, { x + w - s, y + h - up }, { x, y + h - up } };
+        ALLY.poly(dl, pts, U4(f[1], f[2], f[3], a));
+    else                                                             -- (Vex mode: rounded, as its pool's bands - a slim dark edge round it)
+        local r = math.floor(h / 2);
+        DL.RF(dl, x, y - up, x + w, y + h - up, U4(f[1], f[2], f[3], a * (pink and 0.92 or 0.85)), r);
+        DL.R(dl, x, y - up, x + w, y + h - up, U4(0, 0, 0, 0.55 * a), r, C.rall, 1);
+    end
     local tw_, th_ = imgui.CalcTextSize(label);
     DL.T(dl, x + (w - tw_) / 2, y - up + (h - (tonumber(th_) or h)) / 2, U4(ink[1], ink[2], ink[3], a), label);
     return hit and on;
@@ -11507,15 +12731,27 @@ function C.loot_win()
         local x0 = math.floor(x + ox + 0.5);                          -- (on whole pixels: crisp edges)
         local bw0 = rh * 1.05;                                       -- the icon's block: dark, a bright stripe down its left side
         local blk = { { x0 + sl, ry }, { x0 + sl + bw0, ry }, { x0 + bw0, ry + rh }, { x0, ry + rh } };
-        ALLY.poly(dl, blk, U4(0.07, 0.065, 0.10, 0.92));
         local mine0 = (not fake) and it.mine or nil;                 -- (its colour: gold; brighter if it's going to you, grey once passed)
         local wn0 = (not fake) and C.lot_winner(slot) or nil;
         local me0 = '';
         pcall(function() me0 = AshitaCore:GetMemoryManager():GetParty():GetMemberName(0) or ''; end);
-        local hc = (mine0 and mine0 >= 0 and wn0 == me0) and { 1.0, 0.93, 0.62 } or ((mine0 and mine0 < 0) and { 0.50, 0.48, 0.62 } or { 0.96, 0.74, 0.28 });
-        for k = 1, 4 do dl:AddLine(blk[k], blk[k % 4 + 1], U4(0.96, 0.76, 0.32, picked and 1 or 0.45), picked and 1.3 or 1); end
+        local NM = not YUI_HEX;                                      -- (Normal mode: its pink to violet instead of gold)
+        local EG = NM and { 0.86, 0.42, 0.90 } or { 0.96, 0.76, 0.32 };   -- (the edges)
+        local hc = (mine0 and mine0 >= 0 and wn0 == me0) and (NM and { 1, 1, 1 } or { 1.0, 0.93, 0.62 }) or ((mine0 and mine0 < 0) and { 0.50, 0.48, 0.62 } or (NM and { 0.92, 0.91, 0.95 } or { 0.96, 0.74, 0.28 }));   -- (Normal mode: the stripe white)
+        if NM then                                                   -- (Vex mode: the item popup's look - a soft dark band, fine dividers - no slanted cards)
+            local fl_ = L.flash[slot] and math.max(0, 1 - (now - L.flash[slot]) / 0.6) or 0;
+            C.band(dl, x0 - 10 * sc, ry, x0 + W + 10 * sc, ry + rh, ((over or picked) and 0.62 or 0.48) + 0.15 * fl_, (over or picked) and 0.70 or 0.50);
+        else ALLY.poly(dl, blk, U4(0.07, 0.065, 0.10, 0.92)); end
+        if not NM then for k = 1, 4 do dl:AddLine(blk[k], blk[k % 4 + 1], U4(EG[1], EG[2], EG[3], picked and 1 or 0.45), picked and 1.3 or 1); end end
         local sw1 = math.max(2, math.floor(2.5 * sc + 0.5));         -- (just the line, crisp, over the block's edge)
-        ALLY.poly(dl, { { x0 + sl, ry }, { x0 + sl + sw1, ry }, { x0 + sw1, ry + rh }, { x0, ry + rh } }, U4(hc[1], hc[2], hc[3], 1));
+        do                                                           -- (inset a pixel top and foot, so it sits inside the block's edge; a fine dark outline round it)
+            local t0, t1 = 1 / rh, 1 - 1 / rh;
+            local st_ = { { x0 + sl * (1 - t0), ry + 1 }, { x0 + sl * (1 - t0) + sw1, ry + 1 }, { x0 + sl * (1 - t1) + sw1, ry + rh - 1 }, { x0 + sl * (1 - t1), ry + rh - 1 } };
+            if not NM then
+                ALLY.poly(dl, st_, U4(hc[1], hc[2], hc[3], 1));
+                for k = 1, 4 do dl:AddLine(st_[k], st_[k % 4 + 1], U4(0, 0, 0, 0.55), 1); end
+            end
+        end
         local isz = rh - 12 * sc;
         local ic = YUI_EQ_ICON and YUI_EQ_ICON(it.id) or nil;
         local icx = x0 + (bw0 + sl) / 2 + 2 * sc;
@@ -11523,12 +12759,25 @@ function C.loot_win()
         local gp = 3 * sc;                                           -- the card: dark, a little see-through, a light along its top
         local c0 = x0 + bw0 + gp;
         local card = { { c0 + sl, ry }, { x0 + W, ry }, { x0 + W - sl, ry + rh }, { c0, ry + rh } };
-        ALLY.poly(dl, card, U4(0.085, 0.08, 0.115, (over or picked) and 0.90 or 0.82));
-        ALLY.grad(dl, { c0 + sl, ry }, { x0 + W - sl, ry + 1 }, { 1, 1, 1, 0.14 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0.14 });
+        if not NM then
+            ALLY.poly(dl, card, U4(0.085, 0.08, 0.115, (over or picked) and 0.90 or 0.82));
+            ALLY.grad(dl, { c0 + sl, ry }, { x0 + W - sl, ry + 1 }, { 1, 1, 1, 0.14 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0.14 });
+        end
         local fl1 = L.flash[slot] and math.max(0, 1 - (now - L.flash[slot]) / 0.6) or 0;   -- (just landed: its gold edge flashes)
-        if fl1 > 0 then pcall(ALLY.glow_ring, dl, card, 3 * sc, U4(1.0, 0.85, 0.45, 0.30 * fl1)); end
+        if fl1 > 0 and not NM then pcall(ALLY.glow_ring, dl, card, 3 * sc, NM and U4(1.0, 0.50, 0.82, 0.30 * fl1) or U4(1.0, 0.85, 0.45, 0.30 * fl1)); end
         local ea = math.max(picked and 1 or 0.45, fl1);
-        for k = 1, 4 do dl:AddLine(card[k], card[k % 4 + 1], U4(0.96 + 0.04 * fl1, 0.76 + 0.14 * fl1, 0.32 + 0.30 * fl1, ea), (picked and 1.3 or 1) + fl1); end   -- (a gold edge; bright on the picked one)
+        if NM then                                                   -- (Vex mode: two dividers either side of the icon, white-pink)
+            local AC_ = { 1.0, 0.62, 0.86 };
+            local al_ = (picked or over) and 1 or (0.75 + 0.25 * fl1);
+            local lh_ = math.floor(rh * 0.30);                       -- (two whole lines either side of the icon: the left pink, the right white)
+            local lw_ = math.max(2, math.floor(2 * sc + 0.5));
+            local ci_ = math.floor(cy);
+            local xl_, xr_ = math.floor(x0 + 8 * sc), math.floor(c0 + sl * 0.3);
+            DL.RF(dl, xl_, ci_ - lh_, xl_ + lw_, ci_ + lh_, U4(1.0, 0.42, 0.72, al_), 0);
+            DL.RF(dl, xr_, ci_ - lh_, xr_ + lw_, ci_ + lh_, U4(1, 1, 1, 0.92 * al_), 0);
+        else
+            for k = 1, 4 do dl:AddLine(card[k], card[k % 4 + 1], U4(EG[1] + (1 - EG[1]) * fl1 * 0.6, EG[2] + (1 - EG[2]) * fl1 * 0.6, EG[3] + (1 - EG[3]) * fl1 * 0.6, ea), (picked and 1.3 or 1) + fl1); end   -- (its edge; bright on the picked one)
+        end
         local bx_ = x0 + W - sl * 0.5 - 8 * sc;                      -- your LOT / PASS (or what you did), at its right end
         local mine = (not fake) and it.mine or nil;
         local bw_ = math.floor(46 * sc);
@@ -11567,8 +12816,8 @@ function C.loot_win()
         local barw = math.max(10, bx_ - tx);
         local hy = ny + nh + 2 * sc;
         local bh2 = math.max(2, math.floor(3 * sc));
-        local c1 = (left < 60) and { 1.0, 0.36, 0.40 } or { 1.0, 0.86, 0.46 };
-        local c2 = (left < 60) and { 0.80, 0.10, 0.20 } or { 0.86, 0.56, 0.16 };
+        local c1 = (left < 60) and { 1.0, 0.36, 0.40 } or (NM and { 1.0, 0.42, 0.72 } or { 1.0, 0.86, 0.46 });
+        local c2 = (left < 60) and { 0.80, 0.10, 0.20 } or (NM and { 0.66, 0.30, 1.00 } or { 0.86, 0.56, 0.16 });
         pcall(glow_bar, dl, tx, hy, barw, bh2, f, f, c1, c2, slot);
         imgui.SetWindowFontScale(fs * 0.60);
         local wn, wl = nil, nil;
@@ -11578,7 +12827,7 @@ function C.loot_win()
         local tsw = imgui.CalcTextSize(ts);
         local sub = wn and (wn .. ' ' .. wl) or 'No lots yet';
         local sy_ = hy + bh2 + 2 * sc;
-        text(dl, tx, sy_, ALLY.fit(sub, barw - tsw - 10 * sc), wn and { 1.0, 0.82, 0.42, 1 } or { 0.66, 0.70, 0.96, 1 });
+        text(dl, tx, sy_, ALLY.fit(sub, barw - tsw - 10 * sc), wn and (NM and { 1.0, 0.66, 0.86, 1 } or { 1.0, 0.82, 0.42, 1 }) or { 0.66, 0.70, 0.96, 1 });
         local tq = (left < 60) and (0.70 + 0.30 * math.sin(now * 5)) or 1;
         text(dl, tx + barw - tsw, sy_, ts, (left < 60) and { 1.0, 0.45, 0.48, tq } or { 0.80, 0.78, 0.90, 0.9 });
         if over and #wait > 0 then L.wtip = { wait = wait, x = x + W + 10 * sc, y = ry }; end
@@ -11606,6 +12855,189 @@ function C.loot_win()
     imgui.SetCursorScreenPos({ x, y });
     imgui.Dummy({ W, H });
     end_plain('loot_x', 'loot_y');
+end
+-- The soft dark band (the item popup, Vex mode's treasure pool): images/brush/band_soft.png in three - its two ends fading
+-- out kept as they are, its middle stretched; soft at its top and foot too (tools\yunaui-modetext\make_band.py)
+function C.band(dl, x0, y0, x1, y1, a, la)                          -- (la: its slim dark outline's strength - nil, none)
+    local cap = math.min((y1 - y0) * 1.0, (x1 - x0) / 3);
+    local function three(t, col)
+        DL.I(dl, t.ptr, x0, y0, x0 + cap, y1, 0, 0, 0.25, 1, col);
+        DL.I(dl, t.ptr, x0 + cap, y0, x1 - cap, y1, 0.25, 0, 0.75, 1, col);
+        DL.I(dl, t.ptr, x1 - cap, y0, x1, y1, 0.75, 0, 1, 1, col);
+    end
+    local t = tex('brush/band_soft.png');
+    if t then
+        pcall(three, t, U4(1, 1, 1, math.max(0, math.min(1, a))));
+        local tl = (la or 0) > 0.01 and tex('brush/band_line.png');
+        if tl then pcall(three, tl, U4(1, 1, 1, math.max(0, math.min(1, la)))); end
+    else
+        DL.RF(dl, x0, y0, x1, y1, U4(0.02, 0.02, 0.03, 0.6 * a), 0);
+    end
+end
+function C.divider(dl, x, cy, h, c, a, s)                            -- (a fine upright line, a short brighter bar on its middle - both on whole pixels, the bar centred on it)
+    local xi, ci = math.floor(x), math.floor(cy);
+    local hh, bh = math.floor(h / 2), math.max(3, math.floor(4 * (s or 1) + 0.5));
+    DL.RF(dl, xi, ci - hh, xi + 1, ci + hh, U4(c[1], c[2], c[3], 0.40 * a), 0);
+    DL.RF(dl, xi - 1, ci - bh, xi + 2, ci + bh, U4(c[1], c[2], c[3], 0.95 * a), 0);
+end
+-- TREASURE POOL > Item popup: an item that goes to you (a drop, or the pool won) pops up as a card in the pool's style - WON
+-- in YunaUI's font in the slanted dark block with the bright stripe, its name beside it. Gold in Hex link, pink to violet in
+-- Vex mode. Newest on top; each slides in, its edge flashing, stays a few seconds and fades. Its own window: Edit Mode places it.
+C.GOT = { list = {} };
+function C.got_add(id)
+    if (id or 0) <= 0 or cfg.loot_got == false then return; end
+    local G = C.GOT;
+    local now = os.clock();                                          -- (the pool's packet and the chat's line both tell it: once)
+    G.seen = G.seen or {};
+    if now - (G.seen[id] or -99) < 3 then return; end
+    G.seen[id] = now;
+    table.insert(G.list, 1, { id = id, t0 = os.clock() });
+    while #G.list > 5 do table.remove(G.list); end
+end
+function C.inv_packet(e)                                             -- (0x0DC: someone invites you to their party or alliance)
+    if cfg.party_invite == false then return; end
+    local name = (e.data:sub(0x0C + 1, 0x0C + 16):match('^[^%z]*')) or '';
+    if name == '' then name = 'Someone'; end
+    local G = C.GOT;
+    for i = #G.list, 1, -1 do if G.list[i].inv then table.remove(G.list, i); end end   -- (a new invite replaces an old one)
+    table.insert(G.list, 1, { inv = true, label = 'INVITE', text = name .. '   /join to accept', t0 = os.clock(), life = 12 });
+    if cfg.invite_snd ~= false then pcall(C.snd_play, 'invite', 'invite_vol'); end   -- (SOUND ALERTS > Party invite)
+    pcall(C.inv_flash);
+end
+function C.inv_close()                                               -- (you joined, or the invite's gone: its card goes)
+    local G = C.GOT;
+    for _, it in ipairs(G.list) do if it.inv and os.clock() - it.t0 < (it.life or 12) then it.life = os.clock() - it.t0; end end
+end
+pcall(ffi.cdef, [[
+    typedef struct { uint32_t cbSize; void* hwnd; uint32_t dwFlags; uint32_t uCount; uint32_t dwTimeout; } YUI_FLASHWINFO;
+    int __stdcall FlashWindowEx(YUI_FLASHWINFO* pfwi);
+    void* __stdcall FindWindowExA(void* parent, void* after, const char* cls, const char* name);
+]]);
+function C.inv_flash()                                               -- (in another window: the game's taskbar button flashes until you come back)
+    if C.mb_focused and C.mb_focused() then return; end
+    local u = C.MB.user32 or ffi.load('user32');
+    local h = C.MB.hwnd;
+    if h == nil then                                                 -- (this game's window - with two games open, not the other one's)
+        local me, pid, w = ffi.C.GetCurrentProcessId(), ffi.new('uint32_t[1]'), nil;
+        for _ = 1, 16 do
+            w = u.FindWindowExA(nil, w, 'FFXiClass', nil);
+            if w == nil then break; end
+            u.GetWindowThreadProcessId(w, pid);
+            if pid[0] == me then h = w; break; end
+        end
+    end
+    if h == nil then return; end
+    local fi = ffi.new('YUI_FLASHWINFO');
+    fi.cbSize, fi.hwnd, fi.dwFlags, fi.uCount, fi.dwTimeout = ffi.sizeof('YUI_FLASHWINFO'), h, 0x3 + 0xC, 0, 0;   -- (FLASHW_ALL | FLASHW_TIMERNOFG)
+    u.FlashWindowEx(fi);
+end
+function C.got_chat(s)                                               -- ("Yunas obtains a crab shell.": solo, the pool hands it over before
+    if cfg.loot_got == false or not s:find('obtain', 1, true) then return; end   --  YunaUI sees it there - the chat's line is the sure sign)
+    local me = AshitaCore:GetMemoryManager():GetParty():GetMemberName(0) or '';
+    if me == '' then return; end
+    local rm = AshitaCore:GetResourceManager();
+    for line in (s .. '\n'):gmatch('([^\n\7]*)[\n\7]') do
+        local sl = line:gsub('[%c]', ''):gsub('^%[[^%]]*%]%s*', '');
+        local who, what = sl:match('^(.-) obtains? (.-)%.$');
+        if who == me and what then
+            what = what:gsub('^an? ', ''):gsub('^the ', ''):gsub('^%d+ ', '');
+            local it = rm:GetItemByName(what, 0) or rm:GetItemByName((what:gsub('e?s$', '')), 0);
+            if it and (it.Id or 0) > 0 then C.got_add(it.Id); end
+        end
+    end
+end
+function C.got_win()                                                 -- (the look: a soft dark band fading out at both ends; a short divider line, WON, another
+    local G = C.GOT;                                                 --  divider, the item's name in bold - accents gold in Hex link, white-pink in Vex mode)
+    local now = os.clock();
+    local LIFE, FADE = 4.5, 0.6;
+    for i = #G.list, 1, -1 do if now - G.list[i].t0 > (G.list[i].life or LIFE) + FADE then table.remove(G.list, i); end end
+    local fake = EDIT.on or (ui.open and ui.tab == 10);                -- (its tab open, or Edit Mode: a preview to place it)
+    local gs = EDIT.G and EDIT.G.on and EDIT.G.STEPS[EDIT.G.i] and EDIT.G.STEPS[EDIT.G.i][1] == 'Treasure pool';
+    if gs and now - (G.demo_t or -99) > 2.2 then                     -- (the guide's slide: one won every couple of seconds)
+        G.demo_t = now;
+        local F = C.LOOT.FAKE;
+        G.demo_i = (G.demo_i or 0) % #F + 1;
+        C.got_add(F[G.demo_i][1]);
+    end
+    if #G.list == 0 and (not fake or cfg.loot_got == false) then return; end   -- (an invite shows with the item popup off too)
+    local items = G.list;
+    if #items == 0 then items = { { id = 13014, t0 = now - 1, fake = true } }; end
+    local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.loot_scale) or 1);
+    first_place('got_x', 'got_y', -170, -420);
+    if not plain_window('YunaUI Item##yui_got', 'got_x', 'got_y') then imgui.End(); imgui.PopStyleVar(2); return; end
+    local dl = imgui.GetWindowDrawList();
+    pcall(function() C.fullclip(dl); end);
+    local x, y = imgui.GetCursorScreenPos();
+    local rh = math.floor(44 * sc);
+    local gap = math.floor(4 * sc);
+    local AC = YUI_HEX and { 1.0, 0.82, 0.42 } or { 1.0, 0.62, 0.86 };   -- (the accent: gold / white-pink)
+    local maxw = 0;
+    local ry = math.floor(y + 0.5);
+    for _, it in ipairs(items) do
+        local age = now - it.t0;
+        local ik = 1 - (1 - math.max(0, math.min(1, age / 0.35))) ^ 3;   -- (slides in from the left)
+        local out = it.fake and 1 or math.max(0, math.min(1, ((it.life or LIFE) + FADE - age) / FADE));
+        local al = ik * out;
+        local nm = it.text or C.loot_name(it.id);
+        if nm == '' then nm = 'Item ' .. it.id; end
+        local lab = it.label or 'WON';                               -- (WON - or INVITE, a party invite)
+        if al > 0.01 then
+            local pz = sized('chat', 19 * sc);
+            local x0 = math.floor(x - (1 - ik) * 24 * sc + 0.5);
+            local cy = math.floor(ry + rh / 2) + 0.5;
+            local lh = imgui.GetTextLineHeight();
+            local nw = tonumber((imgui.CalcTextSize(nm))) or 0;
+            local pad, dv = math.floor(22 * sc), math.floor(18 * sc);   -- (the band's soft ends; room either side of a divider)
+            local ww_ = 0;
+            unsized(pz);
+            local wpx = 13 * sc;
+            do
+                local pw = sized('chat', wpx);
+                for i = 1, #lab do ww_ = ww_ + (tonumber((imgui.CalcTextSize(lab:sub(i, i)))) or 0) + ((i < #lab) and 2 * sc or 0); end
+                unsized(pw);
+            end
+            local d1 = x0 + pad;                                     -- (where the two dividers and the words go)
+            local wx_ = d1 + dv;
+            local d2 = wx_ + ww_ + dv;
+            local nx = d2 + dv;
+            local bw = (nx + nw + pad) - x0;
+            maxw = math.max(maxw, bw);
+            local fl = it.fake and 0 or math.max(0, 1 - age / 0.8);  -- (just in: a little brighter)
+            C.band(dl, x0, ry, x0 + bw, ry + rh, (0.55 + 0.15 * fl) * al, 0.55 * al);   -- the band: soft all round, a slim dark outline
+            if YUI_HEX then
+                C.divider(dl, d1, cy, rh * 0.56, AC, al, sc);
+                C.divider(dl, d2, cy, rh * 0.56, AC, al, sc);
+            else                                                     -- (Vex mode: two whole lines - the left pink, the right white)
+                local lh_, lw_, ci_ = math.floor(rh * 0.28), math.max(2, math.floor(2 * sc + 0.5)), math.floor(cy);
+                DL.RF(dl, math.floor(d1), ci_ - lh_, math.floor(d1) + lw_, ci_ + lh_, U4(1.0, 0.42, 0.72, al), 0);
+                DL.RF(dl, math.floor(d2), ci_ - lh_, math.floor(d2) + lw_, ci_ + lh_, U4(1, 1, 1, 0.92 * al), 0);
+            end
+            do                                                       -- WON, spaced, in the accent
+                local pw = sized('chat', wpx);
+                local wlh = imgui.GetTextLineHeight();
+                local px = math.floor(wx_);
+                for i = 1, #lab do
+                    local ch = lab:sub(i, i);
+                    DL.T(dl, px, math.floor(cy - wlh / 2) + 1, U4(0, 0, 0, 0.7 * al), ch);
+                    DL.T(dl, px, math.floor(cy - wlh / 2), U4(AC[1], AC[2], AC[3], al), ch);
+                    px = px + (tonumber((imgui.CalcTextSize(ch))) or 0) + 2 * sc;
+                end
+                unsized(pw);
+            end
+            do                                                       -- the name, white (a touch heavier)
+                local pn = sized('chat', 19 * sc);
+                lh = imgui.GetTextLineHeight();
+                DL.T(dl, math.floor(nx), math.floor(cy - lh / 2) + 1, U4(0, 0, 0, 0.75 * al), nm);
+                DL.T(dl, math.floor(nx), math.floor(cy - lh / 2), U4(1, 1, 1, al), nm);
+                DL.T(dl, math.floor(nx) + 1, math.floor(cy - lh / 2), U4(1, 1, 1, 0.35 * al), nm);   -- (a touch heavier, as the picture's)
+                unsized(pn);
+            end
+        end
+        ry = ry + rh + gap;
+    end
+    imgui.SetCursorScreenPos({ x, y });
+    imgui.Dummy({ math.max(maxw, 260 * sc), (gs and 3 or #items) * (rh + gap) });
+    end_plain('got_x', 'got_y');
 end
 local LAYOUT = {
     KEYS = { 'target', 'sub', 'enemy', 'party', 'alliance', 'ally2', 'chat', 'chat2', 'exp', 'gil', 'bag', 'cast', 'timer', 'pet', 'doll', 'map', 'bigmap', 'loot' },
@@ -11935,7 +13367,7 @@ end
 -- GENERAL > SHARE MY UI: your whole UI as one code to send to someone - every setting you changed (not the defaults),
 -- every place, your HP / MP / TP bars and the Damage Meter. Places are kept with your screen's size, so on another
 -- screen everything lands in the same spot. Importing keeps what you had first (UNDO puts it back).
-LAYOUT.SKIP = { setup_done = true, welcomed = true, mode_v1 = true, mode_v2 = true, md_backup = true, g_backup = true, g_dps0 = true, layouts = true,
+LAYOUT.SKIP = { setup_done = true, welcomed = true, mode_v1 = true, mode_v2 = true, mode_v3 = true, md_backup = true, g_backup = true, g_dps0 = true, layouts = true,
     layout_names = true, share_backup = true, locked = true };
 function LAYOUT.plain(v, d)                                          -- (a copy with only numbers, strings, booleans and tables of them)
     d = d or 0;
@@ -12202,27 +13634,62 @@ end
 -- The two modes (the switch at the top of the panel, and the first-run chooser): Normal - YunaUI's own look; Hex link -
 -- the target bar over the target's head with a line to it, hexagon bars, the skillchain banner at the top
 C.MODEKEYS = { 'target_scale', 'target_name_scale', 'target_w', 'target_bar_h', 'target_buff_scale', 'sub_w',
-               'head_bars', 'head_bars_scale', 'head_bars_y', 'head_nums' };
-function C.modesave(link)                                            -- (this mode's sizes, kept: cfg.ms_hex / cfg.ms_norm)
+               'head_bars', 'head_bars_scale', 'head_bars_y', 'head_nums', 'target_x', 'target_y' };
+function C.modekeys()                                                -- (the sizes, the target bar's place and its pieces' places)
+    local K = {};
+    for _, k in ipairs(C.MODEKEYS) do K[#K + 1] = k; end
+    for _, pc in ipairs(FIGHT.PIECES or {}) do K[#K + 1] = pc[1] .. '_dx'; K[#K + 1] = pc[1] .. '_dy'; end
+    return K;
+end
+C.MODE_STAY = { win_x = true, md_x = true, modesw_x = true };       -- (the panel, the chooser and the switch itself: where they are)
+function C.modesave(link)                                            -- (this mode's sizes and its whole layout, kept: cfg.ms_hex / cfg.ms_norm)
     local t = {};
-    for _, k in ipairs(C.MODEKEYS) do t[k] = cfg[k]; end
+    for _, k in ipairs(C.modekeys()) do t[k] = cfg[k]; end
+    local pos = {};                                                  -- (every window's place: any key_x with its key_y, the pieces' _dx / _dy)
+    for k, v in pairs(cfg) do
+        if type(k) == 'string' and type(v) == 'number' and (k:match('_x$') or k:match('_dx$')) and not C.MODE_STAY[k] then
+            local ky = k:gsub('x$', 'y');
+            if type(cfg[ky]) == 'number' then pos[k], pos[ky] = v, cfg[ky]; end
+        end
+    end
+    for _, k in ipairs({ 'chat_w', 'chat_h', 'chat2_w', 'chat2_h' }) do pos[k] = tonumber(cfg[k]); end   -- (the chats' sizes, dragged too)
+    t.pos = pos;
+    local ec = YUI_EQ_GET and YUI_EQ_GET() or nil;                   -- (your HP / MP / TP bars)
+    if ec then
+        t.eq = {};
+        for _, k in ipairs({ 'hpbar_x', 'hpbar_y', 'mpbar_x', 'mpbar_y', 'tpbar_x', 'tpbar_y' }) do t.eq[k] = tonumber(ec[k]); end
+        t.eq.sb_anchor = ec.sb_anchor;
+    end
+    local ds = YUI_DPS and YUI_DPS.get and YUI_DPS.get() or nil;     -- (the Damage Meter)
+    if ds and tonumber(ds.x) and tonumber(ds.y) then t.dps = { tonumber(ds.x), tonumber(ds.y) }; end
     cfg[link and 'ms_hex' or 'ms_norm'] = t;
 end
-function C.modeload(link)                                            -- (that mode's sizes, if it has some kept)
+function C.modeload(link)                                            -- (that mode's, if it has some kept; true: its target bar place too)
     local t = cfg[link and 'ms_hex' or 'ms_norm'];
     if type(t) ~= 'table' then return false; end
-    for _, k in ipairs(C.MODEKEYS) do if t[k] ~= nil then cfg[k] = t[k]; end end
-    return true;
+    for _, k in ipairs(C.modekeys()) do if t[k] ~= nil then cfg[k] = t[k]; end end
+    if type(t.pos) == 'table' then                                   -- (its whole layout back - kept since the per-mode layouts)
+        for k, v in pairs(t.pos) do if type(v) == 'number' and not C.MODE_STAY[k] then cfg[k] = v; end end
+        ALLY.py_set, cfg.party_bot = nil, nil;                       -- (PARTY > Grow upward: its bottom taken again where it lands)
+        WATCH.move = 3;                                              -- (every window to its place now)
+        if type(t.eq) == 'table' and next(t.eq) and YUI_EQ_APPLY then pcall(YUI_EQ_APPLY, t.eq); end
+        if type(t.dps) == 'table' and t.dps[1] and YUI_DPS and YUI_DPS.place then pcall(YUI_DPS.place, t.dps[1], t.dps[2]); end
+    end
+    return t.target_x ~= nil and t.target_y ~= nil;
 end
 function C.setmode(link)
     local was = cfg.target_fx == 'link';
-    if was ~= link then C.modesave(was); C.modeload(link); end       -- (each mode with its own sizes)
+    local placed = false;
+    if was ~= link then C.modesave(was); placed = C.modeload(link); end   -- (each mode with its own sizes and target bar place)
     if link then
         if cfg.target_fx ~= 'link' then cfg.std_fx = cfg.target_fx; end
         cfg.target_fx = 'link';
     else
         cfg.target_fx = (cfg.std_fx and cfg.std_fx ~= 'link') and cfg.std_fx or 'blade';
-        if was then                                                  -- (from Hex link: the target bar back on top of the screen, centred,
+        if was and placed then                                       -- (back where you left it in Vex mode)
+            WATCH.one = WATCH.one or {};
+            WATCH.one.target_x = 3;
+        elseif was then                                              -- (from Hex link, the first time: the target bar on top of the screen, centred,
             local W_ = C.screen();                                   --  room over it for Magic Burst - as the chooser shows it)
             local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.target_scale) or 1);
             local w = (tonumber(cfg.target_w) or 520) * sc;
@@ -12244,7 +13711,7 @@ function PANEL.modes(dl, x, y)                                       -- NORMAL M
     local ps = C.ps;
     local HX = cfg.target_fx == 'link';
     imgui.SetWindowFontScale(C.wfs * 0.8);
-    local labels = { 'NORMAL MODE', 'HEX LINK MODE' };
+    local labels = { 'VEX MODE', 'HEX LINK MODE' };
     local sp = 2 * ps;
     local bw = math.floor(math.max(spaced_w(labels[1], sp), spaced_w(labels[2], sp)) + 34 * ps);
     local bh = math.floor(26 * ps);
@@ -12272,7 +13739,7 @@ function PANEL.modes(dl, x, y)                                       -- NORMAL M
         spaced(dl, bx + (bw - lw) / 2, y + (bh - th) / 2, labels[i], u32(on and { 1, 1, 1, 1 } or (over and C.text or C.muted)), sp);
         imgui.SetCursorScreenPos({ bx, y });
         if imgui.InvisibleButton('##yui_mode' .. i, { bw, bh }) and not on then C.setmode(i == 2); end
-        if over then YUI_TIP((i == 2) and 'Hex link: the target bar over its head with a line to it, hexagon bars, the skillchain banner at the top.' or 'Normal: the YunaUI target bar, skillchain fan and Magic Burst card.'); end
+        if over then YUI_TIP((i == 2) and 'Hex link: the target bar over its head with a line to it, hexagon bars, the skillchain banner at the top.' or 'Vex: the YunaUI target bar, skillchain fan and Magic Burst card.'); end
     end
     imgui.SetWindowFontScale(C.wfs);
 end
@@ -12461,6 +13928,217 @@ function PANEL.buttons(dl, wx, wy, ww)                               -- size arr
         if clicked then ui.open, ui.min, PANEL.anim = false, false, nil; end
     end
 end
+-- The mode switch: a small icon (top middle at first - drag it anywhere) showing the mode you're in - Vex mode's
+-- vortex of pink and violet arms, or Hex link's gold hexagon; a click folds it into a flash and the other mode opens
+-- out of it, switched as it turns. GENERAL > Mode switch icon. Not in the public version (Vex mode only).
+C.MS = {};
+function C.ms_vortex(dl, cx, cy, r, a, t, sc)                      -- (Vex mode: the macro bar's vortex - its picture turning round a dark void)
+    local half = r * 1.60;                                           -- (the ring fills about 0.62 of its picture: as big as the Hex link one)
+    local vr = half * 2 * 0.2131 * 1.02;                            -- (the void inside the ring)
+    DL.CF(dl, cx, cy, vr, U4(0.015, 0.005, 0.03, 0.92 * a), 40);
+    local fr = tex(string.format('vexorb/%02d.png', math.floor(os.clock() * 24) % 48));   -- (in its middle, the target bar's effect as a
+    if fr then                                                       --  small core: a white spark crackling, magenta fading into the dark)
+        local q = vr * 0.80;
+        pcall(function() DL.I2(dl, fr.ptr, cx - q, cy - q, cx + q, cy + q, { 0, 0 }, { 1, 1 }, U4(1, 1, 1, a)); end);
+    end
+    local gw = C.mip('glass/voidring_w', half * 2 / 512) or C.mip('glass/voidring', half * 2 / 512);
+    if not gw then return; end
+    local an = t * 0.9;
+    local ca, sa = math.cos(an) * half, math.sin(an) * half;
+    local function R_(px, py) return { cx + px * ca - py * sa, cy + px * sa + py * ca }; end
+    pcall(function()
+        dl:AddImageQuad(gw.ptr, R_(-1, -1), R_(1, -1), R_(1, 1), R_(-1, 1), { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, U4(0.92, 0.90, 1.0, 0.95 * a));
+    end);
+end
+function C.ms_hex(dl, cx, cy, r, a, t, sc)                          -- (Hex link: the user's picture - two star orbs in a gold ring, crescent blades)
+    local half = r * 1.00;                                           -- (its picture fills its square: the same height as Vex mode's ring, inside the box)
+    local im = C.mip('hexlink_icon', half * 2 / 512);
+    if not im then return; end
+    local an = math.sin(t * 0.9) * 0.10;                             -- (it sways a little, to and fro)
+    local ca, sa = math.cos(an), math.sin(an);
+    local function P(px, py) return cx + (px * ca - py * sa) * half, cy + (px * sa + py * ca) * half; end
+    pcall(function()
+        local x1, y1 = P(-1, -1); local x2, y2 = P(1, -1); local x3, y3 = P(1, 1); local x4, y4 = P(-1, 1);
+        dl:AddImageQuad(im.ptr, { x1, y1 }, { x2, y2 }, { x3, y3 }, { x4, y4 }, { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, U4(1, 1, 1, a));
+    end);
+    for i, st in ipairs({ { -0.38, -0.205, { 0.55, 0.75, 1.00 }, 0.0 }, { 0.45, 0.30, { 0.78, 0.55, 1.00 }, 2.1 } }) do
+        local px, py = P(st[1], st[2]);                              -- (its two stars twinkle, each in its own time)
+        local tw = math.max(0, math.sin(t * 1.7 + st[4])) ^ 2;
+        local c = st[3];
+        DL.CF(dl, px, py, half * 0.16 * (0.6 + 0.4 * tw), U4(c[1], c[2], c[3], 0.30 * a * tw), 16);
+        local L, w = half * (0.10 + 0.14 * tw), 0.9 * sc;
+        local c1 = U4(1, 1, 1, a * (0.35 + 0.65 * tw));
+        DL.TF(dl, px - L, py, px, py - w, px + L, py, c1); DL.TF(dl, px - L, py, px + L, py, px, py + w, c1);
+        DL.TF(dl, px, py - L, px + w, py, px, py + L, c1); DL.TF(dl, px, py - L, px, py + L, px - w, py, c1);
+    end
+end
+-- The mode's entrance: each piece of the UI fades in, nearest to the mode switch icon first - the UI built again in the
+-- new mode, not just swapped (always on). (No drawn wave: the gold / violet rings were disliked.)
+C.MT = {};
+C.MT_KEYS = { tgt = 'target_x', sub = 'sub_x', enemy = 'enemy_x', party = 'party_x', exp = 'exp_x', cast = 'cast_x', pet = 'pet_x',
+    timers = 'timer_x', strip = 'strip_x', gil = 'gil_x', bag = 'bag_x', map = 'map_x', mbar = 'mbp_x', chat = 'chat_x' };
+function C.mt_start(link)
+    if YUI_PUBLIC then return; end
+    local W, H = C.screen();
+    local ox, oy = W / 2, H / 2;                                     -- (from the icon - or the middle, the icon off)
+    if cfg.mode_icon ~= false and (tonumber(cfg.modesw_x) or -1) >= 0 then
+        local sz = C.MS.sz or 58;
+        ox, oy = cfg.modesw_x + (C.MS.w or sz) / 2, cfg.modesw_y + (C.MS.h or sz) / 2;
+    end
+    local far = 0;
+    for _, c in ipairs({ { 0, 0 }, { W, 0 }, { 0, H }, { W, H } }) do far = math.max(far, math.sqrt((c[1] - ox) ^ 2 + (c[2] - oy) ^ 2)); end
+    C.MT = { t0 = os.clock(), link = link, ox = ox, oy = oy, far = far, dur = 0.9 };
+end
+function C.mt_r()                                                    -- (the wave's radius now, and how far through it is; nil: none)
+    local T = C.MT;
+    if not T.t0 then return nil; end
+    local e = (os.clock() - T.t0) / T.dur;
+    if e >= 1.3 then T.t0 = nil; return nil; end
+    local u = math.min(1, e);
+    return (1 - (1 - u) ^ 2) * T.far * 1.2, e;
+end
+function C.mt_alpha(name)                                            -- (a piece's fade-in as the wave reaches it; nil: no wave)
+    local R = C.mt_r();
+    if not R then return nil; end
+    local T = C.MT;
+    local px, py = T.ox, T.oy;
+    local kx = C.MT_KEYS[name or ''];
+    if kx then
+        local x, y = tonumber(cfg[kx]), tonumber(cfg[(kx:gsub('_x$', '_y'))]);
+        local sz = WATCH.size and WATCH.size[kx];
+        if x and y then px, py = x + ((sz and sz[1]) or 0) / 2, y + ((sz and sz[2]) or 0) / 2; end
+    elseif name == 'heads' then
+        local W, H = C.screen(); px, py = W / 2, H / 2;
+    end
+    local d = math.sqrt((px - T.ox) ^ 2 + (py - T.oy) ^ 2);
+    return math.max(0, math.min(1, (R - d) / (T.far * 0.22)));
+end
+function C.modesw()
+    local gs = EDIT.G and EDIT.G.on and EDIT.G.STEPS[EDIT.G.i] and EDIT.G.STEPS[EDIT.G.i][1] == 'Mode switch';   -- (the guide's slide about it)
+    if YUI_PUBLIC or cfg.mode_icon == false or (C.MD and C.MD.on) or (EDIT.G and EDIT.G.on and not gs) then return; end
+    local M = C.MS;
+    if gs and not M.t0 and os.clock() - (M.demo_t or -99) > 3.2 then   -- (on the slide: it turns over every few seconds - the picture only, your mode stays)
+        M.demo_t, M.t0, M.to, M.done, M.demo = os.clock(), os.clock(), nil, false, true;
+    end
+    if not gs and M.dside then M.dside, M.demo = nil, nil; end
+    local W_, H_ = C.screen();
+    local sz = math.floor(math.max(36, math.min(120, H_ * 0.040)) * math.max(0.5, math.min(2.5, tonumber(cfg.mode_icon_size) or 1)));   -- (GENERAL > Icon size)   -- (sized by the screen's height: the same share of it at 1080p, 1440p
+    local sc = sz / 58;                                              --  or 4K - 43, 58 or 86 px - never tiny, never huge)
+    local th = math.floor(sz * 0.42);                               -- (YUNA UI as text: its height - its width from the picture's shape, 395 x 90)
+    local tw = math.floor(th * 395 / 90);
+    M.sz, M.w, M.h = sz, tw, th;
+    if (tonumber(cfg.modesw_x) or -1) < 0 then
+        local W = C.screen();
+        cfg.modesw_x, cfg.modesw_y = math.floor(W / 2 + 44 * sc), math.floor(12 * sc);
+    end
+    local stuck = false;                                             -- (GENERAL > Stick to the chat: sitting on the chat's top edge, at its corner - wherever
+    if cfg.ms_chat ~= false and cfg.chat and not gs then             --  the chat is and whatever its size; the combat log counted when it's joined to it)
+        local cx0, cy0 = tonumber(cfg.chat_x), tonumber(cfg.chat_y);
+        local cw0 = tonumber(cfg.chat_w) or 620;
+        if cx0 and cy0 then
+            if cfg.chat_split and cfg.chat_link then
+                local c2x, c2y = tonumber(cfg.chat2_x) or cx0, tonumber(cfg.chat2_y) or cy0;
+                if cfg.chat_link_v then cy0 = math.min(cy0, c2y);
+                else cx0, cw0 = math.min(cx0, c2x), cw0 + (tonumber(cfg.chat2_w) or cw0); end
+            end
+            local pad = math.floor(12 * sc);
+            local right = (cx0 + cw0 / 2) > (W_ / 2);                -- (a chat on the right of the screen: at its top right corner)
+            cfg.modesw_x = math.floor(right and (cx0 + cw0 - tw - pad) or (cx0 + pad));
+            cfg.modesw_y = math.floor(cy0 - th - 3 * sc);
+            stuck = true;
+        end
+    end
+    if not plain_window('YunaUI Mode##yui_modesw', 'modesw_x', 'modesw_y', stuck) then imgui.End(); imgui.PopStyleVar(2); return; end
+    local dl = imgui.GetWindowDrawList();
+    local x, y = imgui.GetCursorScreenPos();
+    imgui.InvisibleButton('##yui_modesw_b', { tw, th });
+    local hov = imgui.IsItemHovered();
+    local mx, my = imgui.GetMousePos();
+    if imgui.IsItemClicked(0) then M.down = { mx, my }; end
+    if imgui.IsItemActive() and not cfg.locked and not stuck then    -- (dragged by itself - not while it sits on the chat)
+        local dx, dy = imgui.GetMouseDragDelta(0);
+        if math.abs(dx) + math.abs(dy) > 3 then
+            local wx, wy = imgui.GetWindowPos();
+            imgui.SetWindowPos({ wx + dx, wy + dy });
+            imgui.ResetMouseDragDelta(0);
+        end
+    end
+    if M.down and not imgui.IsMouseDown(0) then                      -- (a click, not a drag: the other mode)
+        if math.abs(mx - M.down[1]) + math.abs(my - M.down[2]) < 5 and not M.t0 then
+            M.t0, M.to, M.done = os.clock(), cfg.target_fx ~= 'link', false;
+            if cfg.mode_snd ~= false then pcall(C.snd_play, M.to and 'mode_hex' or 'mode_vex', 'mode_snd_vol'); end   -- (into Hex link: a sci-fi click; into Vex mode: a soft air whoosh - Pixabay)
+        end
+        M.down = nil;
+    end
+    local now = os.clock();                                          -- (YUNA UI - its UI pink in Vex mode, gold in Hex link; a click turns it over like a card,
+    local cx, cy = x + tw / 2, y + th / 2;                           --  the other mode on its back)
+    local link = (cfg.target_fx == 'link') ~= (M.dside == true);     -- (the guide's slide: its back side showing)
+    local cs, s_, flash = 1, 0, 0;
+    if M.t0 then
+        local e = math.min(1, (now - M.t0) / 0.6);
+        local ang = (1 - (1 - e) ^ 2) * math.pi;                     -- (fast, settling at the end)
+        if ang >= math.pi / 2 and not M.done then
+            M.done = true;
+            if M.demo then M.dside = not M.dside; else pcall(C.setmode, M.to); pcall(C.mt_start, M.to); end
+            link = (cfg.target_fx == 'link') ~= (M.dside == true);
+        end
+        cs, s_ = math.abs(math.cos(ang)), math.sin(ang);
+        if M.done then flash = 1 - e; end
+        if e >= 1 then M.t0, M.demo = nil, (M.demo and gs) or nil; cs, s_ = 1, 0; end
+    end
+    local gi = C.mip(link and 'modetext_hex' or 'modetext_vex', th / 90);   -- (turning: the picture, a smoothly shrunk copy near its size)
+    if flash > 0 then                                                -- (the new colour glowing behind it as it lands)
+        local gt = tex('brush/glow_round.png');
+        local c = link and { 1.0, 0.82, 0.42 } or { 1.0, 0.43, 0.72 };
+        if gt then pcall(function() DL.I(dl, gt.ptr, cx - tw * 0.75, cy - th * 1.6, cx + tw * 0.75, cy + th * 1.6, 0, 0, 1, 1, U4(c[1], c[2], c[3], 0.55 * flash)); end); end
+    end
+    local still = (M.t0 == nil) and fonts.title ~= nil and YUI_NEWFONT(fonts.title);   -- (still: real text in the font - sharp at any size)
+    if still then
+        local str = 'YUNA UI';
+        local function width_at(px_)                                 -- (its width at a size, letters spaced a little)
+            local w_ = 0;
+            if push_font(fonts.title, px_) then
+                for i = 1, #str do w_ = w_ + (tonumber((imgui.CalcTextSize(str:sub(i, i)))) or 0) + ((i < #str) and px_ * 0.07 or 0); end
+                imgui.PopFont();
+            end
+            return w_;
+        end
+        local w0 = width_at(th);
+        local fpx = th * ((w0 > 0) and math.min(1.3, tw / w0) or 1);   -- (sized to fill its box - the same size on hover: a bigger font moved the letters)
+        pcall(function() dl:PushClipRectFullScreen(); end);
+        if push_font(fonts.title, fpx) then
+            local sp = fpx * 0.07;
+            local wt = 0;
+            for i = 1, #str do wt = wt + (tonumber((imgui.CalcTextSize(str:sub(i, i)))) or 0) + ((i < #str) and sp or 0); end
+            local lh = imgui.GetTextLineHeight();
+            local xi, yi = math.floor(cx - wt / 2 + 0.5), math.floor(cy - lh / 2 + 0.5);
+            local uc = link and { 1.0, 0.82, 0.43 } or { 1.0, 0.43, 0.72 };
+            local al = hov and 1 or 0.92;
+            local so = math.max(1, math.floor(fpx * 0.05 + 0.5));
+            local ol = math.max(1, math.floor(fpx * 0.03 + 0.5));       -- (a black outline round each letter)
+            for i = 1, #str do
+                local ch = str:sub(i, i);
+                local c = (i > 5) and uc or { 1, 1, 1 };
+                DL.T(dl, xi, yi + so, U4(0, 0, 0, 0.7 * al), ch);
+                for ox = -ol, ol, ol do for oy = -ol, ol, ol do
+                    if ox ~= 0 or oy ~= 0 then DL.T(dl, xi + ox, yi + oy, U4(0, 0, 0, 0.75 * al), ch); end
+                end end
+                DL.T(dl, xi, yi, U4(c[1], c[2], c[3], al), ch);
+                xi = xi + (tonumber((imgui.CalcTextSize(ch))) or 0) + sp;
+            end
+            imgui.PopFont();
+        else still = false; end
+        pcall(function() dl:PopClipRect(); end);
+    end
+    if gi and cs > 0.02 and not still then
+        local hw, hh = tw / 2 * cs * (hov and 1.04 or 1), th / 2 * (hov and 1.04 or 1);
+        local near, far = 1 + 0.22 * s_, 1 - 0.22 * s_;              -- (its edge coming at you taller: the turn has depth)
+        local hl, hr = hh * (M.done and far or near), hh * (M.done and near or far);
+        local col = U4(1, 1, 1, hov and 1 or 0.92);
+        pcall(function() dl:AddImageQuad(gi.ptr, { cx - hw, cy - hl }, { cx + hw, cy - hr }, { cx + hw, cy + hr }, { cx - hw, cy + hl }, { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, col); end);
+    end
+    end_plain('modesw_x', 'modesw_y');
+end
 function PANEL.mini()                                                -- minimised: the logo, top of the screen
     if (tonumber(cfg.mini_x) or -1) < 0 then
         local ds = imgui.GetIO().DisplaySize;
@@ -12491,6 +14169,40 @@ function PANEL.mini()                                                -- minimise
     end
 end
 local function draw_window()
+    C.sound_rows = function()                                        -- (SOUND ALERTS: every sound YunaUI plays, by what it's for)
+        local function vol(id, label, key, prevkey, play)            -- (a volume slider; letting go plays the sound at its new volume)
+            if cfg[key] == nil then cfg[key] = 0.6; end                  -- (never set: the 0.6 it plays at, not 0)
+            row_slider(id, label, key, 0.0, 1.5, 0.05, '%.2fx', nil, function() C.SND.bufs = {}; C.SND[prevkey] = os.clock(); save(); end);
+            if C.SND[prevkey] and os.clock() - C.SND[prevkey] > 0.35 then C.SND[prevkey] = nil; pcall(play); end
+        end
+        section('YOUR TP');
+        if cfg.target_fx == 'link' then                              -- (each mode its own TP sound)
+            row_switch('##yui_tps', 'TP sound', 'tp_sound', 'A chime as your TP reaches 1000, 2000 and 3000 - each one a step higher, so you can hear a weapon skill is ready.');
+            if cfg.tp_sound ~= false then vol('##yui_tpv', 'TP sound volume', 'tp_sound_vol', 'prev', function() C.snd_play('tp3'); end); end
+        else
+            if cfg.tp_vex_snd == nil then cfg.tp_vex_snd = true; end
+            row_switch('##yui_tpvs', 'TP sound', 'tp_vex_snd', 'A soft chime as your TP reaches 1000, 2000 and 3000 - a step higher each time, so you can hear how much TP you have.');
+            if cfg.tp_vex_snd ~= false then vol('##yui_tpvv', 'TP sound volume', 'tp_vex_vol', 'prevv', function() C.snd_play('tp_vex3', 'tp_vex_vol'); end); end
+        end
+        section('PARTY');
+        if cfg.invite_snd == nil then cfg.invite_snd = true; end
+        row_switch('##yui_pinvs', 'Party invite', 'invite_snd', 'A short sound when someone invites you to a party or alliance (with the invite card - PARTY > Party invite alert).');
+        if cfg.invite_snd ~= false then vol('##yui_pinvv', 'Party invite volume', 'invite_vol', 'previ', function() C.snd_play('invite', 'invite_vol'); end); end
+        section('TREASURE POOL');
+        row_switch('##yui_lootv', 'Item won', 'loot_voice', 'A short sound when an item from the treasure pool goes to you.');
+        if not YUI_PUBLIC then
+            section('MODE SWITCH');
+            if cfg.mode_snd == nil then cfg.mode_snd = true; end
+            row_switch('##yui_modes', 'Mode switch', 'mode_snd', 'A sound as YUNA UI turns over to the other mode - a soft whoosh into Vex mode, a sci-fi click into Hex link.');
+            if cfg.mode_snd ~= false then vol('##yui_modesv', 'Mode switch volume', 'mode_snd_vol', 'prevm', function() C.snd_play((cfg.target_fx == 'link') and 'mode_hex' or 'mode_vex', 'mode_snd_vol'); end); end
+            section('ACTION BARS');
+            row_switch('##yui_mbsn', 'Scroll sound', 'mb_sound', 'A short tick each time the pick moves on the action bar.');
+            if cfg.mb_sound ~= false then vol('##yui_mbsv', 'Scroll sound volume', 'mb_snd_vol', 'prevs', function() C.mp3_play('mb_scroll', 'mb_snd_vol'); end); end
+            row_switch('##yui_mbvo', 'Voice when an ability is ready', 'mb_voice', 'When a job ability you used comes off a recast of 30 s or more, a soft voice says it - "Berserk up".');
+            if cfg.mb_voice ~= false then vol('##yui_mbvv', 'Voice volume', 'mb_voice_vol', 'prevj', function() C.jav_say(551); end); end   -- (hear it: Boost)
+        end
+        imgui.TextColored(C.muted, 'Every sound YunaUI plays is here. Moving a volume slider plays the sound at its new volume.');
+    end
     if not ui.open then return; end                                 -- (closed: /yunaui or /yui opens it)
     C.ps = math.max(0.7, math.min(1.8, tonumber(cfg.panel_scale) or 1));   -- GENERAL > Settings panel size
     local ps = C.ps;
@@ -12670,6 +14382,14 @@ local function draw_window()
             section('MOVING');
             row_switch('##yui_l', 'Lock positions', 'locked', 'On: nothing can be dragged.');
             hint('Drag anything to move it; each piece is free.');
+            if not YUI_PUBLIC then
+                section('MODE SWITCH');
+                if cfg.mode_icon == nil then cfg.mode_icon = true; end if cfg.ms_chat == nil then cfg.ms_chat = true; end
+                if cfg.mode_icon_size == nil then cfg.mode_icon_size = 1.0; end
+                row_slider('##yui_modez', 'Icon size', 'mode_icon_size', 0.5, 2.5, 0.05, '%.2fx');
+                if cfg.mode_icon ~= false then row_switch('##yui_modec', 'Stick to the chat', 'ms_chat', "On: YUNA UI sits on the chat's top edge, at its corner, and follows it when you move or resize the chat. Off: drag it anywhere."); end
+                row_switch('##yui_modei', 'Mode switch icon', 'mode_icon', 'On: YUNA UI on the screen shows your mode - its UI pink in Vex mode, gold in Hex link - and a click turns it over to the other one. Drag it anywhere.');
+            end
             section('THIS PANEL');
             row_slider('##yui_palpha', 'Background', 'panel_alpha', 0.15, 1.0, 0.05, '%.2f');
             hint('How see-through the panel is: lower shows more of the game behind it. Double click to put it back.');
@@ -12681,7 +14401,7 @@ local function draw_window()
             row_switch('##yui_t', 'Show', 'target');
             row_slider('##yui_s_t', 'Size', 'target_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_slider('##yui_tnsc', 'Target name size', 'target_name_scale', 0.5, 2.5, 0.05, '%.2fx');
-            row_switch('##yui_tarrow', 'YunaUI target marker', 'tarrow', "On: in Hex link the game's arrow over your target is hidden - its banner, line and icon show it (on yourself, the game's arrow stays). Normal: the game's arrow. Off: the game's arrow always.", nil, function() C.TAR_last = nil; end);
+            row_switch('##yui_tarrow', 'YunaUI target marker', 'tarrow', "On: in Hex link a white prism takes the place of the game's arrow over whatever you target. Vex: the game's arrow. Off: the game's arrow always.", nil, function() C.TAR_last = nil; end);
             if HX then
                 row_switch('##yui_hl_cc', 'Claim colour', 'hl_claim', 'On: the bar is coloured as the game colours names - orange not claimed, red claimed by you or your party, purple claimed by someone else.');
                 row_switch('##yui_hl_hn', "Hide the game's name over your target", 'hl_hidename', "On: the name the game draws over the monster or player you target is hidden - the Hex link bar over its head already shows it. Other names stay.");
@@ -12771,6 +14491,8 @@ local function draw_window()
             row_slider('##yui_pmth', 'MP bar thickness' .. tl_, 'party_mp_th', 0.5, 3.0, 0.05, '%.2fx');
             row_switch('##yui_pdist', 'Distance', 'party_dist', 'On: how far each member is (in yalms), small, after the name. Pink when out of range.');
             row_switch('##yui_pzone', 'Zone of members elsewhere', 'party_zone', 'On: a member in another zone shows where they are, under their name (party and alliance).');
+            if cfg.party_invite == nil then cfg.party_invite = true; end
+            row_switch('##yui_pinv', 'Party invite alert', 'party_invite', 'On: when someone invites you to a party or alliance, a card shows who (with /join to accept); if you are in another window, the game flashes in the taskbar. Move the card in Edit Mode (it sits with the item popup). Its sound: SOUND ALERTS.');
             section('ALLIANCE');
             row_switch('##yui_a', 'Show', 'alliance');
             row_switch('##yui_ap', 'Pretend members (to place it)', 'alliance', 'Shows both alliance parties so you can place and size them when not in an alliance.', PREVIEW, function() end);
@@ -12781,7 +14503,7 @@ local function draw_window()
             hint('Click a member to target them. With Pretend members on, a click just marks one, to see how it looks.');
             section('CARDS');
             hint('Your party and the alliances: job tag, name, HP and MP for each member.');
-            row_switch('##yui_clow', 'Low HP warning', 'card_low', 'Under 75% HP a warning: Normal mode the edge of the card turns yellow, under 50% orange; Hex link the HP bar itself turns orange, then red-orange. Under 25% the card beats red.');
+            row_switch('##yui_clow', 'Low HP warning', 'card_low', 'Under 75% HP a warning: Vex mode the edge of the card turns yellow, under 50% orange; Hex link the HP bar itself turns orange, then red-orange. Under 25% the card beats red.');
             do
                 local lt = { v = (ALLY.lowtest == 0.70 and 'y') or (ALLY.lowtest == 0.45 and 'o') or (ALLY.lowtest and 'r') or 'off' };   -- (every member shown at that HP, to see it - set it back to Off when done)
                 row_pick('##yui_clowt', 'Preview HP warning', 'v', { { 'off', 'Off' }, { 'y', 'Yellow (70%)' }, { 'o', 'Orange (45%)' }, { 'r', 'Red (20%)' } }, lt, function(k, v)
@@ -12797,22 +14519,18 @@ local function draw_window()
         elseif tab == 4 then
             ------------------------------------------------------------------ BARS
             section('YOUR BARS');                                    -- your own HP / MP / TP (equip.lua's settings)
-            if cfg.target_fx == 'link' then                          -- (Hex link mode only)
-            row_switch('##yui_tps', 'TP sound', 'tp_sound', 'A chime as your TP reaches 1000, 2000 and 3000 - each one a step higher, so you can hear a weapon skill is ready.');
-            end
-            if cfg.tp_sound ~= false and cfg.target_fx == 'link' then
-                row_slider('##yui_tpv', 'TP sound volume', 'tp_sound_vol', 0.05, 1.5, 0.05, '%.2fx', nil, function()
-                    C.SND.bufs = {};                                 -- (made again at the new volume; a preview plays)
-                    C.SND.prev = os.clock();
-                    save();
-                end);
-                if C.SND.prev and os.clock() - C.SND.prev > 0.35 then C.SND.prev = nil; C.snd_play('tp3'); end
+            if cfg.target_fx ~= 'link' then                          -- (Vex mode)
+                if cfg.tp_fx == nil then cfg.tp_fx = true; end
+                row_switch('##yui_tpfx', 'TP bar effect', 'tp_fx', 'On: from 1000 TP your TP bar crackles like the target bar, in gold - stronger at 2000, strongest at 3000. Off: a plain TP bar.');
             end
             if C.head_bars_on() then
                 hint('Over your head: thin HP and MP bars, the TP as three dots (gold when full: a weapon skill is ready) and the numbers beside them.');
                 row_slider('##yui_hbs', 'Head bars size', 'head_bars_scale', 0.5, 2.5, 0.05, '%.2fx');
                 row_slider('##yui_hby', 'Head bars height', 'head_bars_y', -80, 80, 1, '%d');
                 row_pick('##yui_hbn', 'Head bars numbers', 'head_nums', { { 'always', 'Always' }, { 'change', 'When they change' }, { 'off', 'Off' } });
+                if cfg.head_when == nil then cfg.head_when = (cfg.head_fight == true) and 'engaged' or 'always'; end   -- (the old Only in a fight switch)
+                row_pick('##yui_hbw', 'Show', 'head_when', { { 'always', 'Always' }, { 'engaged', 'When you engage' }, { 'aggro', 'With aggro (you or your party)' } });
+                hint('Out of a fight your name and stars show over your head as usual; when the bars come they take their place. With aggro: as soon as a monster is on you or anyone in your party - before you engage, as when you can\'t mount.');
                 if C.vana_cfg() then hint('Your own name and stars over your head are hidden while these bars are on (VanaCore\'s Hide own nameplate), and come back with Fixed.');
                 else hint('Tip: hide your own name and stars over your head in /vana > Options > Nameplates > Hide own nameplate.'); end
             end
@@ -12987,6 +14705,9 @@ local function draw_window()
                 hint('The minimap needs its map files (the mapsimg and maps3d folders in YunaUI\'s folder).');
             end
         elseif tab == 11 then
+            ------------------------------------------------------------------ SOUND ALERTS
+            C.sound_rows();
+        elseif tab == 12 then
             ------------------------------------------------------------------ ACTION BARS
             section('ACTION BARS');
             row_switch('##yui_mbon', 'Show', 'macrobar', "On: YunaUI's own macro bar in place of the game's - your macros as they are, Ctrl and Alt rows.");
@@ -12994,33 +14715,24 @@ local function draw_window()
                 local wv_ = true;                                    -- (the wave's own settings: both modes)
                 row_switch('##yui_mbboth', 'Both rows', 'mb_both', 'On: Ctrl and Alt rows one over the other, the row you hold bright. Off: only the row you hold.');
                 if wv_ then row_slider('##yui_mbtx', 'Text size', 'mb_text', 0.6, 2.5, 0.05, '%.2fx'); end
-                row_switch('##yui_mbsn', 'Scroll sound', 'mb_sound', 'On: a short tick each time the pick moves.', nil, function()
-                    if cfg.mb_sound ~= false then C.mp3_play('mb_scroll', 'mb_snd_vol'); end
-                    save();
-                end);
-                if cfg.mb_sound ~= false then
-                    row_slider('##yui_mbsv', 'Scroll sound volume', 'mb_snd_vol', 0.05, 1.5, 0.05, '%.2fx', nil, function() C.MB.svprev = os.clock(); save(); end);
-                    if C.MB.svprev and os.clock() - C.MB.svprev > 0.35 then C.MB.svprev = nil; C.mp3_play('mb_scroll', 'mb_snd_vol'); end
-                end
-                row_switch('##yui_mbal', 'Always show', 'mb_always', 'On: the macro bar stays on the screen all the time. Off: it shows only while Ctrl / Alt (L2 / R2) is held.');
-                if not cfg.mb_always then                            -- (always shown: L2 / R2 just pick the row, held - nothing to choose)
-                    row_pick('##yui_mbpd', 'L2 / R2 and Ctrl / Alt', 'mb_pad', { { 'hold', 'Hold to show' }, { 'toggle', 'Press to show, press again to hide' } });
+                row_switch('##yui_mbal', 'Always show', 'mb_always', 'On: the macro bar stays on the screen all the time. Off: it shows only while Ctrl / Alt (' .. C.mb_bn() .. ') is held.');
+                row_pick('##yui_mbbt', 'Macro buttons (controller)', 'mb_btn', { { 'l2', 'L2 / R2' }, { 'l1', 'L1 / R1' } });   -- (as the player set the game's pad)
+                if not cfg.mb_always then                            -- (always shown: the buttons just pick the row, held - nothing to choose)
+                    row_pick('##yui_mbpd', C.mb_bn() .. ' (controller)', 'mb_pad', { { 'hold', 'Hold to show' }, { 'toggle', 'Press to show, press again to hide' } });   -- (Ctrl / Alt: always held, as the game)
                 end
                 row_slider('##yui_mbsc', 'Size', 'mb_scale', 0.5, 2.0, 0.05, '%.2fx');
-                hint('Keyboard: hold Ctrl or Alt and press 1 to 0, as in the game. Controller: hold L2 or R2, pick with the D-pad left / right, Cross (A) runs it. Move the bar in Edit Mode.');
+                hint('Keyboard: hold Ctrl or Alt and press 1 to 0, as in the game. Controller: hold ' .. (C.mb_l1() and 'L1 or R1' or 'L2 or R2') .. ', pick with the D-pad left / right, Cross (A) runs it. Move the bar in Edit Mode. Right-click a button to edit that macro.');
             end
         elseif tab == 10 then
             ------------------------------------------------------------------ TREASURE POOL
             section('TREASURE POOL');
             row_switch('##yui_lootw', 'Show the pool', 'loot_win', "On: when something drops, YunaUI's own treasure pool shows it: time left, who is winning, and Lot / Pass buttons. Click an item to keep it picked.");
             row_slider('##yui_s_loot', 'Pool size', 'loot_scale', 0.6, 2.0, 0.05, '%.2fx');
-            row_slider('##yui_s_coin', 'Drop coin size', 'loot_coin_scale', 0.5, 2.5, 0.05, '%.2fx');
-            row_switch('##yui_lootv', 'Item sound', 'loot_voice', 'On: a short sound plays when an item from the treasure pool goes to you.');
-            if cfg.loot_voice ~= false then
-                row_slider('##yui_lootvv', 'Item sound volume', 'loot_voice_vol', 0.05, 1.5, 0.05, '%.2fx', nil, function()
-                    C.SND.vprev = os.clock();                        -- (a preview plays)
-                end);
-                if C.SND.vprev and os.clock() - C.SND.vprev > 0.35 then C.SND.vprev = nil; C.mp3_play('item', 'loot_voice_vol'); end
+            if cfg.loot_got == nil then cfg.loot_got = true; end
+            row_switch('##yui_lootg', 'Item popup', 'loot_got', 'On: an item that goes to you - a drop, or the pool won - pops up - WON and its name - for a few seconds. Move it in Edit Mode.');
+            if cfg.loot_got ~= false and accent_button('TRY THE ITEM POPUP##yui_gottry', { ROW_W, 0 }, true) then   -- (a pretend item won: see it come in and go)
+                local L_ = C.LOOT.FAKE;
+                C.got_add(L_[math.random(#L_)][1]);
             end
             hint("With an item picked (the mouse over it or a click in the pool, or the cursor on it in the game's own pool), everyone's lot shows on their party card: a number, -- for a pass, ? for still to go, the highest in gold.");
         else
@@ -13115,7 +14827,7 @@ ashita.events.register('load', 'yui_load', function()
     if tonumber(cfg.glow_style) ~= 4 and tonumber(cfg.glow_style) ~= 6 then cfg.glow_style = 4; end
     cfg.glow_anim = 'still';                                         -- (the glow's animation choice is gone: the clips play as they are)
     cfg.equip_look = 'strip';                                        -- (your gear: always the strip; the wheel / diamond ring are gone)
-    if cfg.strip_fx ~= 'muzzle' and cfg.strip_fx ~= 'spell9' and cfg.strip_fx ~= 'none' then cfg.strip_fx = 'muzzle'; end   -- (the others are gone)
+    cfg.strip_fx, cfg.strip_under = 'none', 'free';                -- (the gear card: no swap effect, dragged anywhere - those choices are gone)
     if cfg.bar_fx == 'electric' then cfg.bar_fx = 'still'; end       -- (Electric bar effect and Magic spell overlay are gone)
     if cfg.cast_fx == 'electric' then cfg.cast_fx = 'same'; end
     for _, k in ipairs({ 'barfx', 'barfx_target', 'barfx_party', 'barfx_alliance', 'barfx_equip' }) do
@@ -13191,6 +14903,9 @@ pcall(ffi.cdef, [[
     typedef const char* (__thiscall* YUI_mb_name_f)(uint32_t, uint32_t);
     typedef const char* (__thiscall* YUI_mb_line_f)(uint32_t, uint32_t, uint32_t);
     typedef void        (__thiscall* YUI_mb_run_f)(uint32_t, uint8_t, uint8_t);
+    typedef int         (__thiscall* YUI_mb_setname_f)(uint32_t, const char*);
+    typedef int         (__thiscall* YUI_mb_setline_f)(uint32_t, int, const char*);
+    typedef void        (__thiscall* YUI_mb_save_f)(uint32_t, int, uint32_t);
     short __stdcall GetAsyncKeyState(int vKey);
     typedef struct { uint16_t wButtons; uint8_t bLeftTrigger; uint8_t bRightTrigger; int16_t sThumbLX, sThumbLY, sThumbRX, sThumbRY; } YUI_XPAD;
     typedef struct { uint32_t dwPacketNumber; YUI_XPAD Gamepad; } YUI_XSTATE;
@@ -13212,6 +14927,10 @@ function C.mb_init()
     M.f_line = find('8B44240485C07C??83F8147D??8B542408528D1440C1E2052BD08D4C9104E8????????C2080033C0C20800', 0);
     M.f_run = find('8A44240453563C018BF175??8A5C24108B4E040FBEC350E8', 0);
     M.f_stop = find('C781????????FFFFFFFFC3', 0);                    -- (FsMacroContainer::stopMacro: its "running" field's offset is in it)
+    M.f_setline = find('53568B7424105785F68BD974??8B54241085D27C??83FA067D', 0);   -- (a macro's line: its 6 lines x 61 bytes, 60 letters)
+    M.f_setname = find('568B74240885F68BD175??83C8FF5EC20400578BFE83C9FF33C0F2AEF7D1495F83F908', 0);   -- (its name: 8 letters)
+    M.f_save = find('8B44240881EC600100008D542400568BF18B8C24680100005051528BCEE8', 0);   -- (the open page written to its mcr<n>.dat, as the game saves it)
+    M.p_mfolder = find('8B86BC1D000068????????992BC28BCED1F850E8', 7);   -- (the folder the game passes to it)
     local ok, u = pcall(ffi.load, 'user32');
     M.user32 = ok and u or nil;
     for _, dll in ipairs({ 'xinput1_4', 'xinput1_3', 'xinput9_1_0' }) do   -- (an Xbox pad's triggers)
@@ -13271,19 +14990,27 @@ function C.mb_plain(ln)
     end
     return table.concat(out);
 end
+function C.mb_pline(id, l)                                          -- (a macro's line, its auto-translate words made plain - what it casts / uses is read from this:
+    local ln = C.mb_line(id, l);                                     --  a {Berserk} macro's recast, kind and weapon skill were missed)
+    local ok, pl = pcall(C.mb_plain, ln);
+    return ok and pl or ln;
+end
 pcall(ffi.cdef, 'uint32_t __stdcall GetTickCount(void);');
 function C.mb_now()                                                  -- (real seconds for a macro's waits: os.clock is the game's CPU time, which runs
     local ok, t = pcall(function() return ffi.C.GetTickCount(); end);   --  faster than the clock when its threads are busy - a <wait1> came too soon)
     return ok and (tonumber(t) / 1000) or os.clock();
 end
 function C.mb_run(mod, slot)                                        -- (mod 1 Ctrl, 2 Alt; slot 0..9: its lines played as the game plays them)
-    local M = C.MB;
     local id = (mod - 1) * 10 + slot;
     local lines = {};
     for l = 0, 5 do
         local ok, ln = pcall(C.mb_line, id, l);
         if ok and type(ln) == 'string' and ln:match('%S') then local okp, pl = pcall(C.mb_plain, ln); lines[#lines + 1] = okp and pl or ln; end
     end
+    C.mb_play(lines);
+end
+function C.mb_play(lines)                                           -- (lines played as the game plays a macro's: <wait n>, /wait n)
+    local M = C.MB;
     if #lines == 0 then return; end
     if M.dbg and M.queue and #M.queue > 0 then msg(string.format('[mb] %d line(s) left of the last macro: dropped (a new one took over)', #M.queue)); end
     M.queue, M.stwait, M.qnext = {}, nil, C.mb_now(); M.qt0, M.qc0 = M.qnext, os.clock();                -- (a macro already playing: this one takes over, as in the game)
@@ -13301,6 +15028,164 @@ function C.mb_run(mod, slot)                                        -- (mod 1 Ct
                                                                        --  a spell sent 1 s after one was refused - so after one, a little longer)
         end
     end
+end
+-- ACTION BARS > edit a macro (right-click a button): its name and 6 lines written with the game's own functions and the
+-- page saved as the game saves it (its mcr<n>.dat, checksum and all) - the game's macro menu shows the change too.
+function C.mb_canedit()
+    local M = C.MB;
+    return C.mb_init() and M.f_setline and M.f_setname and M.f_save and M.p_mfolder and true or false;
+end
+function C.mb_write(id, name, lines)                                -- (id 0..19 on the open page; lines: 6 strings) - true when saved
+    local M = C.MB;
+    if not C.mb_canedit() then return false, 'not found in this game version'; end
+    local o = C.mb_obj(M.p_macro);
+    if o == 0 or id < 0 or id > 19 then return false, 'no macro page open'; end
+    local mac = o + 4 + id * 380;
+    local okw, er = pcall(function()
+        ffi.cast('YUI_mb_setname_f', M.f_setname)(mac, name:sub(1, 8));
+        for l = 0, 5 do ffi.cast('YUI_mb_setline_f', M.f_setline)(mac, l, (lines[l + 1] or ''):sub(1, 60)); end
+        local fno = math.floor((ashita.memory.read_int32(o + 0x1DBC) or 0) / 2);
+        local folder = ashita.memory.read_uint32(M.p_mfolder);
+        ffi.cast('YUI_mb_save_f', M.f_save)(o, fno, folder);
+    end);
+    if not okw then return false, tostring(er); end
+    M.at = -99;                                                      -- (its name and what it does read again)
+    if C.MB_CD and C.MB_CD.what then C.MB_CD.what[id] = nil; end
+    if M.wsn then M.wsn[id] = nil; end
+    if C.MB_KIND then C.MB_KIND[id] = nil; end
+    return true;
+end
+function C.mb_tidy_name(s)                                           -- (a name tidied: spaces trimmed, the first letter a capital; all one case
+    s = tostring(s or ''):gsub('^%s+', ''):gsub('%s+$', ''):gsub('%s+', ' ');   --  "MEIKYO" / "meikyo" -> "Meikyo"; mixed case kept: "ThirdEye")
+    if not (s:match('%u') and s:match('%l')) then s = s:lower(); end
+    return (s:gsub('^%l', string.upper));
+end
+function C.mb_tidy_page()                                            -- (every name on the open page tidied, the page saved once) - how many changed
+    local M = C.MB;
+    if not C.mb_canedit() then return nil, 'not found in this game version'; end
+    local o = C.mb_obj(M.p_macro);
+    if o == 0 then return nil, 'no macro page open'; end
+    local n = 0;
+    local okw, er = pcall(function()
+        for id = 0, 19 do
+            local okn, nm = pcall(C.mb_name, id);
+            nm = okn and nm or '';
+            local t = C.mb_tidy_name(nm);
+            if t ~= nm then ffi.cast('YUI_mb_setname_f', M.f_setname)(o + 4 + id * 380, t:sub(1, 8)); n = n + 1; end
+        end
+        if n > 0 then
+            local fno = math.floor((ashita.memory.read_int32(o + 0x1DBC) or 0) / 2);
+            ffi.cast('YUI_mb_save_f', M.f_save)(o, fno, ashita.memory.read_uint32(M.p_mfolder));
+        end
+    end);
+    if not okw then return nil, tostring(er); end
+    M.at = -99;                                                      -- (the names read again)
+    return n;
+end
+C.ME = nil;                                                          -- (the macro being edited: { id, book, page, name = {s}, lines = { {s} x 6 }, raw, plain })
+function C.mb_edit_open(id)
+    local M = C.MB;
+    if not C.mb_canedit() then msg('Editing macros: not available in this game version.'); return; end
+    local bk, pg = C.mb_bookpage();
+    local E = { id = id, book = bk, page = pg, raw = {}, plain = {}, lines = {} };
+    local okn, nm = pcall(C.mb_name, id);                          -- (the safe read: an empty name comes back as nothing - read as '', or the game crashed)
+    E.name = { okn and nm or (M.names[id] or '') };
+    for l = 0, 5 do
+        local ok, ln = pcall(C.mb_line, id, l);
+        ln = (ok and type(ln) == 'string') and ln or '';
+        local okp, pl = pcall(C.mb_plain, ln);
+        E.raw[l + 1], E.plain[l + 1] = ln, okp and pl or ln;
+        E.lines[l + 1] = { E.plain[l + 1] };
+    end
+    E.name0 = E.name[1];
+    C.ME = E;
+end
+function C.mb_editor()                                               -- (the panel: Ctrl 3 - its name, its 6 lines, TEST / SAVE / CANCEL)
+    local E = C.ME;
+    if not E then return; end
+    local ps = C.ps or 1;
+    local SW, SH = C.screen();
+    local PW = math.max(540, 600 * ps);
+    imgui.SetNextWindowPos({ SW / 2 - PW / 2, SH * 0.28 }, ImGuiCond_Appearing);
+    imgui.SetNextWindowSize({ PW, 0 }, ImGuiCond_Always);
+    imgui.PushStyleColor(ImGuiCol_WindowBg, { 0.06, 0.05, 0.08, 0.96 });
+    imgui.PushStyleColor(ImGuiCol_Border, { NEON2[1], NEON2[2], NEON2[3], 0.8 });
+    imgui.PushStyleColor(ImGuiCol_FrameBg, { 0.13, 0.12, 0.17, 1 });
+    imgui.PushStyleVar(ImGuiStyleVar_WindowRounding, 10 * ps);
+    imgui.PushStyleVar(ImGuiStyleVar_FrameRounding, 6 * ps);
+    imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 16 * ps, 14 * ps });
+    local open = { true };
+    local row = (E.id >= 10) and 'ALT' or 'CTRL';
+    local key = tostring((E.id % 10 + 1) % 10);
+    if imgui.Begin('##yui_medit', open, bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_NoSavedSettings)) then
+        local pushed = sized('chat', 15 * ps);
+        local dl = imgui.GetWindowDrawList();
+        local x, y = imgui.GetCursorScreenPos();
+        spaced(dl, x, y, 'EDIT MACRO  .  ' .. row .. ' ' .. key, U4(NEON2[1], NEON2[2], NEON2[3], 1), 2 * ps);
+        imgui.Dummy({ 10, imgui.GetTextLineHeight() + 2 });
+        unsized(pushed);
+        if E.book then imgui.TextColored({ 0.62, 0.60, 0.72, 1 }, string.format('Book %d  .  Page %d', E.book, E.page)); end
+        imgui.Dummy({ 4, 6 });
+        local LC = (tonumber((imgui.CalcTextSize('Line 6'))) or 40) + 18;   -- (the labels' column)
+        imgui.TextColored({ 0.70, 0.68, 0.80, 1 }, 'Name');
+        imgui.SameLine(LC);
+        imgui.PushItemWidth(180);
+        imgui.InputText('##yui_mename', E.name, 9);
+        imgui.PopItemWidth();
+        imgui.SameLine(0, 10 * ps);                                  -- (TIDY NAMES: every name on this page neat - "MEIKYO" -> "Meikyo")
+        if accent_button('TIDY NAMES##yui_metidy', { 0, 0 }, true, true) then
+            local bk, pg = C.mb_bookpage();
+            if bk ~= E.book or pg ~= E.page then
+                E.err = 'The macro page changed - open the macro again to edit it.';
+            else
+                local n, er = C.mb_tidy_page();
+                if n then
+                    E.name[1] = C.mb_tidy_name(E.name[1]); E.err = nil;
+                    msg(n > 0 and string.format('Macro names tidied: %d changed on this page.', n) or 'Macro names: already tidy.');
+                else E.err = 'Not tidied: ' .. tostring(er); end
+            end
+        end
+        if imgui.IsItemHovered() then YUI_TIP('Tidy every macro name on this page (Ctrl and Alt):\nspaces trimmed, first letter a capital - "MEIKYO" becomes "Meikyo".\nNames already in mixed case (ThirdEye) keep their capitals.'); end
+        imgui.Dummy({ 4, 6 });
+        for l = 1, 6 do
+            imgui.TextColored({ 0.70, 0.68, 0.80, 1 }, 'Line ' .. l);
+            imgui.SameLine(LC);
+            imgui.PushItemWidth(-1);
+            imgui.InputText('##yui_meline' .. l, E.lines[l], math.max(61, #E.plain[l] + 1));   -- (room for a line whose auto-translate words, made plain, run past 60: not cut short)
+            imgui.PopItemWidth();
+        end
+        if E.err then imgui.TextColored({ 1, 0.45, 0.50, 1 }, E.err); end
+        imgui.TextColored({ 0.55, 0.53, 0.64, 1 }, 'Name: up to 8 letters.  Lines: up to 60.');
+        imgui.Dummy({ 4, 6 * ps });
+        local bw = (imgui.GetContentRegionAvail() - 16 * ps) / 3;
+        local function lines_out()                                  -- (a line left as it was keeps its auto-translate words)
+            local t = {};
+            for l = 1, 6 do t[l] = (E.lines[l][1] == E.plain[l]) and E.raw[l] or E.lines[l][1]; end
+            return t;
+        end
+        if accent_button('TEST##yui_metest', { bw, 0 }, true) then
+            local t = {};
+            for l = 1, 6 do if E.lines[l][1]:match('%S') then t[#t + 1] = E.lines[l][1]; end end
+            pcall(C.mb_play, t);
+        end
+        imgui.SameLine(0, 8 * ps);
+        if accent_button('SAVE##yui_mesave', { bw, 0 }) then
+            local bk, pg = C.mb_bookpage();
+            if bk ~= E.book or pg ~= E.page then
+                E.err = 'The macro page changed - open the macro again to edit it.';
+            else
+                local ok, er = C.mb_write(E.id, E.name[1], lines_out());
+                if ok then msg(string.format('Macro %s %s saved.', row, key)); C.ME = nil;
+                else E.err = 'Not saved: ' .. tostring(er); end
+            end
+        end
+        imgui.SameLine(0, 8 * ps);
+        if accent_button('CANCEL##yui_mecancel', { bw, 0 }, true) or imgui.IsKeyPressed(ImGuiKey_Escape or 0x1B) then C.ME = nil; end
+    end
+    imgui.End();
+    imgui.PopStyleVar(3);
+    imgui.PopStyleColor(3);
+    if not open[1] then C.ME = nil; end
 end
 C.MB_TCMD = { ma = true, magic = true, ja = true, jobability = true, ws = true, weaponskill = true, ra = true, ranged = true,
     item = true, pet = true, ta = true, target = true, na = true, ninjutsu = true };   -- (lines the game sends as a macro's: its sub target arrow works)
@@ -13341,7 +15226,13 @@ function C.mb_tick()                                                -- (the play
         M.stwait = { t0 = now, pre = C.mb_stflags() };
     end
 end
-function C.mb_pad()                                                 -- (a controller's trigger held: 1 the left - Ctrl row, 2 the right - Alt row)
+function C.mb_l1()                                                  -- (ACTION BARS > Macro buttons: L1 / R1 in place of L2 / R2 - as the player set the game's pad)
+    return cfg.mb_btn == 'l1';
+end
+function C.mb_bn()                                                  -- (the macro buttons' names, for the words)
+    return C.mb_l1() and 'L1 / R1' or 'L2 / R2';
+end
+function C.mb_pad()                                                 -- (a controller's macro button held: 1 the left - Ctrl row, 2 the right - Alt row)
     local M = C.MB;
     M.both = false;
     if M.xl ~= nil and os.clock() - (M.xt or -9) < 0.5 then           -- (an Xbox pad: as the game's own read saw it, before YunaUI hid the triggers from it)
@@ -13354,8 +15245,13 @@ function C.mb_pad()                                                 -- (a contro
     if M.xin then
         local ok, r = pcall(function() return M.xin.XInputGetState(0, M.xs); end);
         if ok and r == 0 then
-            if M.xs.Gamepad.bLeftTrigger > 60 then return 1; end
-            if M.xs.Gamepad.bRightTrigger > 60 then return 2; end
+            if C.mb_l1() then                                        -- (the shoulder buttons)
+                if bit.band(M.xs.Gamepad.wButtons, 0x0100) ~= 0 then return 1; end
+                if bit.band(M.xs.Gamepad.wButtons, 0x0200) ~= 0 then return 2; end
+            else
+                if M.xs.Gamepad.bLeftTrigger > 60 then return 1; end
+                if M.xs.Gamepad.bRightTrigger > 60 then return 2; end
+            end
         end
     end
     if M.dl2 then return 1; end                                      -- (a DirectInput pad: L2 / R2, from its button events)
@@ -13431,7 +15327,8 @@ function C.mb_focused()                                              -- (the gam
         if h == nil then return false; end
         local pid = ffi.new('uint32_t[1]');
         M.user32.GetWindowThreadProcessId(h, pid);
-        return pid[0] == ffi.C.GetCurrentProcessId();
+        if pid[0] == ffi.C.GetCurrentProcessId() then M.hwnd = h; return true; end   -- (the game's window: kept for PARTY > Party invite alert)
+        return false;
     end);
     M.fg = (not ok) or r;                                            -- (if it can't tell: as before)
     return M.fg;
@@ -13472,26 +15369,33 @@ function C.macrobar()
     local held = ctrl and 1 or (alt and 2 or 0);
     if held ~= (M.kbheld or 0) then                                  -- (Ctrl / Alt just pressed: that row's pick where it was left)
         local was = M.kbheld or 0;
-        if was ~= 0 and held == 0 and cfg.mb_pad == 'toggle' and not cfg.mb_always and not M.kused and os.clock() - (M.kdown or -9) < 0.35 then
-            M.ktog = (M.ktog == was) and 0 or was;                   -- (a tap, Press to show: the bar opens on that row - another tap closes it)
+        if held ~= 0 then
+            M.kdown, M.kused, M.kother, M.kmac = os.clock(), false, false, false;
+            M.kpre = {};                                             -- (keys already held when Ctrl / Alt went down - running with W: not a shortcut)
+            for vk = 0x08, 0xFE do if C.mb_key(vk) then M.kpre[vk] = true; end end
         end
-        if held ~= 0 then M.kdown, M.kused, M.kother = os.clock(), false, false; end
         M.kbheld = held;
+        if M.dbg then msg('[mb] Ctrl / Alt: ' .. held .. ' focused=' .. tostring(C.mb_focused())); end
         if held ~= 0 and M.lastsel[held] then M.sel = M.lastsel[held]; end
     end
     if held ~= 0 then                                                -- (a key used with it: not a tap)
-        for vk = 0x30, 0x39 do if C.mb_key(vk) then M.kused = true; end end
-        for vk in pairs(C.MB_VK or {}) do if C.mb_key(vk) then M.kused = true; end end
-        if C.mb_key(0x26) or C.mb_key(0x28) then M.kused = true; end
+        for vk = 0x30, 0x39 do if C.mb_key(vk) then M.kused, M.kmac = true, true; end end   -- (a macro key / the bar's keys used with it: never a tap)
+        for vk in pairs(C.MB_VK or {}) do if C.mb_key(vk) then M.kused, M.kmac = true, true; end end
+        if C.mb_key(0x26) or C.mb_key(0x28) then M.kused, M.kmac = true, true; end
         if not M.kother and C.mb_focused() then                        -- (any other key with it - Ctrl + P / L / R..., the game's chat shortcuts: not for the bar,
             for vk = 0x08, 0xFE do                                     --  it stays shut till Ctrl / Alt is let go)
-                local mod = (vk >= 0x10 and vk <= 0x12) or (vk >= 0xA0 and vk <= 0xA5) or (vk >= 0x30 and vk <= 0x39) or C.MB_VK[vk] ~= nil or vk == 0x26 or vk == 0x28;
-                if not mod and C.mb_key(vk) then M.kother, M.kused = true, true; break; end
+                local mod = (vk >= 0x10 and vk <= 0x12) or (vk >= 0xA0 and vk <= 0xA5) or (vk >= 0x30 and vk <= 0x39) or C.MB_VK[vk] ~= nil or vk == 0x26 or vk == 0x28
+                    or vk == 0x57 or vk == 0x41 or vk == 0x53 or vk == 0x44 or vk == 0x20 or vk == 0x25 or vk == 0x27 or (M.kpre and M.kpre[vk]);   -- (moving - W A S D, Space, arrows - or held before: never a shortcut)
+                if not mod and C.mb_key(vk) then
+                    M.kother, M.kused = true, true;
+                    if M.dbg then msg(string.format('[mb] another key held with it: %02X - the bar stays shut', vk)); end
+                    break;
+                end
             end
         end
         if M.kother then held = 0; end
     end
-    if cfg.mb_pad ~= 'toggle' or cfg.mb_always then M.ktog = 0; end
+    M.ktog = 0;                                                      -- (the keyboard is always hold to show, as the game: a Ctrl / Alt tap never keeps it open - Press to show is the controller's only)
     M.kbk = M.kbk or {};                                             -- (Ctrl / Alt held: the arrows move the pick, Enter runs it - read as the digits are)
     for vk, w in pairs(C.MB_VK or {}) do
         local down = held ~= 0 and C.mb_key(vk);
@@ -13539,17 +15443,30 @@ function C.macrobar()
     if held == 0 and (M.ktog or 0) ~= 0 then held = M.ktog; end      -- (opened with a Ctrl / Alt tap: shown on that row till the next tap)
     local always = cfg.mb_always == true;
     local early = (M.kbheld or 0) ~= 0 and held == M.kbheld and not M.kused and os.clock() - (M.kdown or 0) < 0.15;   -- (Ctrl / Alt only just down: a moment to see if it's a chat shortcut before it shows)
-    M.tabopen = (ui.open and ui.tab == 11) and true or false;
-    local recent = false;                                            -- (a macro just run: the bar stays a moment, so its echo is seen)
-    for _, t_ in pairs(M.flash or {}) do if now - t_ < 1.1 then recent = true; end end
-    local want = (always or (held ~= 0 and not early) or EDIT.on or M.tabopen or recent) and 1 or 0;   -- (shown too while its tab is open)
-    M.a = M.a + (want - M.a) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 10);
+    M.tabopen = (ui.open and ui.tab == 12) and true or false;
+    local recent = false;                                            -- (a macro just run: it closes fast, so you're ready to open it again)
+    for _, t_ in pairs(M.flash or {}) do if now - t_ < 0.6 then recent = true; end end
+    local mdemo = EDIT.G.on and EDIT.G.STEPS[EDIT.G.i] and EDIT.G.STEPS[EDIT.G.i][1] == 'Action bars';   -- (the guide's Action bars slide: the bar shows live)
+    if mdemo and now - (M.mddemo or -99) > 6 then                    -- (and every 6 s two macros are used: their cooldowns play, in that style)
+        M.mddemo = now;
+        M.fake = { [2] = { now, now + 5 }, [3] = { now, now + 3.5 } };
+        M.flash[2], M.flash[3] = now, now + 0.15;
+    end
+    local want = (always or (held ~= 0 and not early) or EDIT.on or M.tabopen or mdemo) and 1 or 0;   -- (shown too while its tab is open)
+    do                                                               -- (at an even pace, not a fast fall-off: opening ~0.3 s, hiding ~0.45 s - the panels' depth and
+        local dt_ = math.min(0.05, imgui.GetIO().DeltaTime or 0.016);   --  dissolve play out instead of being over in a blink)
+        local d_ = want - M.a;
+        M.a = M.a + math.max(-dt_ / (recent and 0.14 or 0.45), math.min(dt_ / 0.30, d_));
+    end
+    pcall(C.mb_reverb, now);                                         -- (a macro you ran rings out - even as the bar closes)
+    if C.ME then local oke, ere = pcall(C.mb_editor); if not oke then YUI_ERRLOG('medit', ere); C.ME = nil; end end   -- (a macro being edited)
     if M.a < 0.02 then M.ringrow = nil; return; end   -- (the cards going back into the chat: drawn till they're in)
     pcall(C.mblook, held, always, now);                              -- (MACRO WAVES: the hexagons and the recast timeline - every other look taken out)
 end
 ashita.events.register('unload', 'yui_unload', function()
     pcall(function() local v = rawget(_G, 'vana'); if v and v.gameui then v.gameui.image('target_arrow'); end end);   -- (the game's arrow back - VanaCore does it too)
     pcall(C.hn_off);                                                 -- (the name over your target back)
+    pcall(function() local v = rawget(_G, 'vana'); if C.MB.hid and v and v.gameui then v.gameui.show('macro_bar'); end end);   -- (the game's macro bar back)
     pcall(function() if CHATLOG.f then CHATLOG.f:close(); CHATLOG.f = nil; end end);   -- the chat log file
     pcall(legacy.hide_input, false);                                 -- the game's typing bar and chat windows back
     pcall(legacy.hide_logs, false);
@@ -13728,7 +15645,7 @@ YUI_BAR_OUTLINE = function(dl, x, y, w, h) pcall(C.outline, dl, x, y, w, h); end
 -- does. A map is 512 "map pixels"; a world spot is at X * |scale| / 5, -Y * |scale| / 5, less the map's offset.
 ----------------------------------------------------------------------------------------------------
 YMAP = { zone = -1, floor = -1, entry = nil, tex = nil, mobs = {}, mobs_t = 0, check_t = 0, big = false };
-function YMAP.have()                                                 -- (the maps are made on your own PC and never published:
+function YMAP.have()                                                 -- (the maps ship in mapsimg - see the README's credits:
     if YMAP.has == nil then                                          --  without the mapsimg folder there is no minimap at all)
         local ok, r = pcall(function() return ashita.fs.exists((addon.path:gsub('[\\/]+$', '')) .. '\\mapsimg'); end);
         YMAP.has = (ok and r) and true or false;
@@ -14577,7 +16494,8 @@ function YMAP.hub_on() return cfg.map_hub == true and cfg.minimap ~= false and Y
 -- its new amount with what changed beside it, a new zone draws the frame and scans it, Vana'diel's time and day sit in
 -- its corner. With the map at the top of the screen the tags go over it and the zone's name under it.
 function YMAP.frame_on() return cfg.minimap ~= false and YMAP.have(); end   -- (the map's frame: always with the minimap; EXP, gil and bag in it: dock_on)
-function YMAP.dock_on() return cfg.minimap ~= false and cfg.map_dock ~= false and YMAP.have(); end   -- (both modes: Hex link's Visor, Normal's Capsule)
+function YMAP.dock_on() return cfg.minimap ~= false and cfg.map_dock ~= false and YMAP.have() and not YMAP.round(); end   -- (both modes: Hex link's Visor, Normal's Capsule)
+function YMAP.round() return false; end   -- (MINIMAP > Frame > Round gold: a plain round map in a gold ring; EXP, gil and bag their own windows)
 C.HD = { comets = {} };
 C.VDAYS = { { 'Firesday', { 1.0, 0.36, 0.28 } }, { 'Earthsday', { 0.86, 0.68, 0.30 } }, { 'Watersday', { 0.32, 0.62, 1.0 } },
             { 'Windsday', { 0.40, 0.92, 0.50 } }, { 'Iceday', { 0.62, 0.92, 1.0 } }, { 'Lightningday', { 0.78, 0.48, 1.0 } },
@@ -14644,7 +16562,7 @@ function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: th
     local za = now - (YMAP.tt or 0);
     local zf = math.min(1, za / 0.9); zf = 1 - (1 - zf) ^ 3;
     local info = YMAP.dock_on();                                     -- (EXP, gil and bag on the map: off - the frame whole, nothing in it but the day)
-    frame(P, 1, col({ 0, 0, 0 }, 0.55), 4 * s, info);
+    frame(P, 1, col({ 0, 0, 0 }, 0.55), 4 * s, info);                -- (the first Visor - MINIMAP > Frame > Original)
     frame(P, zf, col(GO, 0.75), 1.4 * s, info);
     if za > 0.6 and za < 1.6 then
         local q = (za - 0.6) / 1.0;
@@ -15191,6 +17109,137 @@ function YMAP.hub(dl, cx, cy, M)                                     -- the jobs
     unsized(pushed);
     return bottom;
 end
+-- The minimap's glass card: the user's own reference picture (images/glass/mapcard.png, cut from it and emptied by
+-- tools\yunaui-macrobar\card_from_ref.py), drawn at f = its scale; the live map in its middle, the words in its plates.
+-- Positions are in that picture's pixels (988 x 755; the card 28..960 x 28..727, the map 62..926 x 190..610).
+function YMAP.glassdock(dl, ix, iy, f)
+    local H = C.HD;
+    local now = os.clock();
+    local GO, WH, GR = { 1.0, 0.80, 0.42 }, { 1, 1, 1 }, { 0.62, 0.62, 0.64 };
+    local AZ = (C.HEXMP and C.HEXMP[1]) or { 0.35, 0.80, 1.00 };
+    local function X(px) return ix + px * f; end
+    local function Y(py) return iy + py * f; end
+    local function say(str, px, x_, ymid, c, al)                     -- (outlined text, its left at x_, its middle at ymid; gives back its width)
+        local pushed = sized('chat', px);
+        local w_ = tonumber((imgui.CalcTextSize(str))) or 0;
+        local h_ = imgui.GetTextLineHeight();
+        outlined(dl, math.floor(x_), math.floor(ymid - h_ / 2), str, { c[1], c[2], c[3], al or 1 });
+        unsized(pushed);
+        return w_;
+    end
+    local function tw(str, px) return (YMAP.tsize(str, px)); end
+    -- the readings
+    local pl = AshitaCore:GetMemoryManager():GetPlayer();
+    local mj, lvl = pl and pl:GetMainJob() or 0, pl and pl:GetMainJobLevel() or 0;
+    local sub, sublvl = pl and pl:GetSubJob() or 0, pl and pl:GetSubJobLevel() or 0;
+    local limit = pl and pl.GetIsLimitModeEnabled and pl:GetIsLimitModeEnabled() and C.lv75(pl, lvl);
+    local pts, need, v = 0, 1, 0;
+    if pl then
+        if limit then pts, need = pl:GetLimitPoints() or 0, 10000; else pts, need = pl:GetExpCurrent() or 0, pl:GetExpNeeded() or 1; end
+        v = need > 0 and math.max(0, math.min(1, pts / need)) or 0;
+    end
+    local merits, mmax = pl and pl:GetMeritPoints() or 0, pl and pl:GetMeritPointsMax() or 0;
+    local used, bmax = 0, 0;
+    pcall(function() local inv = AshitaCore:GetMemoryManager():GetInventory(); used, bmax = inv:GetContainerCount(0) or 0, inv:GetContainerCountMax(0) or 0; end);
+    local gil = C.gil_read();
+    local blank_ = (lvl <= 0 or mj == 0 or bmax <= 0);
+    if blank_ then H.blank = now; end
+    local live = not blank_ and now - (H.blank or -99) > 3;
+    if live and H.lvl and lvl > H.lvl and H.mj == mj then H.burst = now; end   -- (a level up)
+    if live and H.used and used > H.used and used >= bmax and bmax > 0 then H.shake = now; end   -- (the bag just filled)
+    H.pts, H.limit, H.lvl, H.mj, H.used = pts, limit, lvl, mj, used;
+    H.v = H.v and (H.v + (v - H.v) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 4)) or v;
+    -- your jobs (top left plate: 130 .. 470)
+    do
+        local xx = X(130);
+        xx = xx + say(JOBS[mj] or '?', 44 * f, xx, Y(78), GO);
+        xx = xx + say(' ' .. lvl, 44 * f, xx, Y(78), WH);
+        if JOBS[sub] and sublvl > 0 then
+            local st = ' / ' .. JOBS[sub] .. ' ' .. sublvl;
+            local px = 34 * f;
+            local room = X(470) - xx;
+            if tw(st, px) > room then px = px * math.max(0.7, room / math.max(1, tw(st, px))); end
+            if tw(st, px) <= room + 1 then say(st, px, xx, Y(80), GR); end
+        end
+    end
+    -- your gil (after the coin, 678 .. 900), rolling to its new amount, what changed beside it
+    do
+        H.gd = H.gd or gil;
+        H.gd = H.gd + (gil - H.gd) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 5);
+        if math.abs(gil - H.gd) < 1 then H.gd = gil; end
+        local gs = commas(math.floor(H.gd + 0.5));
+        local gw = say(gs, 44 * f, X(678), Y(78), WH);
+        local diff, ga = C.gil_diff(gil);
+        if diff ~= 0 then
+            local ds = (diff > 0 and '+' or '') .. commas(diff);
+            if X(678) + gw + 8 * f + tw(ds, 28 * f) <= X(935) then
+                say(ds, 28 * f, X(678) + gw + 8 * f, Y(80), diff > 0 and { 0.55, 1, 0.65 } or { 1, 0.5, 0.65 }, ga);
+            end
+        end
+    end
+    -- the day and time (left plate of the second row: its dot at 97, its words 120 .. 380)
+    do
+        local vt = (os.time() - 1009810800) * 25;
+        local hr, mn = math.floor(vt / 3600) % 24, math.floor(vt / 60) % 60;
+        local d = C.VDAYS[math.floor(vt / 86400) % 8 + 1];
+        local ts = string.format('%s  %02d:%02d', d[1], hr, mn);
+        local px = 40 * f;
+        local room = X(395) - X(120);
+        if tw(ts, px) > room * 1.2 then ts = string.format('%s %02d:%02d', (d[1]:gsub('s?day$', '')), hr, mn); end   -- (too long, Lightningday: "Lightning 12:27" - readable, not shrunk)
+        if tw(ts, px) > room then px = px * math.max(0.85, room / math.max(1, tw(ts, px))); end
+        DL.CF(dl, X(97), Y(158), 11 * f, U4(d[2][1], d[2][2], d[2][3], 1), 20);
+        DL.CF(dl, X(94), Y(154), 4 * f, U4(1, 1, 1, 0.55), 10);
+        say(ts, px, X(120), Y(158), WH);
+    end
+    -- your merits, or EXP / limit points (right plate of the second row, ending at 908)
+    do
+        local vS, kS = string.format('%d%%', math.floor(v * 100)), limit and 'LIMIT' or 'EXP';
+        if C.lv75(pl, lvl) and not limit then vS, kS = string.format('%d/%d', merits, mmax), 'MERITS'; end
+        local w1, w2 = tw(vS, 40 * f), tw(kS, 32 * f);
+        local tx = X(908) - w1 - 8 * f - w2;
+        say(vS, 40 * f, tx, Y(158), WH);
+        say(kS, 32 * f, tx + w1 + 8 * f, Y(160), GO);
+        if H.v > 0.002 and kS ~= 'MERITS' then                       -- (its progress: a fine gold line under the plate)
+            DL.L(dl, X(640), Y(186), X(640) + (X(925) - X(640)) * H.v, Y(186), U4(GO[1], GO[2], GO[3], 0.95), math.max(1.2, 4 * f));
+        end
+    end
+    -- the bag (bottom left plate: 108 ..; its line 75 .. 345 under it - red, beating, when nearly full)
+    do
+        local sh = H.shake and (now - H.shake) or 99;
+        local ox = (sh < 0.5) and math.sin(sh * 60) * 3 * f * 3 * (1 - sh / 0.5) or 0;
+        local near = bmax > 0 and used >= bmax - 5;
+        local beat = near and (0.5 + 0.5 * math.sin(now * 6)) or 0;
+        local fc = near and { 1.0, 0.36, 0.40 } or AZ;
+        local uw = say(tostring(used), 46 * f, X(108) + ox, Y(650), near and { 1, 0.7, 0.72 } or WH);
+        say('/' .. tostring(bmax), 34 * f, X(108) + ox + uw + 4 * f, Y(654), { 0.52, 0.66, 0.80 });
+        local fr = bmax > 0 and used / bmax or 0;
+        local x0, x1, ly = X(75) + ox, X(345) + ox, Y(687);
+        DL.L(dl, x0, ly, x1, ly, U4(0, 0, 0, 0.55), math.max(2, 8 * f));
+        if fr > 0 then
+            DL.L(dl, x0, ly, x0 + (x1 - x0) * fr, ly, U4(fc[1], fc[2], fc[3], 0.25 + 0.3 * beat), math.max(3, 14 * f));
+            DL.L(dl, x0, ly, x0 + (x1 - x0) * fr, ly, U4(fc[1], fc[2], fc[3], 1), math.max(1.5, 5 * f));
+        end
+    end
+    -- the zone and your grid square (the foot plate, centred on 602)
+    do
+        local zn = (YMAP.name and YMAP.name ~= '') and YMAP.name or '';
+        local gp = YMAP.gridpos and YMAP.gridpos() or '';
+        local px = 40 * f;
+        local w1 = tw(zn, px);
+        local w2 = (gp ~= '') and (24 * f + tw(gp, px)) or 0;
+        local room = X(840) - X(430);
+        if w1 + w2 > room then px = px * math.max(0.65, room / (w1 + w2)); w1 = tw(zn, px); w2 = (gp ~= '') and (24 * f + tw(gp, px)) or 0; end
+        local xz = X(602) - (w1 + w2) / 2;
+        say(zn, px, xz, Y(692), WH);
+        if gp ~= '' then say(gp, px, xz + w1 + 24 * f, Y(692), GO); end
+    end
+    local bu = H.burst and (now - H.burst) or 99;                    -- (a level up: LEVEL UP in gold over the map, fading)
+    if bu < 1.6 then
+        local ls = 'LEVEL UP';
+        say(ls, 60 * f, X(494) - tw(ls, 60 * f) / 2, Y(330), { 1.0, 0.88, 0.62 }, math.min(1, (1.6 - bu) / 0.4));
+    end
+    return iy + 755 * f;
+end
 function YMAP.mini(party, ent, zid, me, sc)                          -- the minimap: the map around you, no grid
     local M = math.floor((tonumber(cfg.map_size) or 220) * sc);
     first_place('map_x', 'map_y', 560, -560);
@@ -15199,21 +17248,30 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
     local x, y = imgui.GetCursorScreenPos();
     x, y = math.floor(x + 4), math.floor(y + 4);
     local y0_ = y;
-    local style = YMAP.frame_on() and (YUI_HEX and 'visor' or 'capsule') or nil;
+    local style = (YMAP.frame_on() and not YMAP.round()) and (YUI_HEX and 'visor' or 'capsule') or nil;
+                                                                     -- (Hex link: the glass card ('card': Glass / Thin gold), or the first Visor)
                                                                      -- (the map with your EXP, bag, jobs and gil built in: Hex link's
                                                                      --  Visor, Normal mode's Capsule)
     local MW, MH = M, M;
-    if style == 'visor' then MW, MH = math.floor(M * 1.35), math.floor(M * 0.8); end   -- (the Visor: a wide map)
+    if style == 'visor' or style == 'card' then MW, MH = math.floor(M * 1.35), math.floor(M * 0.8); end   -- (the Visor: a wide map)
     if style == 'capsule' then MW, MH = math.floor(M * 1.25), math.floor(M * 0.9); end   -- (the Capsule: a little wide)
     local s_ = math.max(0.55, M / 220);
     local dockL = style and math.floor(6 * s_) or 0;                 -- (a little room either side for the frame)
+    local GP, GH1, GFT, GG = 10 * s_, 26 * s_, 24 * s_, 22 * s_;     -- (the glass card: its padding, top row, foot, room for its glow)
+    if YMAP.round() then dockL = math.floor(9 * s_); end            -- (room for the gold ring's glow)
+    if style == 'card' then                                          -- (the reference's card: its map place 864 x 420 of its 932 wide card)
+        YMAP.gf = (MW + 2 * GP) / 932;
+        MW, MH = math.floor(864 * YMAP.gf), math.floor(420 * YMAP.gf);
+        dockL = math.floor(62 * YMAP.gf) + 2;
+    end
     local padR = dockL;
     x = x + dockL;
     local _, SH_ = C.screen();                                       -- (the zone's name above the map - or under it when the map is at the
     local tlow = (tonumber(cfg.map_y) or 0) + M / 2 < SH_ * 0.4;     --  top of the screen; Hex link's dock flips with it)
     local onedge = style and true or false;                          -- (with a frame the zone's name sits on its edge: the top, or the bottom when low)
     local T;
-    if onedge and not tlow then T = math.floor(20 * s_);                          -- (a little room: the name sits on the frame's top edge, drawn after it)
+    if style == 'card' then onedge = false; T = math.floor(190 * YMAP.gf) + 2;   -- (the glass card: jobs and gil in its top rows, the zone's name in its foot)
+    elseif onedge and not tlow then T = math.floor(20 * s_);                          -- (a little room: the name sits on the frame's top edge, drawn after it)
     elseif tlow then T = style and math.floor(30 * s_) or 0;
     else T = YMAP.title(dl, x, y, M, sc, MW); end   -- the zone's name, above the map (under it: the dock flips - its plate over the map, the day tab under)
     y = y + T;
@@ -15228,6 +17286,17 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
             cfg.map_zoom = math.floor(math.max(16, math.min(256, z)) + 0.5);
             WATCH.later = true;                                      -- (saved a moment later, not every notch)
         end
+    end
+    if style == 'card' then                                          -- (the glass card under the map: drawn first, the map over it)
+        local f = YMAP.gf;
+        local thin = false;                         -- (MINIMAP > Frame: Glass, or Thin gold - no glass at all: the plain minimap, its
+        if thin then                                                  --  words where they are, a thin gold line round the card's same shape)
+            pcall(C.rrline, dl, x - 34 * f, y - 162 * f, x + 898 * f, y + 536 * f, { 82 * f, 41 * f, 58 * f, 72 * f });
+        end
+        local gt = (not thin) and C.mip('glass/mapcard', f) or nil;
+        if gt then pcall(function() DL.I(dl, gt.ptr, x - 62 * f, y - 190 * f, x + 926 * f, y + 565 * f, 0, 0, 1, 1, U4(1, 1, 1, 1)); end); end
+        local gg = (not thin) and C.mip('glass/mapcard_glow', f) or nil;   -- (alive: its gold glowing a little brighter and back, slowly)
+        if gg then pcall(function() DL.I(dl, gg.ptr, x - 62 * f, y - 190 * f, x + 926 * f, y + 565 * f, 0, 0, 1, 1, U4(1, 1, 1, 0.03 + 0.32 * C.breath())); end); end
     end
     local ground = 'none';                                           -- (no frame: just the lines over the game, on a soft fade)
     if ground ~= 'none' then
@@ -15297,9 +17366,20 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
     end
     unsized(pushed);
     local bottom = y + MH;
+    if YMAP.round() then                                             -- (the gold ring: bright, a soft glow round it, a dark hair inside)
+        local rr = M / 2 + 3 * s_;
+        local GO, CH = { 1.0, 0.76, 0.34 }, { 1.0, 0.88, 0.56 };
+        DL.C(dl, cx, cy, rr + 1, U4(GO[1], GO[2], GO[3], 0.14), 96, 7 * s_);
+        DL.C(dl, cx, cy, rr - 2 * s_, U4(0, 0, 0, 0.40), 96, 1.5 * s_);
+        DL.C(dl, cx, cy, rr, U4(GO[1], GO[2], GO[3], 1), 96, 2.6 * s_);
+        DL.C(dl, cx, cy, rr, U4(CH[1], CH[2], CH[3], 0.9), 96, 1.1 * s_);
+        bottom = bottom + 8 * s_;
+    end
     if YMAP.hub_on() then bottom = YMAP.hub(dl, cx, cy, M) or bottom; end   -- (MINIMAP > EXP, gil and bag on the map)
     if style then                                                    -- (Hex link: the map dock)
-        local okd, rb = pcall((style == 'capsule') and YMAP.capsule or YMAP.dock, dl, x, y, M, cx, cy, tlow, MW, MH);
+        local okd, rb;
+        if style == 'card' then okd, rb = pcall(YMAP.glassdock, dl, x - 62 * YMAP.gf, y - 190 * YMAP.gf, YMAP.gf);
+        else okd, rb = pcall((style == 'capsule') and YMAP.capsule or YMAP.dock, dl, x, y, M, cx, cy, tlow, MW, MH); end
         if okd and rb then bottom = math.max(bottom, rb); elseif not okd then YUI_ERRLOG('mapdock', rb); end
         if onedge then                                               -- (the name on the frame's top edge, over the break)
             local fp = ((style == 'capsule') and 6 or 4) * s_;
@@ -15309,7 +17389,7 @@ function YMAP.mini(party, ent, zid, me, sc)                          -- the mini
             else pcall(YMAP.title_edge, dl, cx, cy - MH / 2 - fp, s_); end
         end
     end
-    if tlow and not onedge then bottom = bottom + 4 * sc + YMAP.title(dl, x, bottom + 4 * sc, M, sc, MW); end   -- (the zone's name under it all)
+    if tlow and not onedge and style ~= 'card' then bottom = bottom + 4 * sc + YMAP.title(dl, x, bottom + 4 * sc, M, sc, MW); end   -- (the zone's name under it all)
     imgui.Dummy({ MW + 8 + dockL + padR, bottom - y0_ + 8 });   -- (the frame's right corner sticks out a little)
     end_plain('map_x', 'map_y');
 end
@@ -15519,7 +17599,7 @@ EDIT.G.STEPS = {
         "Who your target is looking at, and the monsters fighting you. Click a monster in the list to target it." }, { { 'subtarget', 'TARGET (Target of target)' }, { 'enemylist', 'TARGET (Enemy list)' } } },
     { "Party", function(G) return { G.win('party_x') }; end, {
         "Each member: the job tag in its role colour (tank, healer, damage, support), the name, HP, MP and TP.",
-        "The job tags are animated: click one to hide or show that member's buffs. A member under 75% HP is marked (Hex link: the HP bar turns orange, then red-orange; Normal: a yellow, then orange edge); under 25% it trembles and beats red.",
+        "The job tags are animated: click one to hide or show that member's buffs. A member under 75% HP is marked (Hex link: the HP bar turns orange, then red-orange; Vex: a yellow, then orange edge); under 25% it trembles and beats red.",
         "Double click a member to turn it over and see its exact HP and MP. Double click again to turn it back.",
         "The arrow next to the anchor icon, by PARTY, hides or shows the whole list." }, { { 'party', 'PARTY' } } },
     { "Alliance", function(G) return { G.win('alliance_x'), G.win('ally2_x') }; end, {
@@ -15539,6 +17619,15 @@ EDIT.G.STEPS = {
         "Your avatar, wyvern, automaton or beast: its HP, MP, TP, its ability timers and what it is fighting. It shows only when you have a pet." }, { { 'petbar', 'BARS (Pet)' } } },
     { "Timers", function(G) return { G.win('timer_x') }; end, {
         "Your abilities and spells that are not ready yet, with the time left." }, { { 'timers', 'TIMERS' } } },
+    { "Action bars", function(G) return { G.win('mbp_x') }; end, function(G)
+        local t = { "Hold Ctrl or Alt (" .. C.mb_bn() .. " on a controller) and your macros show here: the row you hold big and bright, the other under it. Run one as always, or right-click it to edit it." };
+        if G.hx() then
+            t[2] = "Each macro is a slanted gold blade. When you use one, its cooldown is the gold dot in its corner: small and dim while it recharges, full and pulsing when it is ready again.";
+        else
+            t[2] = "Each macro is a soft white vortex. When you use one, it shrinks into a small orb and slowly grows back into its vortex as its cooldown runs out: full size means ready.";
+        end
+        t[3] = "A macro that closes the skillchain on your target lights up with its name, and spells that can Magic Burst glow.";
+        return t; end, { { 'macrobar', 'ACTION BARS' } } },
     { "Gear", function(G) return { G.win('strip_x') or G.win('_sx') }; end, {
         "Your 16 equipped items in HD. They light up when you change gear; put the mouse over them to see them at any time." }, { { 'strip_show', 'EQUIP (Gear strip)' } } },
     { "Damage Meter", function(G) return { G.dps() }; end, {
@@ -15547,6 +17636,13 @@ EDIT.G.STEPS = {
     { "Chat", function(G) return { G.chat(1), cfg.chat_split and G.chat(2) or nil }; end, {
         "Channel tabs (Say, Party, Tell...), timestamps, and a combat log of its own if you want one.",
         "Put the mouse over it to see the older lines, and scroll to read your history." }, { { 'chat', 'CHAT' } } },
+    { "Treasure pool", function(G) return { G.win('loot_x'), G.win('got_x') }; end, {
+        "Items that drop show here with the time left and who is winning: LOT or PASS each one, or all of them at once.",
+        "An item that goes to you - a drop, or the pool won - pops up for a few seconds: WON and its name." }, { { 'loot_win', 'TREASURE POOL' }, { 'loot_got', 'TREASURE POOL (Item popup)' } } },
+    { "Mode switch", function(G) return { G.win('modesw_x') }; end, function(G)
+        return { "YUNA UI, on your chat's top edge, shows your mode: its UI " .. (G.hx() and "gold - Hex link." or "pink - Vex mode."),
+            "Click it and it turns over like a card: the whole UI changes to the other look - " .. (G.hx() and "pink Vex mode" or "gold Hex link") .. ". Click again to come back." }; end,
+        { { 'mode_icon', 'GENERAL (Mode switch icon)' } } },
     { "Settings", nil, {
         "Type /yui to open the settings: every piece has its own size, look and on / off switch.",
         "In GENERAL > MY LAYOUTS you can keep five layouts of your own, with their places and sizes." } },
@@ -15554,12 +17650,17 @@ EDIT.G.STEPS = {
         "Now place everything where you like: drag any piece, it snaps to the grid and lines up with the others. Press DONE when you are happy.",
         "Later: /yui edit to move things again, /yui guide to see this guide again." } },
 };
+if YUI_PUBLIC then                                                   -- (the public version: no action bar, no mode switch - no slides about them)
+    for i = #EDIT.G.STEPS, 1, -1 do local t_ = EDIT.G.STEPS[i][1]; if t_ == 'Action bars' or t_ == 'Mode switch' then table.remove(EDIT.G.STEPS, i); end end
+end
 function EDIT.G.start()
     local G = EDIT.G;
     G.on, G.i, G.edit0 = true, 1, EDIT.on;
     if not cfg.g_backup then                                         -- (your layout, kept: the slides borrow the pieces)
         local t = LAYOUT.capture();
         t.o.strip_x, t.o.strip_y = tonumber(cfg.strip_x), tonumber(cfg.strip_y);   -- (the gear strip too)
+        t.o.mbp_x, t.o.mbp_y = tonumber(cfg.mbp_x), tonumber(cfg.mbp_y);   -- (and the action bar)
+        t.o.got_x, t.o.got_y = tonumber(cfg.got_x), tonumber(cfg.got_y);   -- (the item popup)
         cfg.g_backup = t;
         pcall(save);
     end
@@ -15689,6 +17790,9 @@ function EDIT.G.show(title)
     if title == 'Cast bar, EXP, gil and bag' then return (YMAP.dock_on and YMAP.dock_on()) and { 'cast', 'map' } or { 'cast', 'exp', 'gil', 'bag' }; end
     if title == 'Pet' then return { 'pet' }; end
     if title == 'Timers' then return { 'timers' }; end
+    if title == 'Action bars' then return { 'mbar' }; end
+    if title == 'Treasure pool' then return { 'loot', 'got' }; end
+    if title == 'Mode switch' then return { 'modesw' }; end
     if title == 'Gear' then return { 'strip' }; end
     if title == 'Damage Meter' then return { 'dps' }; end
     if title == 'Chat' then return { 'chat' }; end
@@ -15772,7 +17876,8 @@ function EDIT.G.item(id)
     end
     local W_ = { party = { 'party_x', 'party' }, ally1 = { 'alliance_x', 'party' }, ally2 = { 'ally2_x', 'party' }, enemy = { 'enemy_x', 'enemy' },
                  cast = { 'cast_x', 'cast' }, exp = { 'exp_x', 'exp' }, gil = { 'gil_x', 'gil' }, bag = { 'bag_x', 'bag' }, pet = { 'pet_x', 'pet' },
-                 timers = { 'timer_x', 'timers' }, strip = { 'strip_x', 'strip' }, map = { 'map_x', 'map' } };
+                 timers = { 'timer_x', 'timers' }, strip = { 'strip_x', 'strip' }, map = { 'map_x', 'map' }, mbar = { 'mbp_x', 'mbar' },
+                 loot = { 'loot_x', 'loot' }, got = { 'got_x', 'got' }, modesw = { 'modesw_x', 'modesw' } };
     local w = W_[id];
     return w and win(w[1], w[2]) or nil;
 end
@@ -15983,7 +18088,7 @@ C.MD = { on = false, i = 1, h = 260 };
 C.MD.STEPS = {                                                       -- (one page: see both live, then pick)
     { 'Pick your style', { "YunaUI comes in two styles. Flip the switch above to see each one live on your screen: a pretend target and fight are showing.",
         'Then pick the one you like. You can change it any time at the top of /yui.' },
-      { 'Normal: the target bar where you place it, a fan of weapon skills, the Magic Burst card.', 'Hex link: the target bar over the target, a line to it, hexagon bars, a skillchain banner at the top.' } },
+      { 'Vex: the target bar where you place it, a fan of weapon skills, the Magic Burst card.', 'Hex link: the target bar over the target, a line to it, hexagon bars, a skillchain banner at the top.' } },
 };
 function C.MD.start(then_guide)
     local M = C.MD;
@@ -16107,7 +18212,7 @@ function C.MD.draw()
             local a1 = (i == 2) and PANEL.GOLD or C.normcol(2);
             DL.RF(fg, bx, y, bx + sw_ / 2, y + sh_, u32(on and { a1[1], a1[2], a1[3], 0.32 } or (hov and { 1, 1, 1, 0.07 } or { 0.10, 0.09, 0.13, 1 })), (i == 1) and sh_ / 2 or 0, (i == 1) and C.rleft or 0);
             DL.R(fg, bx, y, bx + sw_ / 2, y + sh_, U4(a1[1], a1[2], a1[3], on and 0.95 or 0.3), (i == 1) and sh_ / 2 or 0, (i == 1) and C.rleft or 0, on and 1.6 or 1);
-            local lb = (i == 1) and 'NORMAL' or 'HEX LINK';
+            local lb = (i == 1) and 'VEX' or 'HEX LINK';
             local lw = spaced_w(lb, 2 * k);
             local _, lh_ = imgui.CalcTextSize(lb);
             spaced(fg, bx + (sw_ / 2 - lw) / 2, y + (sh_ - lh_) / 2, lb, u32(on and { 1, 1, 1, 1 } or { 0.70, 0.68, 0.78, 1 }), 2 * k);
@@ -16165,7 +18270,7 @@ function C.MD.draw()
         end
         if last then                                                 -- I AM NORMAL / I AM HEX LINK
             local bw = math.floor((CW - pad * 2 - 12 * k) / 2);
-            if button('pn', 'NORMAL MODE', cx + pad, bw, true, C.normcol(3)) then M.pick(false); end
+            if button('pn', 'VEX MODE', cx + pad, bw, true, C.normcol(3)) then M.pick(false); end
             if button('ph', 'HEX LINK MODE', cx + pad + bw + 12 * k, bw, true, PANEL.GOLD2) then M.pick(true); end
             y = y + bh + 10 * k;
             if M.i > 1 and button('back', 'BACK', cx + pad, math.floor(90 * k), false) then M.i = M.i - 1; end
@@ -16198,7 +18303,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
     end);
     if cfg.welcomed == nil and logged then                           -- (the very first launch: Edit Mode opens once, to place everything;
         cfg.welcomed = true;                                         --  a player who already had YunaUI doesn't get it)
-        if not cfg.spine_v2 then EDIT.welcome = true; cfg.mode_v1, cfg.mode_v2 = true, true; pcall(C.MD.start, true); end   -- (the mode chooser, then the guide, then Edit Mode)
+        if not cfg.spine_v2 then EDIT.welcome = true; cfg.mode_v1, cfg.mode_v2, cfg.mode_v3 = true, true, true; pcall(C.MD.start, true); end   -- (the mode chooser, then the guide, then Edit Mode)
         pcall(save);
     end
     if cfg.g_dps0 and logged and not EDIT.G.on then                  -- (left mid-guide last time: the Damage Meter as it was)
@@ -16208,6 +18313,10 @@ ashita.events.register('d3d_present', 'yui_present', function()
     end
     if cfg.md_backup and logged and not C.MD.on then pcall(C.MD.restore); pcall(save); end   -- (left mid-demo last time: your layout back)
     if cfg.g_backup and logged and not EDIT.G.on then pcall(EDIT.G.unstage); pcall(save); end   -- (left mid-guide: the same)
+    if not YUI_PUBLIC and cfg.mode_v3 == nil and logged and not EDIT.G.on and not C.MD.on then   -- (once, the full version - Hex link mode and the action bars:
+        cfg.mode_v1, cfg.mode_v2, cfg.mode_v3 = true, true, true;   --  players who had the public one never saw the chooser, so the chooser
+        pcall(C.MD.start, true); pcall(save);                        --  first, then the whole guide with its new slides)
+    end
     if cfg.mode_v2 == nil and logged and not EDIT.G.on and not C.MD.on then cfg.mode_v1, cfg.mode_v2 = true, true; pcall(C.MD.start, true); pcall(save); end   -- (once after this update: Normal or Hex link?, then the guide - players who already had YunaUI too)
     if not cfg.pieces_v1 then                                        -- (once: old Edit Mode offsets of the target's name, Magic Burst, fan and
         for _, pc in ipairs(FIGHT.PIECES) do cfg[pc[1] .. '_dx'], cfg[pc[1] .. '_dy'] = 0, 0; end   --  cast cleared - they follow the bar)
@@ -16265,7 +18374,13 @@ ashita.events.register('d3d_present', 'yui_present', function()
         -- each piece on its own: a problem in one (shown once in chat) never stops the others, the logo or the window
         local function piece(fn, ...)
             if YUI_PRES and not YUI_PRES[(C.PF and C.PF[fn]) or '-'] then return; end   -- (the guide: only the slide's own pieces)
+            local ma = C.MT.t0 and C.mt_alpha(C.PF and C.PF[fn]) or nil;   -- (a mode's entrance: it fades in as the wave reaches it)
+            if ma then
+                if ma <= 0.01 then return; end
+                imgui.PushStyleVar(ImGuiStyleVar_Alpha, ma);
+            end
             local ok2, e2 = pcall(fn, ...);
+            if ma then imgui.PopStyleVar(); end
             if not ok2 then
                 YUI_ERRLOG('draw', e2);
                 if ui.last_err ~= tostring(e2) then ui.last_err = tostring(e2); msg('Draw error: ' .. ui.last_err); end
@@ -16317,7 +18432,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         EDIT.was = EDIT.on;
         C.PF = C.PF or { [draw_target] = 'tgt', [draw_subtarget] = 'sub', [draw_enemies] = 'enemy', [draw_chat] = 'chat',
             [draw_party] = 'party', [draw_exp] = 'exp', [draw_cast] = 'cast', [PET.draw] = 'pet', [TIMERS.draw] = 'timers',
-            [C.head_bars] = 'heads', [draw_strip] = 'strip', [draw_gil] = 'gil', [draw_bag] = 'bag', [YMAP.draw] = 'map',
+            [C.head_bars] = 'heads', [draw_strip] = 'strip', [draw_gil] = 'gil', [draw_bag] = 'bag', [YMAP.draw] = 'map', [C.macrobar] = 'mbar', [C.loot_win] = 'loot', [C.got_win] = 'got', [C.modesw] = 'modesw',
             [EDIT.G.dim] = 'all', [EDIT.G.draw] = 'all', [EDIT.G.splash] = 'all', [C.MD.draw] = 'all' };   -- (the guide: which slide shows what)
         piece(EDIT.G.dim);                                           -- (the guide: the screen dimmed under the slide's pieces)
         piece(draw_target, dt);
@@ -16357,9 +18472,11 @@ ashita.events.register('d3d_present', 'yui_present', function()
         TIMERS.preview = (ui.open and ui.tab == 7) or EDIT.on;      -- the TIMERS tab (and Edit Mode) show a preview of it
         piece(TIMERS.draw);
         piece(C.loot_win);                                           -- (TREASURE POOL)
+        piece(C.got_win);                                            -- (TREASURE POOL > Item popup)
         piece(C.bubble_draw);                                        -- (CHAT > Speech bubbles)
         pcall(C.hide_tname);                                         -- (Hex link: the game's name over your target hidden)
         pcall(C.tp_sound);                                           -- (BARS > TP sound: a chime at 1000 / 2000 / 3000)
+        if not YUI_PUBLIC then pcall(C.jav_tick); end                -- (ACTION BARS > Voice: a job ability ready again - not in the public version: no ACTION BARS tab to turn it off)
         piece(C.macrobar);                                           -- (BARS > MACRO BAR)
         piece(C.head_bars);                                          -- (BARS > YOUR BARS > Where: over your head)
         YUI_EQ_HIDE = true;                                          -- (the old gear wheel never shows)
@@ -16374,6 +18491,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(EDIT.G.draw);                                          -- the first-time guide (/yui guide)
         piece(EDIT.G.splash);                                        -- and its send-off
         piece(C.MD.draw);                                            -- (the mode chooser: Normal or Hex link)
+        piece(C.modesw);                                             -- (the mode switch icon)
     end);
     if not ok then YUI_ERRLOG('frame', err); end
     if not ok and ui.last_err ~= tostring(err) then ui.last_err = tostring(err); msg('Draw error: ' .. ui.last_err); end
@@ -16388,6 +18506,8 @@ ashita.events.register('packet_in', 'yui_packet', function(e)
     elseif e.id == 0x068 then pcall(PET.sync, e);
     elseif e.id == 0x029 then pcall(read_message, e);
     elseif e.id == 0x0D3 then pcall(C.loot_packet, e);
+    elseif e.id == 0x0DC then pcall(C.inv_packet, e);                -- (PARTY > Party invite alert)
+    elseif e.id == 0x0C8 then pcall(C.inv_close);                    -- (the party formed: the invite's card goes)
     elseif e.id == 0x0D2 then pcall(C.loot_drop, e);               -- (an item fell in the pool: it flies in from the monster)              -- (a lot or a pass on a treasure pool item)
     elseif e.id == 0x00E then pcall(read_claim, e);
     elseif e.id == 0x057 then pcall(C.weather_packet, e);
@@ -16408,8 +18528,10 @@ end);
 
 ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStation and other DirectInput pads
     local b, st = e.button, e.state or 0;
-    if b == 54 then C.MB.dl2 = st >= 128; elseif b == 55 then C.MB.dr2 = st >= 128; end   -- (MACRO BAR: L2 / R2 held)
-    if (b == 54 or b == 55) and st >= 128 and C.mb_mine() and not (C.MB.dl2 and C.MB.dr2) then   -- (the game never sees one trigger go down: its hidden palette stays shut - a release always reaches it, or it could think one still held)
+    local bl_, br_ = 54, 55;                                         -- (MACRO BAR: L2 / R2 held - or L1 / R1, as the player picked)
+    if C.mb_l1() then bl_, br_ = 52, 53; end
+    if b == bl_ then C.MB.dl2 = st >= 128; elseif b == br_ then C.MB.dr2 = st >= 128; end
+    if (b == bl_ or b == br_) and st >= 128 and C.mb_mine() and not (C.MB.dl2 and C.MB.dr2) then   -- (the game never sees one trigger go down: its hidden palette stays shut - a release always reaches it, or it could think one still held)
         e.blocked = true; return;
     end
     if b == 49 and C.MB.okheld then                                  -- (the Cross that ran a macro: never the game's, down to its release)
@@ -16423,13 +18545,13 @@ ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStati
     if b == 32 then                                                  -- (the D-pad followed always - a release missed made the next press not count)
         povwas = C.MB.pov;
         C.MB.pov = st;
-        C.MB.hold = (st == 27000) and 'left' or ((st == 9000) and 'right' or nil);
+        C.MB.hold = (st == 27000 or st == 0) and 'left' or ((st == 9000 or st == 18000) and 'right' or nil);   -- (up / left: the one before; down / right: the next)
         if C.MB.hold ~= nil and st ~= povwas then C.MB.hold_t, C.MB.hold_n = os.clock(), nil; end
     end
     if (C.MB.padrow or 0) ~= 0 and not C.mb_free() then              -- (a macro row open: the D-pad and Cross are the bar's - not while the game picks a sub target)
         if b == 32 then
-            if st == 27000 or st == 9000 then                        -- (left / right: the bar's - up / down stay the game's, L2 + R2 + up / down turns the page)
-                if st ~= povwas then C.mb_padkey((st == 27000) and 'left' or 'right'); end
+            if st == 27000 or st == 9000 or st == 0 or st == 18000 then   -- (the D-pad: the bar's - up / down move along the lists, left / right too; L2 + R2 + up / down still turns the page)
+                if st ~= povwas then C.mb_padkey((st == 27000 or st == 0) and 'left' or 'right'); end
                 e.blocked = true; return;
             end
         elseif b == 49 then
@@ -16473,7 +18595,13 @@ ashita.events.register('xinput_state', 'yui_pad_xs', function(e)    -- Xbox (XIn
     if e.state == nil then return; end
     local ok = pcall(function()
         local g = ffi.cast('YUI_XSTATE*', e.state).Gamepad;
-        M.xl, M.xr, M.xt = tonumber(g.bLeftTrigger) or 0, tonumber(g.bRightTrigger) or 0, os.clock();
+        if C.mb_l1() then                                            -- (L1 / R1 picked: the shoulder buttons, as if triggers fully down)
+            M.xl = bit.band(g.wButtons, 0x0100) ~= 0 and 255 or 0;
+            M.xr = bit.band(g.wButtons, 0x0200) ~= 0 and 255 or 0;
+            M.xt = os.clock();
+        else
+            M.xl, M.xr, M.xt = tonumber(g.bLeftTrigger) or 0, tonumber(g.bRightTrigger) or 0, os.clock();
+        end
         if M.okheld and bit.band(g.wButtons, 0x1000) == 0 then M.okheld = false; end   -- (the A that ran a macro: let go)
     end);
     if M.okheld and e.state_modified ~= nil then                     -- (held: the game never sees it - it would target what's in front)
@@ -16484,12 +18612,16 @@ ashita.events.register('xinput_state', 'yui_pad_xs', function(e)    -- Xbox (XIn
     local takebtn = (M.padrow or 0) ~= 0 and not C.mb_free();
     pcall(function()
         local g = ffi.cast('YUI_XSTATE*', e.state_modified).Gamepad;
-        g.bLeftTrigger, g.bRightTrigger = 0, 0;                      -- (the game never sees one trigger: its hidden palette stays shut)
-        if takebtn then g.wButtons = bit.band(g.wButtons, bit.bnot(0x100C)); end   -- (and while a row is open: D-pad left / right and A are the bar's)
+        if C.mb_l1() then g.wButtons = bit.band(g.wButtons, bit.bnot(0x0300));   -- (the game never sees one macro button: its hidden palette stays shut)
+        else g.bLeftTrigger, g.bRightTrigger = 0, 0; end
+        if takebtn then g.wButtons = bit.band(g.wButtons, bit.bnot(0x100F)); end   -- (and while a row is open: the D-pad and A are the bar's)
     end);
 end);
 ashita.events.register('xinput_button', 'yui_pad_x', function(e)    -- Xbox (XInput) pads
     local b, st = e.button, e.state or 0;
+    if (b == 8 or b == 9) and C.mb_l1() and st ~= 0 and C.mb_mine() and not ((C.MB.xl or 0) > 60 and (C.MB.xr or 0) > 60) then   -- (L1 / R1 picked: one shoulder never the game's)
+        e.blocked = true; return;
+    end
     if b == 12 and C.MB.okheld then                                  -- (the A that ran a macro: never the game's, down to its release)
         if st == 0 then C.MB.okheld = false; end
         e.blocked = true; return;
@@ -16500,13 +18632,14 @@ ashita.events.register('xinput_button', 'yui_pad_x', function(e)    -- Xbox (XIn
     C.MB.xb = C.MB.xb or {};
     local was = C.MB.xb[b];                                          -- (followed always - a release missed made the next press not count)
     C.MB.xb[b] = st ~= 0;
-    if b == 2 or b == 3 then
-        if st ~= 0 and not was then C.MB.hold, C.MB.hold_t, C.MB.hold_n = (b == 2) and 'left' or 'right', os.clock(), nil;
-        elseif st == 0 and C.MB.hold == ((b == 2) and 'left' or 'right') then C.MB.hold = nil; end
+    if b == 0 or b == 1 or b == 2 or b == 3 then                     -- (up / left: the one before; down / right: the next)
+        local w_ = (b == 0 or b == 2) and 'left' or 'right';
+        if st ~= 0 and not was then C.MB.hold, C.MB.hold_t, C.MB.hold_n = w_, os.clock(), nil;
+        elseif st == 0 and C.MB.hold == w_ then C.MB.hold = nil; end
     end
-    if (C.MB.padrow or 0) ~= 0 and (b == 2 or b == 3 or b == 12) and not C.mb_free() then   -- (a macro row open: left / right and A are the bar's - up / down stay the game's: L2 + R2 + up / down turns the page)
+    if (C.MB.padrow or 0) ~= 0 and (b == 0 or b == 1 or b == 2 or b == 3 or b == 12) and not C.mb_free() then   -- (a macro row open: left / right and A are the bar's - up / down stay the game's: L2 + R2 + up / down turns the page)
         if st ~= 0 and not was then                                  -- (only as it goes down)
-            if b == 2 then C.mb_padkey('left'); elseif b == 3 then C.mb_padkey('right'); elseif b == 12 then C.mb_padkey('ok'); end
+            if b == 2 or b == 0 then C.mb_padkey('left'); elseif b == 3 or b == 1 then C.mb_padkey('right'); elseif b == 12 then C.mb_padkey('ok'); end
         end
         e.blocked = true; return;
     end
@@ -16549,6 +18682,7 @@ function legacy.kb_act(k)                                            -- (what a 
     if not (cfg.chat and cfg.hide_game_chat) then return nil; end
     local io = imgui.GetIO();
     if io.WantTextInput or io.KeyCtrl or io.KeyAlt or io.KeyShift then return nil; end
+    if C.mb_typing and C.mb_typing() then return nil; end           -- (typing a line in the game's chat: Enter sends it - /lw lot, /uw... (Totsuki))
     if k == 0x21 then return (legacy.pad.menu == '' or legacy.pad.mine) and 'log' or nil; end
     if not legacy.pad.open then return nil; end                     -- (YunaUI's chat lit: opened with F, or the game's focus on its chat)
     if k == 0x4E then return legacy.pad.big and 'log' or nil; end   -- (numpad +: in the big chat, the next tab - as F; else it stays the game's)
@@ -16578,18 +18712,30 @@ function C.mb_kbact(what, row)                                       -- ('run' /
             M.flash[id] = now; pcall(C.mb_run, row, M.sel or 0);
             if C.mb_hasst(row, M.sel or 0) then M.free_until = now + 0.8; end   -- (a <st>/<stal> macro: the keys are the game's while it picks - any other, the next straight away)
             M.kbok = true;                                           -- (but the Enter that ran it stays ours till it's let go: held, the game ran its own hidden macro)
+            if C.mb_kbtog() then M.ktog = 0; end                      -- (opened with a tap: running closes it, as the pad's does)
         end
     else
         M.sel = ((M.sel or 0) + what) % 10;
         M.lastsel[row] = M.sel;
     end
 end
+function C.mb_typing()                                               -- (the game's chat line open, or one of YunaUI's boxes: you're typing)
+    local t = false;
+    pcall(function() local o = AshitaCore:GetChatManager():IsInputOpen(); t = (o == 0x11 or o == 1); end);
+    if not t then pcall(function() if imgui.GetIO().WantTextInput then t = true; end end); end
+    return t;
+end
 function C.mb_kbrow()
     if not (C.mb_mine and C.mb_mine()) then return 0; end
+    if C.mb_typing() then C.MB.ktog = 0; return 0; end              -- (typing: Enter sends the line, the arrows move the caret - a tap-opened row closes)
     if C.mb_free and C.mb_free() then return 0; end                 -- (picking a target for a macro just run: Enter and the arrows are the game's)
     if C.mb_key(0x11) then return 1; end
     if C.mb_key(0x12) then return 2; end
+    if (C.MB.ktog or 0) ~= 0 then return C.MB.ktog; end             -- (opened with a tap, Press to show: the keys work as the pad's - no Ctrl / Alt to hold)
     return 0;
+end
+function C.mb_kbtog()                                                -- (open by a tap, Ctrl / Alt not held: up / down move the pick too, as the pad's D-pad)
+    return (C.MB.ktog or 0) ~= 0 and not C.mb_key(0x11) and not C.mb_key(0x12) and C.mb_kbrow() ~= 0;
 end
 -- (the same through the game window's key messages: Enter and the arrows don't always come as DirectInput events)
 C.MB_VK = { [0x25] = -1, [0x27] = 1, [0x0D] = 'run' };               -- (up / down left to the game: they turn the macro page)
@@ -16599,6 +18745,7 @@ ashita.events.register('key', 'yui_mb_key', function(e)
         for _, vk in pairs(C.MB.kdig or {}) do if vk == wp then e.blocked = true; return; end end
     end
     local w = C.MB_VK[wp];
+    if w == nil and (wp == 0x26 or wp == 0x28) and C.mb_kbtog() then w = (wp == 0x26) and -1 or 1; end   -- (open by a tap: up / down move the pick)
     if w == nil then return; end
     if w == 'run' and C.MB.kbok then e.blocked = true; return; end
     local row = C.mb_kbrow();
@@ -16631,9 +18778,7 @@ ashita.events.register('key_data', 'yui_kb', function(e)
         elseif M.kdig[k] then e.blocked = true; return;              -- (held: once per press)
         else
             local row = C.mb_kbrow();
-            local chat = false;
-            pcall(function() local o = AshitaCore:GetChatManager():IsInputOpen(); chat = (o == 0x11 or o == 1); end);
-            if row ~= 0 and not chat then
+            if row ~= 0 and not C.mb_typing() then                      -- (typing - the chat, or the macro editor's boxes: the digit is the text's)
                 M.kdig[k] = (dslot == 9) and 0x30 or (0x31 + dslot);
                 pcall(C.mb_kbrun, row, dslot);
                 e.blocked = true; return;
@@ -16653,6 +18798,7 @@ ashita.events.register('key_data', 'yui_kb', function(e)
         end
     end
     local dir = C.MB_ARROWS[k];
+    if dir == nil and (k == 0xC8 or k == 0xD0) and C.mb_kbtog() then dir = (k == 0xC8) and -1 or 1; end   -- (open by a tap: up / down move the pick)
     if dir then
         local row = C.mb_kbrow();
         if row ~= 0 then
@@ -16680,6 +18826,7 @@ ashita.events.register('key_state', 'yui_kb_state', function(e)    -- (the game 
         if C.mb_key(vk) then keys[dk] = 0; else C.MB.kdig[dk] = nil; end
     end
     if C.mb_kbrow() ~= 0 then for k in pairs(C.MB_ARROWS) do keys[k] = 0; end keys[0x1C] = 0; keys[0x9C] = 0; end   -- (Ctrl / Alt + arrows / Enter: the bar's)
+    if C.mb_kbtog() then keys[0xC8] = 0; keys[0xD0] = 0; end         -- (open by a tap: up / down too)
     if C.MB.kbok then                                                -- (the Enter that ran a macro: hidden from the game down to its release)
         if keys[0x1C] == 0 and keys[0x9C] == 0 and not C.mb_key(0x0D) then C.MB.kbok = false; else keys[0x1C] = 0; keys[0x9C] = 0; end
     end
@@ -16722,6 +18869,20 @@ ashita.events.register('command', 'yui_command', function(e)
             end
         end);
         if not ok then msg('gearcol error: ' .. tostring(err)); end
+    elseif sub == 'preview' then                                     -- (/yui preview: the pretend fight on - skillchain, casts, target of target - again to stop)
+        FIGHT.show = not FIGHT.show; msg('Preview ' .. (FIGHT.show and 'on' or 'off'));
+    elseif sub == 'mbedit' then                                      -- (/yui mbedit <1-20>: edit a macro of the open page - 1-10 Ctrl, 11-20 Alt)
+        local n = tonumber(args[3] or '');
+        if n and n >= 1 and n <= 20 then pcall(C.mb_edit_open, n - 1); else msg('Usage: /yui mbedit <1-20>  (1-10 Ctrl, 11-20 Alt)'); end
+    elseif sub == 'gottest' then                                     -- (TREASURE POOL > Item popup: a pretend item to you)
+        pcall(C.got_add, tonumber(args[3] or '') or 13014);
+    elseif sub == 'mbtest' then                                      -- (ACTION BARS: a pretend use of Ctrl 3 and 4 - their dots recharge over 8 / 5 s)
+        local M = C.MB;
+        local now = os.clock();
+        M.fake = { [2] = { now, now + 8 }, [3] = { now, now + 5 } };
+        M.fakesc = { fake = true, ts = now, dur = 10, go = true, close = {}, burst = {} };   -- (and a pretend skillchain: weapon skills close it, spells burst)
+        M.flash[2], M.flash[3] = now, now + 0.15;
+        msg('Action bars test: Ctrl 3 and 4 used - hold Ctrl to watch them heal');
     elseif sub == 'mbdebug' then                                     -- (ACTION BARS: say what the keyboard does to the bar)
         C.MB.dbg = not C.MB.dbg; msg('Macro bar debug ' .. (C.MB.dbg and 'on' or 'off'));
     elseif sub == 'lootmenu' then                                    -- (which game menus were open with something in the pool)
@@ -16748,8 +18909,18 @@ ashita.events.register('command', 'yui_command', function(e)
         local ok, err = pcall(C.map_info);                           -- (always says something: the line, or why it couldn't)
         if not ok then msg('Map info failed: ' .. tostring(err)); end
     elseif sub == 'welcome' then EDIT.welcome = true; EDIT.G.start();   -- (what a new player sees on the first launch; settings untouched)
+    elseif sub == 'guide' and args[3] == 'close' then if EDIT.G.on then EDIT.G.stop(false); end   -- (/yui guide close: leave it, your layout back)
     elseif sub == 'guide' or sub == 'tour' then EDIT.G.start();      -- the first-time guide again
-    elseif sub == 'mode' then C.MD.start(false);                      -- the mode chooser again (Normal or Hex link)
+        if tonumber(args[3] or '') then EDIT.G.i = tonumber(args[3]); end   -- (/yui guide 12: open on that slide - for checking it)
+    elseif sub == 'sizes' then                                       -- (/yui sizes: each window's size as YunaUI measured it - for layout bugs)
+        for k, sz in pairs(WATCH.size or {}) do msg(string.format('%s  x=%d  w=%d h=%d', k, tonumber(cfg[k]) or -1, sz[1], sz[2])); end
+    elseif sub == 'setnormal' or sub == 'setvex' then pcall(C.setmode, false); pcall(C.mt_start, false); save();
+    elseif sub == 'sethex' then pcall(C.setmode, true); pcall(C.mt_start, true); save();
+    elseif sub == 'mode' and args[3] == 'close' then                 -- (/yui mode close: leave the chooser, your style and layout as they were)
+        if C.MD.on then C.MD.pick(C.MD.fx0 == 'link'); end
+    elseif sub == 'mode' then C.MD.start(false);                      -- (/yui mode [2] [hex]: open on a card, showing a style - for checking it)
+        if tonumber(args[3] or '') then C.MD.i = tonumber(args[3]); end
+        if args[4] == 'hex' or args[4] == 'normal' then C.MD.link = args[4] == 'hex'; C.MD.apply(); end                      -- the mode chooser again (Normal or Hex link)
     elseif sub == 'lock' or sub == 'unlock' then cfg.locked = (sub == 'lock'); save(); msg(cfg.locked and 'Locked.' or 'Unlocked.');
     elseif sub == 'reset' then settings.reset(); msg('Reset to default (reload the addon to move everything back).');
     else msg('/yui  - open YunaUI   |   /yui edit   |   /yui guide   |   /yui lock | unlock   |   /yui reset'); end
