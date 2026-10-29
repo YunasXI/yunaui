@@ -112,6 +112,9 @@ local defaults = T{
     expbar = true, exp_x = -1, exp_y = -1, exp_w = 520, exp_scale = 1.0,
     chat = true, chat_x = 20, chat_y = 720, chat_w = 620, chat_h = 260, chat_size = 16,
     chat_split = false, chat2_x = 660, chat2_y = 720, chat2_w = 520, chat2_h = 260,
+    chat3 = false, chat3_x = -1, chat3_y = -1, chat3_w = 460, chat3_h = 260, c3_tell = true, c3_ls = true, c3_ls2 = true,
+    c3_party = false, c3_say = false, c3_shout = false, c3_unity = false,
+    cm_tell = true, cm_ls = true, cm_ls2 = true, cm_party = true, cm_say = true, cm_shout = true, cm_unity = true,
     chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', party_buff_row = 8, exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_lines = 'hp', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_fight = false, head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, tarrow = true, macrobar = true, mb_show = 'hold', mb_always = false, mb_pad = 'hold', mb_btn = 'l2', mb_scale = 1.0, mb_look = 'strip', mb_style = 'cards', hp_by_job = false, mb_timers = true, mb_wave = 'bars', mb_text = 1.0, mb_both = true, mb_frame = 'arc', mb_view = 'pills', mbp_x = -1, mbp_y = -1, mb_brush = 'all', mb_layout = 'lens', mb_wcol = 'gold', mb_nstyle = 'wave', mb_wavecol = 'job', mb_sound = true, mb_snd_vol = 0.6, mb_voice = true, mb_voice_vol = 0.8, mb_cards_at = 'feet', mb_dn = 'hd_circle', mb_dh = 'hd_sigil', mb_x = -1, mb_y = -1, mbs_x = -1, mbs_y = -1, mbc_x = -1, mbc_y = -1, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
@@ -6278,8 +6281,8 @@ end
 ----------------------------------------------------------------------------------------------------
 -- Two windows: 1 = general chat (with the channel buttons), 2 = combat log (only when "Split combat log" is on;
 -- otherwise everything goes to 1).
-local logs = { {}, {} };
-local cw = { { scroll = 0, hv = 0 }, { scroll = 0, hv = 0 } };      -- per window: lines scrolled up, hover glow 0..1
+local logs = { {}, {} };                                             -- (the chat, the combat log; the third chat reads the chat's)
+local cw = { { scroll = 0, hv = 0 }, { scroll = 0, hv = 0 }, { scroll = 0, hv = 0 } };      -- per window: lines scrolled up, hover glow 0..1
 local OUTLINE = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 }, { 1, 2 } };
 local chat_lit_all = false;                                         -- YunaUI's window is open (or first setup): keep the chats lit
 -- The chat's colours, one per kind of message (each can be changed in the CHAT tab; Linkshell is bright white)
@@ -6360,7 +6363,12 @@ local CHANNELS = {
 };
 C.CHAT_COMBAT = #CHANNELS + 1;                                       -- (the Combat tab: after the channels)
 -- CHAT > Tabs: which tabs show under the chat (cfg.chat_tabs_on[name] = false hides one; All always shows)
-function C.tab_on(name) return name == 'All' or type(cfg.chat_tabs_on) ~= 'table' or cfg.chat_tabs_on[name] ~= false; end
+C.TAB_CM = { Say = 'say', Party = 'party', LS = 'ls', LS2 = 'ls2', Shout = 'shout', Yell = 'shout', Tell = 'tell' };   -- (CHAT > Main chat shows: a channel off, its tab gone too)
+function C.tab_on(name)
+    if name == 'All' then return true; end
+    if C.TAB_CM[name] and cfg['cm_' .. C.TAB_CM[name]] == false then return false; end
+    return type(cfg.chat_tabs_on) ~= 'table' or cfg.chat_tabs_on[name] ~= false;
+end
 -- your linkshells as VanaCore knows them (vana.game.linkshell): name, pearl colour (lifted so it reads), message,
 -- who set it - asked again every 3 s; nil for a slot with nothing
 C.LS = { at = -99 };
@@ -6412,6 +6420,30 @@ end
 -- SAVE THE CHAT NOW writes everything still in the chat to a file of its own.
 local CHATLOG = { TALK = { say = true, party = true, ls = true, ls2 = true, shout = true, yell = true, tell = true, emote = true, unity = true },
     CAP_TALK = 3000, CAP_OTHER = 2000 };
+C.C3 = { { 'tell', 'Tells', 'TELL' }, { 'ls', 'Linkshell', 'LS' }, { 'ls2', 'Linkshell 2', 'LS2' }, { 'party', 'Party', 'PARTY' },
+    { 'say', 'Say', 'SAY' }, { 'shout', 'Shout and Yell', 'SHOUT' }, { 'unity', 'Unity', 'UNITY' } };   -- (CHAT > Third chat: what it can show)
+function C.c3_has(e)                                                 -- (does this line go to the third chat?)
+    local c = e and e.cat;
+    if c == 'yell' then c = 'shout'; end
+    return c ~= nil and cfg['c3_' .. c] == true;
+end
+function C.cm_has(e)                                                 -- (CHAT > Main chat shows: does the main chat's All tab show it?)
+    local c = e and e.cat;
+    if c == 'yell' then c = 'shout'; end
+    return c == nil or cfg['cm_' .. c] ~= false;
+end
+function C.c3_pick(key, on)                                          -- (a channel picked for the third chat leaves the main chat - and comes back
+    cfg[key] = on;                                                   --  when it's taken off; the third chat on or off does the same for its picks)
+    local function each(f) for _, q in ipairs(C.C3) do f(q[1]); end end
+    if key == 'chat3' then each(function(k) if cfg['c3_' .. k] == true then cfg['cm_' .. k] = not on; end end);
+    elseif cfg.chat3 then cfg['cm_' .. key:sub(4)] = not on; end
+    save();
+end
+function C.c3_label()                                                -- ("TELL . LS . LS2": what it shows, said at its bottom)
+    local t = {};
+    for _, q in ipairs(C.C3) do if cfg['c3_' .. q[1]] == true then t[#t + 1] = q[3]; end end
+    return (#t > 0) and table.concat(t, '  .  ') or 'NOTHING PICKED';
+end
 function CHATLOG.add(log, e)
     local talk = CHATLOG.TALK[e.cat] == true;
     e.talk = talk;
@@ -9102,6 +9134,10 @@ local function chat_add(mode, raw)
                 if cat_ ~= 'combat' and raw_line:match('^%[[%a][%w%s%._:%-]*%]') then cat_ = 'addon'; end   -- (any channel: players' lines never start so - a linkshell's is "[1]<Name>")
                 CHATLOG.add(log_, { text = line, raw = raw_line, cat = cat_, t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode, tslen = #pre, ctype = ctype });
                 if n_ == 1 then chat_seen_new(mode); end
+                if n_ == 1 and cfg.chat3 and C.c3_has(log_[#log_]) then   -- (a line for the third chat: its ground darkens a moment;
+                    cw[3].last3 = os.clock();                        --  scrolled back, the view stays still)
+                    if cw[3].scroll > 0 then cw[3].scroll = cw[3].scroll + 1; end
+                end
             end
             if fd ~= 'merged' and cw[n_].scroll > 0 then cw[n_].scroll = cw[n_].scroll + 1; end
         end
@@ -10065,7 +10101,11 @@ local function draw_chat(n)
         if sig ~= C.tssig then if C.tssig then pcall(C.ts_rebuild); end C.tssig = sig; end
     end
     if n == 1 then C.bigchat = false; end
-    if not cfg.chat or (n == 2 and not cfg.chat_split) then return; end
+    if n == 1 and cfg.cm_v1 == nil then                              -- (once, with Main chat shows: a third chat already on keeps its picks out of the main one)
+        cfg.cm_v1 = true;
+        if cfg.chat3 then for _, q in ipairs(C.C3) do if cfg['c3_' .. q[1]] == true then cfg['cm_' .. q[1]] = false; end end end
+    end
+    if not cfg.chat or (n == 2 and not cfg.chat_split) or (n == 3 and not cfg.chat3) then return; end
     if n == 2 and legacy.pad.big then return; end                    -- (the big chat is open: the combat log shows inside it, as a tab)
     if CHATFLAGS == nil then
         CHATFLAGS = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoScrollbar,
@@ -10073,8 +10113,22 @@ local function draw_chat(n)
             ImGuiWindowFlags_NoFocusOnAppearing, ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoSavedSettings,
             ImGuiWindowFlags_NoBringToFrontOnFocus);
     end
-    local p = (n == 1) and 'chat_' or 'chat2_';
-    local st, log = cw[n], logs[n];
+    local p = (n == 1) and 'chat_' or ((n == 2) and 'chat2_' or 'chat3_');
+    local st, log = cw[n], logs[(n == 3) and 1 or n];                -- (the third chat: the chat's lines it takes)
+    if n == 3 and (tonumber(cfg.chat3_x) or -1) < 0 then              -- (first time: beside the chats, at their bottom - no room there: above the chat)
+        local SW_ = C.screen();
+        local r_ = (tonumber(cfg.chat_x) or 20) + (tonumber(cfg.chat_w) or 620);
+        if cfg.chat_split then r_ = math.max(r_, (tonumber(cfg.chat2_x) or 0) + (tonumber(cfg.chat2_w) or 520)); end
+        local w3, h3 = tonumber(cfg.chat3_w) or 460, tonumber(cfg.chat3_h) or 260;
+        if r_ + 12 + w3 <= SW_ then
+            cfg.chat3_x = math.floor(r_ + 12);
+            cfg.chat3_y = math.floor((tonumber(cfg.chat_y) or 720) + (tonumber(cfg.chat_h) or 260) - h3);
+        else
+            cfg.chat3_x = math.floor(tonumber(cfg.chat_x) or 20);
+            cfg.chat3_y = math.floor(math.max(0, (tonumber(cfg.chat_y) or 720) - h3 - 44));   -- (clear of YUNA UI on the chat's top edge)
+        end
+        st.relink = true;
+    end
     if n == 2 and cfg.chat_link then                                 -- anchored: the combat log sits right beside the chat, the same size,
         local tw, th = tonumber(cfg.chat_w) or 620, tonumber(cfg.chat_h) or 260;   -- its edges lined up, and follows it when it moves
         local cx_, cy_ = tonumber(cfg.chat_x) or 20, tonumber(cfg.chat_y) or 700;
@@ -10122,7 +10176,7 @@ local function draw_chat(n)
     end
     imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
     imgui.PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
-    if imgui.Begin((n == 1) and 'YunaUI Chat##yui_chat' or 'YunaUI Combat##yui_chat2', { true }, flags) then
+    if imgui.Begin((n == 1) and 'YunaUI Chat##yui_chat' or ((n == 2) and 'YunaUI Combat##yui_chat2' or 'YunaUI Chat 3##yui_chat3'), { true }, flags) then
         pcall(function()                                             -- (where it is, for the guide's box)
             local wx_, wy_ = imgui.GetWindowPos();
             local ww_, wh_ = imgui.GetWindowSize();
@@ -10136,7 +10190,7 @@ local function draw_chat(n)
         local hov = imgui.IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem or 0) or imgui.IsWindowFocused() and imgui.IsMouseDown(0);
         local typing = (n == 1 and cfg.chat_typing ~= false) and typing_now() or nil;   -- you're typing: it shows it (CHAT tab)
         st.hovraw = hov;
-        local linked = cfg.chat_link and cfg.chat_split;
+        local linked = cfg.chat_link and cfg.chat_split and n ~= 3;   -- (the third chat stands on its own)
         local other = cw[(n == 1) and 2 or 1];
         local hovx = hov or (linked and other.hovraw) or false;     -- (anchored: the mouse over either lights both)
         local want = (hovx or typing or chat_lit_all or st.scroll > 0) and 1 or 0;
@@ -10158,8 +10212,9 @@ local function draw_chat(n)
         -- little darker for a moment when a line arrives), growing to the whole chat when it's lit (the mouse over it,
         -- typing, scrolling). Readable on grass, snow or sand, and never a box.
         do
-            local lg_ = logs[(n == 1) and 1 or 2];
+            local lg_ = logs[(n == 2) and 2 or 1];
             local last = (lg_ and lg_[#lg_] and (lg_[#lg_].t0 or lg_[#lg_].t)) or -99;
+            if n == 3 then last = st.last3 or -99; end               -- (the third chat: its own newest line)
             local pulse = math.max(0, 1 - (now - last) / 2.5);
             st.pulse = pulse;
             local uh = st.used_h or 0;
@@ -10281,6 +10336,9 @@ local function draw_chat(n)
             if tab ~= 1 and TAB_OF[e.mode or 0] ~= tab then i = i - 1; goto next_line; end
             if tab == 1 and e.mode == C.ROE_MODE then i = i - 1; goto next_line; end   -- (RoE: only in its own tab)
             if only and ((only == 'combat') ~= is_combat(e.mode or 0)) then i = i - 1; goto next_line; end
+            if n == 3 then                                           -- (CHAT > Third chat: only the channels picked for it...)
+                if not C.c3_has(e) then i = i - 1; goto next_line; end
+            elseif n == 1 and tab == 1 and not big and not only and not C.cm_has(e) then i = i - 1; goto next_line; end   -- (CHAT > Main chat shows)
             do
             local keep = cfg.chat_fade_old == false;                 -- CHAT > Fade when idle: on, a line shows for 'Lines stay for' then fades
             local lt = keep and 1 or math.max(0, math.min(1, 1 - ((now - (e.t or now)) - hold) / fade));   --  away, shade and all (the chat
@@ -10456,10 +10514,10 @@ local function draw_chat(n)
                 bx = bx + bw2 + 6;
             end
         end
-        if n == 2 and st.hv > 0.05 then                              -- the combat window says what it is
+        if n >= 2 and st.hv > 0.05 then                              -- the combat window says what it is (the third chat: what it shows)
             local fs = FS;
             imgui.SetWindowFontScale(fs * 0.62);
-            DL.T(dl, x + pad, y + h - imgui.GetTextLineHeight() - 8, U4(C.muted[1], C.muted[2], C.muted[3], 0.7 * st.hv), 'COMBAT LOG');
+            DL.T(dl, x + pad, y + h - imgui.GetTextLineHeight() - 8, U4(C.muted[1], C.muted[2], C.muted[3], 0.7 * st.hv), (n == 2) and 'COMBAT LOG' or C.c3_label());
             imgui.SetWindowFontScale(fs);
         end
         unsized(pushed);
@@ -13040,7 +13098,7 @@ function C.got_win()                                                 -- (the loo
     end_plain('got_x', 'got_y');
 end
 local LAYOUT = {
-    KEYS = { 'target', 'sub', 'enemy', 'party', 'alliance', 'ally2', 'chat', 'chat2', 'exp', 'gil', 'bag', 'cast', 'timer', 'pet', 'doll', 'map', 'bigmap', 'loot' },
+    KEYS = { 'target', 'sub', 'enemy', 'party', 'alliance', 'ally2', 'chat', 'chat2', 'chat3', 'exp', 'gil', 'bag', 'cast', 'timer', 'pet', 'doll', 'map', 'bigmap', 'loot' },
     GUESS = { loot = { 350, 270 }, target = { 540, 60 }, sub = { 320, 50 }, enemy = { 230, 220 }, party = { 340, 300 }, alliance = { 260, 170 },
               ally2 = { 260, 170 }, exp = { 540, 40 }, gil = { 170, 26 }, bag = { 320, 26 }, cast = { 320, 44 },
               timer = { 290, 230 }, pet = { 290, 180 }, doll = { 300, 420 } },
@@ -13049,6 +13107,7 @@ local LAYOUT = {
 function LAYOUT.size(k)
     if k == 'chat' then return tonumber(cfg.chat_w) or 620, tonumber(cfg.chat_h) or 260; end
     if k == 'chat2' then return tonumber(cfg.chat2_w) or 520, tonumber(cfg.chat2_h) or 260; end
+    if k == 'chat3' then return tonumber(cfg.chat3_w) or 460, tonumber(cfg.chat3_h) or 260; end
     if k == 'dps' then                                               -- the Damage Meter: its own window (dps.lua), at its size
         local ds = YUI_DPS and YUI_DPS.get and YUI_DPS.get() or nil;
         local z = ((ds and tonumber(ds.size)) or 100) / 100;
@@ -13331,7 +13390,7 @@ end
 function LAYOUT.capture()                                            -- where everything is now, and every size
     local o, eq = {}, {};
     for _, k in ipairs(LAYOUT.KEYS) do o[k .. '_x'], o[k .. '_y'] = tonumber(cfg[k .. '_x']), tonumber(cfg[k .. '_y']); end
-    for _, k in ipairs({ 'chat_w', 'chat_h', 'chat2_w', 'chat2_h' }) do o[k] = tonumber(cfg[k]); end   -- (the chats' sizes too)
+    for _, k in ipairs({ 'chat_w', 'chat_h', 'chat2_w', 'chat2_h', 'chat3_w', 'chat3_h' }) do o[k] = tonumber(cfg[k]); end   -- (the chats' sizes too)
     local ec = YUI_EQ_GET and YUI_EQ_GET() or nil;
     if ec then
         for _, k in ipairs({ 'hpbar_x', 'hpbar_y', 'mpbar_x', 'mpbar_y', 'tpbar_x', 'tpbar_y' }) do eq[k] = tonumber(ec[k]); end
@@ -13367,7 +13426,7 @@ end
 -- GENERAL > SHARE MY UI: your whole UI as one code to send to someone - every setting you changed (not the defaults),
 -- every place, your HP / MP / TP bars and the Damage Meter. Places are kept with your screen's size, so on another
 -- screen everything lands in the same spot. Importing keeps what you had first (UNDO puts it back).
-LAYOUT.SKIP = { setup_done = true, welcomed = true, mode_v1 = true, mode_v2 = true, mode_v3 = true, md_backup = true, g_backup = true, g_dps0 = true, layouts = true,
+LAYOUT.SKIP = { cm_v1 = true, setup_done = true, welcomed = true, mode_v1 = true, mode_v2 = true, mode_v3 = true, md_backup = true, g_backup = true, g_dps0 = true, layouts = true,
     layout_names = true, share_backup = true, locked = true };
 function LAYOUT.plain(v, d)                                          -- (a copy with only numbers, strings, booleans and tables of them)
     d = d or 0;
@@ -13652,7 +13711,7 @@ function C.modesave(link)                                            -- (this mo
             if type(cfg[ky]) == 'number' then pos[k], pos[ky] = v, cfg[ky]; end
         end
     end
-    for _, k in ipairs({ 'chat_w', 'chat_h', 'chat2_w', 'chat2_h' }) do pos[k] = tonumber(cfg[k]); end   -- (the chats' sizes, dragged too)
+    for _, k in ipairs({ 'chat_w', 'chat_h', 'chat2_w', 'chat2_h', 'chat3_w', 'chat3_h' }) do pos[k] = tonumber(cfg[k]); end   -- (the chats' sizes, dragged too)
     t.pos = pos;
     local ec = YUI_EQ_GET and YUI_EQ_GET() or nil;                   -- (your HP / MP / TP bars)
     if ec then
@@ -14586,6 +14645,13 @@ local function draw_window()
             if accent_button('PAD: LEARN AGAIN##yui_cpad', { ROW_W, 0 }) then cfg.pad_log, cfg.pad_big = nil, nil; legacy.pad_toggle(false); save(); end
             hint("YunaUI learns your pad: the button that opens the game's log (Triangle, X...) then opens YunaUI's chat instead. Learn again: forget it, then press your log button once.");
             row_switch('##yui_c2', 'Split combat log', 'chat_split', 'On: battle messages go to a second chat window of their own (move and size it like the first).');
+            hint('Main chat shows:');
+            for _, q in ipairs(C.C3) do row_switch('##yui_cm_' .. q[1], '   ' .. q[2], 'cm_' .. q[1], 'Off: ' .. q[2] .. " are left out of the main chat's All tab (its " .. q[2] .. ' tab still shows them).'); end
+            row_switch('##yui_c3', 'Third chat', 'chat3', 'On: one more chat window (move and size it like the others) for the channels you pick below - good on a wide screen.', nil, C.c3_pick);
+            if cfg.chat3 then
+                hint('Third chat shows (picking one takes it out of the main chat - turn it on there again to have it in both):');
+                for _, q in ipairs(C.C3) do row_switch('##yui_c3_' .. q[1], '   ' .. q[2], 'c3_' .. q[1], 'On: ' .. q[2] .. ' show in the third chat.', nil, C.c3_pick); end
+            end
             row_switch('##yui_ct', 'Timestamps', 'chat_time');
             if cfg.chat_time then
                 row_switch('##yui_cts', 'Seconds', 'chat_time_sec');
@@ -17633,7 +17699,7 @@ EDIT.G.STEPS = {
     { "Damage Meter", function(G) return { G.dps() }; end, {
         "The damage of you and your party, with an enmity view. Click a name for the details; right click to post the top 5 in party or linkshell chat.",
         "/dps shows or hides it." }, { { 'dps', 'DAMAGE METER (Show it)' } } },
-    { "Chat", function(G) return { G.chat(1), cfg.chat_split and G.chat(2) or nil }; end, {
+    { "Chat", function(G) return { G.chat(1), cfg.chat_split and G.chat(2) or nil, cfg.chat3 and G.chat(3) or nil }; end, {
         "Channel tabs (Say, Party, Tell...), timestamps, and a combat log of its own if you want one.",
         "Put the mouse over it to see the older lines, and scroll to read your history." }, { { 'chat', 'CHAT' } } },
     { "Treasure pool", function(G) return { G.win('loot_x'), G.win('got_x') }; end, {
@@ -18462,6 +18528,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         elseif ui.was_open and not cfg.setup_done then cfg.setup_done = true; save(); end
         piece(draw_chat, 1);
         piece(draw_chat, 2);
+        piece(draw_chat, 3);
         piece(draw_party, dt);
         piece(draw_exp, dt);
         CAST.preview = (ui.open and ui.tab == 4) or EDIT.on;       -- the BARS tab (and Edit Mode) show a preview of it
