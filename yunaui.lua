@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.85';
+addon.version = '1.0.86';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -8346,8 +8346,8 @@ function C.mp3_play(name, volkey)
             local path = (addon.path .. '/sounds/' .. name .. '.mp3'):gsub('/', string.char(92));
             S.winmm.mciSendStringA('close ' .. al, nil, 0, nil);       -- (still open from before a reload: closed first, or opening it again fails and it stays silent)
             if S.winmm.mciSendStringA('open "' .. path .. '" type mpegvideo alias ' .. al, nil, 0, nil) ~= 0 then return; end
-            S.mci[name] = true;
         end
+        S.mci[name] = os.clock();                                    -- (when it last played: C.snd_tidy closes it once it's been quiet a while)
         S.winmm.mciSendStringA('setaudio ' .. al .. ' volume to ' .. math.floor(math.min(1000, vol * 1000 / 1.5)), nil, 0, nil);
         S.winmm.mciSendStringA('play ' .. al .. ' from 0', nil, 0, nil);
     end);
@@ -8371,7 +8371,24 @@ function C.jav_say(aid, preview)
         if S.winmm.mciSendStringA('open "' .. path .. '" type mpegvideo alias yui_jav', nil, 0, nil) ~= 0 then return; end
         S.winmm.mciSendStringA('setaudio yui_jav volume to ' .. math.floor(math.min(1000, vol * 1000 / 1.5)), nil, 0, nil);
         S.winmm.mciSendStringA('play yui_jav from 0', nil, 0, nil);
+        S.jav_at = os.clock();
     end);
+end
+-- The sound files stay open while a sound plays (Windows' MCI): left open for good, Windows kept them "in use" and a
+-- player copying a new YunaUI over the folder couldn't replace them. Each one is closed after 8 quiet seconds, all on unload.
+function C.snd_tidy(all)
+    local S = C.SND;
+    if not S.winmm then return; end
+    local now = os.clock();
+    if S.mci then
+        for name, t in pairs(S.mci) do
+            if all or now - t > 8 then pcall(function() S.winmm.mciSendStringA('close yui_' .. name, nil, 0, nil); end); S.mci[name] = nil; end
+        end
+    end
+    if S.jav_at and (all or now - S.jav_at > 15) then
+        pcall(function() S.winmm.mciSendStringA('close yui_jav', nil, 0, nil); end);
+        S.jav_at = nil;
+    end
 end
 function C.jav_tick()
     local J = C.JAV;
@@ -15559,6 +15576,7 @@ ashita.events.register('unload', 'yui_unload', function()
     pcall(C.hn_off);                                                 -- (the name over your target back)
     pcall(function() local v = rawget(_G, 'vana'); if C.MB.hid and v and v.gameui then v.gameui.show('macro_bar'); end end);   -- (the game's macro bar back)
     pcall(function() if CHATLOG.f then CHATLOG.f:close(); CHATLOG.f = nil; end end);   -- the chat log file
+    pcall(C.snd_tidy, true);                                         -- the sound files (open, they couldn't be replaced by an update)
     pcall(legacy.hide_input, false);                                 -- the game's typing bar and chat windows back
     pcall(legacy.hide_logs, false);
     if WATCH.own ~= nil and own_file('settings.lua') == WATCH.own then save(); end
@@ -18696,7 +18714,8 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(C.bubble_draw);                                        -- (CHAT > Speech bubbles)
         pcall(C.hide_tname);                                         -- (Hex link: the game's name over your target hidden)
         pcall(C.tp_sound);                                           -- (BARS > TP sound: a chime at 1000 / 2000 / 3000)
-        if not YUI_PUBLIC then pcall(C.jav_tick); end                -- (ACTION BARS > Voice: a job ability ready again - not in the public version: no ACTION BARS tab to turn it off)
+        pcall(C.snd_tidy);                                           -- (sound files closed once quiet: never left "in use")
+        if not YUI_PUBLIC then pcall(C.jav_tick); end               -- (ACTION BARS > Voice: a job ability ready again - not in the public version: no ACTION BARS tab to turn it off)
         piece(C.macrobar);                                           -- (BARS > MACRO BAR)
         piece(C.head_bars);                                          -- (BARS > YOUR BARS > Where: over your head)
         YUI_EQ_HIDE = true;                                          -- (the old gear wheel never shows)
