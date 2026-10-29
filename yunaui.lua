@@ -7566,8 +7566,10 @@ function C.mb_reverb(now)                                            -- (a macro
     local fg = nil;
     pcall(function() fg = imgui.GetForegroundDrawList(); end);
     if fg == nil then return; end
-    local hex = cfg.target_fx == 'link';
-    local GO = hex and { 1.0, 0.82, 0.42 } or { 1.00, 0.36, 0.62 };   -- (Normal mode: the target bar's neon pink)
+    local hex = true;                                                -- (both modes' buttons are blades now: the blade's echo in both - the vortex one below is unused)
+    local link = cfg.target_fx == 'link';
+    local GO = link and { 1.0, 0.82, 0.42 } or { 0.42, 0.74, 1.00 };   -- (Hex link gold / Vex mode the bar's lucent blue)
+    local GL = link and { 1, 0.95, 0.80 } or { 0.82, 0.93, 1.00 };
     for id, t0 in pairs(M.flash or {}) do
         local ft = now - t0;
         local g = M.pgeo[id];
@@ -7613,7 +7615,7 @@ function C.mb_reverb(now)                                            -- (a macro
                     else
                         for e = 1, n_ do
                             fg:AddLine(p[e], p[e % n_ + 1], U4(GO[1], GO[2], GO[3], 0.25 * al), 5);
-                            fg:AddLine(p[e], p[e % n_ + 1], U4(1, 0.95, 0.80, 0.9 * al), 1.6);
+                            fg:AddLine(p[e], p[e % n_ + 1], U4(GL[1], GL[2], GL[3], 0.9 * al), 1.6);
                         end
                     end
                 end
@@ -14781,11 +14783,8 @@ local function draw_window()
                 local wv_ = true;                                    -- (the wave's own settings: both modes)
                 row_switch('##yui_mbboth', 'Both rows', 'mb_both', 'On: Ctrl and Alt rows one over the other, the row you hold bright. Off: only the row you hold.');
                 if wv_ then row_slider('##yui_mbtx', 'Text size', 'mb_text', 0.6, 2.5, 0.05, '%.2fx'); end
-                row_switch('##yui_mbal', 'Always show', 'mb_always', 'On: the macro bar stays on the screen all the time. Off: it shows only while Ctrl / Alt (' .. C.mb_bn() .. ') is held.');
                 row_pick('##yui_mbbt', 'Macro buttons (controller)', 'mb_btn', { { 'l2', 'L2 / R2' }, { 'l1', 'L1 / R1' } });   -- (as the player set the game's pad)
-                if not cfg.mb_always then                            -- (always shown: the buttons just pick the row, held - nothing to choose)
-                    row_pick('##yui_mbpd', C.mb_bn() .. ' (controller)', 'mb_pad', { { 'hold', 'Hold to show' }, { 'toggle', 'Press to show, press again to hide' } });   -- (Ctrl / Alt: always held, as the game)
-                end
+                row_pick('##yui_mbpd', C.mb_bn() .. ' (controller)', 'mb_pad', { { 'hold', 'Hold to show' }, { 'toggle', 'Press to show, press again to hide' } });   -- (Ctrl / Alt: always held, as the game)
                 row_slider('##yui_mbsc', 'Size', 'mb_scale', 0.5, 2.0, 0.05, '%.2fx');
                 hint('Keyboard: hold Ctrl or Alt and press 1 to 0, as in the game. Controller: hold ' .. (C.mb_l1() and 'L1 or R1' or 'L2 or R2') .. ', pick with the D-pad left / right, Cross (A) runs it. Move the bar in Edit Mode. Right-click a button to edit that macro.');
             end
@@ -15501,7 +15500,8 @@ function C.macrobar()
             M.hold_n = now; M.padw = nil; C.mb_padkey(M.hold);
         end
     end
-    if cfg.mb_show == 'always' then cfg.mb_always, cfg.mb_show = true, 'hold'; end   -- (the old "When: Always": now the Always show switch)
+    if cfg.mb_show == 'always' then cfg.mb_show = 'hold'; end        -- (the old "When: Always")
+    if cfg.mb_always then cfg.mb_always = false; save(); end          -- (ACTION BARS > Always show: removed - buggy; shown while held only)
     if M.a > 0.5 and held ~= 0 then                                  -- (ACTION BARS > Scroll sound: a short tick each time the pick moves)
         if M.sndrow == held and M.sndsel ~= nil and M.sndsel ~= M.sel and cfg.mb_sound ~= false then C.mp3_play('mb_scroll', 'mb_snd_vol'); end
         M.sndrow, M.sndsel = held, M.sel;
