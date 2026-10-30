@@ -1205,13 +1205,24 @@ local function draw_details(a)
     local dcol = fx.lit('col_detail', { 0.88, 0.84, 1.00, 1 }, 'bright_detail');   -- YunaUI > ADDONS: colour + brightness
     local dsoft = { dcol[1] * 0.82, dcol[2] * 0.82, dcol[3] * 0.82, 1 };
     local lh = imgui.GetTextLineHeight() + Z(3);
+    local right = x0 - Z(10) + W - Z(6);                             -- (the window's right edge, in the same units as the columns)
+    local function fit(t, room)                                      -- (too long for its column: cut, with a dot)
+        if text_w(t) <= room then return t; end
+        while #t > 1 and text_w(t .. '.') > room do t = t:sub(1, -2); end
+        return t .. '.';
+    end
     local function cols(c1, c2, c3, head)
         imgui.SetCursorPosX(x0);
         local sx, sy = imgui.GetCursorScreenPos();
-        fx.otext(sx, sy, head and dcol or dsoft, c1);
+        fx.otext(sx, sy, head and dcol or dsoft, fit(c1, c2x - x0 - Z(6)));   -- (a long move name never runs into its number)
         fx.otext(sx + (c2x - x0), sy, head and dcol or dsoft, c2);
-        fx.otext(sx + (c3x - x0), sy, dsoft, c3);
-        imgui.Dummy({ W - Z(10), lh });
+        if text_w(c3) <= right - c3x then
+            fx.otext(sx + (c3x - x0), sy, dsoft, c3);
+            imgui.Dummy({ W - Z(10), lh });
+        else                                                         -- (a narrow window: its numbers on a line of their own under it, never cut off)
+            fx.otext(sx + (c2x - x0), sy + lh, dsoft, fit(c3, right - c2x));
+            imgui.Dummy({ W - Z(10), lh * 2 });
+        end
     end
     for _, cat in ipairs(CATS) do
         local c = a.cats[cat];
