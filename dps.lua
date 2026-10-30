@@ -1618,7 +1618,7 @@ local function draw_meter()
     local ax, ay = fx.anchor_pos();
     if ax then imgui.SetNextWindowPos({ ax, ay }, ImGuiCond_Always); end
     local hexw = fx.hexcol() ~= nil;                                 -- (Hex link: its frame, the height fitting the rows)
-    if hexw and ui.fit_h and ui.ww then imgui.SetNextWindowSize({ ui.ww, ui.fit_h }, ImGuiCond_Always); end
+    if hexw and ui.fit_h and ui.ww and not ui.sizing then imgui.SetNextWindowSize({ ui.ww, ui.fit_h }, ImGuiCond_Always); end   -- (not while you drag its corner)
     imgui.SetNextWindowSizeConstraints({ BASE_W * 0.5, hexw and Z(60) or Z(110) }, { BASE_W * 2.5, 4000 });
     if imgui.Begin('Damage Meter##ym_main', ui.open, bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoCollapse,
             ImGuiWindowFlags_NoScrollbar, ImGuiWindowFlags_NoScrollWithMouse, ImGuiWindowFlags_NoBackground,
@@ -1658,6 +1658,15 @@ local function draw_meter()
             if math.abs(k - scale.k) > 0.005 then scale.k, ui.k_main, s.size = k, k, math.floor(k * 100 + 0.5); end
             ui.ww, ui.wh = ww, wh;
             if not hexw then s.h = math.floor(wh / scale.k); end      -- (Hex link: the height is the rows', not saved)
+            if hexw then                                             -- (Hex link: its corner dragged - that height is the most it grows to; past it the list scrolls)
+                if imgui.IsMouseDown(0) and (ui.sizing or (ui.fit_h and math.abs(wh - ui.fit_h) > 2)) then
+                    ui.sizing = true;
+                    s.hx_max = math.floor(wh / scale.k);
+                elseif ui.sizing then
+                    ui.sizing = false;
+                    settings.save('dps');
+                end
+            end
         end
         imgui.SetWindowFontScale(1.0);
         W = math.max(Z(200), (ui.ww or Z(404)) - Z(24));
@@ -1670,7 +1679,9 @@ local function draw_meter()
             local _, ey = imgui.GetCursorScreenPos();
             if type(ey) == 'table' then ey = ey.y or ey[2]; end
             if hexw and type(ey) == 'number' then                    -- (where the rows end: next frame the window fits them)
-                ui.fit_h = math.floor(math.max(Z(60), math.min(Z(640), ey - s.y + Z(8))));
+                local cap = tonumber(s.hx_max) and Z(s.hx_max) or Z(640);   -- (no taller than you sized it)
+                pcall(function() ey = ey + (tonumber(imgui.GetScrollY()) or 0); end);   -- (scrolled down the list: where its rows really end)
+                ui.fit_h = math.floor(math.max(Z(60), math.min(cap, ey - s.y + Z(8))));
             end
         end
         imgui.EndChild();

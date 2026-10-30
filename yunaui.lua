@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.89';
+addon.version = '1.0.90';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -2598,7 +2598,8 @@ function FIGHT.ps_alt(sid, st, t)
     local function rnd(k) local v = math.sin(k * 12.9898 + 78.233) * 43758.5453; return v - math.floor(v); end
     local SW_, SH_ = C.screen();
     local s_ = math.max(0.6, SH_ / 1080) * math.max(0.3, math.min(2.0, tonumber(cfg.hl_fan) or 0.8)) / 0.8;
-    local mx = math.floor(SW_ / 2 + 0.5);
+    local OX, OY = math.floor(tonumber(cfg.hl_scx) or 0), math.floor(tonumber(cfg.hl_scy) or 0);   -- (dragged in Edit Mode: its place from the top middle)
+    local mx = math.floor(SW_ / 2 + 0.5) + OX;
     local left = st.dur - t;
     local ex_ = (left < 0.4) and (1 - left / 0.4) or 0;
     local inn = ease(t / 0.3);
@@ -2618,7 +2619,7 @@ function FIGHT.ps_alt(sid, st, t)
             end
             local cl0 = U4(0.01, 0.01, 0.03, 0);
             local xl, xc0, xc1, xr = math.floor(mx - HW), math.floor(mx - core), math.floor(mx + core), math.floor(mx + HW);
-            local top_ = FIGHT.psy and (FIGHT.psy - 8 * s_) or 0;    -- (from the top of the screen - or of the guide's picture)
+            local top_ = FIGHT.psy and (FIGHT.psy - 8 * s_) or math.max(0, OY - 8 * s_);   -- (from the top of the screen - or of the guide's picture, or where it was dragged)
             for j = 0, N - 1 do                                      -- (each step shaded top to bottom: no lines between them)
                 local y0, y1 = math.floor(top_ + (bot - top_) * j / N), math.floor(top_ + (bot - top_) * (j + 1) / N);
                 if y1 > y0 then
@@ -2687,7 +2688,7 @@ function FIGHT.ps_alt(sid, st, t)
     end
     local state = go and 'CHAIN NOW' or 'GET READY';
     do
-        local y_ = 22 * s_ - (1 - inn) * 14 * s_ + (FIGHT.psy or 0);   -- (FIGHT.psy: the guide's slide moves it down)
+        local y_ = 22 * s_ - (1 - inn) * 14 * s_ + (FIGHT.psy or OY);   -- (FIGHT.psy: the guide's slide moves it down)
         local title = st.chain and tostring(st.chain):upper() or 'SKILLCHAIN';
         local tc = st.chain and (FIGHT.PCOL[st.chain] or WH) or col;
         local sp = (6 + 18 * (1 - inn)) * s_;                         -- (tracking in: the letters close up as it arrives)
@@ -2749,6 +2750,27 @@ function FIGHT.ps_alt(sid, st, t)
         local half_ = math.max(tw_ / 2 + 190 * s_, 300 * s_);
         FIGHT.drawn.bn = { mx - half_, y_ - 4, half_ * 2, (oy + (mb_on and 22 * s_ or 0)) - y_ + 8, os.clock() };   -- (for the guide's box)
     end
+    if EDIT.on and not FIGHT.psy then pcall(FIGHT.bn_drag, fg); end     -- (Edit Mode: drag it anywhere)
+end
+function FIGHT.bn_drag(fg)                                          -- (Hex link's banner in Edit Mode: grabbed anywhere on it, it follows the mouse - kept on let go)
+    local B = FIGHT.drawn.bn;
+    if not B then return; end
+    local mx, my = imgui.GetMousePos();
+    local inside = mx >= B[1] and mx <= B[1] + B[3] and my >= B[2] and my <= B[2] + B[4];
+    local D = FIGHT.bdrag;
+    if not D and inside and imgui.IsMouseClicked(0) and not EDIT.drag then
+        D = { mx, my, tonumber(cfg.hl_scx) or 0, tonumber(cfg.hl_scy) or 0 }; FIGHT.bdrag = D;
+    end
+    if D then
+        if imgui.IsMouseDown(0) then
+            local W, H = C.screen();
+            cfg.hl_scx = math.floor(math.max(-W / 2, math.min(W / 2, D[3] + mx - D[1])));
+            cfg.hl_scy = math.floor(math.max(0, math.min(H - 80, D[4] + my - D[2])));
+        else FIGHT.bdrag = nil; save(); end
+    end
+    local a = (D or inside) and 0.95 or 0.45;                         -- (its box, as the other pieces show theirs)
+    DL.R(fg, B[1], B[2], B[1] + B[3], B[2] + B[4], U4(1, 0.82, 0.42, a), 6, C.rall, 1.2);
+    DL.T(fg, B[1] + 6, B[2] + 3, U4(1, 0.90, 0.62, a), 'Skillchain banner');
 end
 FIGHT.HLCOL = { cyan = { 0.35, 0.90, 1.0 }, azure = { 0.35, 0.72, 1.0 }, pink = { 1.0, 0.45, 0.72 }, violet = { 0.70, 0.52, 1.0 },
                 white = { 0.95, 0.96, 1.0 }, gold = { 1.0, 0.80, 0.42 }, red = { 1.0, 0.36, 0.45 }, mint = { 0.45, 0.95, 0.85 } };
@@ -15065,6 +15087,7 @@ function C.mb_init()
     M.f_setline = find('53568B7424105785F68BD974??8B54241085D27C??83FA067D', 0);   -- (a macro's line: its 6 lines x 61 bytes, 60 letters)
     M.f_setname = find('568B74240885F68BD175??83C8FF5EC20400578BFE83C9FF33C0F2AEF7D1495F83F908', 0);   -- (its name: 8 letters)
     M.f_save = find('8B44240881EC600100008D542400568BF18B8C24680100005051528BCEE8', 0);   -- (the open page written to its mcr<n>.dat, as the game saves it)
+    M.f_page = find('568BF1578B7C240C8B86C01D00008D04808D0C878B86BC1D00003BC1', 0);   -- (its setPage: the open page saved, another loaded)
     M.p_mfolder = find('8B86BC1D000068????????992BC28BCED1F850E8', 7);   -- (the folder the game passes to it)
     local ok, u = pcall(ffi.load, 'user32');
     M.user32 = ok and u or nil;
@@ -15398,6 +15421,18 @@ function C.mb_pad_raw()                                             -- (a contro
     if M.dr2 then return 2; end
     return 0;
 end
+-- One macro button held + D-pad up / down: the page turns - by the game's own setPage (FsMacroContainer: it saves the open
+-- page, then loads the new one), so it works the same on every pad. Its page is page x 2 (0..18); past either end it wraps.
+pcall(ffi.cdef, 'typedef int (__thiscall* YUI_mb_page_f)(uint32_t, int);');
+function C.mb_pageturn(dir)
+    local M = C.MB;
+    if not M.f_page then return; end
+    local o = C.mb_obj(M.p_macro);
+    if o == 0 then return; end
+    local cur = ashita.memory.read_int32(o + 0x1DB8) or 0;
+    pcall(function() ffi.cast('YUI_mb_page_f', M.f_page)(o, cur + ((dir == 'down') and 2 or -2)); end);
+    M.at = -99;                                                      -- (the new page's names read again)
+end
 -- the controller while a row is open: left / right move the highlight, the confirm button runs it; true = taken
 function C.mb_padkey(what)
     local M = C.MB;
@@ -15407,6 +15442,7 @@ function C.mb_padkey(what)
     M.padt, M.padw = now, what;
     if what == 'left' then M.sel = ((M.sel or 0) + 9) % 10; M.lastsel[M.padrow] = M.sel;
     elseif what == 'right' then M.sel = ((M.sel or 0) + 1) % 10; M.lastsel[M.padrow] = M.sel;
+    elseif what == 'up' or what == 'down' then C.mb_pageturn(what);  -- (one macro button + up / down: the page turns - no need for both)
     elseif what == 'ok' then
         local id = (M.padrow - 1) * 10 + (M.sel or 0);
         if (M.names[id] or '') ~= '' then
@@ -18751,8 +18787,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(C.bubble_draw);                                        -- (CHAT > Speech bubbles)
         pcall(C.hide_tname);                                         -- (Hex link: the game's name over your target hidden)
         pcall(C.tp_sound);                                           -- (BARS > TP sound: a chime at 1000 / 2000 / 3000)
-        pcall(C.snd_tidy);                                           -- (sound files closed once quiet: never left "in use")
-        if not YUI_PUBLIC then pcall(C.jav_tick); end               -- (ACTION BARS > Voice: a job ability ready again - not in the public version: no ACTION BARS tab to turn it off)
+        pcall(C.snd_tidy);                                           -- (sound files closed once quiet: never left "in use")        if not YUI_PUBLIC then pcall(C.jav_tick); end               -- (ACTION BARS > Voice: a job ability ready again - not in the public version: no ACTION BARS tab to turn it off)
         piece(C.macrobar);                                           -- (BARS > MACRO BAR)
         piece(C.head_bars);                                          -- (BARS > YOUR BARS > Where: over your head)
         YUI_EQ_HIDE = true;                                          -- (the old gear wheel never shows)
@@ -18823,13 +18858,13 @@ ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStati
     if b == 32 then                                                  -- (the D-pad followed always - a release missed made the next press not count)
         povwas = C.MB.pov;
         C.MB.pov = st;
-        C.MB.hold = (st == 27000 or st == 0) and 'left' or ((st == 9000 or st == 18000) and 'right' or nil);   -- (up / left: the one before; down / right: the next)
+        C.MB.hold = (st == 27000) and 'left' or ((st == 9000) and 'right' or nil);   -- (left: the one before; right: the next - up / down turn the page)
         if C.MB.hold ~= nil and st ~= povwas then C.MB.hold_t, C.MB.hold_n = os.clock(), nil; end
     end
     if (C.MB.padrow or 0) ~= 0 and not C.mb_free() then              -- (a macro row open: the D-pad and Cross are the bar's - not while the game picks a sub target)
         if b == 32 then
             if st == 27000 or st == 9000 or st == 0 or st == 18000 then   -- (the D-pad: the bar's - up / down move along the lists, left / right too; L2 + R2 + up / down still turns the page)
-                if st ~= povwas then C.mb_padkey((st == 27000 or st == 0) and 'left' or 'right'); end
+                if st ~= povwas then C.mb_padkey((st == 27000 and 'left') or (st == 9000 and 'right') or (st == 0 and 'up') or 'down'); end
                 e.blocked = true; return;
             end
         elseif b == 49 then
@@ -18870,14 +18905,14 @@ function C.mb_mine()                                                -- (YunaUI's
 end
 C.MB_XBITS = { { 0, 0x0001 }, { 1, 0x0002 }, { 2, 0x0004 }, { 3, 0x0008 }, { 12, 0x1000 } };   -- (D-pad up, down, left, right; A)
 function C.mb_xpad(b, down, was)                                     -- (an Xbox D-pad / A press or release; true = the bar's)
-    if b <= 3 then                                                   -- (up / left: the one before; down / right: the next)
-        local w_ = (b == 0 or b == 2) and 'left' or 'right';
+    if b == 2 or b == 3 then                                         -- (left: the one before; right: the next - held, it keeps going)
+        local w_ = (b == 2) and 'left' or 'right';
         if down and not was then C.MB.hold, C.MB.hold_t, C.MB.hold_n = w_, os.clock(), nil;
         elseif not down and C.MB.hold == w_ then C.MB.hold = nil; end
     end
     if (C.MB.padrow or 0) ~= 0 and not C.mb_free() then              -- (a macro row open: the D-pad and A are the bar's)
-        if down and not was then                                     -- (only as it goes down)
-            if b == 2 or b == 0 then C.mb_padkey('left'); elseif b == 3 or b == 1 then C.mb_padkey('right'); elseif b == 12 then C.mb_padkey('ok'); end
+        if down and not was then                                     -- (only as it goes down; up / down turn the page)
+            if b == 2 then C.mb_padkey('left'); elseif b == 3 then C.mb_padkey('right'); elseif b == 0 then C.mb_padkey('up'); elseif b == 1 then C.mb_padkey('down'); elseif b == 12 then C.mb_padkey('ok'); end
         end
         return true;
     end
