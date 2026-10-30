@@ -2938,7 +2938,17 @@ function JOBS.statbar(key, value, v, lag, pct)
             if not imgui.IsMouseDown(0) then save(); end
         end
         if not ax and YUI_ONSCREEN and type(sw) == 'number' then    -- (always on the screen)
-            local nx, ny, moved = YUI_ONSCREEN(wx, wy, sw, sh);
+            local gw, gh = sw, sh;                                   -- (the HP bar with MP / TP anchored to it: the whole group on the screen -
+            if key == 'hp' and (tonumber(cfg.sb_anchor) or 0) ~= 0 then   --  only HP was kept in, the other two hung off the bottom)
+                for _, k_ in ipairs({ 'mp', 'tp' }) do
+                    local z = JOBS.sb_size[k_];
+                    if z and cfg['sb_' .. k_] ~= false then
+                        local px, py = JOBS.sb_anchor_pos(k_);
+                        if px then gw, gh = math.max(gw, px + z[1] - wx), math.max(gh, py + z[2] - wy); end
+                    end
+                end
+            end
+            local nx, ny, moved = YUI_ONSCREEN(wx, wy, gw, gh);
             if moved then cfg[kx], cfg[ky] = nx, ny; JOBS.sb_move = math.max(JOBS.sb_move or 0, 2); save(); end
         end
     end
