@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.98';
+addon.version = '1.0.99';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -8372,8 +8372,19 @@ function C.snd_play(name, volkey)                                  -- (volkey: t
 end
 -- an MP3 from sounds/, by Windows' MCI (winmm): opened once, played from its start, at volume key's setting (1 = as recorded)
 pcall(ffi.cdef, 'uint32_t __stdcall mciSendStringA(const char* cmd, char* ret, uint32_t n, void* cb);');
+-- Linux (Wine / Steam Proton): MCI opening an MP3 can freeze the game for good there (no codec for it) - the item sound
+-- when you got loot hung a player's game at every drop. Those MP3s are left silent under Wine; the WAV sounds still play.
+pcall(ffi.cdef, 'const char* wine_get_version(void);');
+function C.is_wine()
+    if C.WINE == nil then
+        C.WINE = false;
+        pcall(function() local n = ffi.load('ntdll'); C.WINE = n.wine_get_version ~= nil; end);   -- (only Wine's ntdll has it: Windows' throws)
+    end
+    return C.WINE;
+end
 function C.mp3_play(name, volkey)
     local S = C.SND;
+    if C.is_wine() then return; end
     if S.winmm == nil then local ok, lib = pcall(ffi.load, 'winmm'); S.winmm = ok and lib or false; end
     if not S.winmm then return; end
     local vol = math.max(0, math.min(1.5, tonumber(cfg[volkey]) or 0.8));
@@ -8400,6 +8411,7 @@ function C.jav_used(aid)                                            -- (you used
 end
 function C.jav_say(aid, preview)
     local S = C.SND;
+    if C.is_wine() then return; end                                  -- (MCI's MP3 under Wine / Proton: it can freeze the game)
     if S.winmm == nil then local ok, lib = pcall(ffi.load, 'winmm'); S.winmm = ok and lib or false; end
     if not S.winmm then return; end
     local vol = math.max(0, math.min(1.5, tonumber(cfg.mb_voice_vol) or 0.8));
