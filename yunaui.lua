@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.93';
+addon.version = '1.0.94';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -724,9 +724,8 @@ end
 function YUI_ONSCREEN(wx, wy, sw, sh)
     if type(wx) ~= 'number' or type(wy) ~= 'number' or type(sw) ~= 'number' or type(sh) ~= 'number' or sw < 4 then return wx, wy, false; end
     if imgui.IsMouseDown(0) or wx < -1000 then return wx, wy, false; end   -- (not while dragged; not one parked off screen on purpose)
-    local ds = imgui.GetIO().DisplaySize;
-    local W, H = ds and tonumber(ds.x), ds and tonumber(ds.y);
-    if not W or W < 200 or not H or H < 200 then return wx, wy, false; end
+    local W, H = C.screen();                                         -- (the biggest size the game window is said to be - ImGui's alone was too small on a
+    if not W or W < 200 or not H or H < 200 then return wx, wy, false; end   --  scaled 4K screen: every window kept away from the right edge)
     local nx = math.max(0, math.min(W - math.min(sw, W), wx));      -- (the whole window on the screen, as plain_window)
     local ny = math.max(0, math.min(H - math.min(sh, H), wy));
     if math.abs(nx - wx) > 1 or math.abs(ny - wy) > 1 then return math.floor(nx), math.floor(ny), true; end
@@ -3938,8 +3937,7 @@ function EDIT.grips(fg, boxes)
     return R and R.k or hot;
 end
 function EDIT.snap(kx, x, y, w, h)
-    local ds = imgui.GetIO().DisplaySize;
-    local W, H = (ds and ds.x) or 1920, (ds and ds.y) or 1080;
+    local W, H = C.screen();                                         -- (the full screen: ImGui's own size could be too small)
     local xs, ys = { W / 2 }, { H / 2 };                             -- the lines to line up with
     for k, sz in pairs(WATCH.size or {}) do
         local ky = k:gsub('_x$', '_y');
@@ -3971,8 +3969,7 @@ end
 function EDIT.draw()
     if not EDIT.on then return; end
     if EDIT.G and EDIT.G.on then return; end                         -- (the guide is showing: no grid, no panel)
-    local ds = imgui.GetIO().DisplaySize;
-    local W, H = (ds and ds.x) or 1920, (ds and ds.y) or 1080;
+    local W, H = C.screen();                                         -- (the full screen: ImGui's own size could be too small)
     local dl = nil;
     pcall(function() dl = imgui.GetBackgroundDrawList(); end);
     local fg = nil;
@@ -4462,8 +4459,7 @@ end
 -- The party / alliance windows always stay on the screen: placed by their real size (not a guess), and pushed back
 -- inside if they ever stick out (a let-go drag, a member joining, a smaller screen)
 function ALLY.screen()
-    local ds = imgui.GetIO().DisplaySize;
-    local w, h = ds and tonumber(ds.x), ds and tonumber(ds.y);
+    local w, h = C.screen();                                         -- (the full screen: ImGui's own size could be too small - the party kept off the right edge)
     if not w or w < 100 or not h or h < 100 then return nil; end
     return w, h;
 end
@@ -10720,8 +10716,7 @@ end
 -- the first time, each one is placed near the bottom middle of the screen (then they go wherever you drag them)
 local function first_place(kx, ky, dx, dy)
     if (tonumber(cfg[kx]) or -1) >= 0 then return; end
-    local ds = imgui.GetIO().DisplaySize;
-    local dw, dh = (ds and ds.x) or 1920, (ds and ds.y) or 1080;
+    local dw, dh = C.screen();                                       -- (the full screen: ImGui's own size could be too small)
     cfg[kx], cfg[ky] = math.floor(dw / 2 + dx), math.floor(dh + dy);
 end
 local GOLD = { 1.00, 0.90, 0.58 };
@@ -13398,8 +13393,7 @@ function LAYOUT.stack_h(hh) return hh * 3 - 12; end
 -- in their own places by the bar), sub-target, enemies, party, alliances, your bars, cast bar, pet, timers, equipment,
 -- minimap, chats, Damage Meter, exp, gil and bag - each in room nothing else has.
 function LAYOUT.build(name)
-    local ds = imgui.GetIO().DisplaySize;
-    LAYOUT.W, LAYOUT.H = (ds and ds.x) or 1920, (ds and ds.y) or 1080;
+    LAYOUT.W, LAYOUT.H = C.screen();                                 -- (the full screen: ImGui's own size could be too small)
     local W, H, m = LAYOUT.W, LAYOUT.H, 24;
     local o, eq = {}, {};
     LAYOUT.taken = {};
@@ -14377,8 +14371,7 @@ function C.modesw()
 end
 function PANEL.mini()                                                -- minimised: the logo, top of the screen
     if (tonumber(cfg.mini_x) or -1) < 0 then
-        local ds = imgui.GetIO().DisplaySize;
-        cfg.mini_x, cfg.mini_y = math.floor(((ds and ds.x) or 1920) / 2 - 28), 6;
+        cfg.mini_x, cfg.mini_y = math.floor(C.screen() / 2 - 28), 6;
     end
     if plain_window('YunaUI Mini##yui_mini', 'mini_x', 'mini_y') then
         local dl = imgui.GetWindowDrawList();
@@ -15534,7 +15527,7 @@ function C.mb_padkey(what)
         if (M.names[id] or '') ~= '' then
             M.flash[id] = os.clock(); C.mb_run(M.padrow, M.sel or 0);
             M.tog = 0;                                               -- (run: the row closes, as the game's does)
-            M.okheld = true;                                         -- (the press that ran it stays the bar's till it's let go: held, the game took it as "target what's in front")
+            M.okheld, M.okt = true, os.clock();                      -- (the press that ran it stays the bar's till it's let go: held, the game took it as "target what's in front")
             if C.mb_hasst(M.padrow, M.sel or 0) then M.free_until = os.clock() + 0.8; end   -- (a <st>, <stal>, <stnpc> macro: the pad is the game's while it picks its target - any other, the next macro straight away)
         end
     end
@@ -15686,6 +15679,10 @@ function C.macrobar()
     if padrow ~= M.padrow then                                       -- (a row just opened: the highlight where you left it)
         M.padrow = padrow;
         if padrow ~= 0 then M.sel = M.lastsel[padrow] or 0; end
+    end
+    if M.okheld and os.clock() - (M.okt or 0) > 1.5 then M.okheld = false; end   -- (never stuck: its release missed, it lets go anyway)
+    if ((M.padrow or 0) ~= 0 and not C.mb_free()) or M.okheld then   -- (a row open, or the press that ran a macro still held: the game reads the pad at rest -
+        pcall(function() vana.gamepad.nav(true); end);               --  blocking its button events alone missed some pads: the Cross also talked to the NPC in front)
     end
     if held ~= 0 then                                                -- (a macro pressed: its slot flashes)
         for k = 0, 9 do
@@ -18104,8 +18101,7 @@ function EDIT.G.splash()
     local fg = nil;
     pcall(function() fg = imgui.GetForegroundDrawList(); end);
     if fg == nil then G.splash_t = nil; return; end
-    local ds = imgui.GetIO().DisplaySize;
-    local W, H = (ds and ds.x) or 1920, (ds and ds.y) or 1080;
+    local W, H = C.screen();                                         -- (the full screen: ImGui's own size could be too small)
     local k = math.max(0.8, math.min(2.0, H / 1080));
     local a = math.min(1, t / 0.5) * math.min(1, (T - t) / 0.9);    -- in quickly, out slowly
     local e = 1 - (1 - math.min(1, t / 0.7)) ^ 3;                    -- (eases in: the letters spread out as it lands)
@@ -18560,8 +18556,7 @@ function C.MD.draw()
     local fg = nil;
     pcall(function() fg = imgui.GetForegroundDrawList(); end);
     if fg == nil then return; end
-    local ds = imgui.GetIO().DisplaySize;
-    local W, H = (ds and ds.x) or 1920, (ds and ds.y) or 1080;
+    local W, H = C.screen();                                         -- (the full screen: ImGui's own size could be too small)
     local k = math.max(0.8, math.min(1.8, H / 1080));
     if M.lay then M.lay = nil; pcall(function() LAYOUT.apply(LAYOUT.build('classic')); end); end   -- (the demo's clean layout)
     do local n_ = os.clock(); FIGHT.fx.t0 = n_ - (n_ % 6); end      -- (the entrance plays again with each pretend fight)
@@ -19294,6 +19289,19 @@ ashita.events.register('command', 'yui_command', function(e)
         M.fakesc = { fake = true, ts = now, dur = 10, go = true, close = {}, burst = {} };   -- (and a pretend skillchain: weapon skills close it, spells burst)
         M.flash[2], M.flash[3] = now, now + 0.15;
         msg('Action bars test: Ctrl 3 and 4 used - hold Ctrl to watch them heal');
+    elseif sub == 'screen' then                                      -- (every screen size YunaUI is told, and the macro bar's place and size: for a player's
+        pcall(function()                                             --  screen it doesn't fit - a scaled 4K one cut the bar at its middle)
+            local ds = imgui.GetIO().DisplaySize;
+            local fb = imgui.GetIO().DisplayFramebufferScale;
+            local u1, u2 = 0, 0; pcall(function() u1, u2 = vana.ui.screen(); end);
+            local wi = {}; pcall(function() wi = vana.window.info() or {}; end);
+            local W, H = C.screen();
+            local sz = WATCH.size and WATCH.size.mbp_x;
+            msg(string.format('Screen: ImGui %sx%s (scale %s) | VanaCore UI %sx%s | window %sx%s | YunaUI uses %dx%d', tostring(ds and ds.x), tostring(ds and ds.y),
+                tostring(fb and fb.x), tostring(u1), tostring(u2), tostring(wi.client_width), tostring(wi.client_height), W, H));
+            msg(string.format('Macro bar: at %s,%s size %s x %s | Size of everything %s, bar size %s', tostring(cfg.mbp_x), tostring(cfg.mbp_y),
+                tostring(sz and math.floor(sz[1])), tostring(sz and math.floor(sz[2])), tostring(cfg.scale), tostring(cfg.mb_scale)));
+        end);
     elseif sub == 'mbdebug' then                                     -- (ACTION BARS: say what the keyboard does to the bar)
         C.MB.dbg = not C.MB.dbg; msg('Macro bar debug ' .. (C.MB.dbg and 'on' or 'off'));
     elseif sub == 'lootmenu' then                                    -- (which game menus were open with something in the pool)
