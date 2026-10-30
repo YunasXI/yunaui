@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.99';
+addon.version = '1.0.100';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -8469,6 +8469,24 @@ function C.jav_tick()
         J.busy = now + 1.6;
     end
 end
+-- SOUND ALERTS > You're stunned: Amy's voice (sounds/stunned.wav, made like the ability callouts) as Stun lands on you -
+-- once per stun, not again within 2 s
+function C.stun_sound()
+    local S = C.SND;
+    local now_ = os.clock();
+    if now_ < (S.stun_next or 0) then return; end
+    S.stun_next = now_ + 0.15;                                       -- (looked at a few times a second)
+    local on = false;
+    pcall(function()
+        local b = AshitaCore:GetMemoryManager():GetPlayer():GetBuffs();
+        for k = 0, 31 do if tonumber(b[k]) == 10 then on = true; break; end end
+    end);
+    if on and not S.stunned and cfg.stun_snd ~= false and now_ - (S.stun_t or -99) > 2 then
+        S.stun_t = now_;
+        C.snd_play('stunned', 'stun_vol');
+    end
+    S.stunned = on;
+end
 function C.tp_sound()
     local tp = 0;
     pcall(function() tp = AshitaCore:GetMemoryManager():GetParty():GetMemberTP(0) or 0; end);
@@ -14429,6 +14447,10 @@ local function draw_window()
             row_switch('##yui_tpvs', 'TP sound', 'tp_vex_snd', 'A soft chime as your TP reaches 1000, 2000 and 3000 - a step higher each time, so you can hear how much TP you have.');
             if cfg.tp_vex_snd ~= false then vol('##yui_tpvv', 'TP sound volume', 'tp_vex_vol', 'prevv', function() C.snd_play('tp_vex3', 'tp_vex_vol'); end); end
         end
+        section('YOU');
+        if cfg.stun_snd == nil then cfg.stun_snd = true; end
+        row_switch('##yui_stuns', "You're stunned", 'stun_snd', 'A voice says "You\'re stunned" the moment Stun lands on you.');
+        if cfg.stun_snd ~= false then vol('##yui_stunv', 'Stun voice volume', 'stun_vol', 'prevst', function() C.snd_play('stunned', 'stun_vol'); end); end
         section('PARTY');
         if cfg.invite_snd == nil then cfg.invite_snd = true; end
         row_switch('##yui_pinvs', 'Party invite', 'invite_snd', 'A short sound when someone invites you to a party or alliance (with the invite card - PARTY > Party invite alert).');
@@ -18887,6 +18909,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(C.bubble_draw);                                        -- (CHAT > Speech bubbles)
         pcall(C.hide_tname);                                         -- (Hex link: the game's name over your target hidden)
         pcall(C.tp_sound);                                           -- (BARS > TP sound: a chime at 1000 / 2000 / 3000)
+        pcall(C.stun_sound);                                         -- (SOUND ALERTS > You're stunned)
         pcall(C.snd_tidy);                                           -- (sound files closed once quiet: never left "in use")
         if not YUI_PUBLIC then pcall(C.jav_tick); end               -- (ACTION BARS > Voice: a job ability ready again - not in the public version: no ACTION BARS tab to turn it off)
         piece(C.macrobar);                                           -- (BARS > MACRO BAR)
