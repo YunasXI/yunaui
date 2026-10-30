@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.94';
+addon.version = '1.0.95';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -18928,11 +18928,12 @@ ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStati
     if (b == bl_ or b == br_) and st >= 128 and C.mb_mine() and not (C.MB.dl2 and C.MB.dr2) then   -- (the game never sees one trigger go down: its hidden palette stays shut - a release always reaches it, or it could think one still held)
         e.blocked = true; return;
     end
-    if b == 49 and C.MB.okheld then                                  -- (the Cross that ran a macro: never the game's, down to its release)
+    local PB = C.padbtn();                                           -- (the game's own confirm / cancel buttons)
+    if b == PB.d_ok and C.MB.okheld then                             -- (the confirm that ran a macro: never the game's, down to its release)
         if st < 128 then C.MB.okheld = false; end
         e.blocked = true; return;
     end
-    if ((C.MB.tog or 0) ~= 0 or (C.MB.ktog or 0) ~= 0) and b == 50 and st >= 128 then   -- (MACRO BAR, press to show: Circle closes it - opened by the pad or by a Ctrl / Alt tap)
+    if ((C.MB.tog or 0) ~= 0 or (C.MB.ktog or 0) ~= 0) and b == PB.d_back and st >= 128 then   -- (MACRO BAR, press to show: cancel closes it - opened by the pad or by a Ctrl / Alt tap)
         C.MB.tog, C.MB.ktog = 0, 0; e.blocked = true; return;
     end
     local povwas;
@@ -18948,7 +18949,7 @@ ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStati
                 if st ~= povwas then C.mb_padkey((st == 27000 and 'left') or (st == 9000 and 'right') or (st == 0 and 'up') or 'down'); end
                 e.blocked = true; return;
             end
-        elseif b == 49 then
+        elseif b == PB.d_ok then
             if st >= 128 then C.mb_padkey('ok'); end
             e.blocked = true; return;
         end
@@ -18984,7 +18985,29 @@ end);
 function C.mb_mine()                                                -- (YunaUI's bar is up in place of the game's: the triggers are its)
     return cfg.macrobar ~= false and C.MB.ok == true and C.MB.hid == true and not YUI_MAPCOVER;
 end
-C.MB_XBITS = { { 0, 0x0001 }, { 1, 0x0002 }, { 2, 0x0004 }, { 3, 0x0008 }, { 12, 0x1000 } };   -- (D-pad up, down, left, right; A)
+C.MB_XBITS = { { 0, 0x0001 }, { 1, 0x0002 }, { 2, 0x0004 }, { 3, 0x0008 }, { 12, 0x1000 } };   -- (D-pad up, down, left, right; confirm - A unless the game says otherwise)
+-- The game's own confirm / cancel buttons (vana.gamepad.bindings): a PlayStation-style pad set up with Circle to confirm
+-- runs macros with Circle, not the Cross YunaUI always took. DirectInput: button n is 48 + n. XInput: A / B unless the
+-- game's setting names an XInput button (12-15).
+C.PADB = { at = -9, d_ok = 49, d_back = 50, x_ok = 12, x_back = 13 };
+function C.padbtn()
+    local P = C.PADB;
+    if os.clock() - P.at < 3 then return P; end
+    P.at = os.clock();
+    pcall(function()
+        local b = vana.gamepad.bindings() or {};
+        local ok_, bk_ = tonumber(b.confirm) or -1, tonumber(b.cancel) or -1;
+        if b.xinput then
+            P.x_ok = (ok_ >= 12 and ok_ <= 15) and ok_ or 12;
+            P.x_back = (bk_ >= 12 and bk_ <= 15) and bk_ or 13;
+        else
+            if ok_ >= 0 and ok_ < 32 then P.d_ok = 48 + ok_; end
+            if bk_ >= 0 and bk_ < 32 then P.d_back = 48 + bk_; end
+        end
+    end);
+    C.MB_XBITS[5] = { P.x_ok, bit.lshift(1, P.x_ok) };
+    return P;
+end
 function C.mb_xpad(b, down, was)                                     -- (an Xbox D-pad / A press or release; true = the bar's)
     if b == 2 or b == 3 then                                         -- (left: the one before; right: the next - held, it keeps going)
         local w_ = (b == 2) and 'left' or 'right';
@@ -18993,7 +19016,7 @@ function C.mb_xpad(b, down, was)                                     -- (an Xbox
     end
     if (C.MB.padrow or 0) ~= 0 and not C.mb_free() then              -- (a macro row open: the D-pad and A are the bar's)
         if down and not was then                                     -- (only as it goes down; up / down turn the page)
-            if b == 2 then C.mb_padkey('left'); elseif b == 3 then C.mb_padkey('right'); elseif b == 0 then C.mb_padkey('up'); elseif b == 1 then C.mb_padkey('down'); elseif b == 12 then C.mb_padkey('ok'); end
+            if b == 2 then C.mb_padkey('left'); elseif b == 3 then C.mb_padkey('right'); elseif b == 0 then C.mb_padkey('up'); elseif b == 1 then C.mb_padkey('down'); elseif b == C.padbtn().x_ok then C.mb_padkey('ok'); end
         end
         return true;
     end
@@ -19011,7 +19034,7 @@ ashita.events.register('xinput_state', 'yui_pad_xs', function(e)    -- Xbox (XIn
         else
             M.xl, M.xr, M.xt = tonumber(g.bLeftTrigger) or 0, tonumber(g.bRightTrigger) or 0, os.clock();
         end
-        if M.okheld and bit.band(g.wButtons, 0x1000) == 0 then M.okheld = false; end   -- (the A that ran a macro: let go)
+        if M.okheld and bit.band(g.wButtons, bit.lshift(1, C.padbtn().x_ok)) == 0 then M.okheld = false; end   -- (the confirm that ran a macro: let go)
         local wb = tonumber(g.wButtons) or 0;                        -- (the D-pad and A read here too: on some set-ups the button events never came,
         M.xb = M.xb or {};                                           --  so an Xbox pad's D-pad did nothing on the bar - whichever comes first counts, once)
         for _, q in ipairs(C.MB_XBITS) do
@@ -19021,7 +19044,7 @@ ashita.events.register('xinput_state', 'yui_pad_xs', function(e)    -- Xbox (XIn
         end
     end);
     if M.okheld and e.state_modified ~= nil then                     -- (held: the game never sees it - it would target what's in front)
-        pcall(function() local g = ffi.cast('YUI_XSTATE*', e.state_modified).Gamepad; g.wButtons = bit.band(g.wButtons, bit.bnot(0x1000)); end);
+        pcall(function() local g = ffi.cast('YUI_XSTATE*', e.state_modified).Gamepad; g.wButtons = bit.band(g.wButtons, bit.bnot(bit.lshift(1, C.padbtn().x_ok))); end);
     end
     if not ok or not C.mb_mine() or e.state_modified == nil then return; end
     if M.xl > 60 and M.xr > 60 then return; end                       -- (both: the game's - L2 + R2 + up / down turns the page)
@@ -19030,7 +19053,7 @@ ashita.events.register('xinput_state', 'yui_pad_xs', function(e)    -- Xbox (XIn
         local g = ffi.cast('YUI_XSTATE*', e.state_modified).Gamepad;
         if C.mb_l1() then g.wButtons = bit.band(g.wButtons, bit.bnot(0x0300));   -- (the game never sees one macro button: its hidden palette stays shut)
         else g.bLeftTrigger, g.bRightTrigger = 0, 0; end
-        if takebtn then g.wButtons = bit.band(g.wButtons, bit.bnot(0x100F)); end   -- (and while a row is open: the D-pad and A are the bar's)
+        if takebtn then g.wButtons = bit.band(g.wButtons, bit.bnot(bit.bor(0x000F, bit.lshift(1, C.padbtn().x_ok)))); end   -- (and while a row is open: the D-pad and confirm are the bar's)
     end);
 end);
 ashita.events.register('xinput_button', 'yui_pad_x', function(e)    -- Xbox (XInput) pads
@@ -19038,17 +19061,18 @@ ashita.events.register('xinput_button', 'yui_pad_x', function(e)    -- Xbox (XIn
     if (b == 8 or b == 9) and C.mb_l1() and st ~= 0 and C.mb_mine() and not ((C.MB.xl or 0) > 60 and (C.MB.xr or 0) > 60) then   -- (L1 / R1 picked: one shoulder never the game's)
         e.blocked = true; return;
     end
-    if b == 12 and C.MB.okheld then                                  -- (the A that ran a macro: never the game's, down to its release)
+    local PB = C.padbtn();
+    if b == PB.x_ok and C.MB.okheld then                             -- (the confirm that ran a macro: never the game's, down to its release)
         if st == 0 then C.MB.okheld = false; end
         e.blocked = true; return;
     end
-    if ((C.MB.tog or 0) ~= 0 or (C.MB.ktog or 0) ~= 0) and b == 13 and st ~= 0 then   -- (MACRO BAR, press to show: B closes it - opened by the pad or by a Ctrl / Alt tap)
+    if ((C.MB.tog or 0) ~= 0 or (C.MB.ktog or 0) ~= 0) and b == PB.x_back and st ~= 0 then   -- (MACRO BAR, press to show: cancel closes it - opened by the pad or by a Ctrl / Alt tap)
         C.MB.tog, C.MB.ktog = 0, 0; e.blocked = true; return;
     end
     C.MB.xb = C.MB.xb or {};
     local was = C.MB.xb[b];                                          -- (followed always - a release missed made the next press not count)
     C.MB.xb[b] = st ~= 0;
-    if (b <= 3 or b == 12) and C.mb_xpad(b, st ~= 0, was) then e.blocked = true; return; end
+    if (b <= 3 or b == PB.x_ok) and C.mb_xpad(b, st ~= 0, was) then e.blocked = true; return; end
     local id = 'x' .. b;
     if b > 3 and st ~= 0 then legacy.pad_press('x', b); end
     if id == cfg.pad_log and cfg.chat and cfg.hide_game_chat and (legacy.pad.big or legacy.pad.mine) then   -- the log button (often X): as above
