@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.87';
+addon.version = '1.0.88';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -224,9 +224,17 @@ end
 -- Every clip area goes through here: inside the screen, on whole pixels and at least 1 px. Plain Ashita (DirectX 8)
 -- can't draw with one bigger than the screen (every window after it vanishes, the settings too), and one partly off the
 -- screen, on half pixels or with no size makes every addon's window shake (as equip.lua's JOBS.clip already knew).
-function C.screen()
-    local ds = imgui.GetIO().DisplaySize;
-    return math.floor((ds and tonumber(ds.x)) or 1920), math.floor((ds and tonumber(ds.y)) or 1080);
+C.SCR = { t = -9, w = 0, h = 0 };
+function C.screen()                                                  -- (the biggest the game window is said to be: on a 4K screen scaled by Windows,
+    local ds = imgui.GetIO().DisplaySize;                            --  ImGui's own size was half - the bar cut off, windows kept off the right half)
+    local w, h = math.floor((ds and tonumber(ds.x)) or 1920), math.floor((ds and tonumber(ds.y)) or 1080);
+    local S, now = C.SCR, os.clock();
+    if now - S.t > 1 then
+        S.t, S.w, S.h = now, 0, 0;
+        pcall(function() local a, b = vana.ui.screen(); S.w, S.h = math.max(S.w, tonumber(a) or 0), math.max(S.h, tonumber(b) or 0); end);
+        pcall(function() local i = vana.window.info(); S.w, S.h = math.max(S.w, tonumber(i.client_width) or 0), math.max(S.h, tonumber(i.client_height) or 0); end);
+    end
+    return math.max(w, S.w), math.max(h, S.h);
 end
 function YUI_GS() return math.max(0.5, math.min(4, tonumber(cfg.scale) or 1)); end   -- GENERAL > Size of everything (equip.lua's bars too)
 function C.cliprect(a, b)
@@ -7331,7 +7339,7 @@ function C.mb_pillbar(row, sel, now, op, cds, nm, sc)
     if not plain_window('YunaUI Action Bar##yui_mbp', 'mbp_x', 'mbp_y') then imgui.End(); imgui.PopStyleVar(2); return; end
     local okd, erd = pcall(function()                               -- (drawn safely: the window is always closed)
     local dl = imgui.GetWindowDrawList();
-    pcall(function() dl:PushClipRectFullScreen(); end);              -- (its glow - Normal mode's vortexes - never cut off at the window's edge)
+    pcall(function() local W_, H_ = C.screen(); dl:PushClipRect({ 0, 0 }, { W_, H_ }, false); end);   -- (its glow never cut off at the window's edge - the whole screen, not ImGui's idea of it: on a scaled 4K screen that was half)
     local wx, wy = imgui.GetCursorScreenPos();
     local top = wy;
     local x0 = wx + LBL;
@@ -7541,14 +7549,15 @@ function C.mb_pillbar(row, sel, now, op, cds, nm, sc)
                 local dz = cl01(1 - ft / 0.35);
                 tk = rsz * (0.62 + 0.38 * (tgt + (1 - tgt) * dz * dz));
             end
-            txt(tostring((k == 9) and 0 or k + 1), (pick and 15 or 13) * s_ * ts * tk, xc, yc - 6 * s_ * tk, (hex and (pick and GL or GOLD)) or WH, a);   -- (Normal mode: every number white)
-            local npx = (pick and 10 or 9.2) * s_ * ts * tk;
+            local nums = cfg.mb_nums ~= false;                       -- (ACTION BARS > Show numbers: off, the name alone - bigger, in the middle)
+            if nums then txt(tostring((k == 9) and 0 or k + 1), (pick and 15 or 13) * s_ * ts * tk, xc, yc - 6 * s_ * tk, (hex and (pick and GL or GOLD)) or WH, a); end   -- (Normal mode: every number white)
+            local npx = (pick and 10 or 9.2) * s_ * ts * tk * (nums and 1 or 1.25);
             local nw = wid(name, npx);
             local room = (hex and (2 * hw - 10 * s_)) or (2 * hw * 0.80 * tk * 1.15);   -- (Normal mode: inside the orb)
             if nw > room then npx = npx * math.max(0.7, room / nw); end
             local nc = busy and DIM or WH;
             if rdy > 0 then nc = { 1 + (GL[1] - 1) * rdy, 1 + (GL[2] - 1) * rdy, 1 + (GL[3] - 1) * rdy }; end
-            txt(name, npx, xc, yc + 11 * s_ * tk, nc, a * (busy and 0.85 or 1));
+            txt(name, npx, xc, yc + (nums and 11 or 2) * s_ * tk, nc, a * (busy and 0.85 or 1));
             ::nextpill::
         end
         ::nextrow::
@@ -14843,6 +14852,8 @@ local function draw_window()
                 row_switch('##yui_mbboth', 'Both rows', 'mb_both', 'On: Ctrl and Alt rows one over the other, the row you hold bright. Off: only the row you hold.');
                 if wv_ then row_slider('##yui_mbtx', 'Text size', 'mb_text', 0.6, 2.5, 0.05, '%.2fx'); end
                 row_pick('##yui_mbbt', 'Macro buttons (controller)', 'mb_btn', { { 'l2', 'L2 / R2' }, { 'l1', 'L1 / R1' } });   -- (as the player set the game's pad)
+                row_switch('##yui_mbsw', 'Swap Ctrl / Alt (controller)', 'mb_padswap', 'On: the right button opens the Ctrl row and the left one the Alt row.');
+                row_switch('##yui_mbnum', 'Show numbers', 'mb_nums', 'Off: only the macro names on the bar, no 1 - 0 over them.');
                 row_pick('##yui_mbpd', C.mb_bn() .. ' (controller)', 'mb_pad', { { 'hold', 'Hold to show' }, { 'toggle', 'Press to show, press again to hide' } });   -- (Ctrl / Alt: always held, as the game)
                 row_slider('##yui_mbsc', 'Size', 'mb_scale', 0.5, 2.0, 0.05, '%.2fx');
                 hint('Keyboard: hold Ctrl or Alt and press 1 to 0, as in the game. Controller: hold ' .. (C.mb_l1() and 'L1 or R1' or 'L2 or R2') .. ', pick with the D-pad left / right, Cross (A) runs it. Move the bar in Edit Mode. Right-click a button to edit that macro.');
@@ -15356,7 +15367,12 @@ end
 function C.mb_bn()                                                  -- (the macro buttons' names, for the words)
     return C.mb_l1() and 'L1 / R1' or 'L2 / R2';
 end
-function C.mb_pad()                                                 -- (a controller's macro button held: 1 the left - Ctrl row, 2 the right - Alt row)
+function C.mb_pad()                                                 -- (ACTION BARS > Swap: the right button the Ctrl row, the left the Alt row - as some set the game's pad)
+    local r = C.mb_pad_raw();
+    if cfg.mb_padswap and r ~= 0 then r = 3 - r; end
+    return r;
+end
+function C.mb_pad_raw()                                             -- (a controller's macro button held: 1 the left - Ctrl row, 2 the right - Alt row)
     local M = C.MB;
     M.both = false;
     if M.xl ~= nil and os.clock() - (M.xt or -9) < 0.5 then           -- (an Xbox pad: as the game's own read saw it, before YunaUI hid the triggers from it)
