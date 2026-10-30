@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.92';
+addon.version = '1.0.93';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -11119,6 +11119,30 @@ local function equipped(slot)                                       -- the item 
     return id, name;
 end
 local DOLL = { drag = nil, items = {}, at = 0, prev = {}, hit = {} };
+-- The pieces the game shows in a light box in its Equipment window: the box is in the item's own icon (its corner light
+-- grey, half see-through) - YunaUI's HD icons don't have it, so the game's icon is looked at once per item. If it
+-- can't be read: a "+1", "+2"... name.
+DOLL.BOX = {};
+function DOLL.boxed(id, name)
+    if not id then return false; end
+    local v = DOLL.BOX[id];
+    if v == nil then
+        v = false;
+        local ok = pcall(function()
+            local s = AshitaCore:GetResourceManager():GetItemById(id).Bitmap;
+            if type(s) ~= 'string' or #s < 2105 then error('no icon'); end
+            local function px(x, y)                                  -- (32 x 32, 8-bit, bottom-up, after its header and 256-colour palette)
+                local q = 57 + s:byte(1081 + (31 - y) * 32 + x + 1) * 4;
+                return s:byte(q + 3), s:byte(q + 2), s:byte(q + 1), s:byte(q + 4);
+            end
+            local r, g, b, a = px(1, 1);
+            v = a > 0 and r >= 150 and g >= 150 and b >= 150 and math.abs(r - g) < 24 and math.abs(g - b) < 24;
+        end);
+        if not ok then v = type(name) == 'string' and name:find('%+%d+$') ~= nil; end
+        DOLL.BOX[id] = v;
+    end
+    return v;
+end
 -- The equipment as a rune circle (EQUIP > Look: Diamond ring): your 16 slots in violet-edged diamonds round a dark
 -- circle with the Violet Portal (the user's animated clip) in the middle, a thin line from the circle to each diamond.
 -- Drag anywhere on it to move it all (the diamonds keep their places in the circle).
@@ -11735,7 +11759,7 @@ local function draw_strip()
                 local m = hv and -2 or 0;                            -- the one under the mouse grows a touch
                 if t and t < 0.3 then m = m - S * 0.14 * (1 - t / 0.3); end   -- a new piece pops in, then settles
                 image(dl, ic, sx + m, sy + m, sx + S - m, sy + S - m, { 1, 1, 1, a * ca });
-                if type(name) == 'string' and name:find('%+%d+$') then   -- (an HQ piece - "+1", "+2"...: a gold accent, a fine edge and its corner)
+                if DOLL.boxed(id, name) then                         -- (a piece the game boxes in its own Equipment window: a gold accent, a fine edge and its corner)
                     local ga = a * ca;                               -- (the game's own item box, in gold: square, lit top / left, shaded bottom / right)
                     local o_ = math.max(1, math.floor(1.5 * sc + 0.5));
                     local x0_, y0_, x1_, y1_ = math.floor(sx) - o_, math.floor(sy) - o_, math.floor(sx + S) + o_, math.floor(sy + S) + o_;
