@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.90';
+addon.version = '1.0.91';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -704,7 +704,9 @@ local function plain_window(name, kx, ky, force)
         local ny = math.max(0, math.min(H - math.min(sh, H), py));
         if nx ~= px or ny ~= py then px, py, one = nx, ny, one or 1; cfg[kx], cfg[ky] = nx, ny; end
     end
-    imgui.SetNextWindowPos({ px, py }, (WATCH.move > 0 or force or one) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
+    local seen = WATCH.seen and WATCH.seen[kx];                      -- (its place changed while it wasn't drawn - a mode switch with the macro bar shut:
+    local moved_ = seen and (math.abs(seen[1] - px) > 0.5 or math.abs(seen[2] - py) > 0.5);   --  it goes there when it shows, not back to where it was)
+    imgui.SetNextWindowPos({ px, py }, (WATCH.move > 0 or force or one or moved_) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
     local flags = NOFRAME;
     if (cfg.locked and not EDIT.on) or force or (EDIT.on and EDIT.rs_hot) then flags = bit.bor(flags, ImGuiWindowFlags_NoMove); end
     imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
@@ -751,6 +753,8 @@ local function end_plain(kx, ky)
             save();
         end
     end
+    WATCH.seen = WATCH.seen or {};                                   -- (where it was last drawn: plain_window moves it if that changes while it's hidden)
+    WATCH.seen[kx] = { tonumber(cfg[kx]) or wx, tonumber(cfg[ky]) or wy };
     local cz = WATCH.calm and WATCH.calm[kx];
     local nx, ny, moved = YUI_ONSCREEN(wx, wy, cz and cz[1] or sw, cz and cz[2] or sh);   -- (always on the screen - by its settled size)
     if moved then                                                    -- only this window goes back (moving all of them made the whole UI
