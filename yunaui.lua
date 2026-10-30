@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.95';
+addon.version = '1.0.96';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -7355,7 +7355,7 @@ function C.mb_pillbar(row, sel, now, op, cds, nm, sc)
     local function c32(c, a) return U4(c[1], c[2], c[3], cl01(a)); end
     local OL = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 }, { 0, 2 }, { 1, 2 } };
     local SW, SH = C.screen();
-    local STEP, HW, HH, SL = (hex and 86 or 74) * s_, 38 * s_, 22 * s_, 8 * s_;   -- (Normal mode: the vortexes closer together)
+    local STEP, HW, HH, SL = (cfg.mb_tight and (2 * 38 + 2) or (hex and 86 or 74)) * s_, 38 * s_, 22 * s_, 8 * s_;   -- (ACTION BARS > Buttons touching: no gap between them)
     local LBL = 56 * s_;                                             -- (room at the left for CTRL / ALT)
     local both = cfg.mb_both ~= false;
     local GAPR = (hex and 62 or 86) * s_;                           -- (from one line to the next - Normal mode's vortexes need more room)
@@ -7400,6 +7400,8 @@ function C.mb_pillbar(row, sel, now, op, cds, nm, sc)
     local FS_ = nil;                                                 -- (the skillchain / Magic Burst on your target, for the macros that answer it)
     pcall(function() FS_ = C.mb_fight(now); end);
     M.pkx = M.pkx and (M.pkx + (sel - M.pkx) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 16)) or sel;   -- (the lift glides to the pick)
+    local INST = cfg.mb_instant == true;                             -- (ACTION BARS > Instant: no pop-in, no glide, no bounce / flash / rings)
+    if INST then M.pkx = sel; end
     if M.pksel ~= sel or M.pkrow ~= row then M.pksel, M.pkrow, M.pkt = sel, row, now; end   -- (a new pick: a light runs once round its neon)
     for r = 1, 2 do
         if not both and r ~= row then goto nextrow; end
@@ -7418,10 +7420,11 @@ function C.mb_pillbar(row, sel, now, op, cds, nm, sc)
             local name = M.names[id] or '';
             if name == '' then name = '-'; end
             local pick = act and (k == sel);
-            local ek = ease(op * 1.7 - math.abs(k - 4.5) / 4.5 * 0.7 - (act and 0 or 0.15));   -- (each pill on its own: the middle first, the other line a beat after)
+            local ek = INST and 1 or ease(op * 1.7 - math.abs(k - 4.5) / 4.5 * 0.7 - (act and 0 or 0.15));   -- (each pill on its own: the middle first, the other line a beat after)
             if ek <= 0.01 then goto nextpill; end
             local lift = act and math.exp(-((k - M.pkx) ^ 2) / 0.30) or 0;
             local ft = now - (M.flash[id] or -99);
+            if INST then ft = -1; end                                -- (Instant: a run neither bounces nor flashes)
             local punch = (ft >= 0 and ft < 0.35) and (math.exp(-ft * 11) * math.cos(ft * 26)) or 0;
             local flash = (ft >= 0 and ft < 0.30) and (1 - ft / 0.30) or 0;
             local cd = cdt[k];
@@ -7595,7 +7598,7 @@ function C.mb_pillbar(row, sel, now, op, cds, nm, sc)
     end_plain('mbp_x', 'mbp_y');
 end
 function C.mb_reverb(now)                                            -- (a macro you ran: its pill's outline rings out of it - three echoes
-    if cfg.mb_view == 'sides' then return; end                       --  growing and fading, gold, over everything; drawn whether or not
+    if cfg.mb_view == 'sides' or cfg.mb_instant then return; end     --  growing and fading, gold, over everything; drawn whether or not (not with Instant)
     local M = C.MB;                                                  --  the bar is still open, so it plays out after it closes)
     if not M.pgeo then return; end
     local fg = nil;
@@ -8207,7 +8210,8 @@ function C.mblook(held, always, now)                                 -- (ACTION 
     local M = C.MB;
     local row = (held ~= 0) and held or (M.ringrow or 1);
     M.ringrow = row;
-    local sc = (tonumber(cfg.scale) or 1) * math.max(0.5, math.min(2.5, tonumber(cfg.mb_scale) or 1));
+    if cfg.mbar_scale == nil then cfg.mbar_scale = tonumber(cfg.mb_scale) or 1; end   -- (once: the size you had, from when it was shared)
+    local sc = (tonumber(cfg.scale) or 1) * math.max(0.5, math.min(2.5, tonumber(cfg.mbar_scale) or 1));   -- (ACTION BARS > Size: its own - it shared Magic Burst's)
     local op = M.a;
     local sel = M.sel or 0;
     local SW, SH = C.screen();
@@ -13518,7 +13522,7 @@ function LAYOUT.apply(o, eq, dps)
     if dps and YUI_DPS and YUI_DPS.place then pcall(YUI_DPS.place, dps[1], dps[2]); end
 end
 -- What MY LAYOUTS keep besides the places: every size, length and thickness (the look, colours and on / off stay as they are)
-LAYOUT.SIZES = { 'scale', 'target_scale', 'target_name_scale', 'target_w', 'target_bar_h', 'fan_scale', 'mb_scale', 'ecast_scale',
+LAYOUT.SIZES = { 'scale', 'target_scale', 'target_name_scale', 'target_w', 'target_bar_h', 'fan_scale', 'mb_scale', 'mbar_scale', 'ecast_scale',
     'ecast_font', 'target_buff_scale', 'sub_scale', 'sub_w', 'enemy_scale', 'enemy_w', 'party_scale', 'icon_scale', 'ally1_scale',
     'ally1_icon', 'ally2_scale', 'ally2_icon', 'buff_scale', 'party_bar_h', 'party_vgap', 'card_h', 'exp_scale', 'exp_w', 'cast_scale',
     'cast_w', 'cast_h', 'pet_scale', 'pet_w', 'gb_scale', 'gil_scale', 'exp_text', 'chat_size', 'chat_gap', 'timers_scale', 'timers_w', 'timers_h', 'strip_icon' };
@@ -14956,7 +14960,9 @@ local function draw_window()
                 row_switch('##yui_mbsw', 'Swap Ctrl / Alt (controller)', 'mb_padswap', 'On: the right button opens the Ctrl row and the left one the Alt row.');
                 row_switch('##yui_mbnum', 'Show numbers', 'mb_nums', 'Off: only the macro names on the bar, no 1 - 0 over them.');
                 row_pick('##yui_mbpd', C.mb_bn() .. ' (controller)', 'mb_pad', { { 'hold', 'Hold to show' }, { 'toggle', 'Press to show, press again to hide' } });   -- (Ctrl / Alt: always held, as the game)
-                row_slider('##yui_mbsc', 'Size', 'mb_scale', 0.5, 2.0, 0.05, '%.2fx');
+                row_slider('##yui_mbsc', 'Size', 'mbar_scale', 0.5, 2.0, 0.05, '%.2fx');
+                row_switch('##yui_mbtt', 'Buttons touching', 'mb_tight', 'On: the buttons sit right next to each other, no gap between them.');
+                row_switch('##yui_mbin', 'Instant (no animation)', 'mb_instant', 'On: the bar is there at once - no buttons popping in, no bounce, flash or rings when you use a macro.');
                 hint('Keyboard: hold Ctrl or Alt and press 1 to 0, as in the game. Controller: hold ' .. (C.mb_l1() and 'L1 or R1' or 'L2 or R2') .. ', pick with the D-pad left / right, Cross (A) runs it. Move the bar in Edit Mode. Right-click a button to edit that macro.');
             end
         elseif tab == 10 then
@@ -15720,7 +15726,8 @@ function C.macrobar()
     do                                                               -- (at an even pace, not a fast fall-off: opening ~0.3 s, hiding ~0.45 s - the panels' depth and
         local dt_ = math.min(0.05, imgui.GetIO().DeltaTime or 0.016);   --  dissolve play out instead of being over in a blink)
         local d_ = want - M.a;
-        M.a = M.a + math.max(-dt_ / (recent and 0.14 or 0.45), math.min(dt_ / 0.30, d_));
+        if cfg.mb_instant then M.a = want;                           -- (ACTION BARS > Instant: there at once, gone at once)
+        else M.a = M.a + math.max(-dt_ / (recent and 0.14 or 0.45), math.min(dt_ / 0.30, d_)); end
     end
     pcall(C.mb_reverb, now);                                         -- (a macro you ran rings out - even as the bar closes)
     if C.ME then local oke, ere = pcall(C.mb_editor); if not oke then YUI_ERRLOG('medit', ere); C.ME = nil; end end   -- (a macro being edited)
@@ -19324,7 +19331,7 @@ ashita.events.register('command', 'yui_command', function(e)
             msg(string.format('Screen: ImGui %sx%s (scale %s) | VanaCore UI %sx%s | window %sx%s | YunaUI uses %dx%d', tostring(ds and ds.x), tostring(ds and ds.y),
                 tostring(fb and fb.x), tostring(u1), tostring(u2), tostring(wi.client_width), tostring(wi.client_height), W, H));
             msg(string.format('Macro bar: at %s,%s size %s x %s | Size of everything %s, bar size %s', tostring(cfg.mbp_x), tostring(cfg.mbp_y),
-                tostring(sz and math.floor(sz[1])), tostring(sz and math.floor(sz[2])), tostring(cfg.scale), tostring(cfg.mb_scale)));
+                tostring(sz and math.floor(sz[1])), tostring(sz and math.floor(sz[2])), tostring(cfg.scale), tostring(cfg.mbar_scale)));
         end);
     elseif sub == 'mbdebug' then                                     -- (ACTION BARS: say what the keyboard does to the bar)
         C.MB.dbg = not C.MB.dbg; msg('Macro bar debug ' .. (C.MB.dbg and 'on' or 'off'));
