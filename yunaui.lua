@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.88';
+addon.version = '1.0.89';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -11635,7 +11635,7 @@ local function draw_strip()
         elseif hxf then                                              -- (the first Hex link frame: cut corners, GEAR - or what changed it - on its edge)
             local m_ = 6 * sc;
             YUI_HEXFRAME(dl, x - pad - m_, y - pad - m_, x + W + pad + m_, y + H + pad + m_,
-                { a = a, s = sc, title = (DOLL.why and since < hold + 0.8) and string.upper(DOLL.why.label) or 'GEAR',
+                { a = a, s = sc, title = nil,                        -- (nothing on top: no GEAR, no name of what changed it)
                   tcol = (DOLL.why and since < hold + 0.8) and DOLL.why_col(DOLL.why.kind) or nil,
                   t = now - (DOLL.t0 or 0), glint = YUI_HEXGLINT(DOLL.t0), gs = 0.6 });
         elseif not YUI_HEX then                                      -- (Vex: a black card with a rounded violet edge and a soft violet glow)
