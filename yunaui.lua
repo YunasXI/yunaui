@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.96';
+addon.version = '1.0.97';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -18875,7 +18875,8 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(C.bubble_draw);                                        -- (CHAT > Speech bubbles)
         pcall(C.hide_tname);                                         -- (Hex link: the game's name over your target hidden)
         pcall(C.tp_sound);                                           -- (BARS > TP sound: a chime at 1000 / 2000 / 3000)
-        pcall(C.snd_tidy);                                           -- (sound files closed once quiet: never left "in use")        if not YUI_PUBLIC then pcall(C.jav_tick); end               -- (ACTION BARS > Voice: a job ability ready again - not in the public version: no ACTION BARS tab to turn it off)
+        pcall(C.snd_tidy);                                           -- (sound files closed once quiet: never left "in use")
+        if not YUI_PUBLIC then pcall(C.jav_tick); end               -- (ACTION BARS > Voice: a job ability ready again - not in the public version: no ACTION BARS tab to turn it off)
         piece(C.macrobar);                                           -- (BARS > MACRO BAR)
         piece(C.head_bars);                                          -- (BARS > YOUR BARS > Where: over your head)
         YUI_EQ_HIDE = true;                                          -- (the old gear wheel never shows)
