@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.91';
+addon.version = '1.0.92';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -124,7 +124,7 @@ local defaults = T{
 local cfg = settings.load(defaults);
 settings.register('settings', 'yui_settings', function(s) if s ~= nil then cfg = s; end end);
 -- Settings shared between characters: when another character copies its settings into ours (the COPY button), our
--- settings file changes under us; every 2 s we look, and if it did, we take the new settings at once (windows move
+-- settings file changes under us; every 2 s we look (and before every save), and if it did, we take the new settings at once (windows move
 -- too). WATCH.own / WATCH.eq hold what the files said the last time we looked or saved.
 local WATCH = { at = 0, own = nil, eq = nil, move = 0 };
 -- Edit Mode (GENERAL > LAYOUT > EDIT MODE, or /yui edit): every piece shows (with a pretend one where needed), a grid and
@@ -144,6 +144,10 @@ local function own_file(name)
     return ok and data or nil;
 end
 local function save()
+    if WATCH.own ~= nil then                                         -- (settings copied in from another character since we last looked: taken next frame -
+        local disk = own_file('settings.lua');                       --  saving now wrote our old ones over them, the copy lost: it took several tries)
+        if disk and disk ~= WATCH.own then WATCH.at = 0; return; end
+    end
     settings.save();
     WATCH.own = own_file('settings.lua');                          -- our own change: not "from outside"
 end
@@ -12433,6 +12437,44 @@ function C.loot_name(id)
 end
 -- Your Lot / Pass, to the game
 function C.loot_act(slot, lot) C.loot_send(lot and 0x41 or 0x42, slot); end
+-- TREASURE POOL: your alts' LOT ALL / PASS ALL on your main's pool - the other games on this PC (vana.clients) whose
+-- character is in your party or alliance; a click tells that game's YunaUI (vana.ipc), which lots / passes its own pool
+C.ALTS = { at = -9, list = {} };
+function C.loot_alts()
+    local A = C.ALTS;
+    if os.clock() - A.at < 2 then return A.list; end
+    A.at, A.list = os.clock(), {};
+    pcall(function()
+        local inparty = {};
+        local p = AshitaCore:GetMemoryManager():GetParty();
+        for i = 1, 17 do if p:GetMemberIsActive(i) ~= 0 then inparty[(p:GetMemberName(i) or ''):lower()] = true; end end
+        for _, c in ipairs(vana.clients.list() or {}) do
+            if not c.self and c.name and c.name ~= '' and inparty[c.name:lower()] then A.list[#A.list + 1] = c.name; end
+        end
+        table.sort(A.list);
+    end);
+    return A.list;
+end
+function C.loot_alt_send(who, lot)
+    local ok = false;
+    pcall(function() ok = vana.ipc.send('pool ' .. (lot and 'lot' or 'pass') .. ' ' .. who); end);
+    msg((ok and '' or 'Could not reach ') .. who .. (ok and (lot and ': lot all' or ': pass all') or '.'));
+end
+function C.loot_ipc(e)                                               -- (this game is the alt: its main asked it to lot / pass all)
+    local act, who = tostring(e and e.message or ''):match('^pool (%a+) (.+)$');
+    if not act then return; end
+    local me = '';
+    pcall(function() me = AshitaCore:GetMemoryManager():GetParty():GetMemberName(0) or ''; end);
+    if who:lower() ~= me:lower() then return; end
+    pcall(C.loot_read);
+    local n = 0;
+    for _, slot in ipairs(C.LOOT.ord or {}) do
+        local it = C.LOOT.pool[slot];
+        if it and it.mine == nil then C.loot_act(slot, act == 'lot'); n = n + 1; end
+    end
+    msg(string.format('Your main asked: %s all (%d item%s).', act, n, (n == 1) and '' or 's'));
+end
+pcall(function() vana.on('ipc', function(e) pcall(C.loot_ipc, e); end); end);
 function C.loot_read()
     local L = C.LOOT;
     local pool, n = {}, 0;
@@ -12852,7 +12894,8 @@ function C.loot_win()
     local th = math.floor(rh * 0.50);                                -- (the LOT / PASS tags' height)
     local sl = rh * 0.30;                                            -- (the cards' lean, as the party's)
     local all = (#items > 1 or fake);
-    local H = math.max(1, #items) * (rh + gap) + (all and (th + 12 * sc) or 0);
+    local alts = fake and { 'Alt' } or ((#items > 0) and C.loot_alts() or {});   -- (your alts in the party: their own LOT ALL / PASS ALL under yours)
+    local H = math.max(1, #items) * (rh + gap) + (all and (th + 12 * sc) or 0) + #alts * (th + 6 * sc);
     L.win = { x, y, W, H };
     local ry = math.floor(y + 0.5);
     local hov = nil;
@@ -12999,6 +13042,21 @@ function C.loot_win()
         end
         if C.loot_btn(dl, '##yui_passall', x2 + bw2 + 4 * sc, fy, bw2, th, 'PASS ALL', 'pass', not fake) then
             for _, it in ipairs(items) do if it.mine == nil then C.loot_act(it.slot, false); end end
+        end
+        imgui.SetWindowFontScale(fs);
+    end
+    if #alts > 0 then                                                -- (each alt: its name, then its LOT ALL / PASS ALL - sent to its own game)
+        imgui.SetWindowFontScale(fs * 0.60);
+        local bw2 = math.floor(76 * sc);
+        local x2 = x + W - sl * 0.5 - 8 * sc - bw2 * 2 - 4 * sc;
+        local fy = ry + 4 * sc + (all and (th + 6 * sc) or 0);
+        for i, who in ipairs(alts) do
+            local nm_ = who:upper();
+            local nw_ = spaced_w(nm_, 1 * sc);
+            letters(x2 - nw_ - 8 * sc, fy + (th - (tonumber((select(2, imgui.CalcTextSize('A')))) or 12)) / 2, nm_, { 0.80, 0.78, 0.90, 0.95 }, 1 * sc);
+            if C.loot_btn(dl, '##yui_altlot' .. i, x2, fy, bw2, th, 'LOT ALL', 'lot', not fake) then C.loot_alt_send(who, true); end
+            if C.loot_btn(dl, '##yui_altpass' .. i, x2 + bw2 + 4 * sc, fy, bw2, th, 'PASS ALL', 'pass', not fake) then C.loot_alt_send(who, false); end
+            fy = fy + th + 6 * sc;
         end
         imgui.SetWindowFontScale(fs);
     end
@@ -18707,8 +18765,8 @@ ashita.events.register('d3d_present', 'yui_present', function()
             return;
         end
         -- settings copied in from another character? take them now
-        if os.clock() >= WATCH.at then                               -- (settings copied in from another character: looked for every 15 s -
-            WATCH.at = os.clock() + 15;                              --  two files read from disk, off the every-frame path)
+        if os.clock() >= WATCH.at then                               -- (settings copied in from another character: looked for every 2 s, as the copy
+            WATCH.at = os.clock() + 2;                               --  promises - two small files read from disk, off the every-frame path)
             local function parse(data)
                 local chunk = data and loadstring(data);
                 if chunk == nil then return nil; end
