@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.106';
+addon.version = '1.0.107';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -10622,6 +10622,33 @@ function C.weather_packet(e)                                         -- (0x057: 
     elseif e.id == 0x00A then w = struct.unpack('H', e.data, 0x68 + 1); end
     if w and w >= 0 and w <= 19 then C.AMB.wx = w; end
 end
+function C.chat_chain()                                              -- (the chats joined side by side, left to right: the chat, the combat log anchored
+    local t = { 1 };                                                 --  beside it, the third chat joined; nil when it's only one)
+    if cfg.chat_split and cfg.chat_link and not cfg.chat_link_v then t[#t + 1] = 2; end
+    if cfg.chat3 and cfg.chat3_link then t[#t + 1] = 3; end
+    if #t < 2 then return nil; end
+    local px = { 'chat_x', 'chat2_x', 'chat3_x' };
+    table.sort(t, function(a, b) return (tonumber(cfg[px[a]]) or 0) < (tonumber(cfg[px[b]]) or 0); end);
+    return t;
+end
+function C.chat_strip()                                              -- (the chats joined side by side: on the chat's left? - true when there's no room on
+    local W = C.screen() or 1920;                                    --  its right; no room on either side: the chat slides over so they all fit, whole)
+    local tw, cx = tonumber(cfg.chat_w) or 620, tonumber(cfg.chat_x) or 20;
+    local rest = ((cfg.chat3 and cfg.chat3_link) and math.max(200, tonumber(cfg.chat3_w) or 460) or 0)
+        + ((cfg.chat_split and cfg.chat_link and not cfg.chat_link_v) and tw or 0);
+    if rest == 0 or cx + tw + rest <= W then return false; end
+    if cx - rest >= 0 then return true; end
+    cfg.chat_x = math.floor(math.max(0, W - tw - rest));
+    cw[1].relink = true;
+    return false;
+end
+function C.c3_free()                                                 -- (the third chat let go: up above the chats, clear of the combat log coming back)
+    if not cfg.chat3_link then
+        cfg.chat3_y = math.floor(math.max(0, (tonumber(cfg.chat_y) or 720) - (tonumber(cfg.chat3_h) or 260) - 44));
+        cw[3].relink = true;
+    end
+    save();
+end
 local function draw_chat(n)
     if n == 1 then
         local sig = tostring(cfg.chat_time) .. tostring(cfg.chat_time_sec) .. tostring(cfg.chat_time_12) .. tostring(cfg.chat_time_case);
@@ -10659,15 +10686,29 @@ local function draw_chat(n)
     if n == 2 and cfg.chat_link then                                 -- anchored: the combat log sits right beside the chat, the same size,
         local tw, th = tonumber(cfg.chat_w) or 620, tonumber(cfg.chat_h) or 260;   -- its edges lined up, and follows it when it moves
         local cx_, cy_ = tonumber(cfg.chat_x) or 20, tonumber(cfg.chat_y) or 700;
-        local W, H = ALLY.screen();
+        local W, H = C.screen();                                     -- (the chats' own screen size, as the third chat's and the keep-on-screen use)
         W, H = W or 1920, H or 1080;
-        local nx, ny = cx_ + tw, cy_;                                -- (edge to edge: one panel)
+        local w3 = (cfg.chat3 and cfg.chat3_link) and math.max(200, tonumber(cfg.chat3_w) or 460) or 0;   -- (the third chat joined: between them)
+        local nx, ny = cx_ + tw + w3, cy_;                           -- (edge to edge: one panel)
         if cfg.chat_link_v then                                      -- (the anchor's 2nd click: on top of the chat, or under it if there's no room)
             nx, ny = cx_, cy_ - th;
             if ny < 0 then ny = cy_ + th; end
-        elseif nx + tw > W then nx = cx_ - tw; end                   -- (no room on its right: on its left)
+        elseif C.chat_strip() then nx = cx_ - tw - w3;               -- (no room on its right: on its left)
+        else nx = (tonumber(cfg.chat_x) or cx_) + tw + w3; end       -- (the chat may have slid over to make room)
         cfg.chat2_w, cfg.chat2_h = tw, th;
         cfg.chat2_x, cfg.chat2_y = math.floor(nx), math.floor(ny);
+        st.relink = true;
+    end
+    if n == 3 and cfg.chat3_link then                                -- anchored: the third chat right beside the chat (the combat log, anchored beside it,
+        local th = tonumber(cfg.chat_h) or 260;                      --  after it: chat | third chat | combat log) - the same height, its own width;
+        local cx_, cy_ = tonumber(cfg.chat_x) or 20, tonumber(cfg.chat_y) or 700;   --  no room on the right: on the left
+        local tw = tonumber(cfg.chat_w) or 620;
+        local w3 = math.max(200, tonumber(cfg.chat3_w) or 460);
+        local left_ = C.chat_strip();
+        cx_ = tonumber(cfg.chat_x) or cx_;                           -- (the chat may have slid over to make room)
+        local nx = left_ and (cx_ - w3) or (cx_ + tw);
+        cfg.chat3_h = th;
+        cfg.chat3_x, cfg.chat3_y = math.floor(nx), math.floor(cy_);
         st.relink = true;
     end
     local w, h = math.max(200, tonumber(cfg[p .. 'w']) or 600), math.max(80, tonumber(cfg[p .. 'h']) or 260);
@@ -10696,7 +10737,7 @@ local function draw_chat(n)
     st.relink = false;                                               -- (resized by its linked twin: placed again, its bottom kept)
     imgui.SetNextWindowSize({ w, h }, ImGuiCond_Always);
     local flags = CHATFLAGS;
-    if cfg.locked or (n == 2 and cfg.chat_link) then flags = bit.bor(flags, ImGuiWindowFlags_NoMove); end   -- (anchored: it moves with the chat)
+    if cfg.locked or (n == 2 and cfg.chat_link) or (n == 3 and cfg.chat3_link) then flags = bit.bor(flags, ImGuiWindowFlags_NoMove); end   -- (anchored: it moves with the chat)
     if big then                                                      -- (the big chat sits on top of everything: bars, damage...)
         flags = bit.band(flags, bit.bnot(ImGuiWindowFlags_NoBringToFrontOnFocus));
         pcall(imgui.SetNextWindowFocus);
@@ -10717,9 +10758,16 @@ local function draw_chat(n)
         local hov = imgui.IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem or 0) or imgui.IsWindowFocused() and imgui.IsMouseDown(0);
         local typing = (n == 1 and cfg.chat_typing ~= false) and typing_now() or nil;   -- you're typing: it shows it (CHAT tab)
         st.hovraw = hov;
-        local linked = cfg.chat_link and cfg.chat_split and n ~= 3;   -- (the third chat stands on its own)
+        local linked = cfg.chat_link and cfg.chat_split and n ~= 3;   -- (the chat and the combat log anchored)
         local other = cw[(n == 1) and 2 or 1];
+        local chain = C.chat_chain();                                -- (the chats joined side by side, left to right; this one's place in it)
+        local pos_, sm_ = nil, {};
+        if chain then
+            for k_, v_ in ipairs(chain) do if v_ == n then pos_ = k_; end end
+            if pos_ then for _, v_ in ipairs(chain) do if v_ ~= n then sm_[#sm_ + 1] = cw[v_]; end end end
+        end
         local hovx = hov or (linked and other.hovraw) or false;     -- (anchored: the mouse over either lights both)
+        for _, o_ in ipairs(sm_) do if o_.hovraw then hovx = true; end end
         local want = (hovx or typing or chat_lit_all or st.scroll > 0) and 1 or 0;
         st.hv = st.hv + (want - st.hv) * math.min(1, (imgui.GetIO().DeltaTime or 0.016) * 8);
         if n == 1 then                                               -- CHAT > Back to All when it closes: a tab picked in the full screen chat
@@ -10729,12 +10777,8 @@ local function draw_chat(n)
                 if cfg.chat_tab_reset ~= false and (tonumber(cfg.chat_tab) or 1) ~= 1 then cfg.chat_tab = 1; save(); end
             end
         end
-        local right = (tonumber(cfg.chat2_x) or 0) > (tonumber(cfg.chat_x) or 0);   -- (which side the combat log is on)
-        local sl_, sr_ = false, false;
-        if linked and not cfg.chat_link_v then
-            if n == 1 then if right then sr_ = true; else sl_ = true; end
-            else if right then sl_ = true; else sr_ = true; end end
-        end
+        local sl_, sr_ = false, false;                               -- (joined side by side: another chat on its left / on its right)
+        if pos_ then sl_, sr_ = pos_ > 1, pos_ < #chain; end
         -- The chat's one look (no options): a soft dark ground with no edges, behind the newest lines when it's at rest (a
         -- little darker for a moment when a line arrives), growing to the whole chat when it's lit (the mouse over it,
         -- typing, scrolling). Readable on grass, snow or sand, and never a box.
@@ -10745,15 +10789,19 @@ local function draw_chat(n)
             local pulse = math.max(0, 1 - (now - last) / 2.5);
             st.pulse = pulse;
             local uh = st.used_h or 0;
-            local oth = linked and (((other.used_h or 0) > 0) or (other.hv or 0) > 0.02);   -- (the linked one shows a panel too: they join; empty, this one stands alone)
+            local othv = linked and cfg.chat_link_v and (((other.used_h or 0) > 0) or (other.hv or 0) > 0.02);   -- (the linked one shows a panel too: they join; empty, this one stands alone)
+            local oth = othv or false;
+            for _, o_ in ipairs(sm_) do if (o_.used_h or 0) > 0 or (o_.hv or 0) > 0.02 then oth = true; end end
             if linked and cfg.chat_link_v and C.clear_on() then      -- (anchored one on top of the other: the top one's panel as tall as
                 local me_y = tonumber(cfg[(n == 1) and 'chat_y' or 'chat2_y']) or 0;   --  its own lines; the bottom one's whole height when the top
                 local ot_y = tonumber(cfg[(n == 1) and 'chat2_y' or 'chat_y']) or 0;   --  one has lines - so they always meet, no gap between them)
                 if ot_y < me_y and (other.used_h or 0) > 0 then uh = h; end
                 pulse = math.max(pulse, other.pulse or 0);
-            elseif linked and (not C.clear_on() or (oth and uh > 0)) then   -- (anchored, both with lines: the same height and strength, so where they meet
-                uh = math.max(uh, other.used_h or 0);                 --  there's no step and no seam)
-                pulse = math.max(pulse, other.pulse or 0);
+            elseif #sm_ > 0 and (not C.clear_on() or (oth and uh > 0)) then   -- (joined, with lines: the same height and strength, so where they meet
+                for _, o_ in ipairs(sm_) do                           --  there's no step and no seam)
+                    uh = math.max(uh, o_.used_h or 0);
+                    pulse = math.max(pulse, o_.pulse or 0);
+                end
             end
             local gh = math.min(h, uh + 26);
             local gy = y + (h - gh) * (1 - st.hv);
@@ -10761,22 +10809,23 @@ local function draw_chat(n)
                 local A = math.max(0, math.min(1, tonumber(cfg.chat_panel_a) or 0.72));
                 if (gh > 30 or st.hv > 0.02) and not big then        -- (the big chat has its own panel)
                     local fl = C.rall;                               -- (round corners; linked side by side: only the outer ones, so the two read as one panel;
+                    local rr = YUI_HEX and 3 or 10;                  -- (Hex link: crisper corners)
                     if not oth then                                  --  the other one empty: all four)
+                    elseif sl_ and sr_ then rr = 0;                  -- (the middle one of three: square)
                     elseif sl_ then fl = ImDrawFlags_RoundCornersRight or ImDrawCornerFlags_Right or 10;
                     elseif sr_ then fl = ImDrawFlags_RoundCornersLeft or ImDrawCornerFlags_Left or 5; end
                     if linked and cfg.chat_link_v then               -- (linked one on top of the other: only the corners away from the other one)
                         local me_y = tonumber(cfg[(n == 1) and 'chat_y' or 'chat2_y']) or 0;
                         local ot_y = tonumber(cfg[(n == 1) and 'chat2_y' or 'chat_y']) or 0;
                         if ot_y < me_y then fl = ((other.used_h or 0) > 0) and (ImDrawFlags_RoundCornersBottom or ImDrawCornerFlags_Bot or 12) or C.rall;   -- (the top one empty: all round)
-                        else fl = oth and (ImDrawFlags_RoundCornersTop or ImDrawCornerFlags_Top or 3) or C.rall; end
+                        else fl = othv and (ImDrawFlags_RoundCornersTop or ImDrawCornerFlags_Top or 3) or C.rall; end
                     end
-                    local rr = YUI_HEX and 3 or 10;                  -- (Hex link: crisper corners)
                     local first_ = not oth or not (sl_ or (linked and cfg.chat_link_v and (tonumber(cfg[(n == 1) and 'chat2_y' or 'chat_y']) or 0) < (tonumber(cfg[(n == 1) and 'chat_y' or 'chat2_y']) or 0)));
                     local pfill = U4(0.055, 0.045, 0.08, math.min(1, A * (0.92 + 0.08 * pulse + 0.10 * st.hv)));
                     local kc = 18;                                   -- (Hex link: the top left corner cut at 45 degrees, as its frames' corners - big enough to read)
                     local mir = sl_ or (not sr_ and (x + w / 2) > (C.screen() / 2));   -- (a chat on the right of the screen, or the right one of two
                                                                      --  side by side: its top right corner cut - the two mirrored)
-                    local cutp = YUI_HEX and (first_ or sl_) and pcall(function()   -- (Hex link: light - the panel fades upward, faint at rest, full when lit)
+                    local cutp = YUI_HEX and (first_ or (sl_ and not sr_)) and pcall(function()   -- (Hex link: light - the panel fades upward, faint at rest, full when lit)
                         local pa = math.min(1, A * (1.12 + 0.08 * pulse + 0.10 * st.hv));
                         local top = pa * (0.78 + 0.22 * st.hv);   -- (at rest: still dark enough to read every line)
                         if mir then dl:AddConvexPolyFilled({ { x, gy }, { x + w - kc, gy }, { x + w, gy + kc }, { x + w, y + h }, { x, y + h } }, U4(0.055, 0.045, 0.08, top));
@@ -11064,12 +11113,13 @@ local function draw_chat(n)
         local nowc = os.clock();                                     -- (the corner icons fade 5 s after the mouse leaves; back when it's over)
         if hov or st.lastov == nil then st.lastov = nowc; end
         local gf = math.max(0, math.min(1, 1 - (nowc - st.lastov - 5) / 0.6));
-        if n == 2 and gf > 0.02 and st.hv > 0.05 then                -- the anchor (the combat log's bottom right, while it's lit): beside the chat
+        if (n == 2 or n == 3) and gf > 0.02 and st.hv > 0.05 then    -- the anchor (the combat log's / third chat's bottom right, while it's lit): beside the chat
             local bs = 22;
             local ax, ay = x + w - bs - 10, y + h - bar + (bar - bs) / 2 - 2;
             imgui.SetCursorScreenPos({ ax, ay });
-            if imgui.InvisibleButton('##yui_chat_link', { bs, bs }) then   -- clicks go round: beside the chat -> on top of it (if there's room) -> free
-                if not cfg.chat_link then cfg.chat_link, cfg.chat_link_v = true, false;
+            if imgui.InvisibleButton('##yui_chat_link' .. n, { bs, bs }) then   -- clicks go round: beside the chat -> on top of it (if there's room) -> free
+                if n == 3 then cfg.chat3_link = not cfg.chat3_link; C.c3_free();   -- (the third chat: joined beside the chat, or free)
+                elseif not cfg.chat_link then cfg.chat_link, cfg.chat_link_v = true, false;
                 elseif not cfg.chat_link_v then
                     local _, H = ALLY.screen();
                     local th_, cy_ = tonumber(cfg.chat_h) or 260, tonumber(cfg.chat_y) or 700;
@@ -11079,13 +11129,14 @@ local function draw_chat(n)
                 save();
             end
             local hv2 = imgui.IsItemHovered();
-            if hv2 then YUI_TIP((not cfg.chat_link) and 'Anchor the combat log to the chat: beside it, the same size'
+            if hv2 and n == 3 then YUI_TIP(cfg.chat3_link and 'Joined to the other chats (click to free it)' or 'Join the third chat to the other chats: beside the chat, the same height');
+            elseif hv2 then YUI_TIP((not cfg.chat_link) and 'Anchor the combat log to the chat: beside it, the same size'
                 or ((not cfg.chat_link_v) and 'Beside the chat (click: on top of it)' or 'On top of the chat (click to free it)')); end
-            local on = cfg.chat_link == true;
+            local on = (n == 3) and cfg.chat3_link == true or (n == 2 and cfg.chat_link == true);
             local c = on and { 0.86, 0.58, 1.0, (hv2 and 1 or 0.9) * gf } or { 0.62, 0.60, 0.70, (hv2 and 1 or 0.7) * gf };
             local cx, cy = ax + bs / 2, ay + bs / 2;
             local vx, vy = 5, 0;                                     -- (the two dots: side by side, or one above the other when on top)
-            if on and cfg.chat_link_v then vx, vy = 0, 5; end
+            if on and n == 2 and cfg.chat_link_v then vx, vy = 0, 5; end
             if YUI_HEX then                                          -- (Hex link mode: two small hexagons, gold and azure, a dark rim each,
                 local a_ = c[4];                                     --  apart - a fine gold line joins them when anchored)
                 local hx_, hy_ = vx * 1.15, vy * 1.15;
@@ -11104,6 +11155,7 @@ local function draw_chat(n)
         end
         if not cfg.locked and not big then                           -- (the big chat has no resize grip)
             local gl = sr_;                                          -- (the left one of two side by side: its grip on its left, the outer corner)
+            if n == 3 and sl_ and sr_ then gl = (tonumber(cfg.chat3_x) or 0) < (tonumber(cfg.chat_x) or 0); end   -- (the third chat in the middle: on the side away from the chat)
             local gox = YUI_HEX and 16 or 9;                         -- (Hex link: inside the cut corner, not on its line)
             local goy = YUI_HEX and 11 or 9;
             imgui.SetCursorScreenPos({ gl and x or (x + w - 24), y });
@@ -11129,6 +11181,11 @@ local function draw_chat(n)
                     if cfg.chat_link and cfg.chat_split and n == 2 then -- (anchored: resizing the combat log resizes the chat too, its bottom kept)
                         cfg.chat_y = (tonumber(cfg.chat_y) or 700) + ((tonumber(cfg.chat_h) or 260) - nh);
                         cfg.chat_w, cfg.chat_h = nw, nh;
+                        cw[1].relink = true;
+                    end
+                    if cfg.chat3_link and n == 3 then                -- (joined: its height is the chat's - the chat's bottom kept)
+                        cfg.chat_y = (tonumber(cfg.chat_y) or 700) + ((tonumber(cfg.chat_h) or 260) - nh);
+                        cfg.chat_h = nh;
                         cw[1].relink = true;
                     end
                     imgui.ResetMouseDragDelta(0);
@@ -15296,6 +15353,7 @@ local function draw_window()
             hint('Main chat shows:');
             for _, q in ipairs(C.C3) do row_switch('##yui_cm_' .. q[1], '   ' .. q[2], 'cm_' .. q[1], 'Off: ' .. q[2] .. " are left out of the main chat's All tab (its " .. q[2] .. ' tab still shows them).'); end
             row_switch('##yui_c3', 'Third chat', 'chat3', 'On: one more chat window (move and size it like the others) for the channels you pick below - good on a wide screen.', nil, C.c3_pick);
+            if cfg.chat3 then row_switch('##yui_c3l', 'Join to the other chats', 'chat3_link', 'On: the third chat sits right beside the chat (the combat log, when it\'s anchored beside the chat, after it), the same height - one panel. Off: it moves on its own. Also its anchor at its bottom right.', nil, C.c3_free); end
             if cfg.chat3 then
                 hint('Third chat shows (picking one takes it out of the main chat - turn it on there again to have it in both):');
                 for _, q in ipairs(C.C3) do row_switch('##yui_c3_' .. q[1], '   ' .. q[2], 'c3_' .. q[1], 'On: ' .. q[2] .. ' show in the third chat.', nil, C.c3_pick); end
