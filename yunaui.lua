@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.2';
+addon.version = '1.1.3';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -16306,9 +16306,10 @@ function C.mb_pad_raw()                                             -- (a contro
     M.both = false;
     if M.xl ~= nil and os.clock() - (M.xt or -9) < 0.5 then           -- (an Xbox pad: as the game's own read saw it, before YunaUI hid the triggers from it)
         M.both = M.xl > 60 and M.xr > 60;
-        if M.xl > 60 then return 1; end
-        if M.xr > 60 then return 2; end
-        return 0;
+        local tl, tr = (M.xheld == 1) and 20 or 60, (M.xheld == 2) and 20 or 60;   -- (open past 60, kept open down to 20: a finger easing off mid-scroll
+        local r = (M.xl > tl and 1) or (M.xr > tr and 2) or 0;       --  closed the row, and that D-pad press went to the game - it targeted someone)
+        M.xheld = r;
+        return r;
     end
     M.both = (M.dl2 and M.dr2) and true or false;
     if M.xin then
@@ -19872,6 +19873,8 @@ ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStati
             if st == 27000 or st == 9000 or st == 0 or st == 18000 then   -- (the D-pad: the bar's - up / down move along the lists, left / right too; L2 + R2 + up / down still turns the page)
                 if st ~= povwas then C.mb_padkey((st == 27000 and 'left') or (st == 9000 and 'right') or (st == 0 and 'up') or 'down'); end
                 e.blocked = true; return;
+            elseif st > 0 and st < 36000 then                        -- (a diagonal - a thumb rolling between two: the bar's too, not the game's targeting)
+                e.blocked = true; return;
             end
         elseif b == PB.d_ok then
             if st >= 128 then C.mb_padkey('ok'); end
@@ -19970,14 +19973,21 @@ ashita.events.register('xinput_state', 'yui_pad_xs', function(e)    -- Xbox (XIn
     if M.okheld and e.state_modified ~= nil then                     -- (held: the game never sees it - it would target what's in front)
         pcall(function() local g = ffi.cast('YUI_XSTATE*', e.state_modified).Gamepad; g.wButtons = bit.band(g.wButtons, bit.bnot(bit.lshift(1, C.padbtn().x_ok))); end);
     end
-    if not ok or not C.mb_mine() or e.state_modified == nil then return; end
+    if not ok or not C.mb_mine() or e.state_modified == nil then M.xdlock = false; return; end
     if M.xl > 60 and M.xr > 60 then return; end                       -- (both: the game's - L2 + R2 + up / down turns the page)
-    local takebtn = (M.padrow or 0) ~= 0 and not C.mb_free();
+    local trig = cfg.mb_pad ~= 'toggle' and ((M.xl or 0) > 20 or (M.xr or 0) > 20);   -- (Hold to show: a trigger down at all - the row this frame, not last frame's)
+    local takebtn = ((M.padrow or 0) ~= 0 or trig) and not C.mb_free();
     pcall(function()
         local g = ffi.cast('YUI_XSTATE*', e.state_modified).Gamepad;
         if C.mb_l1() then g.wButtons = bit.band(g.wButtons, bit.bnot(0x0300));   -- (the game never sees one macro button: its hidden palette stays shut)
         else g.bLeftTrigger, g.bRightTrigger = 0, 0; end
-        if takebtn then g.wButtons = bit.band(g.wButtons, bit.bnot(bit.bor(0x000F, bit.lshift(1, C.padbtn().x_ok)))); end   -- (and while a row is open: the D-pad and confirm are the bar's)
+        local dpad = bit.band(g.wButtons, 0x000F) ~= 0;
+        if takebtn then
+            g.wButtons = bit.band(g.wButtons, bit.bnot(bit.bor(0x000F, bit.lshift(1, C.padbtn().x_ok))));   -- (and while a row is open: the D-pad and confirm are the bar's)
+            M.xdlock = dpad;
+        elseif M.xdlock then                                         -- (the row shut with the D-pad still held - the trigger let go first: the rest of
+            if dpad then g.wButtons = bit.band(g.wButtons, bit.bnot(0x000F)); else M.xdlock = false; end   --  that press stays the bar's, not a target change)
+        end
     end);
 end);
 ashita.events.register('xinput_button', 'yui_pad_x', function(e)    -- Xbox (XInput) pads
