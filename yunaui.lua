@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.102';
+addon.version = '1.0.103';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -151,7 +151,10 @@ local function save()
     settings.save();
     WATCH.own = own_file('settings.lua');                          -- our own change: not "from outside"
 end
-local function msg(t) print(chat.header(addon.name):append(chat.message(t))); end
+local function msg(t)
+    print(chat.header(addon.name):append(chat.message(t)));
+    if YUI_CHAT_ADD and cfg and cfg.chat then pcall(YUI_CHAT_ADD, 1, '[yunaui] ' .. tostring(t)); end   -- (YunaUI's own chat too: an addon's own lines never come back to it -
+end                                                                  --  /yui screen showed nothing in game)
 -- Errors also go to a file (yunaui-errors.txt in the addon's folder): with the game's chat hidden they can't always
 -- be seen in game
 YUI_ERRSEEN = {};
@@ -3465,6 +3468,7 @@ local function draw_target(dt)
     if hp_ then
         tkx, tky = '_tx', '_ty';
         if not tdrag then cfg._tx, cfg._ty = hp_[1], hp_[2]; WATCH.move = WATCH.move + 1; end
+        C.TBP = { hp_[1], hp_[2], os.clock() };                      -- (where it went last: /yui screen says)
     end
     if cfg.tx_c == nil then                                          -- (the old first place, 560 px from the left - off centre on a wide
         if tonumber(cfg.target_x) == 560 and tonumber(cfg.target_y) == 60 then cfg.target_x = -1; end   --  screen: never moved, centred now)
@@ -5975,7 +5979,7 @@ function ALLY.card(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
 end
 function ALLY.card_(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     if ALLY.lowtest and m.inzone then m = setmetatable({ hpp = math.min(m.hpp or 1, (type(ALLY.lowtest) == 'number') and ALLY.lowtest or 0.22) }, { __index = m }); end   -- (Preview HP warning: yellow / orange / red)
-    if cfg.card_low ~= false and m.inzone and (m.hpp or 1) < 0.25 then   -- low HP: the card trembles, in bursts
+    if cfg.card_low ~= false and m.inzone and (m.hpp or 1) < 0.25 and (m.hpp or 1) > 0 then   -- low HP: the card trembles, in bursts (not when dead: 0 HP is still)
         local t = os.clock();
         local env = (0.5 + 0.5 * math.sin(t * 5 + i)) ^ 2;
         local k = sc * (0.35 + 0.65 * env);
@@ -11525,8 +11529,8 @@ local function item_icon(id)
     end);
     return item_icons[id] or nil;
 end
-local function equipped(slot)                                       -- the item id in a slot, and its name
-    local id, name = nil, nil;
+local function equipped(slot)                                       -- the item id in a slot, its name, and how many (ammo: the rounds left)
+    local id, name, count = nil, nil, nil;
     pcall(function()
         local inv = AshitaCore:GetMemoryManager():GetInventory();
         local e = inv:GetEquippedItem(slot);
@@ -11534,12 +11538,12 @@ local function equipped(slot)                                       -- the item 
         local idx, cont = bit.band(e.Index, 0x00FF), bit.rshift(bit.band(e.Index, 0xFF00), 8);
         local it = inv:GetContainerItem(cont, idx);
         if it and it.Id and it.Id ~= 0 and it.Id ~= 65535 then
-            id = it.Id;
+            id, count = it.Id, tonumber(it.Count);
             local r = AshitaCore:GetResourceManager():GetItemById(id);
             name = r and r.Name and r.Name[1] or nil;
         end
     end);
-    return id, name;
+    return id, name, count;
 end
 local DOLL = { drag = nil, items = {}, at = 0, prev = {}, hit = {} };
 -- The pieces the game shows in a light box in its Equipment window: the box is in the item's own icon (its corner light
@@ -12199,6 +12203,16 @@ local function draw_strip()
                         DL.R(dl, x0_ - 1, y0_ - 1, x1_ + 1, y1_ + 1, mid_, 0, allc, 1);   -- (a gold line round it all)
                     end
                 end
+            end
+            local cnt_ = (DOLL.items[slot] or {})[3];
+            if ic and slot == 3 and cnt_ and cnt_ > 1 then           -- (the ammo: how many are left, in its corner as the game's own Equipment window)
+                local cs_ = tostring(cnt_);
+                local fs_ = FS or 1;
+                imgui.SetWindowFontScale(fs_ * math.max(0.45, math.min(1.2, S / 40)));
+                local cw_, ch_ = imgui.CalcTextSize(cs_);
+                cw_, ch_ = tonumber(cw_) or 0, tonumber(ch_) or 10;
+                text(dl, sx + S - cw_ - 1, sy + S - ch_ + 1, cs_, { 1, 1, 1, a * ca });
+                imgui.SetWindowFontScale(fs_);
             end
             if sw and not sw.behind then swap_clip(); end
             if t and sfx == 'line' then                              -- the swap, drawn like the HP / MP bars: a thin pink-to-violet
@@ -15155,9 +15169,10 @@ local function draw_window()
             end
             row_switch('##yui_pbord', 'FFXI buff order', 'party_buff_ffxi', "On: each member's buffs read left to right in the game's own order. Off: the newest next to the card.");
             row_pick('##yui_ptagc', 'Job tag colours', 'party_tag_col', { { 'job', 'Each job its colour' }, { 'role', 'By role' } });
-            local tl_ = (cfg.target_fx == 'link') and ' (turned plates)' or '';   -- (Hex link: the plates keep their own; these set the turned ones')
-            row_slider('##yui_phth', 'HP bar thickness' .. tl_, 'party_hp_th', 0.5, 3.0, 0.05, '%.2fx');
-            row_slider('##yui_pmth', 'MP bar thickness' .. tl_, 'party_mp_th', 0.5, 3.0, 0.05, '%.2fx');
+            if cfg.target_fx ~= 'link' then                          -- (Hex link: the plates' bars, front and turned, are their own size - these did nothing there)
+                row_slider('##yui_phth', 'HP bar thickness', 'party_hp_th', 0.5, 3.0, 0.05, '%.2fx');
+                row_slider('##yui_pmth', 'MP bar thickness', 'party_mp_th', 0.5, 3.0, 0.05, '%.2fx');
+            end
             row_switch('##yui_pdist', 'Distance', 'party_dist', 'On: how far each member is (in yalms), small, after the name. Pink when out of range.');
             row_switch('##yui_pzone', 'Zone of members elsewhere', 'party_zone', 'On: a member in another zone shows where they are, under their name (party and alliance).');
             if cfg.party_invite == nil then cfg.party_invite = true; end
@@ -15889,7 +15904,9 @@ function C.mb_editor()                                               -- (the pan
     if not open[1] then C.ME = nil; end
 end
 C.MB_TCMD = { ma = true, magic = true, ja = true, jobability = true, ws = true, weaponskill = true, ra = true, ranged = true,
-    item = true, pet = true, ta = true, target = true, na = true, ninjutsu = true };   -- (lines the game sends as a macro's: its sub target arrow works)
+    item = true, pet = true, ta = true, target = true, na = true, ninjutsu = true,
+    assist = true, as = true };                                      -- (lines the game sends as a macro's: its sub target arrow works - /assist too: typed, it only
+                                                                     --  worked on someone engaged)
 function C.mb_hasst(mod, slot)                                      -- (does this macro pick a sub target - <st>, <stal>, <stnpc>, <stpc>, <stpt>?)
     local id = (mod - 1) * 10 + slot;
     for l = 0, 5 do
@@ -19387,6 +19404,7 @@ ashita.events.register('packet_in', 'yui_packet', function(e)
     elseif e.id == 0x0AC then FIGHT.mine_at = nil; end                -- (your weapon skills changed)
 end);
 
+YUI_CHAT_ADD = chat_add;                                             -- (msg: YunaUI's own lines into its chat)
 ashita.events.register('text_in', 'yui_text', function(e)
     if e.blocked or e.message == nil or #e.message > 2048 then return; end
     local mode = bit.band(e.mode, 0xFF);
@@ -19803,6 +19821,11 @@ ashita.events.register('command', 'yui_command', function(e)
                 tostring(fb and fb.x), tostring(u1), tostring(u2), tostring(wi.client_width), tostring(wi.client_height), W, H));
             msg(string.format('Macro bar: at %s,%s size %s x %s | Size of everything %s, bar size %s', tostring(cfg.mbp_x), tostring(cfg.mbp_y),
                 tostring(sz and math.floor(sz[1])), tostring(sz and math.floor(sz[2])), tostring(cfg.scale), tostring(cfg.mbar_scale)));
+            local tsz = (WATCH.calm and WATCH.calm['_tx']) or (WATCH.size and WATCH.size['_tx']);   -- (Hex link's target bar: where it thinks the head is, where it went)
+            local hd, bp_ = C.TBB, C.TBP;
+            msg(string.format('Target bar: head %s,%s | bar %s,%s | box %s x %s | usual place %s,%s | mode %s',
+                tostring(hd and math.floor(hd[1])), tostring(hd and math.floor(hd[2])), tostring(bp_ and math.floor(bp_[1])), tostring(bp_ and math.floor(bp_[2])),
+                tostring(tsz and math.floor(tsz[1])), tostring(tsz and math.floor(tsz[2])), tostring(cfg.target_x), tostring(cfg.target_y), tostring(cfg.target_fx)));
         end);
     elseif sub == 'mbdebug' then                                     -- (ACTION BARS: say what the keyboard does to the bar)
         C.MB.dbg = not C.MB.dbg; msg('Macro bar debug ' .. (C.MB.dbg and 'on' or 'off'));
