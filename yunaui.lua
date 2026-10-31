@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.104';
+addon.version = '1.0.105';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -15941,6 +15941,32 @@ function C.mb_hasst(mod, slot)                                      -- (does thi
     end
     return false;
 end
+function C.mb_assist(line)                                          -- (/assist: the game asks the server, which only answers for someone engaged -
+    local ok, r = pcall(function()                                   --  the client already knows who anyone is looking at, so target that; false: the game's own)
+        local mm = AshitaCore:GetMemoryManager();
+        local ent, party = mm:GetEntity(), mm:GetParty();
+        local arg = (line:gsub('"', ''):match('^%s*/%a+%s+(%S+)') or '<t>'):lower();
+        local who = 0;
+        if arg == '<t>' then who = mm:GetTarget():GetTargetIndex(0) or 0;
+        elseif arg:match('^<p%d>$') then who = party:GetMemberTargetIndex(tonumber(arg:match('%d'))) or 0;
+        elseif arg:match('^<a[12]%d>$') then
+            local a, n = arg:match('^<a(%d)(%d)>$');
+            who = party:GetMemberTargetIndex(tonumber(a) * 6 + tonumber(n)) or 0;
+        elseif not arg:find('<', 1, true) then
+            for j = 0, 2303 do                                       -- (players first - from 1024 - then NPCs and the rest)
+                local i = (j + 1024) % 2304;
+                local n = ent:GetName(i);
+                if n and n:lower() == arg and (ent:GetRenderFlags0(i) or 0) ~= 0 then who = i; break; end
+            end
+        end
+        if who == 0 then return false; end
+        local ti = ent:GetTargetedIndex(who) or 0;
+        if ti == 0 or ti == who then return false; end
+        if (ent:GetName(ti) or '') == '' or (ent:GetRenderFlags0(ti) or 0) == 0 then return false; end
+        return vana.game.set_target(ti) and true or false;           -- (/target <server id> doesn't take a player; out of view: false)
+    end);
+    return ok and r;
+end
 function C.mb_tick()                                                -- (the playing macro's next line, when its time comes)
     local M = C.MB;
     local Q = M.queue;
@@ -15960,7 +15986,8 @@ function C.mb_tick()                                                -- (the play
     M.qnext = now;
     local verb = (q.cmd:match('^%s*/(%a+)') or ''):lower();
     local mode = C.MB_TCMD[verb] and 2 or -1;
-    pcall(function() AshitaCore:GetChatManager():QueueCommand(mode, q.cmd); end);
+    local done_ = (verb == 'assist' or verb == 'as') and C.mb_assist(q.cmd);
+    if not done_ then pcall(function() AshitaCore:GetChatManager():QueueCommand(mode, q.cmd); end); end
     if M.dbg then msg(string.format('[mb] +%.2fs (cpu +%.2fs) line: %s', now - (M.qt0 or now), os.clock() - (M.qc0 or os.clock()), q.cmd)); end
     local bare = q.cmd:gsub('"[^"]*"', '');
     if mode == 2 and (bare:match('<st>') or bare:match('<stal>') or bare:match('<stnpc>') or bare:match('<stpc>') or bare:match('<stpt>')) then
@@ -19789,6 +19816,7 @@ ashita.events.register('command', 'yui_command', function(e)
     local args = e.command:args();
     if #args == 0 then return; end
     local cmd = args[1]:lower():gsub('^/+', '');
+    if (cmd == 'assist' or cmd == 'as') and C.mb_assist(e.command) then e.blocked = true; return; end   -- (typed /assist too: on anyone with a target)
     if cmd ~= 'yui' and cmd ~= 'yunaui' then return; end
     e.blocked = true;
     local sub = (args[2] or ''):lower();
