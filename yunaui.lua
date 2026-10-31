@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.109';
+addon.version = '1.0.110';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -10772,7 +10772,9 @@ local function draw_chat(n)
             local ny_ = math.max(0, math.min(SH_ - h, oy_));
             if nx_ ~= ox_ or ny_ ~= oy_ then cfg[p .. 'x'], cfg[p .. 'y'] = math.floor(nx_), math.floor(ny_); st.relink = true; end
         end
-        imgui.SetNextWindowPos({ tonumber(cfg[p .. 'x']) or 20, tonumber(cfg[p .. 'y']) or 700 }, (WATCH.move > 0 or st.relink) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
+        local sx_, sy_ = tonumber(cfg[p .. 'x']) or 20, tonumber(cfg[p .. 'y']) or 700;
+        local moved_ = st.seen and (math.abs(st.seen[1] - sx_) > 0.5 or math.abs(st.seen[2] - sy_) > 0.5);   -- (its place changed while it wasn't drawn - a mode
+        imgui.SetNextWindowPos({ sx_, sy_ }, (WATCH.move > 0 or st.relink or moved_) and ImGuiCond_Always or ImGuiCond_FirstUseEver);   --  switch, the wave not on it yet: it goes there, not back)
     end
     st.relink = false;                                               -- (resized by its linked twin: placed again, its bottom kept)
     imgui.SetNextWindowSize({ w, h }, ImGuiCond_Always);
@@ -11239,6 +11241,7 @@ local function draw_chat(n)
                 local nx, ny, moved = YUI_ONSCREEN(wx, wy, tonumber(cfg[p .. 'w']) or w, tonumber(cfg[p .. 'h']) or h);
                 if moved then cfg[p .. 'x'], cfg[p .. 'y'] = nx, ny; st.relink = true; end
             end
+            st.seen = { tonumber(cfg[p .. 'x']) or wx, tonumber(cfg[p .. 'y']) or wy };   -- (where it was last drawn: see moved_ above)
             local key = string.format('%d,%d,%d,%d', math.floor(wx), math.floor(wy), math.floor(cfg[p .. 'w']), math.floor(cfg[p .. 'h']));
             if st.saved == nil then st.saved = key; end
             if key ~= st.saved and not imgui.IsMouseDown(0) then st.saved = key; save(); end
