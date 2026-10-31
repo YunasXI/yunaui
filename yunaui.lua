@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.108';
+addon.version = '1.0.109';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -530,6 +530,7 @@ local ROW_W = 340;
 -- called instead of saving (the EQUIP tab uses that to change YunaEquip)
 local function row_switch(id, text, key, hint, tbl, on_change)
     local S = tbl or cfg;
+    if C.FIND.go then C.find_at(id); end                             -- (Search: the one picked glows)
     local x0 = imgui.GetCursorPosX();
     imgui.AlignTextToFramePadding();
     imgui.TextColored(C.text, text);
@@ -543,6 +544,7 @@ end
 -- A slider on one line: the name, a violet track, the value at the end. Double click puts it back to normal.
 local function row_slider(id, text, key, lo, hi, step, fmt, tbl, on_change)
     local S = tbl or cfg;
+    if C.FIND.go then C.find_at(id); end
     local v = tonumber(S[key]) or lo;
     local ps = C.ps;
     local x0 = imgui.GetCursorPosX();
@@ -584,6 +586,7 @@ end
 local function section(text)
     if C.split then C.split(); end
     imgui.Spacing(); imgui.Spacing();
+    if C.FIND.go then C.find_at('sec:' .. text); end
     local ps = C.ps;
     local dl = imgui.GetWindowDrawList();
     local x0, y0 = imgui.GetCursorScreenPos();
@@ -597,6 +600,7 @@ end
 -- A rounded button: violet-edged (the main one) or dark (quiet = true), its name in spaced capitals
 local function accent_button(label, size, quiet, small)
     local ps = C.ps;
+    if C.FIND.go then C.find_at(label); end
     local w = (size and size[1] and size[1] > 0) and size[1] or (spaced_w(label, 3 * ps) + 40 * ps);
     local h = (size and size[2] and size[2] > 0) and size[2] or math.floor(imgui.GetFrameHeight() * (small and 0.95 or 1.25));
     local x, y = imgui.GetCursorScreenPos();
@@ -621,6 +625,7 @@ end
 -- A choice: the name on the left, a dark pill on the right with the current one and a small arrow; click it for the list
 local function row_pick(id, text, key, opts, tbl, on_change)
     local S = tbl or cfg;
+    if C.FIND.go then C.find_at(id); end
     local ps = C.ps;
     local x0 = imgui.GetCursorPosX();
     imgui.AlignTextToFramePadding();
@@ -12990,6 +12995,134 @@ local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 
 YUI_PUBLIC = false;                                                  -- (since 1.0.79 everyone has the full YunaUI: a public.flag left by 1.0.71-1.0.78 - unzipping
 pcall(os.remove, (addon.path or '') .. 'public.flag');               --  over the old folder keeps it - hid the mode switch, Hex link and the Action Bars; removed)
 if YUI_PUBLIC then table.remove(TABS, 12); end                     -- (the Action Bars' tab)
+-- Search settings (the box at the sidebar's bottom): every setting of every tab - read once from this file, by the
+-- tab it's drawn in and the section it's under. Typing lists the ones that match; a click opens its tab, scrolls to it
+-- and it glows a moment (C.find_at, called by the rows, the sections and the buttons).
+C.FIND = { q = { '' }, idx = nil, go = nil, go_t = 0 };
+function C.find_index()
+    local out, seen = {}, {};
+    local f = io.open((addon.path:gsub('[\\/]+$', '')) .. '\\yunaui.lua', 'r');
+    if not f then return out; end
+    local tab, sec, body, fn = nil, nil, false, nil;
+    local stack, inl = {}, nil;                                      -- (the mode blocks round a row: if HX / cfg.target_fx == 'link' ... else ... end)
+    local function mode_of(c)
+        c = c:gsub('^%s+', ''):gsub('%s+$', '');
+        if c == 'HX' or c == "cfg.target_fx == 'link'" then return 'hex'; end
+        if c == 'not HX' or c == "cfg.target_fx ~= 'link'" then return 'vex'; end
+        return nil;
+    end
+    local function cur_mode()
+        if inl then return inl; end
+        for i = #stack, 1, -1 do if stack[i].m then return stack[i].m; end end
+        return nil;
+    end
+    local function add(id, label, rest, md)
+        if not tab or label == '' then return; end
+        md = md or cur_mode();
+        local k = tab .. '|' .. label:lower() .. '|' .. tostring(md);
+        if seen[k] then return; end
+        seen[k] = true;
+        local extra = {};
+        for a in (rest or ''):gmatch("'([^']*)'") do extra[#extra + 1] = a; end
+        for a in (rest or ''):gmatch('"([^"]*)"') do extra[#extra + 1] = a; end
+        out[#out + 1] = { id = id, label = label, tab = tab, sec = sec, mode = md, low = label:lower(), more = table.concat(extra, ' '):lower() };
+    end
+    for line in f:lines() do
+        if line:match('^local function equip_tab%(%)') then fn, tab, sec, stack = 'eq', 6, nil, {};
+        elseif line:match('^    C%.sound_rows = function%(%)') then fn, tab, sec, stack = 'snd', 11, nil, {};
+        elseif fn == 'eq' and line:match('^end') then fn, tab = nil, nil;
+        elseif fn == 'snd' and line:match('^    end%s*$') then fn, tab = nil, nil;
+        elseif line:match("^        if C%.find_q%(%) ~= '' then") then body = true;
+        elseif body and line:match('^        if ui%.col_dirty') then body, tab = false, nil; end
+        if body then
+            local n = line:match('^        elseif tab == (%d+) then');
+            if n then tab, sec, stack = tonumber(n), nil, {}; end
+            if line:match('^        else%s*$') then tab, sec, stack = 8, nil, {}; end
+        end
+        if tab then
+            local code = line:gsub('%s*%-%-.*$', '');
+            local ind, cond = code:match('^(%s*)if (.-) then%s*$');
+            inl = nil;
+            if ind then stack[#stack + 1] = { ind = #ind, m = mode_of(cond) };
+            else
+                local c2 = code:match('^%s*if (.-) then .+');
+                if c2 then inl = mode_of(c2); end
+                local ie = code:match('^(%s*)else%s*$');
+                local ii = code:match('^(%s*)elseif ');
+                local ien = code:match('^(%s*)end[%s%);,]*$');
+                local top = stack[#stack];
+                if top and ie and #ie == top.ind then top.m = (top.m == 'hex' and 'vex') or (top.m == 'vex' and 'hex') or nil;
+                elseif top and ii and #ii == top.ind then top.m = nil;
+                elseif top and ien and #ien == top.ind then stack[#stack] = nil; end
+            end
+            for id, a, b in line:gmatch("'(##[%w_]+)'%s*,%s*HX and '([^']*)' or '([^']*)'") do add(id, a, line, 'hex'); add(id, b, line, 'vex'); end
+            local s_ = line:match("section%('([^']+)'%)");
+            if s_ then sec = s_; add('sec:' .. s_, s_, ''); end
+            for id, lab, rest in line:gmatch("'(##[%w_]+)'%s*,%s*'([^']*)'(.*)") do add(id, lab, rest); end
+            for id, lab, rest in line:gmatch("'(##[%w_]+)'%s*,%s*\"([^\"]*)\"(.*)") do add(id, lab, rest); end
+            for lab, id in line:gmatch("accent_button%('([^'#]+)(##[%w_]+)'") do add(lab .. id, lab, line:match('YUI_TIP%((.*)%)')); end
+        end
+    end
+    f:close();
+    return out;
+end
+function C.find_q() return ((C.FIND.q[1] or ''):gsub('^%s+', ''):gsub('%s+$', '')); end
+function C.find_at(id)                                               -- (the setting Search picked: scrolled to, a glow round it fading)
+    local F = C.FIND;
+    if F.go ~= id then return; end
+    local t = os.clock() - F.go_t;
+    if t > 2.5 then F.go = nil; return; end
+    if t < 0.25 then pcall(imgui.SetScrollHereY, 0.3); end
+    local x, y = imgui.GetCursorScreenPos();
+    local h = imgui.GetFrameHeight();
+    local a = (t < 1.5) and 1 or (1 - (t - 1.5));
+    local A2 = (cfg.target_fx == 'link') and C.GOLDH2 or NEON2;
+    local dl = imgui.GetWindowDrawList();
+    DL.RF(dl, x - 8 * C.ps, y - 3 * C.ps, x + ROW_W + 8 * C.ps, y + h + 3 * C.ps, U4(A2[1], A2[2], A2[3], 0.16 * a), 8 * C.ps);
+    DL.R(dl, x - 8 * C.ps, y - 3 * C.ps, x + ROW_W + 8 * C.ps, y + h + 3 * C.ps, U4(A2[1], A2[2], A2[3], 0.9 * a), 8 * C.ps, C.rall, 1.5);
+end
+function C.find_results()                                            -- (the body while something is typed: what matches, best first)
+    local F = C.FIND;
+    if not F.idx then F.idx = C.find_index(); end
+    local words = {};
+    for w in C.find_q():lower():gmatch('%S+') do words[#words + 1] = w; end
+    local hits = {};
+    local md = (cfg.target_fx == 'link') and 'hex' or 'vex';         -- (only this mode's settings, and the ones both modes have)
+    for _, e in ipairs(F.idx) do
+        if TABS[e.tab] and (e.mode == nil or e.mode == md) then
+            local all = e.low .. ' ' .. (e.sec or ''):lower() .. ' ' .. TABS[e.tab]:lower() .. ' ' .. e.more;
+            local ok, inlab = true, true;
+            for _, w in ipairs(words) do
+                if not all:find(w, 1, true) then ok = false; break; end
+                if not e.low:find(w, 1, true) then inlab = false; end
+            end
+            if ok then hits[#hits + 1] = { e = e, r = (inlab and 0 or 1) + (e.id:sub(1, 4) == 'sec:' and 0.5 or 0) }; end
+        end
+    end
+    table.sort(hits, function(a, b) if a.r ~= b.r then return a.r < b.r; end return a.e.tab < b.e.tab; end);
+    section('SEARCH');
+    if #hits == 0 then imgui.TextColored(C.muted, 'Nothing found for "' .. C.find_q() .. '".'); return; end
+    local ps = C.ps;
+    local dl = imgui.GetWindowDrawList();
+    local rh = math.floor(imgui.GetFrameHeight() * 1.5);
+    for i, h in ipairs(hits) do
+        if i > 80 then break; end
+        local e = h.e;
+        local x, y = imgui.GetCursorScreenPos();
+        if imgui.InvisibleButton('##yui_fr' .. i, { ROW_W, rh }) then
+            ui.tab, F.go, F.go_t, F.q[1] = e.tab, e.id, os.clock(), '';
+        end
+        local hov = imgui.IsItemHovered();
+        if hov then DL.RF(dl, x - 6 * ps, y, x + ROW_W + 6 * ps, y + rh, U4(1, 1, 1, 0.06), 6 * ps); end
+        local _, lh = imgui.CalcTextSize('A');
+        local issec = e.id:sub(1, 4) == 'sec:';
+        DL.T(dl, x, y + 2 * ps, u32(hov and { 1, 1, 1, 1 } or C.text), issec and (e.label:upper() .. '  (section)') or e.label);
+        imgui.SetWindowFontScale((C.wfs or 1) * 0.82);
+        local path = TABS[e.tab] .. ((e.sec and not issec) and ('  >  ' .. e.sec) or '');
+        DL.T(dl, x, y + 4 * ps + lh, u32(C.muted), path);
+        imgui.SetWindowFontScale(C.wfs or 1);
+    end
+end
 -- Layouts (GENERAL > LAYOUT): one click puts every piece of the UI in its place for your screen size.
 -- Built-in: Classic (bars bottom middle, party top right, timers left), Raid (party top left, bars stacked bottom
 -- middle, timers right) and Compact (everything gathered round the bars, a little below the middle).
@@ -14651,21 +14784,47 @@ function PANEL.sidebar(dl, x0, y0, SW, bottom)
         if imgui.InvisibleButton('##yui_side' .. k, { SW, ih }) then ui.tab = k; end
         y = y + ih + 8 * ps;
     end
-    if bottom then                                                   -- BETA TESTERS at the bottom; the mouse over it shows their names
-        imgui.SetWindowFontScale(C.wfs * 0.82);
-        local lh = imgui.GetTextLineHeight();
-        local top = bottom - lh - 6 * ps;
+    if bottom then                                                   -- the search box at the bottom (it took BETA TESTERS' place)
+        local F = C.FIND;
+        local bh = math.floor(imgui.GetFrameHeight() * 1.1);
+        local top = bottom - bh;
         if top > y + 10 * ps then
-            local bw = imgui.CalcTextSize('BETA TESTERS');
-            local mx_, my_ = imgui.GetMousePos();
-            local over = mx_ >= x0 + 20 * ps and mx_ <= x0 + 20 * ps + bw and my_ >= top and my_ <= top + lh;
-            local b1, b2, b3 = C.hp2, C.hp, C.mp2;
-            if cfg.target_fx == 'link' then b1, b2, b3 = NEON2, NEON, NEON2; end   -- (Hex link mode: gold)
-            DL.T(dl, x0 + 20 * ps, top, U4(b1[1], b1[2], b1[3], over and 1 or 0.85), 'BETA TESTERS');
-            pcall(function() DL.RFM(dl, x0 + 20 * ps, top + lh + 1, x0 + 20 * ps + bw, top + lh + 2, u32(b2), U4(b3[1], b3[2], b3[3], 0), U4(b3[1], b3[2], b3[3], 0), u32(b2)); end);
-            if over then YUI_TIP('Thank you to our beta testers:\n' .. table.concat(PANEL.TESTERS, '\n')); end
+            local A2 = (cfg.target_fx == 'link') and PANEL.GOLD2 or NEON2;
+            local act = F.active;
+            DL.RF(dl, x0, top, x0 + SW, top + bh, U4(0.10, 0.09, 0.13, 1), bh / 2);
+            DL.R(dl, x0, top, x0 + SW, top + bh, act and U4(A2[1], A2[2], A2[3], 0.8) or U4(1, 1, 1, 0.12), bh / 2, C.rall, act and 1.4 or 1);
+            local gx, gy, gr = x0 + bh * 0.55, top + bh * 0.46, bh * 0.17;   -- (a magnifying glass)
+            local gc = U4(0.85, 0.83, 0.95, act and 1 or 0.7);
+            DL.C(dl, gx, gy, gr, gc, 16, 1.5);
+            DL.L(dl, gx + gr * 0.7, gy + gr * 0.7, gx + gr * 1.7, gy + gr * 1.7, gc, 1.6);
+            local tx = x0 + bh * 0.95;
+            local q = F.q[1] or '';
+            local clr = q ~= '';
+            local iw = SW - (tx - x0) - (clr and bh * 0.9 or bh * 0.4);
+            imgui.SetCursorScreenPos({ tx, top + (bh - imgui.GetFrameHeight()) / 2 });
+            imgui.PushStyleColor(ImGuiCol_FrameBg, { 0, 0, 0, 0 });
+            imgui.PushStyleColor(ImGuiCol_FrameBgHovered, { 0, 0, 0, 0 });
+            imgui.PushStyleColor(ImGuiCol_FrameBgActive, { 0, 0, 0, 0 });
+            imgui.PushStyleVar(ImGuiStyleVar_FramePadding, { 2 * ps, 6 * ps });
+            imgui.PushItemWidth(iw);
+            imgui.InputText('##yui_find', F.q, 48);
+            imgui.PopItemWidth();
+            imgui.PopStyleVar(1);
+            imgui.PopStyleColor(3);
+            F.active = imgui.IsItemActive();
+            if (F.q[1] or '') == '' and not F.active then
+                local _, th = imgui.CalcTextSize('Search');
+                DL.T(dl, tx + 2 * ps, top + (bh - th) / 2, U4(0.62, 0.60, 0.72, 0.8), 'Search settings');
+            end
+            if clr then                                              -- (x: empty the box)
+                local cx_, cy_, r = x0 + SW - bh * 0.5, top + bh / 2, bh * 0.14;
+                imgui.SetCursorScreenPos({ cx_ - bh * 0.35, top });
+                if imgui.InvisibleButton('##yui_findx', { bh * 0.7, bh }) then F.q[1] = ''; end
+                local xc = U4(0.85, 0.83, 0.95, imgui.IsItemHovered() and 1 or 0.7);
+                DL.L(dl, cx_ - r, cy_ - r, cx_ + r, cy_ + r, xc, 1.5);
+                DL.L(dl, cx_ - r, cy_ + r, cx_ + r, cy_ - r, xc, 1.5);
+            end
         end
-        imgui.SetWindowFontScale(C.wfs);
     end
     return y;
 end
@@ -15128,7 +15287,9 @@ local function draw_window()
             if imgui.IsItemHovered() then YUI_TIP('Back to the normal colour'); end
         end
         local function hint(s) imgui.TextColored(C.muted, s); end
-        if tab == 1 then
+        if C.find_q() ~= '' then                                     -- (something in the Search box: what matches, in place of the tab)
+            C.find_results();
+        elseif tab == 1 then
             ------------------------------------------------------------------ GENERAL
             section('LAYOUT');
             do
@@ -15191,8 +15352,8 @@ local function draw_window()
             row_switch('##yui_t', 'Show', 'target');
             row_slider('##yui_s_t', 'Size', 'target_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_slider('##yui_tnsc', 'Target name size', 'target_name_scale', 0.5, 2.5, 0.05, '%.2fx');
-            row_switch('##yui_tarrow', 'YunaUI target marker', 'tarrow', "On: in Hex link a white prism takes the place of the game's arrow over whatever you target. Vex: the game's arrow. Off: the game's arrow always.", nil, function() C.TAR_last = nil; end);
             if HX then
+                row_switch('##yui_tarrow', 'YunaUI target marker', 'tarrow', "On: a white prism takes the place of the game's arrow over whatever you target. Off: the game's own arrow.", nil, function() C.TAR_last = nil; end);   -- (Hex link only: Vex mode always has the game's arrow)
                 row_switch('##yui_hl_cc', 'Claim colour', 'hl_claim', 'On: the bar is coloured as the game colours names - orange not claimed, red claimed by you or your party, purple claimed by someone else.');
                 row_switch('##yui_hl_hn', "Hide the game's name over your target", 'hl_hidename', "On: the name the game draws over the monster or player you target is hidden - the Hex link bar over its head already shows it. Other names stay.");
                 row_slider('##yui_hl_pct', 'HP percent size', 'hl_pct', 0.5, 2.0, 0.05, '%.2fx');
@@ -16783,7 +16944,9 @@ function YMAP.npcs_near(ent)                                         -- MINIMAP 
     for i = 1, 2303 do                                               -- (past 0x700 too: NPCs the server adds - the EXP Guide)
         pcall(function()
             if (ent:GetRenderFlags0(i) or 0) == 0 then return; end
-            local fl = ent:GetSpawnFlags(i) or 0;                    -- (0x01 a player; 0x02 an NPC; 0x20 too: an object - a door, a lamp; 0x10 a monster)
+            if (ent:GetActorPointer(i) or 0) == 0 then return; end   -- (not in the world now: a point mined out (it moves away - the game keeps
+            local fl = ent:GetSpawnFlags(i) or 0;                    --  its old name and place), out of range, a hidden NPC)
+                                                                     -- (0x01 a player; 0x02 an NPC; 0x20 too: an object - a door, a lamp; 0x10 a monster)
             if bit.band(fl, 0x01) ~= 0 then return; end
             local n = ent:GetName(i);
             if not n or n == '' then return; end
