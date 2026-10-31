@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.107';
+addon.version = '1.0.108';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -115,7 +115,7 @@ local defaults = T{
     chat3 = false, chat3_x = -1, chat3_y = -1, chat3_w = 460, chat3_h = 260, c3_tell = true, c3_ls = true, c3_ls2 = true,
     c3_party = false, c3_say = false, c3_shout = false, c3_unity = false,
     cm_tell = true, cm_ls = true, cm_ls2 = true, cm_party = true, cm_say = true, cm_shout = true, cm_unity = true,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', party_buff_row = 8, exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_lines = 'hp', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_fade_w1 = true, chat_fade_w2 = true, chat_fade_w3 = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_fight = false, head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, tarrow = true, macrobar = true, mb_show = 'hold', mb_always = false, mb_pad = 'hold', mb_btn = 'l2', mb_scale = 1.0, mb_look = 'strip', mb_style = 'cards', hp_by_job = false, mb_timers = true, mb_wave = 'bars', mb_text = 1.0, mb_both = true, mb_frame = 'arc', mb_view = 'pills', mbp_x = -1, mbp_y = -1, mb_brush = 'all', mb_layout = 'lens', mb_wcol = 'gold', mb_nstyle = 'wave', mb_wavecol = 'job', mb_sound = true, mb_snd_vol = 0.6, mb_voice = true, mb_voice_vol = 0.8, mb_cards_at = 'feet', mb_dn = 'hd_circle', mb_dh = 'hd_sigil', mb_x = -1, mb_y = -1, mbs_x = -1, mbs_y = -1, mbc_x = -1, mbc_y = -1, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', party_buff_row = 8, exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, map_gp = true, map_npcs = false, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_lines = 'hp', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_fade_w1 = true, chat_fade_w2 = true, chat_fade_w3 = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_fight = false, head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, tarrow = true, macrobar = true, mb_show = 'hold', mb_always = false, mb_pad = 'hold', mb_btn = 'l2', mb_scale = 1.0, mb_look = 'strip', mb_style = 'cards', hp_by_job = false, mb_timers = true, mb_wave = 'bars', mb_text = 1.0, mb_both = true, mb_frame = 'arc', mb_view = 'pills', mbp_x = -1, mbp_y = -1, mb_brush = 'all', mb_layout = 'lens', mb_wcol = 'gold', mb_nstyle = 'wave', mb_wavecol = 'job', mb_sound = true, mb_snd_vol = 0.6, mb_voice = true, mb_voice_vol = 0.8, mb_cards_at = 'feet', mb_dn = 'hd_circle', mb_dh = 'hd_sigil', mb_x = -1, mb_y = -1, mbs_x = -1, mbs_y = -1, mbc_x = -1, mbc_y = -1, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -5123,7 +5123,7 @@ function ALLY.tag(dl, m, i, x, ny, ch, sc, v, live, mir, cap)       -- (mir: x i
     local tc = ALLY.tagcol(m.job);
     local dim = m.inzone and 1 or 0.45;
     local job = m.tagtext or JOBS[m.job or 0] or '?';
-    local fs0 = (FS or 1) * 0.80;
+    local fs0 = (FS or 1) * 0.80 * (ALLY.tagk or 1);                 -- (ALLY.tagk: smaller writing, for a tag in a small box)
     imgui.SetWindowFontScale(fs0 * 0.74);
     local jw, jh = imgui.CalcTextSize(job);
     jh = tonumber(jh) or 10;
@@ -5538,36 +5538,52 @@ function ALLY.nflip(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live, f)
     local tw_, th_t, s_t = ALLY.tagw(ch, sc);
     local tcol = ALLY.tagcol(m.job);
     local dimt = m.inzone and 1 or 0.45;
-    if face then                                                     -- the back: the name where the tag was, the tag at the right end
-        local nw_ = tw_;                                             -- (the tag's own room: the card as long as the front's)
-        local thk = th_t * k;
-        local nx0, ny0 = x1 + 2 * sc, ny - thk / 2;
-        local sk = thk * 0.30;
-        if ta > 0 then                                               -- (just the name: white with a dark outline, no plate - right by the card)
-            local fsn = (FS or 1) * 0.80 * 0.74;
-            local nm = (m.name or '?'):upper();
+    if face then                                                     -- the back: a box on the left - the name, its TP under it - where the tag was; the job
+        local nx0 = x1 + 2 * sc;                                     --  tag in a box at the card's right end, how far under it (the card as long as the front's)
+        tend = nx0 + tw_;
+        local card_ = { { nx0, y1 }, { tip, y1 }, { tip - sl, y2 }, { nx0, y2 } };   -- (one card, the name's box part of it - drawn first, the name over it)
+        ALLY.poly(dl, card_, U4(0.085, 0.08, 0.115, 0.82 * v));
+        ALLY.grad(dl, { nx0, y1 }, { tip - sl, y1 + 1 }, { 1, 1, 1, 0.14 * v }, { 1, 1, 1, 0 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0.14 * v });
+        for q = 1, 4 do dl:AddLine(card_[q], card_[q % 4 + 1], low and U4(1.0, 0.32, 0.36, 0.9 * v) or (tgt and U4(1, 1, 1, 0.85 * v) or U4(0, 0, 0, 0.85 * v)), tgt and 1.2 or 1); end
+        DL.L(dl, tend + gp * 0.5, y1 + 1, tend + gp * 0.5 - sl, y2 - 1, U4(1, 1, 1, 0.55 * v), 1);   -- (a white line leaning as the card: the name's part, then the bars)
+        if ta > 0 then
+            local hastp = m.inzone and m.tp ~= nil;                  -- (alliance members too: the game sends their TP)
+            local fsn = (FS or 1) * 0.80 * 0.70;
+            local nm = (m.name or '?'):upper():sub(1, 4):gsub('%s+$', '');   -- (the first 4 letters only, as Hex link's turned plate)
             imgui.SetWindowFontScale(fsn);
-            local room = nw_ + 4 * sc;                               -- (a long name: smaller, then cut)
+            local room = tw_ - sl * 0.3 - 5 * sc;                    -- (still too wide: smaller, then its last letters left off - no dot)
             local w0 = tonumber((imgui.CalcTextSize(nm))) or 0;
             if w0 > room then
-                imgui.SetWindowFontScale(fsn * math.max(0.62, room / math.max(1, w0)));
-                while #nm > 2 and (tonumber((imgui.CalcTextSize(nm))) or 0) > room do nm = nm:sub(1, -3) .. '.'; end
+                imgui.SetWindowFontScale(fsn * math.max(0.56, room / math.max(1, w0)));
+                while #nm > 2 and (tonumber((imgui.CalcTextSize(nm))) or 0) > room do nm = nm:sub(1, -2):gsub('%s+$', ''); end
             end
-            local w1, h1 = imgui.CalcTextSize(nm);
-            w1, h1 = tonumber(w1) or 0, tonumber(h1) or 10;
-            local nx_, ny_ = nx0 + nw_ - sk * 0.5 - w1, ny - h1 / 2;
-            for _, d in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { 1, 1 } }) do text(dl, nx_ + d[1], ny_ + d[2], nm, { 0, 0, 0, 0.85 * v * ta * dimt }); end
-            text(dl, nx_, ny_, nm, { 1, 1, 1, v * ta * (m.inzone and 1 or 0.55) });
+            local _, h1 = imgui.CalcTextSize(nm);
+            h1 = tonumber(h1) or 10;
+            local ny_ = hastp and (y1 + ((ny - y1) - h1) / 2 + 1 * sc) or (ny - h1 / 2);   -- (with TP: the top half)
+            text(dl, nx0 + 4 * sc, ny_, nm, { 1, 1, 1, v * ta * (m.inzone and 1 or 0.55) });
             imgui.SetWindowFontScale(FS or 1);
+            if hastp then                                            -- ("TP 2250" on one line in the bottom half, gold from 1000)
+                local tp = tonumber(m.tp) or 0;
+                local full = tp >= 1000;
+                local ts = tostring(tp);
+                local k_ = 1;
+                imgui.SetWindowFontScale(fs0 * 0.46);
+                local lw = tonumber((imgui.CalcTextSize('TP'))) or 8;
+                imgui.SetWindowFontScale(fs0 * 0.66);
+                local vw, vh = imgui.CalcTextSize(ts);
+                vw, vh = tonumber(vw) or 16, tonumber(vh) or 10;
+                local troom = tw_ - sl - 6 * sc;
+                if lw + 3 * sc + vw > troom then k_ = math.max(0.6, troom / (lw + 3 * sc + vw)); end
+                local foot = ny + ((y2 - ny) + vh * k_) / 2 - 1 * sc;
+                imgui.SetWindowFontScale(fs0 * 0.66 * k_);
+                text(dl, nx0 + 4 * sc + (lw + 3 * sc) * k_, foot - vh * k_, ts, full and { 1.0, 0.82, 0.42, v * ta } or { 0.80, 0.79, 0.88, 0.85 * v * ta });
+                imgui.SetWindowFontScale(fs0 * 0.46 * k_);
+                local _, lh_ = imgui.CalcTextSize('TP');
+                text(dl, nx0 + 4 * sc, foot - (tonumber(lh_) or 7) - vh * k_ * 0.06, 'TP', full and { 1.0, 0.82, 0.42, 0.75 * v * ta } or { 0.62, 0.60, 0.72, 0.8 * v * ta });
+                imgui.SetWindowFontScale(FS or 1);
+            end
         end
-        tend = nx0 + nw_;
-        tipb = tip - tw_ - gp;
-        local R = tipb - sl * ((ch - th_t) / 2) / math.max(1, ch) + gp - s_t + tw_;   -- (its slanted left side parallel to the card's right one)
-        if p >= 1 and k >= 0.99 then
-            ALLY.tag(dl, m, i, R, ny, ch, sc, v, live, true);
-        else                                                         -- (while turning: a stripe of the tag's colour)
-            ALLY.poly(dl, { { R - tw_ + sk, ny0 }, { R, ny0 }, { R, ny0 + thk }, { R - tw_, ny0 + thk } }, U4(tcol[1][1], tcol[1][2], tcol[1][3], v * dimt));
-        end
+        tipb = tip;
     elseif p >= 1 and k >= 0.99 then
         tend = ALLY.tag(dl, m, i, x1 + 2 * sc, ny, ch, sc, v, live);
     else                                                             -- (while turning: a stripe of the tag's colour)
@@ -5576,15 +5592,51 @@ function ALLY.nflip(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live, f)
         ALLY.poly(dl, { { x1 + 2 * sc, ny - th2 / 2 }, { x1 + 40 * sc, ny - th2 / 2 }, { x1 + 40 * sc - th2 * 0.3, ny + th2 / 2 }, { x1 + 2 * sc, ny + th2 / 2 } }, U4(tc[1], tc[2], tc[3], v));
         tend = x1 + 40 * sc;
     end
-    local card = { { tend + gp, y1 }, { tipb, y1 }, { tipb - sl, y2 }, { tend + gp - sl, y2 } };
-    ALLY.poly(dl, card, U4(0.085, 0.08, 0.115, 0.82 * v));
-    ALLY.grad(dl, { tend + gp, y1 }, { tipb - sl, y1 + 1 }, { 1, 1, 1, 0.14 * v }, { 1, 1, 1, 0 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0.14 * v });
-    for q = 1, 4 do dl:AddLine(card[q], card[q % 4 + 1], low and U4(1.0, 0.32, 0.36, 0.9 * v) or (tgt and U4(1, 1, 1, 0.85 * v) or U4(0, 0, 0, 0.85 * v)), tgt and 1.2 or 1); end
+    if not face then                                                 -- (the back's card: drawn already, under the name)
+        local card = { { tend + gp, y1 }, { tipb, y1 }, { tipb - sl, y2 }, { tend + gp - sl, y2 } };
+        ALLY.poly(dl, card, U4(0.085, 0.08, 0.115, 0.82 * v));
+        ALLY.grad(dl, { tend + gp, y1 }, { tipb - sl, y1 + 1 }, { 1, 1, 1, 0.14 * v }, { 1, 1, 1, 0 }, { 1, 1, 1, 0 }, { 1, 1, 1, 0.14 * v });
+        for q = 1, 4 do dl:AddLine(card[q], card[q % 4 + 1], low and U4(1.0, 0.32, 0.36, 0.9 * v) or (tgt and U4(1, 1, 1, 0.85 * v) or U4(0, 0, 0, 0.85 * v)), tgt and 1.2 or 1); end
+    end
+    if face then                                                     -- the back's right box: a line down leaning as the card, the job tag on top, how
+        local xd = tipb - tw_ - 8 * sc;                              --  far (yalms) under it, a line between
+        local lc = U4(1, 1, 1, 0.55 * v);                            -- (fine white lines, as the drawing)
+        DL.L(dl, xd, y1 + 1, xd - sl, y2 - 1, lc, 1);
+        local xr = tipb - sl * 0.5;                                  -- (the card's right side, half way down)
+        DL.L(dl, xd - sl * 0.5, ny, xr, ny, lc, 1);
+        if ta > 0 then
+            local tch = math.max(4, (ny - y1) - 3 * sc) / 0.78;        -- (the tag: as tall as the top half allows)
+            local tcy = y1 + (ny - y1) / 2 + 0.5 * sc;
+            local tx0 = xd - sl * ((tcy - y1) / math.max(1, y2 - y1)) + 4 * sc;   -- (clear of the leaning line)
+            if p >= 1 and k >= 0.99 then
+                imgui.SetWindowFontScale(fs0 * 0.74);                -- (a short card - alliance: the job's letters smaller, to fit the top half)
+                local jh_ = tonumber(select(2, imgui.CalcTextSize('WHM'))) or 10;
+                imgui.SetWindowFontScale(fs0);
+                ALLY.tagk = math.max(0.6, math.min(1, ((ny - y1) - 4 * sc) / math.max(1, jh_)));
+                local ok_, er_ = pcall(ALLY.tag, dl, m, i, tx0, tcy, tch, sc, v, live);
+                ALLY.tagk = nil;
+                if not ok_ then error(er_, 0); end
+            else                                                     -- (while turning: a stripe of the tag's colour)
+                local th2 = (ny - y1 - 3 * sc);
+                ALLY.poly(dl, { { tx0, tcy - th2 / 2 }, { tx0 + tw_ - 4 * sc, tcy - th2 / 2 }, { tx0 + tw_ - 4 * sc - th2 * 0.3, tcy + th2 / 2 }, { tx0, tcy + th2 / 2 } }, U4(tcol[1][1], tcol[1][2], tcol[1][3], v * dimt * ta));
+            end
+            local dist = (i ~= 0 and m.inzone) and (m.dist or (m.fake and (m.far and 32.4 or (3 + (i * 3.7) % 15))) or nil) or nil;
+            if dist and cfg.party_dist ~= false then                 -- (how far, in yalms - pink out of range)
+                local dstr = string.format('%.1f', dist);
+                imgui.SetWindowFontScale(fs0 * 0.62);
+                local dw_, dh_ = imgui.CalcTextSize(dstr);
+                dw_, dh_ = tonumber(dw_) or 0, tonumber(dh_) or 10;
+                local far_ = dist > (tonumber(cfg.party_range) or 20.8);
+                local bl_ = xd - sl * 0.75;                          -- (the box's middle in the bottom half)
+                local cx_ = (bl_ + (tipb - sl * 0.75)) / 2;
+                text(dl, cx_ - dw_ / 2, ny + ((y2 - ny) - dh_) / 2, dstr, far_ and { 1, 0.55, 0.75, v * ta } or { 0.84, 0.83, 0.90, 0.9 * v * ta });
+                imgui.SetWindowFontScale(fs0);
+            end
+        end
+    end
     if face and ta > 0 then                                          -- the back: HP and MP, each across its half
-        local tpc = 0;                                               -- (the TP: a small column, the bars get the room)
-        if party then imgui.SetWindowFontScale(fs0 * 0.66); tpc = (tonumber((imgui.CalcTextSize('3000'))) or 20) + 6 * sc; imgui.SetWindowFontScale(fs0); end
         local tx = tend + gp + 4 * sc;
-        local bx1 = tipb - sl * 0.5 - 6 * sc - tpc;
+        local bx1 = tipb - tw_ - 8 * sc - sl * 0.5 - 6 * sc;          -- (up to the right box)
         if m.inzone then
             local hasmp = party or (m.mp or 0) > 0;
             local mid = hasmp and (tx + bx1) / 2 or bx1;
@@ -5623,23 +5675,6 @@ function ALLY.nflip(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live, f)
             end
             lab(tx + 2 * sc, 'HP', tostring(m.hp or 0), low and { 1, 0.55, 0.58 } or { 0.80, 0.78, 0.86 }, mid - tx - 8 * sc);
             if hasmp then lab(mid + 3 * sc, 'MP', tostring(m.mp or 0), { 0.62, 0.74, 1 }, bx1 - mid - 6 * sc); end
-        end
-        if party and m.inzone then                                   -- (the TP, in its column as on the front)
-            local tp = tonumber(m.tp) or 0;
-            local cx = bx1 + 6 * sc + (tpc - 6 * sc) / 2;
-            imgui.SetWindowFontScale(fs0 * 0.46);
-            local lw, lhh = imgui.CalcTextSize('TP');
-            lhh = tonumber(lhh) or lh * 0.62;
-            imgui.SetWindowFontScale(fs0 * 0.66);
-            local ts = tostring(tp);
-            local vw, vh = imgui.CalcTextSize(ts);
-            vh = tonumber(vh) or lh * 0.92;
-            local y0 = ny - (lhh + vh - 2 * sc) / 2;
-            local full = tp >= 1000;
-            text(dl, cx - vw / 2, y0 + lhh - 2 * sc, ts, full and { 1.0, 0.82, 0.42, v * ta } or { 0.80, 0.79, 0.88, 0.85 * v * ta });
-            imgui.SetWindowFontScale(fs0 * 0.46);
-            text(dl, cx - lw / 2, y0, 'TP', full and { 1.0, 0.82, 0.42, 0.75 * v * ta } or { 0.62, 0.60, 0.72, 0.8 * v * ta });
-            imgui.SetWindowFontScale(fs0);
         end
     end
     if p < 1 then                                                    -- (the turn: a light across the middle, brightest edge-on)
@@ -15472,6 +15507,8 @@ local function draw_window()
             row_switch('##yui_mm3f', 'Turn with you', 'map3d_follow', 'The minimap turns as you do, looking the way you face. Off: north stays up.');
             row_switch('##yui_mmtilt', 'Tilt the map', 'map_tilt', 'On: in zones with no 3D shape (most of the open country) the map lies on the ground under you, seen from behind you like the cities\' 3D look. Off: the flat map from above.');
             row_switch('##yui_mmm', 'Monsters', 'map_mobs', 'On: monsters near you show as red dots.');
+            row_switch('##yui_mmgp', 'Gathering points', 'map_gp', 'On: Mining, Harvesting, Logging, Excavation and Clamming Points near you show as gold diamonds.');
+            row_switch('##yui_mmnpc', 'NPCs', 'map_npcs', 'On: NPCs near you (the ones you can talk to) show as small green dots.');
             row_switch('##yui_mmx', 'Zone exits', 'map_exits', 'On: the way out of the zone shows as a gold line, with the name of the zone it leads to.');
             if cfg.target_fx ~= 'link' then                          -- (Normal mode: the lines in your HP bar's colour, or white)
                 row_pick('##yui_mml', 'Lines', 'map_lines', { { 'hp', 'As your HP bar' }, { 'white', 'White' } });
@@ -16735,6 +16772,30 @@ function YMAP.mobs_near(ent)                                         -- monsters
     YMAP.mobs = out;
     return out;
 end
+YMAP.GP = { ['Mining Point'] = true, ['Harvesting Point'] = true, ['Logging Point'] = true, ['Excavation Point'] = true, ['Clamming Point'] = true };
+YMAP.npcs, YMAP.npcs_t = {}, -9;
+function YMAP.npcs_near(ent)                                         -- MINIMAP > Gathering points / NPCs: the ones around (the game knows them
+    local now = os.clock();                                          --  within ~50 yalms), refreshed twice a second; 'gp' a gathering point, 'npc' an NPC
+    if now - YMAP.npcs_t < 0.5 then return YMAP.npcs; end
+    YMAP.npcs_t = now;
+    local out = {};
+    local wn = cfg.map_npcs == true;
+    for i = 1, 2303 do                                               -- (past 0x700 too: NPCs the server adds - the EXP Guide)
+        pcall(function()
+            if (ent:GetRenderFlags0(i) or 0) == 0 then return; end
+            local fl = ent:GetSpawnFlags(i) or 0;                    -- (0x01 a player; 0x02 an NPC; 0x20 too: an object - a door, a lamp; 0x10 a monster)
+            if bit.band(fl, 0x01) ~= 0 then return; end
+            local n = ent:GetName(i);
+            if not n or n == '' then return; end
+            local kind = nil;
+            if YMAP.GP[n] then kind = 'gp';
+            elseif wn and bit.band(fl, 0x02) ~= 0 and bit.band(fl, 0x30) == 0 and n:sub(1, 1) ~= '_' then kind = 'npc'; end
+            if kind then out[#out + 1] = { ent:GetLocalPositionX(i), ent:GetLocalPositionY(i), i, ent:GetLocalPositionZ(i) or 0, kind }; end
+        end);
+    end
+    YMAP.npcs = out;
+    return out;
+end
 -- Widescan > Track: the game sends the tracked monster's place every few seconds (0x0F5: x, height, north, its index,
 -- 1 while tracking); its name comes from the Widescan list (0x0F4). On the map: a pulsing ring and its name - off the
 -- map, at the map's edge on the way to it. Gone when tracking stops, after 15 s with no news, or on zoning.
@@ -16851,6 +16912,27 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
         DL.CF(dl, sx, sy, r + 1.2, U4(0, 0, 0, 0.85), 12);
         DL.CF(dl, sx, sy, r, u32(col), 12);
         if ring then DL.C(dl, sx, sy, r + 4 * sc, U4(1, 1, 1, 0.95), 16, 1.6); end
+    end
+    if cfg.map_gp ~= false or cfg.map_npcs == true then             -- MINIMAP > Gathering points (a gold diamond) / NPCs (a small green dot) - another floor fades
+        local myz = ent:GetLocalPositionZ(me) or 0;
+        for _, m in ipairs(YMAP.npcs_near(ent)) do
+            local fa = 1 - math.max(0, math.min(1, (math.abs((m[4] or myz) - myz) - 6) / 4));
+            if fa > 0.05 or m[3] == tidx then
+                local sx, sy = tomap(m[1], m[2]);
+                if inside(sx, sy) then
+                    if m[5] == 'gp' and cfg.map_gp ~= false then
+                        local r = 3.6 * sc;
+                        local a_ = math.max(fa, 0.3);
+                        local pts = { { sx, sy - r - 1.2 }, { sx + r + 1.2, sy }, { sx, sy + r + 1.2 }, { sx - r - 1.2, sy } };
+                        ALLY.poly(dl, pts, U4(0, 0, 0, 0.85 * a_));
+                        ALLY.poly(dl, { { sx, sy - r }, { sx + r, sy }, { sx, sy + r }, { sx - r, sy } }, U4(1.0, 0.80, 0.30, a_));
+                        if m[3] == tidx then DL.C(dl, sx, sy, r + 4 * sc, U4(1, 1, 1, 0.95), 16, 1.6); end
+                    elseif m[5] == 'npc' then
+                        dot(m[1], m[2], { 0.45, 0.90, 0.55, 0.85 * math.max(fa, 0.3) }, 1.8 * sc, m[3] == tidx);
+                    end
+                end
+            end
+        end
     end
     if cfg.map_mobs ~= false then                                   -- (monsters on another floor - over 6 yalms up or down - fade, gone past 10)
         local myz = ent:GetLocalPositionZ(me) or 0;
@@ -17170,6 +17252,31 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
         DL.CF(dl, px, py, r + 1.2, U4(0, 0, 0, 0.85), 12);
         DL.CF(dl, px, py, r, u32(col), 12);
         if ring then DL.C(dl, px, py, r + 4 * sc, U4(1, 1, 1, 0.95), 16, 1.6); end
+    end
+    if cfg.map_gp ~= false or cfg.map_npcs == true then             -- MINIMAP > Gathering points (a gold diamond) / NPCs (a small green dot)
+        for _, mo in ipairs(YMAP.npcs_near(ent)) do
+            local mz = mo[4] or Z;
+            local fa = 1 - math.max(0, math.min(1, (math.abs(mz - Z) - 6) / 4));
+            if fa > 0.05 or mo[3] == tidx then
+                if mo[5] == 'gp' and cfg.map_gp ~= false then
+                    local px, py = proj(mo[1], mz * hs, mo[2]);
+                    local okp = px ~= nil and px >= x0 and px <= x1 and py >= y0 and py <= y1;
+                    if okp and soft then
+                        local ex, ey = (px - cxs) / (W / 2), (py - cys) / (H / 2);
+                        okp = ex * ex + ey * ey <= 0.80;
+                    end
+                    if okp then
+                        local r = 3.8 * sc;
+                        local a_ = math.max(fa, 0.3);
+                        ALLY.poly(dl, { { px, py - r - 1.2 }, { px + r + 1.2, py }, { px, py + r + 1.2 }, { px - r - 1.2, py } }, U4(0, 0, 0, 0.85 * a_));
+                        ALLY.poly(dl, { { px, py - r }, { px + r, py }, { px, py + r }, { px - r, py } }, U4(1.0, 0.80, 0.30, a_));
+                        if mo[3] == tidx then DL.C(dl, px, py, r + 4 * sc, U4(1, 1, 1, 0.95), 16, 1.6); end
+                    end
+                elseif mo[5] == 'npc' then
+                    dot(mo[1], mo[2], mz, { 0.45, 0.90, 0.55, 0.85 * math.max(fa, 0.3) }, 1.9 * sc, mo[3] == tidx);
+                end
+            end
+        end
     end
     if cfg.map_mobs ~= false then
         for _, mo in ipairs(YMAP.mobs_near(ent)) do
