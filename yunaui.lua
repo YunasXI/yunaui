@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.0';
+addon.version = '1.1.1';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -4468,15 +4468,30 @@ end
 ALLY.FL = {};                                                        -- (each plate's side: back = the numbers; t = when it turned)
 function ALLY.turn(m, i)
     local k = m.name or ('m' .. i);
-    local f = ALLY.FL[k] or { back = false, t = -9 };
+    local f = ALLY.fl(k) or { back = false, t = -9 };
     f.back, f.t, f.was = not f.back, os.clock(), false;
     ALLY.FL[k] = f;
+    if m.name and not m.fake then                                    -- (kept by name: the next login starts with that card as you left it)
+        local t = {};
+        if type(cfg.cards_turned) == 'table' then for n, v in pairs(cfg.cards_turned) do if type(n) == 'string' and v == true then t[n] = true; end end end
+        t[k] = (f.back ~= (ALLY.ALLB or false)) or nil;              -- (only the ones turned the other way from the card icon's choice)
+        cfg.cards_turned = t;
+        save();
+    end
 end
 function ALLY.turnall()                                              -- (the card icon by PARTY: every card over, or every card back)
     ALLY.ALLB, ALLY.ALLT, ALLY.AV = not ALLY.ALLB, os.clock(), (ALLY.AV or 0) + 1;
+    cfg.cards_back = ALLY.ALLB and true or false;                    -- (kept: the next login starts with the cards the way you left them)
+    cfg.cards_turned = {};                                           -- (every card the same way now)
+    save();
 end
 function ALLY.fl(key)                                                -- (a card's side - the card icon's last click taken in once, as it's drawn)
+    if ALLY.AV == nil and cfg.cards_back then ALLY.ALLB, ALLY.ALLT, ALLY.AV = true, -9, 1; end   -- (logged in: turned already, no turning)
     local f = ALLY.FL[key];
+    if f == nil and type(cfg.cards_turned) == 'table' and cfg.cards_turned[key] == true then   -- (a card you turned with a double click, last time)
+        f = { back = not (ALLY.ALLB or false), t = -9, av = ALLY.AV };
+        ALLY.FL[key] = f;
+    end
     if ALLY.AV and (f == nil or f.av ~= ALLY.AV) then
         f = f or { back = false, t = -9 };
         if (f.back or false) ~= (ALLY.ALLB or false) then f.back, f.t, f.was = ALLY.ALLB or false, ALLY.ALLT, false; end
@@ -19576,6 +19591,15 @@ function C.MD.draw()
     imgui.PopStyleColor(1);
     imgui.PopStyleVar(2);
 end
+function YUI_OUT()                                                   -- (logged out - the title and character screens: the party's data stays,
+    local out = false;                                               --  but you're not in the world; dps.lua and equip.lua ask too)
+    pcall(function()
+        local mm = AshitaCore:GetMemoryManager();
+        local me_ = mm:GetParty():GetMemberTargetIndex(0) or 0;
+        out = me_ == 0 or (mm:GetEntity():GetRenderFlags0(me_) or 0) == 0;
+    end);
+    return out;
+end
 ashita.events.register('d3d_present', 'yui_present', function()
     pcall(C.apply_hp);
     local logged = false;                                            -- (logged in: a character really there - logging out or /shutdown
@@ -19653,6 +19677,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         if not AshitaCore:GetFontManager():GetVisible() then return; end
         local p = AshitaCore:GetMemoryManager():GetParty();
         if p == nil or p:GetMemberIsActive(0) == 0 then return; end   -- not logged in / zoning
+        if YUI_OUT() then return; end
         -- each piece on its own: a problem in one (shown once in chat) never stops the others, the logo or the window
         local function piece(fn, ...)
             if YUI_PRES and not YUI_PRES[(C.PF and C.PF[fn]) or '-'] then return; end   -- (the guide: only the slide's own pieces)

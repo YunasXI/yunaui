@@ -3483,6 +3483,7 @@ ashita.events.register('d3d_present', 'ye_present', function()
         if not AshitaCore:GetFontManager():GetVisible() then return; end
         if YUI_MAPCOVER then return; end                              -- (YunaUI's big map is open over the game's Map: only it shows)
         if YUI_PRES and not YUI_PRES.eq then return; end              -- (YunaUI's guide: only the slide's own pieces show)
+        if YUI_OUT and YUI_OUT() then return; end                     -- (logged out: the title and character screens)
         local status = player_status();
         if status == nil then return; end                           -- zoning / not logged in
         if not cfg.imported then JOBS.import(); end

@@ -1932,6 +1932,7 @@ ashita.events.register('d3d_present', 'ym_present', function()
     if lg.f and now() - lg.snap_t > 10 and fighting() then lg.snap_t = now(); pcall(lg.snapshot, hate.focus(), 'every 10s'); end
     send_chat_queue();
     if YUI_PRES and not YUI_PRES.dps then return; end                 -- (YunaUI's guide: only the slide's own pieces show)
+    if YUI_OUT and YUI_OUT() then return; end                         -- (logged out: the title and character screens)
     local ok, err = pcall(draw_ui);
     if not ok then pcall(YUI_ERRLOG, 'meter draw', err); end
 end);
