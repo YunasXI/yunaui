@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.110';
+addon.version = '1.0.111';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -7417,7 +7417,7 @@ function C.tarrow_sync()
     if want == 'hex' then                                            -- (Hex link: the white prism where the game's arrow goes, over whatever
         want = 'prism';                                              --  you target - a monster, a player, you, an NPC or object)
     end
-    if want == 'normal' then want = 'off'; end                       -- (Normal: the game's standard arrow, for now)
+    if want == 'normal' then want = 'vex'; end                       -- (Vex mode: the party cards' triangle, soft pink into your HP pink)
     if want ~= 'off' then                                            -- (picking a sub target - <st>, <stal>, <stnpc>: the game's own arrow shows who, or nothing would)
         if C.mb_picking and C.mb_picking() then want = 'off'; end   -- (one sent from YunaUI's bar)
         if C.mb_stflags and C.mb_stflags()[1] then want = 'off'; end   -- (or the game's own)
@@ -7434,6 +7434,10 @@ function C.tarrow_sync()
         if tint ~= '' then ok_ = pcall(gu.image, 'target_arrow', 'images/tarrow_prism_white.png', { width = 23, height = 22, color = tint });   -- (your job's colour)
         else ok_ = pcall(gu.image, 'target_arrow', 'images/tarrow_prism2.png', { width = 23, height = 22 }); end
         if not ok_ then C.TAR_last = nil; end
+        return;
+    end
+    if want == 'vex' then
+        if not pcall(gu.image, 'target_arrow', 'images/tarrow_vexw.png', { width = 21, height = 14 }) then C.TAR_last = nil; end
         return;
     end
     pcall(gu.image, 'target_arrow');                                 -- (the game's own arrow)
@@ -14760,6 +14764,15 @@ function PANEL.sidebar(dl, x0, y0, SW, bottom)
     y = ty + vh + 34 * ps;
     -- the tabs: the chosen one lit, with a violet glow fading to the right
     local ih = math.floor(40 * ps);
+    local gap = 8 * ps;
+    if bottom then                                                   -- (the Search box always has its room at the bottom: short of space - a smaller
+        local room = bottom - y - math.floor(imgui.GetFrameHeight() * 1.1) - 12 * ps;   --  screen, the panel bigger - the tabs get shorter, not it)
+        local step = room / #TABS;
+        if step < ih + gap then
+            gap = math.max(2, math.floor(step * 0.15));
+            ih = math.max(math.floor(18 * ps), math.floor(step - gap));
+        end
+    end
     local mx, my = imgui.GetMousePos();
     for k, n in ipairs(TABS) do
         local on = (ui.tab or 1) == k;
@@ -14785,13 +14798,13 @@ function PANEL.sidebar(dl, x0, y0, SW, bottom)
         if fit < 1 then imgui.SetWindowFontScale(C.wfs); end
         imgui.SetCursorScreenPos({ x0, y });
         if imgui.InvisibleButton('##yui_side' .. k, { SW, ih }) then ui.tab = k; end
-        y = y + ih + 8 * ps;
+        y = y + ih + gap;
     end
     if bottom then                                                   -- the search box at the bottom (it took BETA TESTERS' place)
         local F = C.FIND;
         local bh = math.floor(imgui.GetFrameHeight() * 1.1);
         local top = bottom - bh;
-        if top > y + 10 * ps then
+        if top > y - 4 * ps then
             local A2 = (cfg.target_fx == 'link') and PANEL.GOLD2 or NEON2;
             local act = F.active;
             DL.RF(dl, x0, top, x0 + SW, top + bh, U4(0.10, 0.09, 0.13, 1), bh / 2);
@@ -15355,8 +15368,8 @@ local function draw_window()
             row_switch('##yui_t', 'Show', 'target');
             row_slider('##yui_s_t', 'Size', 'target_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_slider('##yui_tnsc', 'Target name size', 'target_name_scale', 0.5, 2.5, 0.05, '%.2fx');
+            row_switch('##yui_tarrow', 'YunaUI target marker', 'tarrow', "On: YunaUI's own marker takes the place of the game's arrow over whatever you target - Vex mode the party cards' pink triangle, Hex link a white prism. Off: the game's own arrow.", nil, function() C.TAR_last = nil; end);
             if HX then
-                row_switch('##yui_tarrow', 'YunaUI target marker', 'tarrow', "On: a white prism takes the place of the game's arrow over whatever you target. Off: the game's own arrow.", nil, function() C.TAR_last = nil; end);   -- (Hex link only: Vex mode always has the game's arrow)
                 row_switch('##yui_hl_cc', 'Claim colour', 'hl_claim', 'On: the bar is coloured as the game colours names - orange not claimed, red claimed by you or your party, purple claimed by someone else.');
                 row_switch('##yui_hl_hn', "Hide the game's name over your target", 'hl_hidename', "On: the name the game draws over the monster or player you target is hidden - the Hex link bar over its head already shows it. Other names stay.");
                 row_slider('##yui_hl_pct', 'HP percent size', 'hl_pct', 0.5, 2.0, 0.05, '%.2fx');
