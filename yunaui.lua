@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.0.103';
+addon.version = '1.0.104';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -952,7 +952,10 @@ function C.hexbar(dl, x, y, w, h, v, lag, seed, o)
         local k = math.min(B / 2 + p, (x1 - x0) / 2);
         cr = cr or cl;
         DL.TF(dl, x0, cy, x0 + k, y0, x0 + k, y1, cl);
-        if x1 - k > x0 + k then DL.RFM(dl, x0 + k, y0, x1 - k, y1, cl, cr, cr, cl); end
+        if x1 - k > x0 + k then                                      -- (the middle a pixel into each point: edge to edge, their soft edges left a
+            local o_ = math.min(1, k * 0.5);                         --  hair of the dark rim showing - a black line where they met)
+            DL.RFM(dl, x0 + k - o_, y0 + o_ * 0.5, x1 - k + o_, y1 - o_ * 0.5, cl, cr, cr, cl);
+        end
         DL.TF(dl, x1, cy, x1 - k, y1, x1 - k, y0, cr);
     end
     local fw = w * v;
@@ -5760,9 +5763,22 @@ function ALLY.hexrow(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     if bk then
         DL.L(dl, cut + sl, y1 + 2 * sc, cut - sl, y2 - 2 * sc, U4(DK[1], DK[2], DK[3], 0.45 * v), 1);
         local cx = cut + (tip - cut) / 2;
-        if p >= 1 and k >= 0.99 then                                 -- (its right side straight with the plate's cut corner, its left leaning as
-            local slope_ = (2 * sl) / math.max(1, (y2 - y1) - 4 * sc);   --  the divider - the plate's own end, smaller)
-            ALLY.tag(dl, m, i, tip - 6 * sc - TWb, ny, ch * 0.78, sc, v, live, false, { nil, nil, K * 0.55, slope_ });
+        if p >= 1 and k >= 0.99 then                                 -- (up in the plate's top-right corner - its right side and top along the plate's,
+            local slope_ = (2 * sl) / math.max(1, (y2 - y1) - 4 * sc);   --  its left leaning as the divider; the distance under it)
+            local th_ = math.floor((y2 - y1) * 0.48);
+            local t0_ = y1 + 3 * sc;
+            ALLY.tag(dl, m, i, tip - 3 * sc - TWb, t0_ + th_ / 2, ch * 0.78, sc, v, live, false, { t0_, t0_ + th_, 0, slope_ });
+            local dist = (i ~= 0 and m.inzone) and (m.dist or (m.fake and (m.far and 32.4 or (3 + (i * 3.7) % 15))) or nil) or nil;
+            if dist and cfg.party_dist ~= false then                 -- (how far, in yalms - pink out of range)
+                local dstr = string.format('%.1f', dist);
+                imgui.SetWindowFontScale(fs0 * 0.72);
+                local dw_, dh_ = imgui.CalcTextSize(dstr);
+                dw_, dh_ = tonumber(dw_) or 0, tonumber(dh_) or 10;
+                local far_ = dist > (tonumber(cfg.party_range) or 20.8);
+                local yy_ = t0_ + th_ + ((y2 - 2 * sc) - (t0_ + th_) - dh_) / 2;
+                text(dl, tip - 3 * sc - TWb / 2 - dw_ / 2 + 2 * sc, yy_, dstr, far_ and { 1, 0.55, 0.75, v } or { 0.84, 0.83, 0.90, 0.9 * v });
+                imgui.SetWindowFontScale(fs0);
+            end
         else                                                         -- (while turning: a stripe of its colour)
             local tc = ALLY.tagcol(m.job)[1];
             local th_ = ch * 0.5 * k;
@@ -5946,18 +5962,25 @@ function ALLY.hexrow(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
                 mid_num(tostring(m.mp or 0), bx, bw * 0.88, my2_, yb_ - my2_);
             end
             do                                                       -- (the TP at the left, under the name - gold from 1000; the alliance's too)
-                local full = tp >= 1000;
-                local cx = x1 + 5 * sc + TWb * 0.4;
+                do                                                   -- (the left part divided: a line down beside the bars, one across under the name -
+                    local lc_ = U4(DK[1], DK[2], DK[3], 0.45 * v * ta);  --  the divider's thin gold, as the right box's)
+                    local vx_ = bx - 4 * sc;
+                    DL.L(dl, vx_, y1 + 3 * sc, vx_, y2 - 3 * sc, lc_, 1);
+                    local hy_ = math.floor(nbot + 1.5 * sc) + 0.5;
+                    DL.L(dl, x1 + 3 * sc, hy_, vx_, hy_, lc_, 1);
+                end
+                local full = tp >= 1000;                             -- ("TP 1350" on one line at the bottom-left, under the name)
+                local tx_ = x1 + K * 0.6 + 4 * sc;
                 imgui.SetWindowFontScale(fs0 * 0.50);
                 local lw, lhh = imgui.CalcTextSize('TP');
                 imgui.SetWindowFontScale(fs0 * 0.78);
                 local ts = tostring(tp);
                 local vw, vh = imgui.CalcTextSize(ts);
-                lhh, vh = tonumber(lhh) or 8, tonumber(vh) or 12;
-                local yy = (nbot + yb_) / 2 - (lhh + vh * 0.9) / 2 + 1 * sc;   -- (under the name, in the left column)
-                text(dl, cx - vw / 2, yy + lhh * 0.95, ts, full and { GO2[1], GO2[2], GO2[3], v * ta } or { 0.80, 0.79, 0.88, 0.85 * v * ta });
+                lw, lhh, vh = tonumber(lw) or 8, tonumber(lhh) or 8, tonumber(vh) or 12;
+                local foot = math.min(yb_ + 1 * sc, (nbot + yb_) / 2 + vh / 2 + 2 * sc);   -- (both on one foot)
+                text(dl, tx_ + lw + 3 * sc, foot - vh, ts, full and { GO2[1], GO2[2], GO2[3], v * ta } or { 0.80, 0.79, 0.88, 0.85 * v * ta });
                 imgui.SetWindowFontScale(fs0 * 0.50);
-                text(dl, cx - lw / 2, yy, 'TP', full and { GO[1], GO[2], GO[3], 0.85 * v * ta } or { 0.62, 0.60, 0.72, 0.8 * v * ta });
+                text(dl, tx_, foot - lhh - vh * 0.08, 'TP', full and { GO[1], GO[2], GO[3], 0.85 * v * ta } or { 0.62, 0.60, 0.72, 0.8 * v * ta });
                 imgui.SetWindowFontScale(fs0);
             end
         end
