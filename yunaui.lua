@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.1';
+addon.version = '1.1.2';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1401,8 +1401,8 @@ function C.ptimers(i)                                               -- (PARTY > 
             t[id] = live;
             table.sort(live, function(a, b) return a.t0 < b.t0; end);
             local s = {};
-            for k, e in ipairs(live) do s[k] = e.t0 + e.dur - now; end
-            out[id] = s; any = true;
+            for _, e in ipairs(live) do if not e.wait then s[#s + 1] = e.t0 + e.dur - now; end end   -- (one still waiting for its length: not shown yet)
+            if #s > 0 then out[id] = s; any = true; end
         end
     end
     return any and out or nil;
@@ -1416,7 +1416,8 @@ BUFFS.DUR = { [40] = 1800, [41] = 1800, [33] = 180, [43] = 150, [42] = 75, [116]
               [113] = 3600, [71] = 300, [69] = 300, [100] = 150, [101] = 150, [102] = 150, [103] = 150, [104] = 150, [105] = 150,
               [106] = 150, [107] = 150, [108] = 150, [109] = 150, [110] = 150, [111] = 150,
               [195] = 120, [196] = 120, [197] = 120, [198] = 120, [199] = 120, [200] = 120, [201] = 120, [214] = 120, [215] = 120,
-              [216] = 120, [217] = 120, [218] = 120, [219] = 120, [222] = 120, [223] = 120 };
+              [216] = 120, [217] = 120, [218] = 120, [219] = 120, [222] = 120, [223] = 120,
+              [178] = 180, [179] = 180, [180] = 180, [181] = 180, [182] = 180, [183] = 180, [184] = 180, [185] = 180 };   -- (SCH's storms)
 function BUFFS.learned(spell, other)                                -- (saved per spell: 's' .. its id on you, 'o' .. its id on someone else -
     local L = type(cfg.buff_learn) == 'table' and cfg.buff_learn or {};   --  seen on one of your own characters: Pianissimo songs, sung in other
     return (other and tonumber(L['o' .. tostring(spell)])) or tonumber(L['s' .. tostring(spell)]);   --  gear, last longer than yours)
@@ -1499,12 +1500,13 @@ function BUFFS.cast_on(actor, tid, buff, spell)
     BUFFS.opend[#BUFFS.opend + 1] = { t = os.clock(), tid = tid, buff = buff, sp = spell };   -- (learned when it shows up on them)
     if #BUFFS.opend > 30 then table.remove(BUFFS.opend, 1); end
     local dur = BUFFS.learned(spell, true) or BUFFS.DUR[buff];
-    if not dur then return; end                                      -- (a buff with no known length: no guessed timer)
+    local wait = nil;                                                -- (no known length: it waits a moment for yours - the same cast on you too,
+    if not dur then dur, wait = 6, true; end                         --  Accession, a -ra: your own timer gives it; none comes: no guessed timer)
     BUFFS.cast[tid] = BUFFS.cast[tid] or {};
     local list = BUFFS.cast[tid][buff] or {};
     BUFFS.cast[tid][buff] = list;
     for k = #list, 1, -1 do if list[k].sp == spell then table.remove(list, k); end end   -- (the same spell again: its timer starts over)
-    list[#list + 1] = { t0 = os.clock(), dur = dur, sp = spell };
+    list[#list + 1] = { t0 = os.clock(), dur = dur, sp = spell, wait = wait };
 end
 function BUFFS.learn_from()                                         -- (a spell you just cast on yourself: its full length with your gear, kept)
     local now = os.clock();
@@ -1519,9 +1521,10 @@ function BUFFS.learn_from()                                         -- (a spell 
             BUFFS.pend[spell] = nil;
             local len = math.floor(f.v + 0.5);
             BUFFS.keep('s' .. tostring(spell), len);
-            for _, bs in pairs(BUFFS.cast) do                       -- (the same cast on others - Protectra, a song: it landed on them before
-                for _, e in ipairs(bs[buff] or {}) do                --  your own length was known, so they had the usual one: now yours)
-                    if e.sp == spell and math.abs(e.t0 - t) < 4 and not BUFFS.learned(spell, true) then e.dur = len; end
+            local Lo = type(cfg.buff_learn) == 'table' and tonumber(cfg.buff_learn['o' .. tostring(spell)]) or nil;   -- (its length on others, if ever seen -
+            for _, bs in pairs(BUFFS.cast) do                       --  not BUFFS.learned: that has the length on you just kept, and none was fixed)
+                for _, e in ipairs(bs[buff] or {}) do                -- (the same cast on others - Protectra, a song: it landed on them before
+                    if e.sp == spell and math.abs(e.t0 - t) < 4 and not Lo then e.dur, e.wait = len, nil; end   --  your own length was known, so they had the usual one: now yours)
                 end
             end
         elseif now - t > 4 then BUFFS.pend[spell] = nil;
