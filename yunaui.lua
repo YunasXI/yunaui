@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.13';
+addon.version = '1.1.14';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1288,8 +1288,6 @@ function C.party_buffs_clear() party_buffs = {}; end
 function C.party_buffs_seed()                                        -- (loaded after the login, or reloaded: the server's last party buffs taken from
     local ok, pk, at = pcall(vana.packets.last, true, 0x076);         --  VanaCore's copy - it sends them only when one changes, so the members'
     if not ok or type(pk) ~= 'string' or #pk < 0x04 + 0x30 then return; end   --  buffs stayed off their cards until someone cast a buff)
-    local okz, _, zat = pcall(vana.packets.last, true, 0x00A);
-    if okz and zat and at and at < zat then return; end              -- (from before the last zone: gone)
     read_party_buffs({ id = 0x076, data = pk });
 end
 -- BUFFS > Hide on party cards: { section, { buff id, its setting, its name, its tooltip }... } - shown unless the player ticks one
@@ -20361,7 +20359,8 @@ ashita.events.register('packet_in', 'yui_packet', function(e)
     elseif e.id == 0x0F4 then pcall(YMAP.ws_list, e);               -- (Widescan: a monster in its list - its name)
     elseif e.id == 0x0F5 then pcall(YMAP.ws_track, e);              -- (Widescan > Track: where the tracked one is)
     elseif e.id == 0x00A then C.tarrow_redo(); YMAP.track, YMAP.ws_names = nil, {}; enemies = {}; BUFFS.cast = {}; ENGAGED = {}; CAST.on = false; LASTHIT = {}; FIGHT.casts = {}; FIGHT.sc = {}; FIGHT.mine_at = nil; pcall(C.weather_packet, e);
-        pcall(C.party_buffs_clear);                                  -- (a new zone: party members' buffs from before it gone - the next 0x076 says what's left)
+                                                                     -- (a new zone: party members' buffs kept - the server sends 0x076 only when one
+                                                                     --  changes, so clearing them here left their cards empty until a buff landed)
     elseif e.id == 0x0AC then FIGHT.mine_at = nil; end                -- (your weapon skills changed)
 end);
 
