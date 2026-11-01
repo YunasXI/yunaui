@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.11';
+addon.version = '1.1.12';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -2534,7 +2534,7 @@ end
 FIGHT.drawn = {};                                                    -- where the fan, burst card and cast were last drawn ({ x, y, w, h, time })
 -- Hex link: the cast under the bar's right end, right-aligned to the HP %'s end (xr) - its words, small, and a thin line
 -- under them filling as it goes. Gives back how tall it is (the target of target goes under it; the debuffs don't move).
-function FIGHT.draw_cast_under(dl, sid, xr, y0, sc)
+function FIGHT.draw_cast_under(dl, sid, xr, y0, sc, minx)
     if sid == nil or sid == 0 then return 0; end
     local c = FIGHT.casts[sid];
     if c == nil then return 0; end
@@ -2550,6 +2550,13 @@ function FIGHT.draw_cast_under(dl, sid, xr, y0, sc)
     local lw = imgui.CalcTextSize(label);
     local col = c.broke and { 1, 1, 1, 0.4 + 0.6 * fl } or (tp and { 1.0, 0.78, 0.88, 1 } or { 0.90, 0.84, 1.0, 1 });
     local tx, ty = math.floor(xr - lw + 0.5), math.floor(y0 + 2 * sc + 0.5);
+    do                                                               -- (Hex link: past the target's buff icons on its row - it slides right as
+        local want = (minx and tx < minx) and (minx - tx) or 0;     --  they come, back as they go)
+        local dt = imgui.GetIO().DeltaTime or 0.016;
+        FIGHT.csh = (FIGHT.csh or want) + (want - (FIGHT.csh or want)) * math.min(1, dt * 10);
+        if math.abs(FIGHT.csh - want) < 0.5 then FIGHT.csh = want; end
+        tx = tx + math.floor(FIGHT.csh + 0.5);
+    end
     text(dl, tx, ty, label, col);
     local lt = math.max(4, math.floor(4.5 * sc + 0.5));              -- (a thin hexagon bar under the words, as the target bar)
     local ly = ty + lh + 2;
@@ -3895,7 +3902,15 @@ local function draw_target(dt)
                                                                      -- (Hex link: right under the bar, moved by its own offset)
             local cth = math.max(1, math.floor(h * ek + 0.5));       -- (its bar: as long and as thick as Enemy cast size says)
             local ok, used;
-            if link then ok, used = pcall(FIGHT.draw_cast_under, dl, fsid, x + w + (FIGHT.pctw or 0) + cdx, (FIGHT.pcty or (by + h)) + cdy, csc);   -- (Hex link: under the bar's right end, ending with the HP %)
+            local cmin_ = nil;                                       -- (Hex link: where the target's buff icons end on the row - the cast starts past them)
+            if link and cfg.buffs then
+                local okb_, bl_ = pcall(target_buffs, idx);
+                if okb_ and type(bl_) == 'table' and #bl_ > 0 then
+                    local tbs_ = tonumber(cfg.target_buff_scale) or tonumber(cfg.buff_scale) or 1;
+                    cmin_ = x + math.min(#bl_, 16) * (math.floor(22 * sc * tbs_) + 2) + 8 * sc;
+                end
+            end
+            if link then ok, used = pcall(FIGHT.draw_cast_under, dl, fsid, x + w + (FIGHT.pctw or 0) + cdx, (FIGHT.pcty or (by + h)) + cdy, csc, cmin_);   -- (Hex link: under the bar's right end, ending with the HP %)
             else ok, used = pcall(FIGHT.draw_cast, dl, fsid, x + cdx, by + h + 5 * sc + cdy, w, csc, cth, true, sc * 0.75); end   -- (under the bar's middle; the text has its own size)
             ch = (ok and tonumber(used)) or 0;
             if link then FIGHT.castb, ch = (FIGHT.pcty or (by + h)) + ((cdx == 0 and cdy == 0) and ch or 0), 0; end   -- (Hex link: the cast sits by the HP %; the debuffs keep their row)
@@ -10978,6 +10993,35 @@ function C.weather_packet(e)                                         -- (0x057: 
     elseif e.id == 0x00A then w = struct.unpack('H', e.data, 0x68 + 1); end
     if w and w >= 0 and w <= 19 then C.AMB.wx = w; end
 end
+function C.sbridge(x1, x2, y1, y2, fa, ea, rr, openL, openR, hx)      -- (the gear card anchored between the chats: the panel behind it, from x1 to x2 -
+    if x2 - x1 < 1 then return; end                                  --  open on a side another panel goes on from; drawn behind the windows)
+    local bg = imgui.GetBackgroundDrawList();
+    if hx then                                                       -- (Hex link: the chats' fading panel, square - no border, no corners: the card's
+        local c0, c1 = U4(0.055, 0.045, 0.08, hx[1]), U4(0.055, 0.045, 0.08, hx[2]);   --  pieces sit in the row as they are)
+        DL.RFM(bg, x1, y1, x2, y2, c0, c0, c1, c1);
+        return;
+    end
+    local rr2, fl = rr, C.rall;
+    if openL and openR then rr2 = 0;
+    elseif openL then fl = ImDrawFlags_RoundCornersRight or ImDrawCornerFlags_Right or 10;
+    elseif openR then fl = ImDrawFlags_RoundCornersLeft or ImDrawCornerFlags_Left or 5; end
+    DL.RF(bg, x1, y1, x2, y2, U4(0.055, 0.045, 0.08, fa), rr2, fl);
+    if cfg.chat_border then                                          -- (its share of the one border: top and foot, a side where nothing goes on)
+        local rx1, rx2 = openL and (x1 - 6) or x1, openR and (x2 + 6) or x2;
+        local cx1, cx2 = openL and x1 or (x1 - 5), openR and x2 or (x2 + 5);
+        local clp = pcall(function() bg:PushClipRect({ cx1, y1 - 5 }, { cx2, y2 + 5 }, true); end);
+        for g = 3, 1, -1 do DL.R(bg, rx1 - g, y1 - g, rx2 + g, y2 + g, U4(0.66, 0.48, 1.0, 0.07 * ea), rr2 + g, fl, 2); end
+        DL.R(bg, rx1 + 0.5, y1 + 0.5, rx2 - 0.5, y2 - 0.5, U4(0.74, 0.58, 1.0, 0.90 * ea), rr2, fl, 1.4);
+        if clp then pcall(function() bg:PopClipRect(); end); end
+    end
+end
+function C.sanc_on()                                                 -- (the gear card anchored between the chats: chat | third chat | gear | combat log)
+    return cfg.strip_anchor == true and (cfg.equip_look or 'wheel') == 'strip' and cfg.strip_show ~= false and not cfg.chat_link_v;
+end
+function C.scard_w()                                                 -- (its width in the row of chats: the combat log goes after it)
+    if C.sanc_on() and C.SCARD then return math.floor(C.SCARD[3] - C.SCARD[1] + 0.5); end
+    return 0;
+end
 function C.chat_chain()                                              -- (the chats joined side by side, left to right: the chat, the combat log anchored
     local t = { 1 };                                                 --  beside it, the third chat joined; nil when it's only one)
     if cfg.chat_split and cfg.chat_link and not cfg.chat_link_v then t[#t + 1] = 2; end
@@ -10991,7 +11035,7 @@ function C.chat_strip()                                              -- (the cha
     local W = C.screen() or 1920;                                    --  its right; no room on either side: the chat slides over so they all fit, whole)
     local tw, cx = tonumber(cfg.chat_w) or 620, tonumber(cfg.chat_x) or 20;
     local rest = ((cfg.chat3 and cfg.chat3_link) and math.max(200, tonumber(cfg.chat3_w) or 460) or 0)
-        + ((cfg.chat_split and cfg.chat_link and not cfg.chat_link_v) and tw or 0);
+        + ((cfg.chat_split and cfg.chat_link and not cfg.chat_link_v) and ((C.scard_w() > 0) and 200 or tw) or 0) + C.scard_w();
     if rest == 0 or cx + tw + rest <= W then return false; end
     if cx - rest >= 0 then return true; end
     cfg.chat_x = math.floor(math.max(0, W - tw - rest));
@@ -11045,13 +11089,16 @@ local function draw_chat(n)
         local W, H = C.screen();                                     -- (the chats' own screen size, as the third chat's and the keep-on-screen use)
         W, H = W or 1920, H or 1080;
         local w3 = (cfg.chat3 and cfg.chat3_link) and math.max(200, tonumber(cfg.chat3_w) or 460) or 0;   -- (the third chat joined: between them)
-        local nx, ny = cx_ + tw + w3, cy_;                           -- (edge to edge: one panel)
+        local nx, ny = cx_ + tw + w3 + C.scard_w(), cy_;             -- (edge to edge: one panel - the gear card between them, anchored)
         if cfg.chat_link_v then                                      -- (the anchor's 2nd click: on top of the chat, or under it if there's no room)
             nx, ny = cx_, cy_ - th;
             if ny < 0 then ny = cy_ + th; end
         elseif C.chat_strip() then nx = cx_ - tw - w3;               -- (no room on its right: on its left)
-        else nx = (tonumber(cfg.chat_x) or cx_) + tw + w3; end       -- (the chat may have slid over to make room)
+        else nx = (tonumber(cfg.chat_x) or cx_) + tw + w3 + C.scard_w(); end   -- (the chat may have slid over to make room)
         cfg.chat2_w, cfg.chat2_h = tw, th;
+        if C.scard_w() > 0 and not cfg.chat_link_v then              -- (the gear card in the row: the combat log takes the room left on the screen)
+            cfg.chat2_w = math.floor(math.max(200, math.min(tw, W - nx)));
+        end
         cfg.chat2_x, cfg.chat2_y = math.floor(nx), math.floor(ny);
         st.relink = true;
     end
@@ -11176,6 +11223,17 @@ local function draw_chat(n)
             if C.clear_on() then                                     -- (clear: a dark rounded panel, so the words read on any ground)
                 local A = math.max(0, math.min(1, tonumber(cfg.chat_panel_a) or 0.72));
                 if (gh > 30 or st.hv > 0.02) and not big then        -- (the big chat has its own panel)
+                    local sjl_, sjr_, sjc_ = false, false, nil;      -- (the gear card anchored between the chats: this panel joined to it on a side -
+                    if C.sanc_on() and C.SCARD then                  --  that side square, no corner cut, the panel running on behind the card)
+                        local c_ = C.SCARD;
+                        if gy < c_[4] and y + h > c_[2] then
+                            if math.abs(c_[1] - (x + w)) < 16 then sjr_, sjc_ = true, c_; end
+                            if math.abs(c_[3] - x) < 16 then sjl_, sjc_ = true, c_; end
+                        end
+                    end
+                    local sl_, sr_, oth = sl_ or sjl_, sr_ or sjr_, oth or sjl_ or sjr_;
+                    C.CPAN = C.CPAN or {};
+                    C.CPAN[n] = { x, gy, x + w, y + h, os.clock() };
                     local fl = C.rall;                               -- (round corners; linked side by side: only the outer ones, so the two read as one panel;
                     local rr = YUI_HEX and 3 or 10;                  -- (Hex link: crisper corners)
                     if not oth then                                  --  the other one empty: all four)
@@ -11215,21 +11273,47 @@ local function draw_chat(n)
                         local ea_ = math.min(1, A + 0.25) * (0.75 + 0.25 * st.hv);   -- (the gear card's own edge: lavender violet, a soft violet glow round it)
                         local ec_ = U4(0.74, 0.58, 1.0, 0.90 * ea_);
                         local rx1, rx2, ry1, ry2 = x, x + w, gy, y + h;   -- (joined: each panel draws its share of one frame - the rect runs past a joined side,
-                        if oth and sl_ then rx1 = x - 6; end             --  clipped exactly at its own edge: the top and foot lines meet the next panel's,
-                        if oth and sr_ then rx2 = x + w + 6; end         --  no edge between them)
+                        if (oth and sl_) or sjl_ then rx1 = x - 6; end   --  clipped exactly at its own edge: the top and foot lines meet the next panel's,
+                        if (oth and sr_) or sjr_ then rx2 = x + w + 6; end   --  no edge between them)
                         if linked and cfg.chat_link_v and othv then
                             local me_y = tonumber(cfg[(n == 1) and 'chat_y' or 'chat2_y']) or 0;
                             local ot_y = tonumber(cfg[(n == 1) and 'chat2_y' or 'chat_y']) or 0;
                             if ot_y < me_y then ry1 = gy - 6; else ry2 = y + h + 6; end
                         end
-                        local cx1_ = (oth and sl_) and x or (x - 1);
-                        local cx2_ = (oth and sr_) and (x + w) or (x + w + 1);
-                        if not (oth and sl_) then cx1_ = cx1_ - 4; end   -- (room for the glow outside)
-                        if not (oth and sr_) then cx2_ = cx2_ + 4; end
+                        local jl_, jr_ = (oth and sl_) or sjl_, (oth and sr_) or sjr_;
+                        local cx1_ = jl_ and x or (x - 1);
+                        local cx2_ = jr_ and (x + w) or (x + w + 1);
+                        if not jl_ then cx1_ = cx1_ - 4; end            -- (room for the glow outside)
+                        if not jr_ then cx2_ = cx2_ + 4; end
                         local clp_ = pcall(function() dl:PushClipRect({ cx1_, gy - 5 }, { cx2_, y + h + 5 }, true); end);
                         for g = 3, 1, -1 do DL.R(dl, rx1 - g, ry1 - g, rx2 + g, ry2 + g, U4(0.66, 0.48, 1.0, 0.07 * ea_), rr + g, fl, 2); end
                         DL.R(dl, rx1 + 0.5, ry1 + 0.5, rx2 - 0.5, ry2 - 0.5, ec_, rr, fl, 1.4);
                         if clp_ then pcall(function() dl:PopClipRect(); end); end
+                    end
+                    if sjc_ then                                     -- (the panel's share behind the gear card: the one on its left draws it to the
+                        local fa_ = math.min(1, A * (0.92 + 0.08 * pulse + 0.10 * st.hv));   --  next chat (or the card's edge); with none on its left, the one on its right)
+                        local hx_ = nil;
+                        if YUI_HEX then                              -- (Hex link: its panel fading upward, as the chats')
+                            local pa_ = math.min(1, A * (1.12 + 0.08 * pulse + 0.10 * st.hv));
+                            hx_ = { pa_ * math.max(0.78 + 0.22 * st.hv, A), pa_ };
+                        end
+                        local ea2_ = math.min(1, A + 0.25) * (0.75 + 0.25 * st.hv);
+                        local now_ = os.clock();
+                        local function chat_at(ex)                   -- (another chat's panel edge within reach of ex)
+                            for m_, q_ in pairs(C.CPAN or {}) do
+                                if m_ ~= n and now_ - q_[5] < 0.5 and q_[2] < y + h and q_[4] > gy then
+                                    if math.abs(q_[1] - ex) < 16 then return q_[1], 'l'; end
+                                    if math.abs(q_[3] - ex) < 16 then return q_[3], 'r'; end
+                                end
+                            end
+                            return nil;
+                        end
+                        if sjr_ then
+                            local rx_ = chat_at(sjc_[3]);
+                            pcall(C.sbridge, x + w, rx_ or sjc_[3], gy, y + h, fa_, ea2_, rr, true, rx_ ~= nil, hx_);
+                        elseif sjl_ and not chat_at(sjc_[1]) then
+                            pcall(C.sbridge, sjc_[1], x, gy, y + h, fa_, ea2_, rr, false, true, hx_);
+                        end
                     end
                     if YUI_HEX and kc > 0 then                       -- (Hex link: just the corner cut, a fine light gold edge on it - the chat stays quiet)
                         local GO2 = C.GOLDH2 or { 1, 0.90, 0.62 };
@@ -12527,10 +12611,16 @@ local function draw_strip()
     local under = cfg.strip_under or 'mp';
     local bp = (under ~= 'free' and type(YUI_EQ_BARPOS) == 'table') and YUI_EQ_BARPOS[under] or nil;
     if bp and now - (bp[4] or 0) > 1 then bp = nil; end             -- that bar isn't showing: a window of its own
+    if C.sanc_on() then bp = nil; end                                -- (anchored between the chats: not under a bar)
     if bp and cfg.strip_fit ~= false then                            -- spread the row across the bar's width
         gap = math.max(math.floor(6 * sc), (bp[3] - per * S) / math.max(1, per - 1));
     end
     local rows = math.ceil(16 / per);
+    if C.sanc_on() then                                              -- (anchored between the chats: the pieces a little smaller if needed, so the card is
+        local th_ = tonumber(cfg.chat_h) or 260;                     --  no taller than the row)
+        local fit_ = math.floor((th_ - 2 * pad - 2 * math.floor(6 * sc) - (rows - 1) * gap) / rows);
+        if fit_ >= 12 and fit_ < S then S = fit_; end
+    end
     local W, H = per * S + (per - 1) * gap, rows * S + (rows - 1) * gap;
     -- how bright: dimmed at rest, full when you swap gear (then it fades back) or hover it, or while EQUIP is open
     local rest = cfg.strip_swap_only and 0 or (tonumber(cfg.strip_dim) or 0.35);
@@ -12549,7 +12639,16 @@ local function draw_strip()
     DOLL.shown = a > 0.01;
     if a <= 0.01 then DOLL.hover = false; return; end
     local kx, ky = 'strip_x', 'strip_y';
-    if bp then
+    local anc_ = C.sanc_on() and DOLL.coff and C.SCARD and not C.chat_strip();
+    if anc_ then                                                     -- (anchored: after the chat - and the third chat joined to it - centred on the row)
+        local w3 = (cfg.chat3 and cfg.chat3_link) and math.max(200, tonumber(cfg.chat3_w) or 460) or 0;
+        local cx_, cy_ = tonumber(cfg.chat_x) or 20, tonumber(cfg.chat_y) or 700;
+        local tw, th = tonumber(cfg.chat_w) or 620, tonumber(cfg.chat_h) or 260;
+        cfg._sx = math.floor(cx_ + tw + w3 - DOLL.coff[1] + 0.5);
+        cfg._sy = math.floor(cy_ + (th - (C.SCARD[4] - C.SCARD[2])) / 2 - DOLL.coff[2] + 0.5);
+        kx, ky = '_sx', '_sy';
+        WATCH.move = WATCH.move + 1;
+    elseif bp then
         cfg._sx, cfg._sy = bp[1] - 8, bp[2] + 6 * sc;                -- (the window adds no padding: 8 px like the bars)
         kx, ky = '_sx', '_sy';
         WATCH.move = WATCH.move + 1;                                 -- follow the bar every frame
@@ -12557,10 +12656,11 @@ local function draw_strip()
         first_place('strip_x', 'strip_y', -W / 2, -330);
     end
     local open = plain_window('YunaUI Strip##yui_strip', kx, ky);
-    if bp then WATCH.move = WATCH.move - 1; cfg._sx, cfg._sy = nil, nil; end
+    if bp or anc_ then WATCH.move = WATCH.move - 1; cfg._sx, cfg._sy = nil, nil; end
     local hxf = YUI_HEX and not bp;                                  -- (Hex link, on its own: in Hex link's frame, GEAR on its edge)
     local orig = hxf;                                                -- (the Original frame only)              -- (EQUIP > Frame > Original: the first Hex link frame, GEAR on its edge)
     local top_ = hxf and math.floor((orig and 10 or 30) * sc) or (not YUI_HEX and math.floor(6 * sc) or 0);   -- (the glass card: room at its top; Vex: room for its card's edge)
+    if not bp then top_ = top_ + math.floor(22 * sc); end            -- (room over the card for its anchor)
     if open then
         local dl = imgui.GetWindowDrawList();
         local x, y = imgui.GetCursorScreenPos();
@@ -12588,8 +12688,12 @@ local function draw_strip()
             end); end
             DOLL.rect = { cx0, cy0, cx1, cy1 };
             DOLL.bw, DOLL.bh = cx1 + 29 * f - wx_ + 6, cy1 + 30 * f - wy_ + 4;
+        elseif hxf and C.sanc_on() then                             -- (Hex link, anchored between the chats: no frame of its own - the chats' panel runs
+            local m_ = 6 * sc;                                       --  on behind it and its gold corners are on the chats now)
+            C.SCARD = { x - pad - m_, y - pad - m_, x + W + pad + m_, y + H + pad + m_ };
         elseif hxf then                                              -- (the first Hex link frame: cut corners, GEAR - or what changed it - on its edge)
             local m_ = 6 * sc;
+            C.SCARD = { x - pad - m_, y - pad - m_, x + W + pad + m_, y + H + pad + m_ };   -- (where the card is: the row of chats meets it)
             YUI_HEXFRAME(dl, x - pad - m_, y - pad - m_, x + W + pad + m_, y + H + pad + m_,
                 { a = a, s = sc, title = nil,                        -- (nothing on top: no GEAR, no name of what changed it)
                   tcol = (DOLL.why and since < hold + 0.8) and DOLL.why_col(DOLL.why.kind) or nil,
@@ -12598,12 +12702,56 @@ local function draw_strip()
             local m_ = math.floor(6 * sc);
             local x0, y0, x1, y1 = x - pad - m_, y - pad - m_, x + W + pad + m_, y + H + pad + m_;
             local rr = math.floor(12 * sc);
+            C.SCARD = { x0, y0, x1, y1 };                            -- (CHAT > Gear card joined to the chats: where the card is)
+            local joined_ = false;
+            if C.sanc_on() then
+                for _, q_ in pairs(C.CPAN or {}) do
+                    if now - q_[5] < 0.5 and q_[2] < y1 and q_[4] > y0 and (math.abs(q_[3] - x0) < 16 or math.abs(q_[1] - x1) < 16) then joined_ = true; end
+                end
+            end
+            if joined_ then goto strip_card_done; end                -- (part of the chat panel: no card of its own)
             DL.RF(dl, x0, y0, x1, y1, U4(0.02, 0.015, 0.03, 0.82 * a), rr, C.rall);
             for g = 3, 1, -1 do DL.R(dl, x0 - g, y0 - g, x1 + g, y1 + g, U4(0.66, 0.48, 1.0, 0.07 * a), rr + g, C.rall, 2); end
             DL.R(dl, x0, y0, x1, y1, U4(0.74, 0.58, 1.0, 0.90 * a), rr, C.rall, math.max(1, 1.4 * sc));
+            ::strip_card_done::
         end
+        if C.SCARD then DOLL.coff = { C.SCARD[1] - wx_, C.SCARD[2] - wy_ }; end
         local mx, my = imgui.GetMousePos();
         DOLL.hover = imgui.IsWindowHovered() or (mx >= x and mx <= x + W and my >= y and my <= y + H);
+        if C.SCARD and not bp then                                   -- the anchor over the card: in the row of chats, or free
+            local on_ = cfg.strip_anchor == true;
+            local bs_ = math.floor(20 * sc);
+            local ak = 1.4 * sc;                                     -- (a little bigger than the party's)
+            local ax_, ay_ = math.floor((C.SCARD[1] + C.SCARD[3]) / 2 - bs_ / 2), math.max(wy_, math.floor(C.SCARD[2] - bs_ - 2 * sc));   -- (just over the card, in its middle)
+            local hv_ = mx >= ax_ and mx <= ax_ + bs_ and my >= ay_ and my <= ay_ + bs_;
+            local c_ = on_ and { 0.86, 0.58, 1.0, hv_ and 1 or 0.9 } or { 0.62, 0.60, 0.70, hv_ and 1 or 0.7 };
+            local cxa, cya = ax_ + bs_ / 2, ay_ + bs_ / 2;
+            if YUI_HEX then                                          -- (Hex link: a gold and an azure hexagon, a fine gold line when anchored - as the party's)
+                local dx = 4.2 * ak;
+                local c1_, c2_ = on_ and C.GOLDH or { 0.62, 0.60, 0.70 }, on_ and C.HEXMP[1] or { 0.62, 0.60, 0.70 };
+                if on_ then DL.L(dl, cxa - dx, cya, cxa + dx, cya, U4(C.GOLDH2[1], C.GOLDH2[2], C.GOLDH2[3], 0.55 * c_[4]), 1.2); end
+                for _, q in ipairs({ { -1, c1_ }, { 1, c2_ } }) do
+                    C.hexdot(dl, cxa + q[1] * dx, cya, 3.3 * ak, U4(0.05, 0.045, 0.07, 0.85 * c_[4]));
+                    C.hexdot(dl, cxa + q[1] * dx, cya, 2.5 * ak, U4(q[2][1], q[2][2], q[2][3], c_[4]));
+                end
+            else
+                if on_ then DL.L(dl, cxa - 3.6 * ak, cya, cxa + 3.6 * ak, cya, u32(c_), 1.6 * ak); end
+                DL.CF(dl, cxa - 3.6 * ak, cya, 2.4 * ak, u32(c_), 12);
+                DL.CF(dl, cxa + 3.6 * ak, cya, 2.4 * ak, u32(c_), 12);
+            end
+            imgui.SetCursorScreenPos({ ax_, ay_ });
+            if imgui.InvisibleButton('##yui_sanc', { bs_, bs_ }) then
+                cfg.strip_anchor = not on_;
+                if cfg.strip_anchor then                             -- (the row: chat | third chat | gear | combat log, all anchored)
+                    cfg.chat_link, cfg.chat_link_v = true, false;
+                    if cfg.chat3 then cfg.chat3_link = true; end
+                    cw[1].relink, cw[2].relink, cw[3].relink = true, true, true;
+                end
+                save();
+            end
+            if hv_ then YUI_TIP(on_ and 'Free the gear card from the chats' or 'Anchor the gear card between the chats'); end
+            imgui.SetCursorScreenPos({ wx_, wy_ });
+        end
         local allc = ImDrawFlags_RoundCornersAll or ImDrawCornerFlags_All or 15;
         for k, slot in ipairs(DOLL.STRIP) do
             local c, r = (k - 1) % per, math.floor((k - 1) / per);
@@ -12720,7 +12868,7 @@ local function draw_strip()
         elseif orig then imgui.Dummy({ W + 16 + pad * 2 + 6 * sc, H + 6 + pad * 2 + top_ + 8 * sc });
         elseif not YUI_HEX then imgui.Dummy({ W + 16 + pad * 2 + 4 * sc, H + 6 + pad * 2 + top_ + 12 * sc });   -- (Vex: its card's edge all round)
         else imgui.Dummy({ W + 16 + pad * 2 + (hxf and 42 * sc or 0), H + 6 + pad * 2 + (hxf and (top_ + 44 * sc) or 0) }); end
-        if bp then imgui.End(); imgui.PopStyleVar(2); else end_plain('strip_x', 'strip_y'); end
+        if bp or anc_ then imgui.End(); imgui.PopStyleVar(2); else end_plain('strip_x', 'strip_y'); end
     else
         imgui.End(); imgui.PopStyleVar(2);
     end
