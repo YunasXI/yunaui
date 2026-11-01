@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.6';
+addon.version = '1.1.7';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -3851,6 +3851,9 @@ local function draw_enemies(dt)
     local ent = AshitaCore:GetMemoryManager():GetEntity();
     local list = {};
     local preview = SUBPREVIEW and SUBPREVIEW() or false;
+    pcall(function()                                                 -- (you died: the monsters leave you - the list empties, not kept till the next fight)
+        if (AshitaCore:GetMemoryManager():GetParty():GetMemberHP(0) or 1) == 0 then ENGAGED = {}; end
+    end);
     for idx in pairs(ENGAGED) do
         local ok, valid, nm, hp = pcall(function()
             if idx >= 0x400 or is_party_id(ent:GetServerId(idx)) then return false; end   -- (trusts, pets, players: not enemies)
@@ -18140,17 +18143,18 @@ function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: th
         local diff, ga = C.gil_diff(gil);
         local ds = (diff ~= 0) and ((diff > 0 and '+' or '') .. commas(diff)) or nil;
         local dw = ds and ((tonumber((imgui.CalcTextSize(ds))) or 0) * 0.85 + 8 * s) or 0;
-        local gx = edgeR(midy) - 8 * s - gw - dw;
-        local cl_, cr_ = mR + isl * 0.5, edgeR(midy);                -- (the coin and the amount centred in their block; what changed just after)
-        gx = math.min(gx + dw, math.floor((cl_ + cr_) / 2 - (gw - 14 * s) / 2));
-        if ds then gx = math.min(gx, edgeR(midy) - 8 * s - gw - dw); end
+        local gx = edgeR(midy) - 8 * s - gw;                       -- (the amount always inside its block; what changed shows just outside it)
         C.hexdot(dl, gx - 9 * s, tyy + th / 2, 5 * s, col(C.GOLDH or { 1, 0.76, 0.34 }, 1));   -- (the coin always gold)
         C.hexdot(dl, gx - 9 * s, tyy + th / 2, 2.5 * s, col(C.GOLDH2 or { 1, 0.9, 0.62 }, 1));
         outlined(dl, gx, tyy, gs, { 1, 1, 1, 1 });                   -- (the amount white)
         if ds then
             local fs = FS;
             imgui.SetWindowFontScale(fs * 0.85);
-            outlined(dl, gx + gw + 8 * s, tyy + 1 * s, ds, diff > 0 and { 0.55, 1, 0.65, ga } or { 1, 0.5, 0.65, ga });
+            local dw_ = tonumber((imgui.CalcTextSize(ds))) or 0;     -- (under the block - over it when the map's frame is below: it never pushes the amount out)
+            local dy_ = (far_ == py1) and (py1 + 1 * s) or (py0 - imgui.GetTextLineHeight() - 1 * s);
+            local clip_ = pcall(C.fullclip, dl);                     -- (outside the map window's own box: not cut off)
+            outlined(dl, gx + gw - dw_, dy_, ds, diff > 0 and { 0.55, 1, 0.65, ga } or { 1, 0.5, 0.65, ga });
+            if clip_ then pcall(function() dl:PopClipRect(); end); end
             imgui.SetWindowFontScale(fs);
         end
     end
@@ -19910,7 +19914,7 @@ ashita.events.register('packet_in', 'yui_packet', function(e)
     elseif e.id == 0x057 then pcall(C.weather_packet, e);
     elseif e.id == 0x0F4 then pcall(YMAP.ws_list, e);               -- (Widescan: a monster in its list - its name)
     elseif e.id == 0x0F5 then pcall(YMAP.ws_track, e);              -- (Widescan > Track: where the tracked one is)
-    elseif e.id == 0x00A then YMAP.track, YMAP.ws_names = nil, {}; enemies = {}; BUFFS.cast = {}; ENGAGED = {}; LASTHIT = {}; FIGHT.casts = {}; FIGHT.sc = {}; FIGHT.mine_at = nil; pcall(C.weather_packet, e);
+    elseif e.id == 0x00A then YMAP.track, YMAP.ws_names = nil, {}; enemies = {}; BUFFS.cast = {}; ENGAGED = {}; CAST.on = false; LASTHIT = {}; FIGHT.casts = {}; FIGHT.sc = {}; FIGHT.mine_at = nil; pcall(C.weather_packet, e);
         pcall(C.party_buffs_clear);                                  -- (a new zone: party members' buffs from before it gone - the next 0x076 says what's left)
     elseif e.id == 0x0AC then FIGHT.mine_at = nil; end                -- (your weapon skills changed)
 end);
