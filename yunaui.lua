@@ -2,7 +2,7 @@
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.3';
+addon.version = '1.1.4';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -11707,10 +11707,14 @@ function DOLL.boxed(id, name)
                 local q = 57 + s:byte(1081 + (31 - y) * 32 + x + 1) * 4;
                 return s:byte(q + 3), s:byte(q + 2), s:byte(q + 1), s:byte(q + 4);
             end
-            local r, g, b, a = px(1, 1);
-            v = a > 0 and r >= 150 and g >= 150 and b >= 150 and math.abs(r - g) < 24 and math.abs(g - b) < 24;
+            local n = 0;                                             -- (the box's edge, sampled round the icon: grey, solid - some boxes are darker,
+            for _, p in ipairs({ { 0, 0 }, { 31, 0 }, { 0, 31 }, { 31, 31 }, { 16, 0 }, { 0, 16 }, { 1, 1 } }) do   --  Kraken Club +1's corner was 112)
+                local r, g, b, a = px(p[1], p[2]);
+                if a > 0 and r >= 90 and math.abs(r - g) < 24 and math.abs(g - b) < 24 then n = n + 1; end
+            end
+            v = n >= 5;
         end);
-        if not ok then v = type(name) == 'string' and name:find('%+%d+$') ~= nil; end
+        if not v and type(name) == 'string' and name:find('%+%d+$') then v = true; end   -- (a "+1", "+2"... name: boxed whatever its icon)
         DOLL.BOX[id] = v;
     end
     return v;

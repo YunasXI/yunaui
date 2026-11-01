@@ -54,7 +54,7 @@ local defaults = T{
     bezel_fx = true,   -- the light gliding along the HP / MP ring and the pulsing level (off = they stand still)
     stat_size = 1.0,   -- the size of the HP / MP / TP text
     stat_mode = 'wheel', -- HP / MP / TP: 'wheel' (round the wheel) or 'bars' (three bars of their own, each draggable)
-    sb_scale = 1.0, sb_len = 1.0, sb_tp = true, sb_mp = true, sb_fx = 'same',
+    sb_scale = 1.0, sb_len = 1.0, sb_tp = true, sb_mp = true, sb_hp = true, sb_fx = 'same',
     sb_thick = 1.0, sb_hp_num = 1.0, sb_mp_num = 1.0, sb_tp_num = 1.0, sb_hp_size = 1.0, sb_mp_size = 1.0, sb_tp_size = 1.0, sb_hp_len = 1.0, sb_mp_len = 1.0, sb_tp_len = 1.0,
     hpbar_x = -1, hpbar_y = -1, mpbar_x = -1, mpbar_y = -1, tpbar_x = -1, tpbar_y = -1,
     sb_anchor = 0,           -- the dots by your HP number: 0 = each bar free, 1 = MP and TP stacked under HP, 2 = side by side
@@ -2810,6 +2810,11 @@ function JOBS.sb_anchor_pos(key)
     local mode = tonumber(cfg.sb_anchor) or 0;
     if mode == 0 or key == 'hp' then return nil; end                 -- (locked or not: anchored bars always follow the HP bar)
     local prev = (key == 'mp' or cfg.sb_mp == false) and 'hp' or 'mp';   -- (no MP bar: TP follows the HP bar)
+    if prev == 'hp' and cfg.sb_hp == false then                      -- (no HP bar: the first bar after it takes its place)
+        local hx, hy = tonumber(cfg.hpbar_x), tonumber(cfg.hpbar_y);
+        if hx and hy then return math.floor(hx + 0.5), math.floor(hy + 0.5); end
+        return nil;
+    end
     local px, py = tonumber(cfg[prev .. 'bar_x']), tonumber(cfg[prev .. 'bar_y']);
     local sz = JOBS.sb_size[prev];
     if px == nil or py == nil or sz == nil then return nil; end
@@ -2958,7 +2963,7 @@ end
 -- The settings YunaUI may change with /ye set (its EQUIP tab)
 JOBS.SETTABLE = {};
 for k in ('visible locked style theme middle bottom mid_anim big_logo show_ring low_on bezel_fx flash mini icon art_alpha ' ..
-    'stat_mode stat_size sb_scale sb_len sb_tp sb_mp layout'):gmatch('%S+') do JOBS.SETTABLE[k] = true; end
+    'stat_mode stat_size sb_scale sb_len sb_tp sb_mp sb_hp layout'):gmatch('%S+') do JOBS.SETTABLE[k] = true; end
 -- The first time (per character): bring over your settings from the separate YunaEquip addon, if you had it
 function JOBS.import()
     cfg.imported = true;
@@ -2994,7 +2999,7 @@ function JOBS.statbars()
     if YUI_HIDE_STATBARS and YUI_HIDE_STATBARS() then return; end    -- (YunaUI's BARS > Where: only over your head)
     local hp, mp, tp, hpp, mpp = JOBS.stats();
     local b = JOBS.bars;
-    JOBS.statbar('hp', tostring(hp), b.hp, b.hp_lag, hpp);
+    if cfg.sb_hp ~= false then JOBS.statbar('hp', tostring(hp), b.hp, b.hp_lag, hpp); end   -- (BARS > HP bar: can be turned off too)
     if cfg.sb_mp ~= false then JOBS.statbar('mp', tostring(mp), b.mp, b.mp_lag, mpp); end   -- (BARS > MP bar: can be turned off)
     if cfg.sb_tp ~= false then JOBS.statbar('tp', tostring(tp), b.tp, nil, nil); end
 end
@@ -3407,10 +3412,13 @@ local function draw_bars_settings()
         cfg.stat_mode = 'bars';                                      -- (your HP / MP / TP are always separate bars now)
         do
             if cfg.sb_mp_thick == nil then cfg.sb_mp_thick = tonumber(cfg.sb_thick) or 1; end   -- (the MP bar starts as thick as the HP bar)
-            row_stepper('ye_sbth', 'HP bar thickness', 'sb_thick', 0.25, 0.5, 3.0);
-            row_stepper('ye_sbhs', 'HP bar size', 'sb_hp_size', 0.1, 0.5, 2.5);
-            row_stepper('ye_sbhl', 'HP bar length', 'sb_hp_len', 0.1, 0.3, 4.0);
-            row_stepper('ye_sbhn', 'HP text size', 'sb_hp_num', 0.1, 0.5, 2.5);   -- (the label and number only; the bar stays)
+            row_switch('##ye_sbhp', 'HP bar', 'sb_hp', 'On: your HP bar shows. Off: it is hidden (an anchored MP bar moves up into its place).');
+            if cfg.sb_hp ~= false then
+                row_stepper('ye_sbth', 'HP bar thickness', 'sb_thick', 0.25, 0.5, 3.0);
+                row_stepper('ye_sbhs', 'HP bar size', 'sb_hp_size', 0.1, 0.5, 2.5);
+                row_stepper('ye_sbhl', 'HP bar length', 'sb_hp_len', 0.1, 0.3, 4.0);
+                row_stepper('ye_sbhn', 'HP text size', 'sb_hp_num', 0.1, 0.5, 2.5);   -- (the label and number only; the bar stays)
+            end
             row_switch('##ye_sbmp', 'MP bar', 'sb_mp', 'On: your MP bar shows. Off: it is hidden (an anchored TP bar moves up under HP).');
             if cfg.sb_mp ~= false then
                 row_stepper('ye_sbmth', 'MP bar thickness', 'sb_mp_thick', 0.25, 0.5, 3.0);
