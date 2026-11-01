@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.8';
+addon.version = '1.1.9';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -128,7 +128,7 @@ local defaults = T{
     chat3 = false, chat3_x = -1, chat3_y = -1, chat3_w = 460, chat3_h = 260, c3_tell = true, c3_ls = true, c3_ls2 = true,
     c3_party = false, c3_say = false, c3_shout = false, c3_unity = false,
     cm_tell = true, cm_ls = true, cm_ls2 = true, cm_party = true, cm_say = true, cm_shout = true, cm_unity = true,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', party_buff_row = 8, exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, map_gp = true, map_npcs = false, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_lines = 'hp', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_fade_w1 = true, chat_fade_w2 = true, chat_fade_w3 = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_fight = false, head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, tarrow = true, macrobar = true, mb_show = 'hold', mb_always = false, mb_pad = 'hold', mb_btn = 'l2', mb_scale = 1.0, mb_look = 'strip', mb_style = 'cards', hp_by_job = false, mb_timers = true, mb_wave = 'bars', mb_text = 1.0, mb_both = true, mb_frame = 'arc', mb_view = 'pills', mbp_x = -1, mbp_y = -1, mb_brush = 'all', mb_layout = 'lens', mb_wcol = 'gold', mb_nstyle = 'wave', mb_wavecol = 'job', mb_sound = true, mb_snd_vol = 0.6, mb_voice = true, mb_voice_vol = 0.8, mb_cards_at = 'feet', mb_dn = 'hd_circle', mb_dh = 'hd_sigil', mb_x = -1, mb_y = -1, mbs_x = -1, mbs_y = -1, mbc_x = -1, mbc_y = -1, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', party_buff_row = 8, exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, map_gp = true, map_npcs = false, mob_icon_scale = 1.6, mob_info = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_lines = 'hp', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_fade_w1 = true, chat_fade_w2 = true, chat_fade_w3 = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_fight = false, head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, tarrow = true, macrobar = true, mb_show = 'hold', mb_always = false, mb_pad = 'hold', mb_btn = 'l2', mb_scale = 1.0, mb_look = 'strip', mb_style = 'cards', hp_by_job = false, mb_timers = true, mb_wave = 'bars', mb_text = 1.0, mb_both = true, mb_frame = 'arc', mb_view = 'pills', mbp_x = -1, mbp_y = -1, mb_brush = 'all', mb_layout = 'lens', mb_wcol = 'gold', mb_nstyle = 'wave', mb_wavecol = 'job', mb_sound = true, mb_snd_vol = 0.6, mb_voice = true, mb_voice_vol = 0.8, mb_cards_at = 'feet', mb_dn = 'hd_circle', mb_dh = 'hd_sigil', mb_x = -1, mb_y = -1, mbs_x = -1, mbs_y = -1, mbc_x = -1, mbc_y = -1, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -2838,11 +2838,22 @@ end
 -- Families that are wide but low (their hitbox is big, they aren't tall): the bar over them stays low
 C.FLAT = { 'pugil', 'jagil', 'crab', 'clipper', 'snipper', 'leech', 'worm', 'scorpion', 'spider', 'beetle', 'crawler', 'uragnite',
            'urchin', 'lizard', 'eft', 'slime', 'ooze', 'rabbit', 'hare', 'funguar', 'mandragora', 'sapling', 'coeurl', 'tiger', 'wolf', 'raptor' };
-function C.flat(idx, ent)
-    local nm = '';
-    pcall(function() nm = string.lower(ent:GetName(idx) or ''); end);
-    for _, f in ipairs(C.FLAT) do if nm:find(f, 1, true) then return true; end end
-    return false;
+C.FLATM = {};                                                        -- (a model seen on a flat family's monster: an NM of that family - its own name,
+function C.flat(idx, ent)                                            --  Qoofim the Pugil - shares the model, so it's flat too)
+    local function named(nm_) for _, f in ipairs(C.FLAT) do if nm_:find(f, 1, true) then return true; end end return false; end
+    local nm, mdl = '', 0;
+    pcall(function() nm = string.lower(ent:GetName(idx) or ''); mdl = ent:GetLookHair(idx) or 0; end);
+    if named(nm) then if mdl > 0 then C.FLATM[mdl] = true; end return true; end
+    if mdl <= 0 then return false; end
+    if C.FLATM[mdl] == nil then                                      -- (not known yet: any monster around with that model and a flat name)
+        C.FLATM[mdl] = false;
+        pcall(function()
+            for i = 1, 0x3FF do
+                if i ~= idx and (ent:GetLookHair(i) or 0) == mdl and named(string.lower(ent:GetName(i) or '')) then C.FLATM[mdl] = true; break; end
+            end
+        end);
+    end
+    return C.FLATM[mdl] == true;
 end
 -- The game's own rule for a name over a head (FFXiMain.dll: the actor's name point, +0xD42B0 - read from memory 2026-10-23):
 -- the feet, raised by the model's height (the entity record + 0x204, through the actor + 0x70) x 1.3. The bar's line
@@ -3492,6 +3503,149 @@ function C.tfriend(dl, x, y, w, sc, idx, ent, name, hpp, tk, tmi, dt)
     return h + 2 * sc;
 end
 C.is_party_id = is_party_id;                                         -- (for C.claimcol, above)
+-- TARGET > Monster info: a monster's level range and how it aggros, from the mobdb addon's zone files (mobdb\data\<zone>.lua,
+-- LandSandBoat's data, by Thorny) - read only, nothing copied; without mobdb the target bar is as it was. (Totsuki)
+C.MDB = { zone = nil, data = nil };
+function C.mobdb_get(idx, name)
+    local M = C.MDB;
+    local zid = 0;
+    pcall(function() zid = AshitaCore:GetMemoryManager():GetParty():GetMemberZone(0) or 0; end);
+    if zid ~= M.zone then
+        M.zone, M.data = zid, false;
+        local dirs = {};
+        pcall(function() dirs[#dirs + 1] = AshitaCore:GetInstallPath() .. 'addons/mobdb/data/'; end);
+        dirs[#dirs + 1] = (addon.path:gsub('[\\/]+$', ''):gsub('[\\/]vanacore[\\/]yunaui$', '')) .. '/ashita/mobdb/data/';
+        for _, d in ipairs(dirs) do
+            local f = loadfile(d .. tostring(zid) .. '.lua');
+            if f then
+                local ok, t = pcall(f);
+                if ok and type(t) == 'table' then M.data = t; break; end
+            end
+        end
+    end
+    local D = M.data;
+    if not D then return nil; end
+    return (D.Indices and D.Indices[idx]) or (D.Names and D.Names[name]) or nil;
+end
+function C.mob_icon(dl, kind, x, cy, r, col)                         -- (one of the small aggro icons, centred at x, cy, radius r; returns its width)
+    local c, k = U4(col[1], col[2], col[3], col[4] or 1), U4(0, 0, 0, 0.75 * (col[4] or 1));
+    local PIC_ = {};                   -- (YunaUI's own pictures: images/mob - eye and sound a look per mode; the rest both)
+    local ONE_ = { sight = 'eye_sight3', sound = 'snd_waves3', blood = 'blood_splat3', magic = 'wand_magic3', aggro = 'eyes_aggro', calm = 'eyes_calm', nm = 'crown_nm_red', nm_calm = 'crown_nm_azure' };   -- (an NM: red crown if it attacks, azure if not)
+    if PIC_[kind] or ONE_[kind] then
+        local t_ = tex(ONE_[kind] and ('mob/' .. ONE_[kind] .. '.png') or ('mob/' .. PIC_[kind] .. '_' .. ((cfg.target_fx == 'link') and 'hex' or 'vex') .. '.png'));
+        if t_ then
+            local q = r * (((kind == 'nm' or kind == 'nm_calm') and 1.18) or (kind == 'sound' and 1.0) or 1.35);   -- (the crown and the sound waves a little smaller)   -- (the crown a little smaller than the other pictures)
+            if C.MOBOUT then                                         -- (Hex link, no frame: a black outline round it, readable on any ground)
+                local o_ = math.max(0.8, math.min(1.4, r * 0.06));       -- (a fine outline: about a pixel, soft - not a thick black rim)
+                for _, d_ in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }) do
+                    image(dl, t_, x - q + d_[1] * o_, cy - q + d_[2] * o_, x + q + d_[1] * o_, cy + q + d_[2] * o_, { 0, 0, 0, 0.6 * (col[4] or 1) });
+                end
+            end
+            image(dl, t_, x - q, cy - q, x + q, cy + q, { 1, 1, 1, col[4] or 1 });
+            return r * 2.75;
+        end
+    end
+    if kind == 'sight' then                                          -- (an eye)
+        local pts = {};
+        for q = 0, 16 do local a = math.pi * q / 8; pts[#pts + 1] = { x + math.cos(a) * r * 1.15, cy + math.sin(a) * r * 0.62 }; end
+        for q = 1, 16 do dl:AddLine(pts[q], pts[q + 1], k, 3); end
+        for q = 1, 16 do dl:AddLine(pts[q], pts[q + 1], c, 1.4); end
+        DL.CF(dl, x, cy, r * 0.42, c, 10);
+    elseif kind == 'sound' then                                      -- (a speaker and two sound waves)
+        local sx = x - r * 0.75;
+        local body = { { sx - r * 0.35, cy - r * 0.32 }, { sx, cy - r * 0.32 }, { sx + r * 0.42, cy - r * 0.75 }, { sx + r * 0.42, cy + r * 0.75 }, { sx, cy + r * 0.32 }, { sx - r * 0.35, cy + r * 0.32 } };
+        for q = 1, 6 do dl:AddLine(body[q], body[q % 6 + 1], k, 2.6); end
+        pcall(function() dl:AddConvexPolyFilled(body, c); end);
+        for q = 1, 2 do
+            local rr = r * (0.42 + q * 0.38);
+            for pass = 1, 2 do
+                local pp = {};
+                for s = 0, 6 do local a = -0.8 + 1.6 * s / 6; pp[#pp + 1] = { sx + r * 0.3 + math.cos(a) * rr, cy + math.sin(a) * rr }; end
+                for s = 1, 6 do dl:AddLine(pp[s], pp[s + 1], pass == 1 and k or c, pass == 1 and 3 or 1.4); end
+            end
+        end
+    elseif kind == 'magic' then                                      -- (a four-point star)
+        local p = { { x, cy - r }, { x + r * 0.28, cy - r * 0.28 }, { x + r, cy }, { x + r * 0.28, cy + r * 0.28 }, { x, cy + r }, { x - r * 0.28, cy + r * 0.28 }, { x - r, cy }, { x - r * 0.28, cy - r * 0.28 } };
+        pcall(function() dl:AddConvexPolyFilled(p, c); end);
+    elseif kind == 'blood' then                                      -- (a drop: notices low HP)
+        DL.CF(dl, x, cy + r * 0.25, r * 0.62, c, 12);
+        DL.TF(dl, x - r * 0.58, cy + r * 0.05, x + r * 0.58, cy + r * 0.05, x, cy - r, c);
+    elseif kind == 'scent' then                                      -- (three rising wisps)
+        for q = -1, 1 do
+            local px = x + q * r * 0.55;
+            DL.L(dl, px, cy + r * 0.8, px + r * 0.18, cy, k, 3); DL.L(dl, px + r * 0.18, cy, px, cy - r * 0.8, k, 3);
+            DL.L(dl, px, cy + r * 0.8, px + r * 0.18, cy, c, 1.4); DL.L(dl, px + r * 0.18, cy, px, cy - r * 0.8, c, 1.4);
+        end
+    elseif kind == 'link' then                                       -- (a chain: links with its kind)
+        DL.C(dl, x - r * 0.38, cy, r * 0.5, k, 12, 3); DL.C(dl, x + r * 0.38, cy, r * 0.5, k, 12, 3);
+        DL.C(dl, x - r * 0.38, cy, r * 0.5, c, 12, 1.5); DL.C(dl, x + r * 0.38, cy, r * 0.5, c, 12, 1.5);
+    elseif kind == 'calm' then                                       -- (not aggressive: a calm dot)
+        DL.CF(dl, x, cy, r * 0.5, k, 12); DL.CF(dl, x, cy, r * 0.38, c, 12);
+    end
+    return r * 2.3;
+end
+function C.mob_info(dl, x, y, h, idx, name, a, sc, mid)                -- (TARGET > Monster info: its level range and aggro icons in one tag from x, on a line h tall;
+    if cfg.mob_info == false then return 0; end                      --  the tag framed in the mode's look - Vex a rounded glass pill, Hex link cut corners and gold)
+    local m = C.mobdb_get(idx, name);
+    if not m then return 0; end
+    local hex = cfg.target_fx == 'link';
+    local lo, hi = tonumber(m.MinLevel) or 0, tonumber(m.MaxLevel) or 0;
+    local fs = (FS or 1) * math.max(0.6, math.min(2.2, math.sqrt(math.max(0.5, math.min(3, tonumber(cfg.mob_icon_scale) or 1.6)) / 1.6)));   -- (the level grows with Monster info icon size, gently)
+    local r = math.max(4, h * 0.31) * math.max(0.5, math.min(3, tonumber(cfg.mob_icon_scale) or 1.6));   -- (TARGET > Monster info icon size)
+    local hot = hex and { 1.0, 0.42, 0.36, a } or { 1.0, 0.40, 0.52, a };   -- (aggressive: warm red - pinker in Vex)
+    local icons = {};                                                -- { kind, colour, width }
+    local function pic(k) return k ~= 'scent' and k ~= 'link'; end
+    if m.Aggro then
+        for _, s_ in ipairs({ { 'Sight', 'sight' }, { 'Sound', 'sound' }, { 'Magic', 'magic' }, { 'Blood', 'blood' }, { 'Scent', 'scent' } }) do
+            if m[s_[1]] then icons[#icons + 1] = { s_[2], hot, pic(s_[2]) and r * 2.75 or r * 2.3 }; end
+        end
+    end
+    if m.Link then icons[#icons + 1] = { 'link', hex and { 1.0, 0.86, 0.55, a } or { 0.80, 0.78, 1.0, a }, r * 2.3 }; end
+    -- measured first: the frame round it all
+    local ls = (hi > 0) and ((lo > 0 and lo ~= hi) and (lo .. '-' .. hi) or tostring(hi)) or nil;
+    imgui.SetWindowFontScale(fs * 0.62);
+    local lw, lh = imgui.CalcTextSize('Lv'); lw, lh = tonumber(lw) or 10, tonumber(lh) or 10;
+    imgui.SetWindowFontScale(fs * 0.78);
+    local vw, vh = 0, lh;
+    if ls then vw, vh = imgui.CalcTextSize(ls); vw, vh = tonumber(vw) or 10, tonumber(vh) or 10; end
+    imgui.SetWindowFontScale(fs);
+    local bw_ = m.Notorious and r * 2.4 or r * 2.75;                -- (the crown is smaller: its slot too)
+    local cw_ = bw_ + 3 * sc;                                -- (one badge before the level: an NM's crown, else the face - its colour says if it attacks)   -- (before the level: the crown of a notorious monster, then the eyes - red it attacks, azure it doesn't)
+    local tw_ = cw_ + (ls and (lw + 2 * sc + vw) or 0);
+    local iw_ = 0;
+    for _, ic in ipairs(icons) do iw_ = iw_ + ic[3]; end
+    local fh0 = math.max(vh + 8 * sc, r * 2.6);
+    local padx = 0;                                                  -- (no frame, both modes - the tag starts right after the distance)
+    local gap = (ls and #icons > 0) and 7 * sc or 0;
+    local fw = padx + tw_ + gap + iw_ + padx - ((#icons > 0) and r * 0.25 or 0);
+    local fh = math.max(vh + 8 * sc, r * 2.6);                     -- (never shorter than the numbers: small icons keep a frame round the level)
+    if mid then x = mid - fw / 2; end                                 -- (Hex link: centred over the name - clear of the target of target on the right)
+    local y2 = math.floor(y + h - 2 * sc);
+    local y1 = y2 - math.floor(fh);                                  --  or the HP % beside it)
+    local cy = (y1 + y2) / 2;
+    local x1, x2 = math.floor(x + 4 * sc), math.floor(x + 4 * sc + fw);
+    local cx_ = x1 + padx;
+    C.MOBOUT = true;                                                 -- (each piece with a black outline: readable on any ground)
+    if m.Notorious then C.mob_icon(dl, m.Aggro and 'nm' or 'nm_calm', cx_ + bw_ / 2, cy, r, { 1, 1, 1, a });
+    else C.mob_icon(dl, m.Aggro and 'aggro' or 'calm', cx_ + r * 1.375, cy, r, { 1, 1, 1, a }); end
+    cx_ = cx_ + cw_;
+    if ls then
+        local nm_col = m.Notorious and (hex and { 1.0, 0.84, 0.42 } or { 1.0, 0.86, 0.50 }) or { 0.96, 0.95, 1.0 };
+        local ty_ = math.floor(cy - vh / 2 + 0.5);                   -- (the numbers centred in the tag; Lv on their baseline)
+        imgui.SetWindowFontScale(fs * 0.62);
+        C.outlined(dl, cx_, ty_ + vh * 0.86 - lh, 'Lv', hex and { 0.95, 0.80, 0.50, 0.85 * a } or { 0.86, 0.72, 0.92, 0.85 * a });
+        imgui.SetWindowFontScale(fs * 0.78);
+        C.outlined(dl, cx_ + lw + 2 * sc, ty_, ls, { nm_col[1], nm_col[2], nm_col[3], a });
+        imgui.SetWindowFontScale(fs);
+        cx_ = cx_ + (tw_ - cw_) + gap;
+    end
+    for _, ic in ipairs(icons) do
+        C.mob_icon(dl, ic[1], cx_ + ic[3] / 2, cy, r, ic[2]);
+        cx_ = cx_ + ic[3];
+    end
+    C.MOBOUT = nil;
+    return fw;
+end
 local function draw_target(dt)
     if not cfg.target then return; end
     local idx = target_index();
@@ -3601,20 +3755,25 @@ local function draw_target(dt)
             nw, nh = imgui.CalcTextSize(name);
             FIGHT.anc.tn = { x, y, nw + 60 * sc * nk, nh };
         end
-        if link then tdx, tdy = math.floor(w * 0.45 - nw / 2), 0; end   -- (Hex link: the name over the bar's middle, a little to the left)
+        if link then tdx, tdy = math.floor(4 * sc), 0; end              -- (Hex link: the name at the bar's start - the monster info after it, clear of the target of target)
         text(dl, x + tdx, y + tdy, name, { 1, 1, 1, nla });
         do                                                           -- how far it is, just after the name (in yalms)
             local ok, d2 = pcall(function() return ent:GetDistance(idx); end);
             local d = (ok and type(d2) == 'number' and d2 >= 0) and math.sqrt(d2) or nil;
+            local ix_ = x + tdx + nw + 10 * sc;                      -- (where the monster's level and aggro icons go)
             if d then
                 local far = d > 20.8;                                -- (beyond spell range: a soft pink)
                 local ds = string.format('%.1f', d);
                 local fs = FS or 1;
                 imgui.SetWindowFontScale(fs * 0.78);
-                local _, dh = imgui.CalcTextSize(ds);
+                local dw, dh = imgui.CalcTextSize(ds);
                 local da = nla;
                 text(dl, x + tdx + nw + 10 * sc, y + tdy + (nh - dh) * 0.75, ds, far and { 1, 0.66, 0.80, da } or { 0.96, 0.95, 1, da });
+                ix_ = ix_ + (tonumber(dw) or 0) + 9 * sc;
                 imgui.SetWindowFontScale(fs);
+            end
+            if tk == 'mob' and not fake then                         -- (TARGET > Monster info: after the name - Hex link over it, centred)
+                pcall(C.mob_info, dl, ix_, y + tdy, nh, idx, ent:GetName(idx), nla, sc);
             end
         end
         if nk ~= 1 then unsized(pushed); pushed = sized('chat', 20 * sc); end   -- (the HP % keeps the bar's size, on the name's line)
@@ -7432,7 +7591,8 @@ function C.gu_sync()                                                 -- (the par
     end
     local gu = C.gameui();
     if gu == nil then return; end
-    C.gu_set(gu, 'network_window', true);                            -- (always, while YunaUI is loaded)
+    C.gu_set(gu, 'network_window', false);                           -- (no longer hidden by YunaUI: VanaCore's HUD > Hide decides - hiding it here
+                                                                     --  locked that switch, players couldn't bring the window back)
     C.gu_set(gu, 'party_list', cfg.party);
     C.gu_set(gu, 'alliance_lists', cfg.alliance);
     C.gu_set(gu, 'target_window', cfg.target);
@@ -7491,10 +7651,8 @@ function C.tarrow_sync()
         want = 'prism';                                              --  you target - a monster, a player, you, an NPC or object)
     end
     if want == 'normal' then want = 'vex'; end                       -- (Vex mode: the party cards' triangle, soft pink into your HP pink)
-    if want ~= 'off' then                                            -- (picking a sub target - <st>, <stal>, <stnpc>: the game's own arrow shows who, or nothing would)
-        if C.mb_picking and C.mb_picking() then want = 'off'; end   -- (one sent from YunaUI's bar)
-        if C.mb_stflags and C.mb_stflags()[1] then want = 'off'; end   -- (or the game's own)
-    end
+    -- (picking a target - Switch Target in a fight, <st>, <stal>: YunaUI's marker stays on your target, the game's blue
+    --  cursor still shows the one you're picking - it used to hand the arrow back to the game then: the standard one showed)
     local jc = C.myjobcol and C.myjobcol();
     local tint = (want == 'prism') and '#FFFFFF' or '';              -- (the prism over you: white - over the red HP bar, gold read as orange)
     if want == C.TAR_last and tint == (C.TAR_tint or '') then return; end
@@ -11349,6 +11507,7 @@ local function outlined(dl, tx, ty, s, col)
     for _, o in ipairs(OUTLINE) do DL.T(dl, tx + o[1], ty + o[2], oc, s); end
     DL.T(dl, tx, ty, u32(col), s);
 end
+C.outlined = outlined;                                               -- (for the monster info tag, above)
 -- the first time, each one is placed near the bottom middle of the screen (then they go wherever you drag them)
 local function first_place(kx, ky, dx, dy)
     if (tonumber(cfg[kx]) or -1) >= 0 then return; end
@@ -12970,6 +13129,7 @@ function PET.draw(dt)
     alpha = alpha * out;
     local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.pet_scale) or 1);
     local w = (tonumber(cfg.pet_w) or 260) * sc;
+    if YUI_HEX then w = math.max(w, 300 * sc); end                   -- (Hex link: its plate as wide as a party plate, so the name fits)
     local bh = math.max(3, math.floor(4 * sc));
     first_place('pet_x', 'pet_y', 200, -420);
     if plain_window('YunaUI Pet##yui_pet', 'pet_x', 'pet_y') then
@@ -12982,18 +13142,35 @@ function PET.draw(dt)
         if fx == 'wipe' and appear < 1 then                          -- revealed left to right
             clipped = pcall(function() C.clip(dl, { x - 8, y_top - 4 }, { x - 8 + (w + 24 * sc) * ease, y_top + 2000 }, true); end);
         end
+        local nh, cy, p2, sh;
+        if YUI_HEX then                                              -- (Hex link: the pet as one more party plate - a PET tag in your job's colour,
+            local pp_ = sized('chat', 17 * sc);                      --  HP and MP bars, how far, its TP in the right box; its timers and target under it)
+            local fs_ = FS or 1;
+            imgui.SetWindowFontScale(fs_ * 0.80);
+            local lh_ = imgui.GetTextLineHeight();
+            local ch_ = ALLY.ch(lh_, sc, true);
+            local m_ = { name = d.name, hpp = d.hp * grow, mpp = d.mp * grow, tp = d.tp, inzone = true, job = pl:GetMainJob(), tagtext = 'PET',
+                         dist = d.dist, idx = (d.idx > 0) and d.idx or 0, fake = d.idx < 0 };
+            pcall(ALLY.hexrow, dl, m_, 40, x, x + w, y + ch_ / 2, ch_, lh_, sc, 1, true, false);
+            imgui.SetWindowFontScale(fs_);
+            unsized(pp_);
+            nh, cy = ch_, y + ch_ + 7 * sc;
+            p2 = sized('chat', 13 * sc);
+            sh = imgui.GetTextLineHeight();
+        else
         -- the name (and how far it is), its HP% on the right
         local pushed = sized('semi', 16 * sc);
-        local nw, nh = imgui.CalcTextSize(d.name);
+        local nw;
+        nw, nh = imgui.CalcTextSize(d.name);
         text(dl, x, y, d.name, { 1, 1, 1, 1 });
         local pct = string.format('%d%%', math.floor(d.hp * 100 + 0.5));
         text(dl, x + w - imgui.CalcTextSize(pct), y, pct, { 1, 0.85, 0.92, 1 });
         unsized(pushed);
-        local p2 = sized('chat', 12 * sc);
-        local sh = imgui.GetTextLineHeight();
+        p2 = sized('chat', 12 * sc);
+        sh = imgui.GetTextLineHeight();
         outlined(dl, x + nw + 8 * sc, y + nh - sh - 1, string.format('%.1f', d.dist), { 0.75, 0.75, 0.85, 0.8 });
         unsized(p2);
-        local cy = y + nh + 5 * sc;
+        cy = y + nh + 5 * sc;
         glow_bar(dl, x, cy, w, bh, d.hp * grow, (grow < 1) and nil or lagged('pet' .. d.idx, d.hp, dt), C.hp, C.hp2, 6.1);
         bar_overlay(x, cy, w * math.max(0, math.min(1, d.hp * grow)), bh, bar_fx_for('pet'), 6.1);
         cy = cy + bh + 5 * sc;
@@ -13007,6 +13184,7 @@ function PET.draw(dt)
         local tpc = d.tp >= 1000 and { 1, 0.9, 0.5, 1 } or { 0.85, 0.85, 0.9, 0.85 };
         outlined(dl, x, cy, 'TP ' .. d.tp, tpc);
         cy = cy + sh + 4 * sc;
+        end
         -- its abilities: the name, READY (glowing gold) or the time left, and a thin bar that fills back up
         for k, t in ipairs(d.timers) do
             local ready = t[2] <= 0;
@@ -15458,6 +15636,8 @@ local function draw_window()
             row_slider('##yui_s_t', 'Size', 'target_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_slider('##yui_tnsc', 'Target name size', 'target_name_scale', 0.5, 2.5, 0.05, '%.2fx');
             row_switch('##yui_tarrow', 'YunaUI target marker', 'tarrow', "On: YunaUI's own marker takes the place of the game's arrow over whatever you target - Vex mode the party cards' pink triangle, Hex link a white prism. Off: the game's own arrow.", nil, function() C.TAR_last = nil; end);
+            row_switch('##yui_mobinfo', 'Monster info', 'mob_info', "On: after a monster's name, its level range (gold: a notorious monster) and how it aggros - red icons for what it notices (an eye: sight, waves: sound, a star: magic, a drop: low HP, wisps: scent), a green dot when it isn't aggressive, a chain when it links. From the mobdb addon's data: without mobdb nothing shows.");
+            if cfg.mob_info ~= false then row_slider('##yui_mobisz', 'Monster info icon size', 'mob_icon_scale', 0.5, 3.0, 0.05, '%.2fx'); end
             if HX then
                 row_switch('##yui_hl_cc', 'Claim colour', 'hl_claim', 'On: the bar is coloured as the game colours names - orange not claimed, red claimed by you or your party, purple claimed by someone else.');
                 row_switch('##yui_hl_hn', "Hide the game's name over your target", 'hl_hidename', "On: the name the game draws over the monster or player you target is hidden - the Hex link bar over its head already shows it. Other names stay.");

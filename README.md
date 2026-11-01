@@ -36,7 +36,7 @@ are kept), unzip the new one as above, and change `/addon load yunaui` in your s
 
 **Changes to the game's interface** (through VanaCore, put back as soon as YunaUI is unloaded): while YunaUI's own
 pieces are on, the game's chat log, party list, alliance lists and Target window are hidden (the chat line too, if
-you choose), and the network window is hidden. Turn a YunaUI piece off and the game's own comes back.
+you choose). Turn a YunaUI piece off and the game's own comes back.
 
 ## Commands
 
@@ -58,6 +58,8 @@ YunaUI uses the game's own item and buff icons. For sharper HD ones, install the
 
 - Japanese localization (yunaui_jp.lua, yunaui_lang.lua): Tsukasa - https://github.com/Tsukasa-17/yunaui-jp
   (in game: /yui lang auto|ja|en, or GENERAL > LANGUAGE).
+- Monster info (TARGET > Monster info: level range, aggro, links) read from the mobdb addon's zone files (by Thorny, data from
+  LandSandBoat) when mobdb is installed - nothing of it is copied into YunaUI.
 - Enmity values from LandSandBoat. Cooldown reading follows the Timers addon.
 - Font: TeX Gyre Adventor (GUST Font License). Animated effects: FootageCrate.
 - Job hats and buff icons redrawn for YunaUI.
