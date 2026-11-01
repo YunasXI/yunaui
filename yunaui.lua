@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.12';
+addon.version = '1.1.13';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -2475,6 +2475,10 @@ function FIGHT.edit_pieces()
             local ok_ = link and ('hl_' .. p) or p;
             if nx and ny and EDIT.drag == kx and down then           -- (only while this piece is really dragged: dragging anything else, or the
                 local L = C.tb_lim();                                --  target moving, saved the gap as its place - the cast crept away from the bar)
+                if p == 'mb' or p == 'fo' then                       -- (Magic Burst and the skillchain fan: anywhere on the screen - kept to a sixth of
+                    local W_, H_ = C.screen();                       --  it they snapped back to that edge when let go)
+                    L = { W_, H_ };
+                end
                 cfg[ok_ .. '_dx'] = math.max(-L[1], math.min(L[1], math.floor(nx - a[1] + 0.5)));
                 cfg[ok_ .. '_dy'] = math.max(-L[2], math.min(L[2], math.floor(ny - a[2] + 0.5)));
             end
