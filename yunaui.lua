@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.7';
+addon.version = '1.1.8';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -10912,12 +10912,14 @@ local function draw_chat(n)
             local othv = linked and cfg.chat_link_v and (((other.used_h or 0) > 0) or (other.hv or 0) > 0.02);   -- (the linked one shows a panel too: they join; empty, this one stands alone)
             local oth = othv or false;
             for _, o_ in ipairs(sm_) do if (o_.used_h or 0) > 0 or (o_.hv or 0) > 0.02 then oth = true; end end
+            if #sm_ > 0 and ((st.used_h or 0) > 0 or (st.hv or 0) > 0.02) then oth = true; end   -- (joined: one with lines is enough - the empty one beside it still
+                                                                     --  shows its panel, so the corners where they meet stay square: one shape)
             if linked and cfg.chat_link_v and C.clear_on() then      -- (anchored one on top of the other: the top one's panel as tall as
                 local me_y = tonumber(cfg[(n == 1) and 'chat_y' or 'chat2_y']) or 0;   --  its own lines; the bottom one's whole height when the top
                 local ot_y = tonumber(cfg[(n == 1) and 'chat2_y' or 'chat_y']) or 0;   --  one has lines - so they always meet, no gap between them)
                 if ot_y < me_y and (other.used_h or 0) > 0 then uh = h; end
                 pulse = math.max(pulse, other.pulse or 0);
-            elseif #sm_ > 0 and (not C.clear_on() or (oth and uh > 0)) then   -- (joined, with lines: the same height and strength, so where they meet
+            elseif #sm_ > 0 and (not C.clear_on() or oth) then        -- (joined, with lines: the same height and strength, so where they meet
                 for _, o_ in ipairs(sm_) do                           --  there's no step and no seam)
                     uh = math.max(uh, o_.used_h or 0);
                     pulse = math.max(pulse, o_.pulse or 0);
@@ -15586,6 +15588,7 @@ local function draw_window()
             if cfg.target_fx ~= 'link' then                          -- (Vex mode)
                 if cfg.tp_fx == nil then cfg.tp_fx = true; end
                 row_switch('##yui_tpfx', 'TP bar effect', 'tp_fx', 'On: from 1000 TP your TP bar crackles like the target bar, in gold - stronger at 2000, strongest at 3000. Off: a plain TP bar.');
+                row_pick('##yui_myhpc', 'HP bar colour', 'my_hp_color', { { 'pink', 'Pink' }, { 'white', 'White' } }, nil, function() pcall(C.apply_hp); save(); end);
             end
             if C.head_bars_on() then
                 hint('Over your head: thin HP and MP bars, the TP as three dots (gold when full: a weapon skill is ready) and the numbers beside them.');
@@ -16772,9 +16775,10 @@ function C.apply_hp()
     local h = C.HPCOL[cfg.hp_color or 'pink'] or C.HPCOL.pink;
     C.hpb1, C.hpb2 = h[1], h[2];
     YUI_HP_COL = C.HPCOL[cfg.my_hp_color or cfg.hp_color or 'pink'] or h;   -- (equip.lua: your own HP bar)
+    local pc_ = (cfg.my_hp_color == 'white') and h or YUI_HP_COL;    -- (a white HP bar: the panel keeps the party's colour, not washed-out grey)
     for k = 1, 3 do                                                  -- the settings panel in your HP bar's colours
-        NEON[k], NEON2[k] = YUI_HP_COL[2][k], YUI_HP_COL[3][k];
-        C.acc[k] = YUI_HP_COL[3][k];
+        NEON[k], NEON2[k] = pc_[2][k], pc_[3][k];
+        C.acc[k] = pc_[3][k];
     end
     if cfg.target_fx == 'link' then                                  -- (Hex link mode: the panel's gold instead)
         for k = 1, 3 do NEON[k], NEON2[k], C.acc[k] = PANEL.GOLD[k], PANEL.GOLD2[k], PANEL.GOLD2[k]; end
