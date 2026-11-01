@@ -7707,7 +7707,13 @@ function C.vchat_sync()
 end
 -- TARGET > YunaUI target arrow: VanaCore draws YunaUI's picture where the game's arrow was (one per mode); off or no
 -- vana.gameui: the game's own. Set only when it changes.
+function C.tarrow_redo()                                             -- (the arrow's picture asked for again 3 s and 10 s from now: at a login or
+    local t = os.clock();                                            --  a zone VanaCore's target window may not be ready yet, and took the
+    C.TAR_redo = { t + 3, t + 10 };                                  --  picture without showing it - the arrow was missing until toggled)
+end
+C.tarrow_redo();
 function C.tarrow_sync()
+    if C.TAR_redo and C.TAR_redo[1] and os.clock() >= C.TAR_redo[1] then table.remove(C.TAR_redo, 1); C.TAR_last = nil; end
     local v = rawget(_G, 'vana');
     local gu = type(v) == 'table' and v.gameui or nil;
     if type(gu) ~= 'table' or type(gu.image) ~= 'function' then return; end
@@ -7727,13 +7733,15 @@ function C.tarrow_sync()
     if was == 'none' then pcall(gu.show, 'target_arrow'); end
     if want == 'prism' then                                          -- (Hex link, you on yourself: the gold prism, where the game puts its arrow)
         local ok_;
-        if tint ~= '' then ok_ = pcall(gu.image, 'target_arrow', 'images/tarrow_prism_white.png', { width = 23, height = 22, color = tint });   -- (your job's colour)
-        else ok_ = pcall(gu.image, 'target_arrow', 'images/tarrow_prism2.png', { width = 23, height = 22 }); end
-        if not ok_ then C.TAR_last = nil; end
+        local r_;
+        if tint ~= '' then ok_, r_ = pcall(gu.image, 'target_arrow', 'images/tarrow_prism_white.png', { width = 23, height = 22, color = tint });   -- (your job's colour)
+        else ok_, r_ = pcall(gu.image, 'target_arrow', 'images/tarrow_prism2.png', { width = 23, height = 22 }); end
+        if not ok_ then C.TAR_last = nil; end                        -- (held by another addon: ours follows when it lets go - asked once)
         return;
     end
     if want == 'vex' then
-        if not pcall(gu.image, 'target_arrow', 'images/tarrow_vexw.png', { width = 21, height = 14 }) then C.TAR_last = nil; end
+        local ok_, r_ = pcall(gu.image, 'target_arrow', 'images/tarrow_vexw.png', { width = 21, height = 14 });
+        if not ok_ then C.TAR_last = nil; end
         return;
     end
     pcall(gu.image, 'target_arrow');                                 -- (the game's own arrow)
@@ -20185,7 +20193,7 @@ ashita.events.register('packet_in', 'yui_packet', function(e)
     elseif e.id == 0x057 then pcall(C.weather_packet, e);
     elseif e.id == 0x0F4 then pcall(YMAP.ws_list, e);               -- (Widescan: a monster in its list - its name)
     elseif e.id == 0x0F5 then pcall(YMAP.ws_track, e);              -- (Widescan > Track: where the tracked one is)
-    elseif e.id == 0x00A then YMAP.track, YMAP.ws_names = nil, {}; enemies = {}; BUFFS.cast = {}; ENGAGED = {}; CAST.on = false; LASTHIT = {}; FIGHT.casts = {}; FIGHT.sc = {}; FIGHT.mine_at = nil; pcall(C.weather_packet, e);
+    elseif e.id == 0x00A then C.tarrow_redo(); YMAP.track, YMAP.ws_names = nil, {}; enemies = {}; BUFFS.cast = {}; ENGAGED = {}; CAST.on = false; LASTHIT = {}; FIGHT.casts = {}; FIGHT.sc = {}; FIGHT.mine_at = nil; pcall(C.weather_packet, e);
         pcall(C.party_buffs_clear);                                  -- (a new zone: party members' buffs from before it gone - the next 0x076 says what's left)
     elseif e.id == 0x0AC then FIGHT.mine_at = nil; end                -- (your weapon skills changed)
 end);
