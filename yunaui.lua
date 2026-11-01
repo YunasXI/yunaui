@@ -1,8 +1,9 @@
 -- YunaUI - Copyright (C) 2026 Yunas - https://github.com/YunasXI/yunaui
 -- GPL-3.0 with an attribution term: keep this credit (see NOTICE and LICENSE).
+-- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.4';
+addon.version = '1.1.5';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -34,6 +35,18 @@ pcall(function()
     YUI_JP = z:find('[\128-\255]') ~= nil;
 end);
 pcall(function() local f = io.open(addon.path .. '/japanese.flag', 'rb'); if f then f:close(); YUI_JP = true; end end);
+local JP;                                                            -- [JP] Japanese localization by Tsukasa (yunaui_jp.lua, yunaui_lang.lua): the
+do                                                                   --  [JP] lines below; in English it does nothing. Its files missing or broken:
+    local ok_, m_ = pcall(require, 'yunaui_jp');                     --  a stand-in that leaves every text as it is - YunaUI never fails for it
+    if ok_ and type(m_) == 'table' and pcall(m_.boot) then JP = m_; end
+    if JP == nil then
+        local same = function(x) return x; end;
+        local none = function() end;
+        JP = { t = same, msg = same, psize = same, fsize = same, fit = same, mb = function() return false; end,
+               item_name = function(_, n) return n; end, exit_name = function(_, _, n) return n; end, command = function() return false; end,
+               wrap_dl = none, timers = none, loot = none, panel_wfs = none, size_ui = none, settings_ui = none, fonts = none };
+    end
+end
 YUI_U8C, YUI_U8N = {}, 0;
 function YUI_U8OK(s)                                                 -- (already UTF-8: YunaUI's own text, or text turned once)
     local i, n = 1, #s;
@@ -152,6 +165,7 @@ local function save()
     WATCH.own = own_file('settings.lua');                          -- our own change: not "from outside"
 end
 local function msg(t)
+    t = JP.msg(t);   -- [JP]
     print(chat.header(addon.name):append(chat.message(t)));
     if YUI_CHAT_ADD and cfg and cfg.chat then pcall(YUI_CHAT_ADD, 1, '[yunaui] ' .. tostring(t)); end   -- (YunaUI's own chat too: an addon's own lines never come back to it -
 end                                                                  --  /yui screen showed nothing in game)
@@ -228,6 +242,7 @@ do
     function DL.I(d, t, a, b, c, e, f, g, h, k, ...) P1[1], P1[2], P2[1], P2[2], P3[1], P3[2], P4[1], P4[2] = a, b, c, e, f, g, h, k; return d:AddImage(t, P1, P2, P3, P4, ...); end
     function DL.I2(d, t, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddImage(t, P1, P2, ...); end
 end
+JP.wrap_dl(DL);   -- [JP]
 -- Every clip area goes through here: inside the screen, on whole pixels and at least 1 px. Plain Ashita (DirectX 8)
 -- can't draw with one bigger than the screen (every window after it vanishes, the settings too), and one partly off the
 -- screen, on half pixels or with no size makes every addon's window shake (as equip.lua's JOBS.clip already knew).
@@ -263,6 +278,7 @@ end
 -- rounded corners, a thin violet edge, a pink-to-violet line along the top; the first line white, the rest softer.
 function YUI_TIP(t)
     t = tostring(t or '');
+    t = JP.t(t);   -- [JP]
     if not (imgui.BeginTooltip and imgui.EndTooltip) then imgui.SetTooltip(t); return; end
     local hx = YUI_HEX and C.GOLDH ~= nil;                           -- (Hex link mode: square corners, a gold edge, the line gold to azure)
     imgui.PushStyleVar(ImGuiStyleVar_WindowRounding, hx and 0 or 6);
@@ -363,6 +379,7 @@ local function load_fonts()
     YUI_FONTS = fonts;                                              -- (the Damage Meter uses these: no font of its own)
 end
 local function push_font(f, size)
+    size = JP.psize(size, cfg);   -- [JP]
     if f == nil then return false; end
     if YUI_NEWFONT(f) then return (pcall(imgui.PushFont, f, size)); end
     return (pcall(imgui.PushFont, f));
@@ -370,6 +387,7 @@ end
 -- Text at any size: picks the nearest made size at or above it and scales it down a touch. Returns a token for unsize().
 local FS = 1;                                                       -- the font scale now in use (for small text inside)
 local function sized(kind, size)
+    size = JP.fsize(size, cfg);   -- [JP]
     local list = fonts.sized and fonts.sized[kind] or nil;
     if list == nil or #list == 0 then FS = 1; return false; end
     local pick = list[#list];
@@ -501,6 +519,7 @@ local function diamond(dl, cx, cy, r, lit, alpha)
 end
 -- text with letter spacing (the section names, the buttons)
 local function spaced(dl, x, y, str, col, gap)
+    str = JP.t(str); if JP.mb(str) then return JP.spaced(dl, x, y, str, col, gap, DL.T); end   -- [JP]
     local cx = x;
     for i = 1, #str do
         local ch = str:sub(i, i);
@@ -510,6 +529,7 @@ local function spaced(dl, x, y, str, col, gap)
     return cx - x - gap;
 end
 local function spaced_w(str, gap)
+    str = JP.t(str); if JP.mb(str) then return JP.spaced_w(str, gap); end   -- [JP]
     local w = 0;
     for i = 1, #str do w = w + imgui.CalcTextSize(str:sub(i, i)) + gap; end
     return w - gap;
@@ -11686,6 +11706,7 @@ local function equipped(slot)                                       -- the item 
             id, count = it.Id, tonumber(it.Count);
             local r = AshitaCore:GetResourceManager():GetItemById(id);
             name = r and r.Name and r.Name[1] or nil;
+            name = JP.item_name(r, name);   -- [JP]
         end
     end);
     return id, name, count;
@@ -12710,6 +12731,7 @@ function TIMERS.scan()
     end
     TIMERS.abils, TIMERS.spells, TIMERS.snap = abils, spells, now;
 end
+JP.timers(TIMERS);   -- [JP]
 function TIMERS.clock(left)
     local s = math.max(0, math.ceil(left / 60));
     local h, m = math.floor(s / 3600), math.floor(s / 60) % 60;
@@ -13173,6 +13195,7 @@ function C.loot_name(id)
     end
     return nm;
 end
+JP.loot(C);   -- [JP]
 -- Your Lot / Pass, to the game
 function C.loot_act(slot, lot) C.loot_send(lot and 0x41 or 0x42, slot); end
 -- TREASURE POOL: your alts' LOT ALL / PASS ALL on your main's pool - the other games on this PC (vana.clients) whose
@@ -13641,6 +13664,7 @@ function C.loot_win()
     local mx, my = imgui.GetMousePos();
     L.rowy = L.rowy or {};
     local function letters(px, py, str, col, sp)                     -- (spaced capitals, each letter with its dark edge)
+        if JP.mb(str) then return px + JP.spaced(dl, px, py, str, col, sp, function(d, a, b, c, t) text(d, a, b, t, c); end) + sp; end   -- [JP]
         for i = 1, #str do
             local ch = str:sub(i, i);
             text(dl, px, py, ch, col);
@@ -13739,6 +13763,7 @@ function C.loot_win()
         local _, nh = imgui.CalcTextSize('A');
         nh = tonumber(nh) or 14;
         local room = bx_ - tx;
+        nm = JP.fit(nm, room, 1 * sc);   -- [JP]
         if spaced_w(nm, 1 * sc) > room then
             while #nm > 2 and spaced_w(nm .. '.', 1 * sc) > room do nm = nm:sub(1, -2); end
             nm = nm .. '.';
@@ -15292,6 +15317,7 @@ local function draw_window()
         local pf = fonts.chat or fonts.main;
         C.wfs = 1;                                                   -- older ImGui can't size a font: scale the window's text
         if pf == nil or not YUI_NEWFONT(pf) then C.wfs = C.ps; imgui.SetWindowFontScale(C.wfs); end
+        JP.panel_wfs(C, pf, cfg);   -- [JP]
         local wx, wy = imgui.GetWindowPos();
         PANEL.frame(dl, wx, wy, WIN_W, WIN_H, SW);
         PANEL.sidebar(dl, wx + 26 * ps, wy + 34 * ps, SW - 40 * ps, wy + WIN_H - 30 * ps);
@@ -15346,6 +15372,7 @@ local function draw_window()
             end
             section('SIZE');                                         -- every piece at once (each one's own Size on top of it)
             row_slider('##yui_gscale', 'Size of everything', 'scale', 0.5, 4.0, 0.05, '%.2fx');
+            JP.size_ui(row_slider, cfg);   -- [JP]
             do
                 local bw5 = math.floor((ROW_W - 32) / 5);
                 for i, pr in ipairs({ { '1x', 1.0, '1080p' }, { '1.5x', 1.5, '1440p' }, { '2x', 2.0, '4K' }, { '3x', 3.0, 'a big 4K TV, or sitting far away' } }) do
@@ -15379,6 +15406,7 @@ local function draw_window()
                 if cfg.mode_icon ~= false then row_switch('##yui_modec', 'Stick to the chat', 'ms_chat', "On: YUNA UI sits on the chat's top edge, at its corner, and follows it when you move or resize the chat. Off: drag it anywhere."); end
                 row_switch('##yui_modei', 'Mode switch icon', 'mode_icon', 'On: YUNA UI on the screen shows your mode - its UI pink in Vex mode, gold in Hex link - and a click turns it over to the other one. Drag it anywhere.');
             end
+            JP.settings_ui(section, accent_button, hint);   -- [JP]
             section('THIS PANEL');
             row_slider('##yui_palpha', 'Background', 'panel_alpha', 0.15, 1.0, 0.05, '%.2f');
             hint('How see-through the panel is: lower shows more of the game behind it. Double click to put it back.');
@@ -15890,6 +15918,7 @@ ashita.events.register('load', 'yui_load', function()
         save();
     end
     load_fonts();
+    JP.fonts(YUI_FONTS);   -- [JP]
 end);
 -- On unload, save only if our settings file is still the one we know: if another character copied its settings in
 -- meanwhile, keep them (saving here used to write the old settings back over the copy)
@@ -17081,6 +17110,7 @@ function YMAP.exits_draw(dl, zid, P, sc, inside, myz)
                 DL.L(dl, ax, ay, bx, by, U4(c[1], c[2], c[3], fa), 2.5);
             end
             local nm = YMAP.exit_names[ex[7]];
+            nm = JP.exit_name(YMAP.exit_names, ex[7], nm);   -- [JP]
             if nm == nil then
                 nm = '';
                 pcall(function() nm = AshitaCore:GetResourceManager():GetString('zones.names', ex[7]) or ''; end);
@@ -20212,6 +20242,7 @@ ashita.events.register('command', 'yui_command', function(e)
     if cmd ~= 'yui' and cmd ~= 'yunaui' then return; end
     e.blocked = true;
     local sub = (args[2] or ''):lower();
+    if JP.command(sub, args, msg) then return; end   -- [JP]
     if sub == '' then ui.open = not ui.open;
     elseif sub == 'edit' then EDIT.on = not EDIT.on; if EDIT.on then ui.open = false; end
     elseif sub == 'gearcol' then                                     -- (MACRO WAVES > Wave colour: what it reads from your gear)

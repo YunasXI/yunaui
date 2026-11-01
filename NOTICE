@@ -8,6 +8,9 @@ GNU General Public License version 3 (see LICENSE), with the additional term bel
 YunaUI includes GPL-3.0 code from XIUI; that code stays under the plain GPL-3.0 and its own
 authors' notices. The additional term covers only the material written by Yunas.
 
+yunaui_jp.lua and yunaui_lang.lua (the Japanese localization) are Copyright (C) 2026 Tsukasa
+(https://github.com/Tsukasa-17/yunaui-jp), GPL-3.0 with the same additional term.
+
 sounds/item.mp3 is "Item Pickup" by Yodguard (Pixabay, https://pixabay.com), used under the
 Pixabay Content License; it is not covered by the GPL or the additional term.
 

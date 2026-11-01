@@ -20,5 +20,8 @@ party_dump.txt
 mapsimg_release.txt
 mapsimg_new_*.txt
 
+# the Japanese localization's own settings (each player's)
+yunaui_jp_settings.lua
+
 # /yui menuwatch test output
 menu_dump.txt

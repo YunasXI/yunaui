@@ -56,6 +56,8 @@ YunaUI uses the game's own item and buff icons. For sharper HD ones, install the
 
 ## Credits
 
+- Japanese localization (yunaui_jp.lua, yunaui_lang.lua): Tsukasa - https://github.com/Tsukasa-17/yunaui-jp
+  (in game: /yui lang auto|ja|en, or GENERAL > LANGUAGE).
 - Enmity values from LandSandBoat. Cooldown reading follows the Timers addon.
 - Font: TeX Gyre Adventor (GUST Font License). Animated effects: FootageCrate.
 - Job hats and buff icons redrawn for YunaUI.
