@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.9';
+addon.version = '1.1.10';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -128,7 +128,7 @@ local defaults = T{
     chat3 = false, chat3_x = -1, chat3_y = -1, chat3_w = 460, chat3_h = 260, c3_tell = true, c3_ls = true, c3_ls2 = true,
     c3_party = false, c3_say = false, c3_shout = false, c3_unity = false,
     cm_tell = true, cm_ls = true, cm_ls2 = true, cm_party = true, cm_say = true, cm_shout = true, cm_unity = true,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', party_buff_row = 8, exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, map_gp = true, map_npcs = false, mob_icon_scale = 1.6, mob_info = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_lines = 'hp', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_fade_w1 = true, chat_fade_w2 = true, chat_fade_w3 = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_fight = false, head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, tarrow = true, macrobar = true, mb_show = 'hold', mb_always = false, mb_pad = 'hold', mb_btn = 'l2', mb_scale = 1.0, mb_look = 'strip', mb_style = 'cards', hp_by_job = false, mb_timers = true, mb_wave = 'bars', mb_text = 1.0, mb_both = true, mb_frame = 'arc', mb_view = 'pills', mbp_x = -1, mbp_y = -1, mb_brush = 'all', mb_layout = 'lens', mb_wcol = 'gold', mb_nstyle = 'wave', mb_wavecol = 'job', mb_sound = true, mb_snd_vol = 0.6, mb_voice = true, mb_voice_vol = 0.8, mb_cards_at = 'feet', mb_dn = 'hd_circle', mb_dh = 'hd_sigil', mb_x = -1, mb_y = -1, mbs_x = -1, mbs_y = -1, mbc_x = -1, mbc_y = -1, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, card_shake = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', party_buff_row = 8, exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, map_gp = true, map_npcs = false, mob_icon_scale = 1.6, mob_info = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_lines = 'hp', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_fade_w1 = true, chat_fade_w2 = true, chat_fade_w3 = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_fight = false, head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, tarrow = true, macrobar = true, mb_show = 'hold', mb_always = false, mb_pad = 'hold', mb_btn = 'l2', mb_scale = 1.0, mb_look = 'strip', mb_style = 'cards', hp_by_job = false, mb_timers = true, mb_wave = 'bars', mb_text = 1.0, mb_both = true, mb_frame = 'arc', mb_view = 'pills', mbp_x = -1, mbp_y = -1, mb_brush = 'all', mb_layout = 'lens', mb_wcol = 'gold', mb_nstyle = 'wave', mb_wavecol = 'job', mb_sound = true, mb_snd_vol = 0.6, mb_voice = true, mb_voice_vol = 0.8, mb_cards_at = 'feet', mb_dn = 'hd_circle', mb_dh = 'hd_sigil', mb_x = -1, mb_y = -1, mbs_x = -1, mbs_y = -1, mbc_x = -1, mbc_y = -1, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -2459,6 +2459,10 @@ function FIGHT.edit_pieces()
             if imgui.Begin('YunaUI ' .. pc[2] .. '##yui_ed_' .. p, { true }, EDIT.rs_hot and bit.bor(NOFRAME, ImGuiWindowFlags_NoMove) or NOFRAME) then
                 imgui.Dummy({ a[3], a[4] });
             end
+            if not down then                                         -- (where ImGui really put it - kept off the screen's edge, on whole pixels: else
+                local wx_, wy_ = imgui.GetWindowPos();               --  end_plain took it for a drag every frame and saved the settings each time -
+                if type(wx_) == 'number' then cfg[kx], cfg[ky] = wx_, wy_; end   --  Edit Mode ran at half the frame rate)
+            end
             end_plain(kx, ky);
             local nx, ny = tonumber(cfg[kx]), tonumber(cfg[ky]);
             local ok_ = link and ('hl_' .. p) or p;
@@ -3507,6 +3511,9 @@ C.is_party_id = is_party_id;                                         -- (for C.c
 -- LandSandBoat's data, by Thorny) - read only, nothing copied; without mobdb the target bar is as it was. (Totsuki)
 C.MDB = { zone = nil, data = nil };
 function C.mobdb_get(idx, name)
+    if idx == 0 and EDIT.on and cfg.target_fx ~= 'link' then        -- (Edit Mode, the pretend target: a pretend monster, so its icons can be sized)
+        return { MinLevel = 74, MaxLevel = 76, Aggro = true, Sight = true, Sound = true };
+    end
     local M = C.MDB;
     local zid = 0;
     pcall(function() zid = AshitaCore:GetMemoryManager():GetParty():GetMemberZone(0) or 0; end);
@@ -3619,12 +3626,13 @@ function C.mob_info(dl, x, y, h, idx, name, a, sc, mid)                -- (TARGE
     local gap = (ls and #icons > 0) and 7 * sc or 0;
     local fw = padx + tw_ + gap + iw_ + padx - ((#icons > 0) and r * 0.25 or 0);
     local fh = math.max(vh + 8 * sc, r * 2.6);                     -- (never shorter than the numbers: small icons keep a frame round the level)
-    if mid then x = mid - fw / 2; end                                 -- (Hex link: centred over the name - clear of the target of target on the right)
+    if mid == 'measure' then return fw; end                          -- (just its width: whether it fits on the name's line)
     local y2 = math.floor(y + h - 2 * sc);
     local y1 = y2 - math.floor(fh);                                  --  or the HP % beside it)
     local cy = (y1 + y2) / 2;
     local x1, x2 = math.floor(x + 4 * sc), math.floor(x + 4 * sc + fw);
     local cx_ = x1 + padx;
+    if not hex then C.MIBOX = { x1, y1, x2 - x1, y2 - y1, os.clock() }; end   -- (Edit Mode: its box, with a grip for Monster info icon size)
     C.MOBOUT = true;                                                 -- (each piece with a black outline: readable on any ground)
     if m.Notorious then C.mob_icon(dl, m.Aggro and 'nm' or 'nm_calm', cx_ + bw_ / 2, cy, r, { 1, 1, 1, a });
     else C.mob_icon(dl, m.Aggro and 'aggro' or 'calm', cx_ + r * 1.375, cy, r, { 1, 1, 1, a }); end
@@ -3756,6 +3764,30 @@ local function draw_target(dt)
             FIGHT.anc.tn = { x, y, nw + 60 * sc * nk, nh };
         end
         if link then tdx, tdy = math.floor(4 * sc), 0; end              -- (Hex link: the name at the bar's start - the monster info after it, clear of the target of target)
+        local pw0_, dw0_ = 0, 0;
+        if not link and math.abs(tdy) < nh then                       -- (Vex: the name, its distance and the monster info slide left as the bar shrinks -
+            pw0_ = (tonumber((imgui.CalcTextSize('100%'))) or 40) / nk + 16 * sc;   --  your Edit Mode offset kept while it fits, never past the HP % - drawn at the bar's size)
+            local fs0_ = FS or 1;
+            imgui.SetWindowFontScale(fs0_ * 0.78);
+            dw0_ = (tonumber((imgui.CalcTextSize('00.0'))) or 24) + 12 * sc;
+            imgui.SetWindowFontScale(fs0_);
+            local iw0_ = 0;
+            if (tk == 'mob' and not fake) or (fake and EDIT.on and cfg.target_fx ~= 'link') then
+                local okm_, v_ = pcall(C.mob_info, dl, 0, 0, nh, idx, ent:GetName(idx), 1, sc, 'measure');
+                if okm_ and tonumber(v_) then iw0_ = v_ + 9 * sc; end
+            end
+            local maxdx_ = w - pw0_ - nw - dw0_ - iw0_;
+            if tdx > maxdx_ then tdx = math.floor(math.max(0, maxdx_)); end
+        end
+        local pcx_ = x + w - pw0_;                                    -- (where the HP % starts, on the name's line)
+        if not link and math.abs(tdy) < nh and x + tdx + nw + dw0_ > pcx_ then   -- (Vex: a name (and its distance) running under the HP % is cut short of it)
+            local room_ = pcx_ - (x + tdx) - dw0_;
+            if #name > 4 then
+                while #name > 4 and (tonumber((imgui.CalcTextSize(name .. '..'))) or 0) > room_ do name = name:sub(1, -2); end
+                name = name .. '..';
+                nw = tonumber((imgui.CalcTextSize(name))) or nw;
+            end
+        end
         text(dl, x + tdx, y + tdy, name, { 1, 1, 1, nla });
         do                                                           -- how far it is, just after the name (in yalms)
             local ok, d2 = pcall(function() return ent:GetDistance(idx); end);
@@ -3772,8 +3804,16 @@ local function draw_target(dt)
                 ix_ = ix_ + (tonumber(dw) or 0) + 9 * sc;
                 imgui.SetWindowFontScale(fs);
             end
-            if tk == 'mob' and not fake then                         -- (TARGET > Monster info: after the name - Hex link over it, centred)
-                pcall(C.mob_info, dl, ix_, y + tdy, nh, idx, ent:GetName(idx), nla, sc);
+            if (tk == 'mob' and not fake) or (fake and EDIT.on and cfg.target_fx ~= 'link') then                         -- (TARGET > Monster info: after the name - Hex link over it, centred)
+                local okw_, iw_ = pcall(C.mob_info, dl, ix_, y + tdy, nh, idx, ent:GetName(idx), nla, sc, 'measure');
+                local pw_ = (tonumber((imgui.CalcTextSize('100%'))) or 40) / nk + 14 * sc;
+                local hit_ = math.abs(tdy) < nh and ix_ < x + w and ix_ + (iw_ or 0) > x + w - pw_;   -- (it would cover the HP %)
+                if not link and okw_ and (iw_ or 0) > 0 and hit_ then  -- (Vex: then on its own line over the name)
+                    local up_ = y + tdy - nh * 0.95;
+                    if up_ - nh * 0.35 < 0 then                       -- (the bar at the screen's top: no room over it - past the bar's right end instead)
+                        pcall(C.mob_info, dl, x + w + 8 * sc, y + tdy, nh, idx, ent:GetName(idx), nla, sc);
+                    else pcall(C.mob_info, dl, x + tdx, up_, nh, idx, ent:GetName(idx), nla, sc); end
+                else pcall(C.mob_info, dl, ix_, y + tdy, nh, idx, ent:GetName(idx), nla, sc); end
             end
         end
         if nk ~= 1 then unsized(pushed); pushed = sized('chat', 20 * sc); end   -- (the HP % keeps the bar's size, on the name's line)
@@ -4388,8 +4428,8 @@ EDIT.NAMES = { target_x = 'Target', sub_x = 'Sub-target', enemy_x = 'Enemies', p
                ally2_x = 'Alliance 2', exp_x = 'Exp', gil_x = 'Gil', bag_x = 'Bag', cast_x = 'Cast bar', timer_x = 'Timers',
                pet_x = 'Pet', doll_x = 'Equipment', strip_x = 'Gear strip', logo_x = 'Logo', mini_x = 'Logo',
                fan_x = 'Skillchain fan', ecast_x = 'Enemy cast', tn_x = 'Target name', mb_x = 'Magic Burst', fo_x = 'Skillchain', co_x = 'Enemy cast',
-               loot_x = 'Treasure pool' };
-EDIT.HEXOFF = { tn_x = true, mb_x = true, fo_x = true, co_x = true, fan_x = true, ecast_x = true, sub_x = true };   -- (Hex link: these follow the
+               loot_x = 'Treasure pool', mi_x = 'Monster info' };
+EDIT.HEXOFF = { mi_x = true, tn_x = true, mb_x = true, fo_x = true, co_x = true, fan_x = true, ecast_x = true, sub_x = true };   -- (Hex link: these follow the
 function EDIT.listed(k) return EDIT.NAMES[k] and not (cfg.target_fx == 'link' and EDIT.HEXOFF[k]); end       --  target bar or the top - not placed)
 EDIT.SIZE = { target_x = { 'target_scale', 0.6, 2.0 }, sub_x = { 'sub_scale', 0.6, 2.0 }, enemy_x = { 'enemy_scale', 0.6, 2.0 },
               party_x = { 'party_scale', 0.6, 2.0 }, alliance_x = { 'ally1_scale', 0.6, 2.0 }, ally2_x = { 'ally2_scale', 0.6, 2.0 },
@@ -4397,7 +4437,7 @@ EDIT.SIZE = { target_x = { 'target_scale', 0.6, 2.0 }, sub_x = { 'sub_scale', 0.
               cast_x = { 'cast_scale', 0.6, 2.0 }, timer_x = { 'timers_scale', 0.6, 2.0 }, pet_x = { 'pet_scale', 0.6, 2.0 },
               loot_x = { 'loot_scale', 0.6, 2.0 }, fan_x = { 'fan_scale', 0.4, 2.0 }, fo_x = { 'fan_scale', 0.4, 2.0 },
               ecast_x = { 'ecast_scale', 0.4, 2.0 }, co_x = { 'ecast_scale', 0.4, 2.0 }, mb_x = { 'mb_scale', 0.5, 2.5 },
-              tn_x = { 'target_name_scale', 0.5, 2.5 } };
+              tn_x = { 'target_name_scale', 0.5, 2.5 }, mi_x = { 'mob_icon_scale', 0.5, 3.0 } };
 -- Edit Mode's resize grips: one at each piece's bottom-right corner; dragging it changes that piece's Size (grows to the
 -- right and down, its top-left corner stays). EDIT.rs = the one being dragged; EDIT.rs_hot = the mouse is on a grip
 -- (the pieces don't move then, so the drag is a resize)
@@ -4501,6 +4541,11 @@ function EDIT.draw()
                 boxes[k] = { ox, oy, sz[1], sz[2] };
                 order[#order + 1] = k;
             end
+        end
+        local mb_ = C.MIBOX;                                         -- (Vex: the monster info - not moved, sized by its grip)
+        if mb_ and cfg.target_fx ~= 'link' and os.clock() - mb_[5] < 0.3 then
+            boxes.mi_x = { mb_[1] - 2, mb_[2] - 2, mb_[3] + 4, mb_[4] + 4 };
+            order[#order + 1] = 'mi_x';
         end
         local focus = EDIT.drag or (EDIT.rs and EDIT.rs.k) or EDIT.last_hot;
         if not focus then                                            -- (the smallest piece under the mouse)
@@ -5860,58 +5905,78 @@ function ALLY.nflip(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live, f)
             local dist = (i ~= 0 and m.inzone) and (m.dist or (m.fake and (m.far and 32.4 or (3 + (i * 3.7) % 15))) or nil) or nil;
             if dist and cfg.party_dist ~= false then                 -- (how far, in yalms - pink out of range)
                 local dstr = string.format('%.1f', dist);
-                imgui.SetWindowFontScale(fs0 * 0.62);
+                imgui.SetWindowFontScale(fs0 * 0.76);
                 local dw_, dh_ = imgui.CalcTextSize(dstr);
                 dw_, dh_ = tonumber(dw_) or 0, tonumber(dh_) or 10;
                 local far_ = dist > (tonumber(cfg.party_range) or 20.8);
                 local bl_ = xd - sl * 0.75;                          -- (the box's middle in the bottom half)
                 local cx_ = (bl_ + (tipb - sl * 0.75)) / 2;
-                text(dl, cx_ - dw_ / 2, ny + ((y2 - ny) - dh_) / 2, dstr, far_ and { 1, 0.55, 0.75, v * ta } or { 0.84, 0.83, 0.90, 0.9 * v * ta });
+                text(dl, cx_ - dw_ / 2, ny + ((y2 - ny) - dh_) / 2 + dh_ * 0.12, dstr, far_ and { 1, 0.55, 0.75, v * ta } or { 0.84, 0.83, 0.90, 0.9 * v * ta });
                 imgui.SetWindowFontScale(fs0);
             end
         end
     end
-    if face and ta > 0 then                                          -- the back: HP and MP, each across its half
+    if face and ta > 0 then                                          -- the back: HP the whole width on top, MP the whole width under it (as Hex's)
         local tx = tend + gp + 4 * sc;
-        local bx1 = tipb - tw_ - 8 * sc - sl * 0.5 - 6 * sc;          -- (up to the right box)
+        local xd = tipb - tw_ - 8 * sc;                              -- (up to the right box's leaning line)
         if m.inzone then
             local hasmp = party or (m.mp or 0) > 0;
-            local mid = hasmp and (tx + bx1) / 2 or bx1;
             local hc = low and { 1, 0.42, 0.46 } or { 1, 0.55, 0.82 };
             local jc = C.jobcol(m);
             if jc and not low then hc = jc[1]; end
             do local a_ = C.hpheatN(m, m.hpp); if a_ and not low then hc = a_; end end   -- (white; yellow / orange / red with Low HP warning)
             local _, h2 = C.hpheatN(m, m.hpp);
             if h2 == nil or low then h2 = { hc[1] * 0.80, hc[2] * 0.55, hc[3] * 0.80 }; end
-            local ya, yb = ny + 1 * sc, y2 - 3 * sc;                    -- (the bars: the lower half, end to end of each half)
-            local sh_ = (yb - ya) * 0.30;                            -- (leaning as the card)
-            ALLY.backbar(dl, tx - sh_, mid - 3 * sc, ya, yb, '', '', m.hpp, hc, fs0, sc, v * ta, nil, h2, nil, 0.30);
-            if hasmp then ALLY.backbar(dl, mid + 3 * sc - sh_, bx1, ya, yb, '', '', m.mpp, { 0.55, 0.72, 1 }, fs0, sc, v * ta, nil, { 0.30, 0.45, 0.95 }, nil, 0.30); end
-            local function lab(x, l, num, col, maxw)                 -- ("HP 1786" in the upper half, over its bar - fitted to its half)
-                local room = ny - (y1 + 2 * sc);
-                imgui.SetWindowFontScale(fs0 * 1.05);
-                local _, nh = imgui.CalcTextSize('0'); nh = tonumber(nh) or 10;
-                local kk = math.max(0.6, math.min(1, room / nh));
-                imgui.SetWindowFontScale(fs0 * 1.05 * kk);
-                local nw2, nh2 = imgui.CalcTextSize(num); nw2, nh2 = tonumber(nw2) or 0, tonumber(nh2) or 10;
-                imgui.SetWindowFontScale(fs0 * 0.70 * kk);
-                local lw2, lh2 = imgui.CalcTextSize(l); lw2, lh2 = tonumber(lw2) or 0, tonumber(lh2) or 7;
-                local tot = lw2 + 3 * sc + nw2;
-                if maxw and tot > maxw then                          -- (too wide for its half: both smaller)
-                    kk = kk * math.max(0.55, maxw / tot);
-                    imgui.SetWindowFontScale(fs0 * 1.05 * kk);
-                    nw2, nh2 = imgui.CalcTextSize(num); nw2, nh2 = tonumber(nw2) or 0, tonumber(nh2) or 10;
-                    imgui.SetWindowFontScale(fs0 * 0.70 * kk);
-                    lw2, lh2 = imgui.CalcTextSize(l); lw2, lh2 = tonumber(lw2) or 0, tonumber(lh2) or 7;
-                end
-                local base = ny + 1 * sc;                            -- (the text's foot just over the bar)
-                text(dl, x, base - lh2 - nh2 * 0.06, l, { col[1], col[2], col[3], 0.85 * v * ta });
-                imgui.SetWindowFontScale(fs0 * 1.05 * kk);
-                text(dl, x + lw2 + 3 * sc, base - nh2, num, { 1, 1, 1, v * ta });
+            local ch_ = math.max(1, y2 - y1);
+            local slp = sl / ch_;                                    -- (leaning as the card)
+            local function lean(y) return sl * (y - y1) / ch_; end
+            local ya, yb = math.floor(y1) + 3, math.floor(y2) - 2;    -- (the whole card between its edges, a little room round the bars)
+            local half_ = 2;
+            local gap_ = 2 * half_ + 1;                              -- (the line's pixel row, the same room above and under it)
+            local hb_ = yb;
+            if hasmp then                                            -- (split at the right box's line - the line between them runs on from it -
+                hb_ = math.floor(ny) - half_;                        --  both bars the same height, on whole pixels)
+                local bh_ = math.floor(math.min(hb_ - ya, yb - (hb_ + gap_)));
+                ya, yb = hb_ - bh_, hb_ + gap_ + bh_;
+            end
+            local function num(cs, x0_, x2_, y0_, y1_)               -- (a number alone in a bar's middle: as big as the bar lets it)
+                local h_ = y1_ - y0_;
+                imgui.SetWindowFontScale(fs0 * 1.2);
+                local _, nh_ = imgui.CalcTextSize(cs); nh_ = tonumber(nh_) or 10;
+                local k_ = math.max(0.5, math.min(1.15, h_ * 1.05 / nh_));
+                imgui.SetWindowFontScale(fs0 * 1.2 * k_);
+                local nw_, nh2 = imgui.CalcTextSize(cs); nw_, nh2 = tonumber(nw_) or 0, tonumber(nh2) or 10;
+                local cx_ = (x0_ + x2_) / 2 - lean((y0_ + y1_) / 2);   -- (the bar's middle, at its own height)
+                local tx_ = cx_ - nw_ / 2;
+                local cy_ = y0_ + h_ / 2 + nh2 * 0.14;               -- (centred by eye: digits sat high)
+                for _, d in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }) do text(dl, tx_ + d[1], cy_ - nh2 / 2 + d[2], cs, { 0.12, 0.07, 0.02, 0.30 * v * ta }); end
+                text(dl, tx_, cy_ - nh2 / 2, cs, { 1, 1, 1, v * ta });
                 imgui.SetWindowFontScale(fs0);
             end
-            lab(tx + 2 * sc, 'HP', tostring(m.hp or 0), low and { 1, 0.55, 0.58 } or { 0.80, 0.78, 0.86 }, mid - tx - 8 * sc);
-            if hasmp then lab(mid + 3 * sc, 'MP', tostring(m.mp or 0), { 0.62, 0.74, 1 }, bx1 - mid - 6 * sc); end
+            local L0, R0 = tend + gp + 4, xd - 4;                    -- (between the card's left edge and the right box's line, at the top;
+            local function bar(y0_, y1_, frac, c1, c2)               --  backbar takes its left end at the foot, its right end at the top)
+                local bx0_, bx2_ = L0 - lean(y1_), R0 - lean(y0_);
+                ALLY.backbar(dl, bx0_, bx2_, y0_, y1_, '', '', frac, c1, fs0, sc, v * ta, nil, c2, nil, slp);
+                local K_ = (y1_ - y0_) * slp;                        -- (a fine black outline round it: it stands apart from the card)
+                local o_ = { { bx0_ + K_, y0_ }, { bx2_, y0_ }, { bx2_ - K_, y1_ }, { bx0_, y1_ } };
+                local f_ = math.max(0, math.min(1, tonumber(frac) or 0));
+                if f_ < 1 then                                       -- (what's missing: the bar's own colour, dim - it reads as empty bar, not card;
+                    local fx_ = bx0_ + (bx2_ - bx0_) * f_;           --  a bright edge where the fill stops)
+                    local ep_ = ALLY.clip_x(o_, fx_, bx2_);
+                    if #ep_ >= 3 then pcall(function() dl:AddConvexPolyFilled(ep_, U4(c1[1] * 0.55, c1[2] * 0.55, c1[3] * 0.55, 0.30 * v * ta)); end); end
+                    if f_ > 0 then DL.L(dl, fx_, y0_ + 0.5, fx_, y1_ - 0.5, U4(1, 1, 1, 0.9 * v * ta), 1.5); end
+                end
+                local oc_ = U4(0, 0, 0, 0.9 * v * ta);
+                for q = 1, 4 do dl:AddLine(o_[q], o_[q % 4 + 1], oc_, 1.2); end
+            end
+            bar(ya, hb_, m.hpp, hc, h2);
+            num(tostring(m.hp or 0), L0, R0, ya, hb_);
+            if hasmp then
+                local my_ = hb_ + gap_;
+                DL.L(dl, tend + gp - lean(ny) + 1, ny, xd - sl * 0.5, ny, U4(1, 1, 1, 0.55 * v), 1);   -- (the box's line, on across the card: one line)
+                bar(my_, yb, m.mpp, { 0.55, 0.72, 1 }, { 0.30, 0.45, 0.95 });
+                num(tostring(m.mp or 0), L0, R0, my_, yb);
+            end
         end
     end
     if p < 1 then                                                    -- (the turn: a light across the middle, brightest edge-on)
@@ -6274,7 +6339,7 @@ function ALLY.card(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
 end
 function ALLY.card_(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     if ALLY.lowtest and m.inzone then m = setmetatable({ hpp = math.min(m.hpp or 1, (type(ALLY.lowtest) == 'number') and ALLY.lowtest or 0.22) }, { __index = m }); end   -- (Preview HP warning: yellow / orange / red)
-    if cfg.card_low ~= false and m.inzone and (m.hpp or 1) < 0.25 and (m.hpp or 1) > 0 then   -- low HP: the card trembles, in bursts (not when dead: 0 HP is still)
+    if cfg.card_low ~= false and cfg.card_shake ~= false and m.inzone and (m.hpp or 1) < 0.25 and (m.hpp or 1) > 0 then   -- low HP: the card trembles, in bursts (not when dead: 0 HP is still)
         local t = os.clock();
         local env = (0.5 + 0.5 * math.sin(t * 5 + i)) ^ 2;
         local k = sc * (0.35 + 0.65 * env);
@@ -11124,6 +11189,26 @@ local function draw_chat(n)
                         kc = 0;
                     end
                     if not cutp then DL.RF(dl, x, gy, x + w, y + h, pfill, rr, fl); kc = 0; end
+                    if cfg.chat_border and not YUI_HEX then          -- (CHAT > Panel border, Vex: a fine edge in the map's colours - as the minimap and gear)
+                        local ea_ = math.min(1, A + 0.25) * (0.75 + 0.25 * st.hv);   -- (the gear card's own edge: lavender violet, a soft violet glow round it)
+                        local ec_ = U4(0.74, 0.58, 1.0, 0.90 * ea_);
+                        local rx1, rx2, ry1, ry2 = x, x + w, gy, y + h;   -- (joined: each panel draws its share of one frame - the rect runs past a joined side,
+                        if oth and sl_ then rx1 = x - 6; end             --  clipped exactly at its own edge: the top and foot lines meet the next panel's,
+                        if oth and sr_ then rx2 = x + w + 6; end         --  no edge between them)
+                        if linked and cfg.chat_link_v and othv then
+                            local me_y = tonumber(cfg[(n == 1) and 'chat_y' or 'chat2_y']) or 0;
+                            local ot_y = tonumber(cfg[(n == 1) and 'chat2_y' or 'chat_y']) or 0;
+                            if ot_y < me_y then ry1 = gy - 6; else ry2 = y + h + 6; end
+                        end
+                        local cx1_ = (oth and sl_) and x or (x - 1);
+                        local cx2_ = (oth and sr_) and (x + w) or (x + w + 1);
+                        if not (oth and sl_) then cx1_ = cx1_ - 4; end   -- (room for the glow outside)
+                        if not (oth and sr_) then cx2_ = cx2_ + 4; end
+                        local clp_ = pcall(function() dl:PushClipRect({ cx1_, gy - 5 }, { cx2_, y + h + 5 }, true); end);
+                        for g = 3, 1, -1 do DL.R(dl, rx1 - g, ry1 - g, rx2 + g, ry2 + g, U4(0.66, 0.48, 1.0, 0.07 * ea_), rr + g, fl, 2); end
+                        DL.R(dl, rx1 + 0.5, ry1 + 0.5, rx2 - 0.5, ry2 - 0.5, ec_, rr, fl, 1.4);
+                        if clp_ then pcall(function() dl:PopClipRect(); end); end
+                    end
                     if YUI_HEX and kc > 0 then                       -- (Hex link: just the corner cut, a fine light gold edge on it - the chat stays quiet)
                         local GO2 = C.GOLDH2 or { 1, 0.90, 0.62 };
                         local la = math.min(1, A * 1.1) * (0.75 + 0.25 * st.hv);
@@ -15750,6 +15835,7 @@ local function draw_window()
             section('CARDS');
             hint('Your party and the alliances: job tag, name, HP and MP for each member.');
             row_switch('##yui_clow', 'Low HP warning', 'card_low', 'Under 75% HP a warning: Vex mode the edge of the card turns yellow, under 50% orange; Hex link the HP bar itself turns orange, then red-orange. Under 25% the card beats red.');
+            if cfg.card_low ~= false then row_switch('##yui_cshk', 'Shake under 25% HP', 'card_shake', 'On: a member under 25% HP has their card shake, as well as beat red. Off: it stays still.'); end
             do
                 local lt = { v = (ALLY.lowtest == 0.70 and 'y') or (ALLY.lowtest == 0.45 and 'o') or (ALLY.lowtest and 'r') or 'off' };   -- (every member shown at that HP, to see it - set it back to Off when done)
                 row_pick('##yui_clowt', 'Preview HP warning', 'v', { { 'off', 'Off' }, { 'y', 'Yellow (70%)' }, { 'o', 'Orange (45%)' }, { 'r', 'Red (20%)' } }, lt, function(k, v)
@@ -15883,6 +15969,7 @@ local function draw_window()
             if cfg.chat_look ~= 'classic' then
                 hint('Clear: a dark rounded panel, a thin bar in each channel\'s colour, the time small on the left, long messages kept in one block.');
                 row_slider('##yui_cpa', 'Panel darkness', 'chat_panel_a', 0.0, 1.0, 0.05, '%.2f');
+                if not YUI_HEX then row_switch('##yui_cbord', 'Panel border', 'chat_border', "On: a fine lavender-violet edge with a soft glow round each chat panel - the gear card's own. Off: the panel alone."); end
                 row_switch('##yui_cfull', 'Panel always full size', 'chat_full', "On: each chat's panel always fills the size you gave it - an empty combat log too (no gap beside the chat before your first fight). Off: at rest a panel is only as tall as its lines.");
                 row_slider('##yui_cmg', 'Space between messages', 'chat_msg_gap', 0, 14, 1, '%d px');
                 hint('Panel darkness: 0 is no panel at all. Space between messages: the room between one message and the next (TEXT > Line spacing is the room between the rows of the same message).');

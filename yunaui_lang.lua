@@ -61,6 +61,7 @@ M.JA = {
     ['On: a member farther than the distance below (out of range for spells like Cure) is shown faded, party and alliance. A pretend member shows it while you place the list.'] = 'オン: 下の距離より遠い（ケアルなどが届かない）メンバーを薄く表示します（パーティ・アライアンス）。リスト配置中は仮のメンバーで確認できます。',
     ["On: time left under the buff icons (1h, 5m, 45) - yours exact, your other characters' exact too, and the buffs you cast on others. The buffs stay on one row (their timers need the room under it)."] = 'オン: バフアイコンの下に残り時間（1h・5m・45）を表示します。自分と自分の別キャラ、自分が他人にかけたバフは正確な時間です。バフは1段にまとまります（下にタイマーの場所が必要なため）。',
     ["On: each member's buffs read left to right in the game's own order. Off: the newest next to the card."] = 'オン: 各メンバーのバフをゲームと同じ順で左から右に並べます。オフ: 新しいものをカードの隣に。',
+    ['Shake under 25% HP'] = 'HP25%未満で揺らす', ['On: a member under 25% HP has their card shake, as well as beat red. Off: it stays still.'] = 'オン: HPが25%未満のメンバーのカードが赤く脈打つだけでなく揺れます。オフ: 揺れません。',
     ['Preview HP warning'] = 'HP警告のプレビュー', ['Yellow (70%)'] = '黄（70%）', ['Orange (45%)'] = '橙（45%）', ['Red (20%)'] = '赤（20%）',
     ['Buff and debuff icons next to each party member, under the target bar and in the enemy list (hover one for its name).'] = '各パーティメンバーの横、ターゲットバーの下、敵リストに強化・弱体アイコンを表示します（ホバーで名前）。',
     -- バー
