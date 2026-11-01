@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.10';
+addon.version = '1.1.11';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1285,6 +1285,13 @@ local function read_party_buffs(e)
     party_buffs = t;
 end
 function C.party_buffs_clear() party_buffs = {}; end
+function C.party_buffs_seed()                                        -- (loaded after the login, or reloaded: the server's last party buffs taken from
+    local ok, pk, at = pcall(vana.packets.last, true, 0x076);         --  VanaCore's copy - it sends them only when one changes, so the members'
+    if not ok or type(pk) ~= 'string' or #pk < 0x04 + 0x30 then return; end   --  buffs stayed off their cards until someone cast a buff)
+    local okz, _, zat = pcall(vana.packets.last, true, 0x00A);
+    if okz and zat and at and at < zat then return; end              -- (from before the last zone: gone)
+    read_party_buffs({ id = 0x076, data = pk });
+end
 -- BUFFS > Hide on party cards: { section, { buff id, its setting, its name, its tooltip }... } - shown unless the player ticks one
 C.BUFF_HIDE = {
     { 'ABYSSEA', {
@@ -7116,7 +7123,7 @@ local COMBAT_A = { [162] = true, [163] = true, [164] = true, [165] = true, [166]
     [187] = true, [188] = true, [191] = true };                                                                                       --  alliance's battle lines)
 local function is_combat(m) return (m >= 20 and m <= 120) or m == 122 or m == 129 or m == 131 or COMBAT_A[m] == true; end
 local SJIS = { ['\129\168'] = '>', ['\129\169'] = '<', ['\129\170'] = '^', ['\129\171'] = 'v', ['\129\64'] = ' ',
-               ['\129\154'] = '*', ['\129\153'] = '*', ['\129\69'] = '-', ['\129\124'] = '-', ['\129\117'] = '"', ['\129\118'] = '"' };
+               ['\129\154'] = '*', ['\129\153'] = '-', ['\129\69'] = '-', ['\129\124'] = '-', ['\129\117'] = '"', ['\129\118'] = '"' };
 function C.mob_name(s)                                               -- (a name without the marker symbol it may start with)
     if type(s) ~= 'string' then return s; end
     local r = s:gsub('[\128-\255]', ''):gsub('^%?(%a)', '%1');      -- (only a "?" stuck to the front - "???" stays "???", never an empty name)
@@ -11134,6 +11141,13 @@ local function draw_chat(n)
         -- little darker for a moment when a line arrives), growing to the whole chat when it's lit (the mouse over it,
         -- typing, scrolling). Readable on grass, snow or sand, and never a box.
         do
+            local x, w = x, w;                                       -- (joined side by side, overlapping the one on its left by a few pixels: the
+            if sl_ and chain and pos_ then                           --  panel starts at that one's right edge - two dark panels over each other
+                local ln_ = chain[pos_ - 1];                         --  showed as a darker band where they meet)
+                local pre_ = (ln_ == 1) and 'chat' or ('chat' .. tostring(ln_));
+                local lx_, lw_ = tonumber(cfg[pre_ .. '_x']), tonumber(cfg[pre_ .. '_w']);
+                if lx_ and lw_ and lx_ + lw_ > x and lx_ + lw_ < x + w - 20 then w = x + w - (lx_ + lw_); x = lx_ + lw_; end
+            end
             local lg_ = logs[(n == 2) and 2 or 1];
             local last = (lg_ and lg_[#lg_] and (lg_[#lg_].t0 or lg_[#lg_].t)) or -99;
             if n == 3 then last = st.last3 or -99; end               -- (the third chat: its own newest line)
@@ -16192,6 +16206,7 @@ end
 -- Events
 ----------------------------------------------------------------------------------------------------
 ashita.events.register('load', 'yui_load', function()
+    pcall(C.party_buffs_seed);
     -- the party window now has the buffs on its left: move it left once so the list stays where it was
     if not cfg.buffs_left then
         cfg.party_x = (tonumber(cfg.party_x) or 40) - ((math.floor(16 * (tonumber(cfg.scale) or 1)) + 2) * 16 + 8);
