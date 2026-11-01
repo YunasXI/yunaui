@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.5';
+addon.version = '1.1.6';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1371,6 +1371,33 @@ local function buff_icon(id, px)
         if ffi.C.D3DXCreateTextureFromFileInMemoryEx(d3d.get_device(), info.Bitmap, info.ImageSize, 0xFFFFFFFF, 0xFFFFFFFF, 1, 0,
                 ffi.C.D3DFMT_A8R8G8B8, ffi.C.D3DPOOL_MANAGED, ffi.C.D3DX_DEFAULT, ffi.C.D3DX_DEFAULT, 0xFF000000, nil, nil, ptr) == ffi.C.S_OK then
             local t = d3d.gc_safe_release(ffi.cast('IDirect3DTexture8*', ptr[0]));
+            pcall(function()                                         -- (the game's original icons: most sit on a black square, a few like Blind don't - the
+                local res, rect = t:LockRect(0, nil, 0);             --  near-black joined to the edge is made see-through, so all look the same, clean; the
+                if res ~= ffi.C.S_OK or rect == nil then return; end --  icon's own dark parts inside its outline stay)
+                local w, h = 32, 32;
+                pcall(function() local dr, d = t:GetLevelDesc(0); if dr == ffi.C.S_OK and d ~= nil then w, h = tonumber(d.Width), tonumber(d.Height); end end);
+                local bits, pitch = ffi.cast('uint8_t*', rect.pBits), tonumber(rect.Pitch);
+                local function bg(x, y) local q = bits + y * pitch + x * 4; return q[3] == 0 or math.max(q[0], q[1], q[2]) <= 24; end   -- (see-through or near-black)
+                local seen, queue, opq = {}, {}, 0;
+                for y = 0, h - 1 do for x = 0, w - 1 do if (bits + y * pitch + x * 4)[3] > 0 then opq = opq + 1; end end end
+                local function push(x, y) local k = y * w + x; if not seen[k] and bg(x, y) then seen[k] = true; queue[#queue + 1] = { x, y }; end end
+                for x = 0, w - 1 do push(x, 0); push(x, h - 1); end
+                for y = 1, h - 2 do push(0, y); push(w - 1, y); end
+                local i, gone, core = 1, 0, false;
+                while i <= #queue do
+                    local x, y = queue[i][1], queue[i][2]; i = i + 1;
+                    if (bits + y * pitch + x * 4)[3] > 0 then gone = gone + 1; end
+                    if math.abs(x - w / 2) < 4 and math.abs(y - h / 2) < 4 then core = true; end
+                    if x > 0 then push(x - 1, y); end
+                    if x < w - 1 then push(x + 1, y); end
+                    if y > 0 then push(x, y - 1); end
+                    if y < h - 1 then push(x, y + 1); end
+                end
+                if gone > 0 and not core and gone < opq * 0.7 then      -- (it would reach the middle, or most of it: a dark icon itself (Regen) - kept as it is)
+                    for _, e in ipairs(queue) do (bits + e[2] * pitch + e[1] * 4)[3] = 0; end
+                end
+                t:UnlockRect(0);
+            end);
             icons[id] = { tex = t, ptr = tonumber(ffi.cast('uint32_t', t)) };
         end
     end);
@@ -1747,6 +1774,7 @@ local function enemy_add(id, status, secs)
     if status == 134 then enemies[id][135] = nil; elseif status == 135 then enemies[id][134] = nil; end   -- (Dia and Bio overwrite each other)
     enemies[id][status] = os.clock() + (secs or DEBUFF_TIME[status] or 180);
 end
+C.SPIKES = { [1] = 34, [2] = 35, [3] = 173, [5] = 38, [6] = 403 };   -- (a spikes reaction's effect -> its status: Blaze, Ice, Dread, Shock Spikes, Reprisal)
 C.MSG_PHYS = set_of('103,110,185,187,238,242,317,802');              -- (a physical hit: melee, ability or weapon skill)
 C.MSG_JAONLY = set_of('110,317');                                    -- (only an ability says these)
 function C.ja_hit(tid, kind, param, m)                               -- an ability that hit: its hidden effect (a Bash's stun), on the monster
@@ -2618,7 +2646,11 @@ local function read_action(e)
                 if FIGHT.SCMSG[am] then fx_ap = aa; end              -- (a skillchain's own message only; its param is the damage)
             end
             if is_first then pcall(FIGHT.on_skill, actor, kind, param, m, tid, fx_ap, first); end   -- skillchains (the Chains way)
-            if bits(1) == 1 then bits(10); bits(14); bits(10); end  -- spikes
+            if bits(1) == 1 then                                    -- spikes: the one hit has them - a monster's shown even when its cast was missed
+                local sa = bits(10); bits(14); bits(10);             --  (cast before you came, or out of range: the server never lists its buffs)
+                local sst = C.SPIKES[sa];
+                if sst and not is_party_id(tid) and (enemies[tid] == nil or (enemies[tid][sst] or 0) < os.clock() + 60) then enemy_add(tid, sst, 60); end
+            end
             if max == 0 then return; end
             if (m == 230 or m == 266) and kind == 4 then pcall(BUFFS.cast_on, actor, tid, p, param); end   -- (a buff you cast landed: PARTY > Buff timers on their card)
             if not is_party_id(tid) then pcall(C.ja_hit, tid, kind, param, m); end
@@ -3858,7 +3890,7 @@ local function draw_enemies(dt)
             local on = (e.idx == tidx);
             if on then                                               -- your target: a soft frame and a marker
                 DL.RF(dl, x - 6, ry - 2, x + w + 6, ry + rowh - 4, U4(C.gold[1], C.gold[2], C.gold[3], 0.12), 5);
-                DL.TF(dl, x - 12, ry + lh / 2 - 4, x - 12, ry + lh / 2 + 4, x - 7, ry + lh / 2, U4(1, 1, 1, 0.9));
+                if cfg.enemy_arrow ~= false then DL.TF(dl, x - 12, ry + lh / 2 - 4, x - 12, ry + lh / 2 + 4, x - 7, ry + lh / 2, U4(1, 1, 1, 0.9)); end   -- (ENEMY LIST > Target marker)
             end
             local nm = e.name;
             local pct = string.format('%d%%', math.floor(e.hp * 100 + 0.5));
@@ -7151,10 +7183,10 @@ function C.feed_take(log, line, mode, only)
         end
     end
     if cfg.chat_rounds ~= false then                                 -- CHAT > Melee rounds: one attack round, one line
-        local ma, mt, md = sl:match('^(.-) hits (.-) for (%d+) points? of damage%.$');
+        local ma, mt, md = sl:match('^(.-) hits? (.-) for (%d+) points? of damage%.$');   -- (hit / take / miss: a plural name - "The Ding Bats take")
         local crit, miss = false, false;
         if ma == nil and F.crit and now - F.crit.t < 0.3 then        -- (a critical hit: its damage comes on the next line)
-            mt, md = sl:match('^(.-) takes (%d+) points? of damage%.$');
+            mt, md = sl:match('^(.-) takes? (%d+) points? of damage%.$');
             if mt then ma, crit = F.crit.who, true; end
         end
         F.crit = nil;
@@ -7164,7 +7196,7 @@ function C.feed_take(log, line, mode, only)
         end
         if ma == nil then
             local L = F.last;                                        -- (a miss right after an ability is that ability's)
-            local wa, wt = sl:match('^(.-) misses (.-)%.$');
+            local wa, wt = sl:match('^(.-) misse?s? (.-)%.$');
             if wa and not (L and L.feed and L.feed.state == 'done' and L.feed.actor == wa and now - (F.last_t or 0) < 2.5) then ma, mt, miss = wa, wt, true; end
         end
         if ma then
@@ -7215,10 +7247,10 @@ function C.feed_take(log, line, mode, only)
         local w, x = sl:match('^(.-) gains the effect of (.-)%.$');
         if w then r = { who = w }; end
         if not r then w = sl:match('^(.-) receives the effect of .-%.$'); if w then r = { who = w }; end end
-        if not r then w, x = sl:match('^(.-) takes (%d+) points? of damage%.$'); if w then r = { who = w, dmg = x }; end end
-        if not r then w, x = sl:match('^(.-) takes (%d+) damage%.$'); if w then r = { who = w, dmg = x }; end end
+        if not r then w, x = sl:match('^(.-) takes? (%d+) points? of damage%.$'); if w then r = { who = w, dmg = x }; end end
+        if not r then w, x = sl:match('^(.-) takes? (%d+) damage%.$'); if w then r = { who = w, dmg = x }; end end
         if not r then w, x = sl:match('^(.-) recovers (%d+) HP%.$'); if w then r = { who = w, heal = x }; end end
-        if not r then w = sl:match('^(.-) resists the spell%.$') or sl:match('^.- misses (.-)%.$'); if w then r = { who = w, miss = true }; end end
+        if not r then w = sl:match('^(.-) resists? the spell%.$') or sl:match('^.- misse?s? (.-)%.$'); if w then r = { who = w, miss = true }; end end
         if r then
             -- an alliance: several casting at once, the lines don't say whose effect it is - it goes onto a line of someone
             -- in that person's own party (party songs and rolls reach only the caster's party); none there: onto the last
@@ -9489,9 +9521,9 @@ C.CF_TYPES = {                                                       -- (what a 
     { 'ranged', 'ranged attack' }, { 'magic', ' casts ' }, { 'magic', 'Magic Burst' }, { 'magic', 'resists the spell' },
     { 'uses', ' uses ' }, { 'guards', ' guards ' }, { 'blocks', ' blocks ' }, { 'parries', ' parries ' },
     { 'dodges', ' evades' }, { 'dodges', 'shadow' }, { 'dodges', ' dodges' }, { 'dodges', ' anticipates' },
-    { 'misses', ' misses' }, { 'healing', ' recovers %d+ [HM]P' }, { 'healing', '[HM]P drained' },
+    { 'misses', ' miss' }, { 'healing', ' recovers %d+ [HM]P' }, { 'healing', '[HM]P drained' },
     { 'effects', 'effect of ' }, { 'effects', 'effect wears off' }, { 'effects', ' is no longer ' }, { 'effects', '^.- is %a+%.$' },
-    { 'melee', ' hits ' }, { 'melee', 'critical hit' }, { 'damage', 'points? of damage' },
+    { 'melee', ' hits? ' }, { 'melee', 'critical hit' }, { 'damage', 'points? of damage' },
 };
 function C.cf_type(sl)
     for _, t in ipairs(C.CF_TYPES) do if sl:find(t[2]) then return t[1]; end end
@@ -9571,9 +9603,9 @@ function C.cf_sort(line)                                             -- (who did
     local sl = line:gsub('[\1\2]', '');
     local sa, st = C.cf_slog(sl);                                    -- (simplelog's way of writing them)
     if sa or st then return sa and C.cf_who(sa) or nil, st; end
-    local nm = sl:match("^%d+ of (.-)'s shadow") or sl:match('^(.-) hits ') or sl:match('^(.-) misses') or sl:match('^(.-) casts ')
+    local nm = sl:match("^%d+ of (.-)'s shadow") or sl:match('^(.-) hits? ') or sl:match('^(.-) miss') or sl:match('^(.-) casts ')
             or sl:match('^(.-) uses ') or sl:match('^(.-) readies ') or sl:match('^(.-) starts casting ') or sl:match('^(.-) scores ')
-            or sl:match('^(.-) recovers ') or sl:match('^(.-) takes ') or sl:match('^(.-) is ') or sl:match('^(.-) receives ')
+            or sl:match('^(.-) recovers ') or sl:match('^(.-) takes? ') or sl:match('^(.-) is ') or sl:match('^(.-) receives ')
             or sl:match('^(.-) gains ') or sl:match('^(.-) blocks ') or sl:match('^(.-) parries ') or sl:match('^(.-) guards ')
             or sl:match('^(.-) evades') or sl:match('^(.-) dodges') or sl:match("^(.-)'s ") or sl:match('^([%w%-]+)');
     if nm then nm = nm:gsub("'s .*$", ''):gsub("'s$", ''):gsub('^[Tt]he ', ''); end   -- ("Yunas's ranged attack" -> Yunas)
@@ -9957,6 +9989,7 @@ function C.feed_draw(dl, x, y, e, a, lh, measure, notime, row)
         chev({ 0.70, 0.68, 0.80 });
         cx = cx + sp * 0.5;
         local kc = (f.kind == 'magic') and { 0.74, 0.64, 1.0 } or { 1.0, 0.82, 0.45 };
+        if cfg.cf_cols then kc = C.cf_col((f.kind == 'magic') and 'magic' or 'uses') or kc; end   -- (CHAT > COMBAT LOG > Colour by kind: the spell / ability its colour)
         txt(f.act, kc);
         if f.state == 'cast' then                                    -- (being cast: three dots that pulse)
             local k = math.floor(os.clock() * 3) % 3;
@@ -10888,6 +10921,7 @@ local function draw_chat(n)
                 end
             end
             local gh = math.min(h, uh + 26);
+            if cfg.chat_full and C.clear_on() then gh = h; end          -- (CHAT > Panel always full size: its whole size, lines or not)
             local gy = y + (h - gh) * (1 - st.hv);
             if C.clear_on() then                                     -- (clear: a dark rounded panel, so the words read on any ground)
                 local A = math.max(0, math.min(1, tonumber(cfg.chat_panel_a) or 0.72));
@@ -10911,7 +10945,7 @@ local function draw_chat(n)
                                                                      --  side by side: its top right corner cut - the two mirrored)
                     local cutp = YUI_HEX and (first_ or (sl_ and not sr_)) and pcall(function()   -- (Hex link: light - the panel fades upward, faint at rest, full when lit)
                         local pa = math.min(1, A * (1.12 + 0.08 * pulse + 0.10 * st.hv));
-                        local top = pa * (0.78 + 0.22 * st.hv);   -- (at rest: still dark enough to read every line)
+                        local top = pa * math.max(0.78 + 0.22 * st.hv, A);   -- (at rest: still dark enough to read every line - Panel darkness 1.00: fully dark, lit or not)
                         if mir then dl:AddConvexPolyFilled({ { x, gy }, { x + w - kc, gy }, { x + w, gy + kc }, { x + w, y + h }, { x, y + h } }, U4(0.055, 0.045, 0.08, top));
                         else dl:AddConvexPolyFilled({ { x + kc, gy }, { x + w, gy }, { x + w, y + h }, { x, y + h }, { x, gy + kc } }, U4(0.055, 0.045, 0.08, top)); end
                         local yb = math.min(y + h, gy + kc);
@@ -10921,7 +10955,7 @@ local function draw_chat(n)
                     end);
                     if not cutp and YUI_HEX then                     -- (Hex link, the second one beside it: the same fading panel, no cut)
                         local pa = math.min(1, A * (1.12 + 0.08 * pulse + 0.10 * st.hv));
-                        local top = pa * (0.78 + 0.22 * st.hv);
+                        local top = pa * math.max(0.78 + 0.22 * st.hv, A);
                         local c0, c1 = U4(0.055, 0.045, 0.08, top), U4(0.055, 0.045, 0.08, pa);
                         cutp = pcall(DL.RFM, dl, x, gy, x + w, y + h, c0, c0, c1, c1);
                         kc = 0;
@@ -15481,6 +15515,7 @@ local function draw_window()
             row_slider('##yui_s_enm', 'Most shown', 'enemy_max', 1, 20, 1, '%d');
             row_slider('##yui_s_enbi', 'Debuff icon size', 'enemy_buff_scale', 0.6, 2.5, 0.05, '%.2fx');
             row_slider('##yui_s_enbt', 'Debuff text size', 'enemy_buff_text', 0.5, 2.5, 0.05, '%.2fx');
+            row_switch('##yui_enarr', 'Target marker', 'enemy_arrow', 'On: a small white arrow before the monster you target, besides its lit row. Off: just the lit row.');
             hint('Previews show while this tab is open.');
         elseif tab == 3 then
             ------------------------------------------------------------------ PARTY
@@ -15662,6 +15697,7 @@ local function draw_window()
             if cfg.chat_look ~= 'classic' then
                 hint('Clear: a dark rounded panel, a thin bar in each channel\'s colour, the time small on the left, long messages kept in one block.');
                 row_slider('##yui_cpa', 'Panel darkness', 'chat_panel_a', 0.0, 1.0, 0.05, '%.2f');
+                row_switch('##yui_cfull', 'Panel always full size', 'chat_full', "On: each chat's panel always fills the size you gave it - an empty combat log too (no gap beside the chat before your first fight). Off: at rest a panel is only as tall as its lines.");
                 row_slider('##yui_cmg', 'Space between messages', 'chat_msg_gap', 0, 14, 1, '%d px');
                 hint('Panel darkness: 0 is no panel at all. Space between messages: the room between one message and the next (TEXT > Line spacing is the room between the rows of the same message).');
             else
@@ -18078,14 +18114,23 @@ function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: th
         local tgw = tonumber((imgui.CalcTextSize(tag))) or 0;
         local jw = tonumber((imgui.CalcTextSize(jt))) or 0;
         local tc = ALLY.tagcol(mj) or { { 0.9, 0.9, 0.9 } };
+        local sw, sh = 0, 0;
+        if st then
+            local fs = FS;
+            imgui.SetWindowFontScale(fs * 0.84);
+            sw = tonumber((imgui.CalcTextSize(st))) or 0;
+            sh = imgui.GetTextLineHeight();
+            imgui.SetWindowFontScale(fs);
+            if x0_ + tgw + jw + sw > xmax then st, sw = nil, 0; end
+        end
+        local bl_, br_ = edgeL(midy), mL - isl * 0.5;               -- (centred in its block, between its slanted ends)
+        x0_ = math.max(x0_, math.floor((bl_ + br_) / 2 - (tgw + jw + sw) / 2));
         outlined(dl, x0_, tyy, tag, { tc[1][1], tc[1][2], tc[1][3], 1 });
         outlined(dl, x0_ + tgw, tyy, jt, { 0.92, 0.90, 0.86, 1 });
         if st then
             local fs = FS;
             imgui.SetWindowFontScale(fs * 0.84);
-            local sw = tonumber((imgui.CalcTextSize(st))) or 0;
-            local sh = imgui.GetTextLineHeight();
-            if x0_ + tgw + jw + sw <= xmax then outlined(dl, x0_ + tgw + jw, tyy + th - sh - 1 * s, st, { 0.78, 0.76, 0.72, 1 }); end
+            outlined(dl, x0_ + tgw + jw, tyy + th - sh - 1 * s, st, { 0.78, 0.76, 0.72, 1 });
             imgui.SetWindowFontScale(fs);
         end
     end
@@ -18096,6 +18141,9 @@ function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: th
         local ds = (diff ~= 0) and ((diff > 0 and '+' or '') .. commas(diff)) or nil;
         local dw = ds and ((tonumber((imgui.CalcTextSize(ds))) or 0) * 0.85 + 8 * s) or 0;
         local gx = edgeR(midy) - 8 * s - gw - dw;
+        local cl_, cr_ = mR + isl * 0.5, edgeR(midy);                -- (the coin and the amount centred in their block; what changed just after)
+        gx = math.min(gx + dw, math.floor((cl_ + cr_) / 2 - (gw - 14 * s) / 2));
+        if ds then gx = math.min(gx, edgeR(midy) - 8 * s - gw - dw); end
         C.hexdot(dl, gx - 9 * s, tyy + th / 2, 5 * s, col(C.GOLDH or { 1, 0.76, 0.34 }, 1));   -- (the coin always gold)
         C.hexdot(dl, gx - 9 * s, tyy + th / 2, 2.5 * s, col(C.GOLDH2 or { 1, 0.9, 0.62 }, 1));
         outlined(dl, gx, tyy, gs, { 1, 1, 1, 1 });                   -- (the amount white)
