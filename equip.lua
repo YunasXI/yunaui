@@ -3280,6 +3280,7 @@ end
 
 -- YGO's switch: a pill that is periwinkle with the knob on the right when on. Returns true when clicked.
 local function switch(id, on)
+    if YUI_SWITCH then return YUI_SWITCH(id, on); end                -- (in YunaUI's panel: its own switch - its look and the controller)
     local x, y = imgui.GetCursorScreenPos();
     local w, h = 38, 20;
     local clicked = imgui.InvisibleButton(id, { w, h });
@@ -3347,44 +3348,72 @@ end
 local function row_switch(id, text, key, hint)
     local x0 = imgui.GetCursorPosX();
     row_label(text, hint);
-    imgui.SameLine(x0 + ROW_W - 38);
-    if switch(id, cfg[key]) then cfg[key] = not cfg[key]; save(); end
+    imgui.SameLine(x0 + ROW_W - (YUI_SWITCH_W and YUI_SWITCH_W() or 38));
+    if switch(id, cfg[key]) then
+        local old = cfg[key];
+        cfg[key] = not cfg[key]; save();
+        if YUI_UNDO_PUSH then YUI_UNDO_PUSH(cfg, key, old, text, function() save(); end); end
+    end
     if hint and imgui.IsItemHovered() then (YUI_TIP or imgui.SetTooltip)(hint); end
 end
 -- "< 100% >" like YGO's Window scale
+local function arrow_btn(label, bh)                                 -- (in YunaUI's panel: its round glass chip)
+    if YUI_ACCENT then return YUI_ACCENT(label, { bh, bh }, true, true); end
+    return imgui.Button(label, { bh, bh });
+end
 local function row_stepper(id, text, key, step, lo, hi)
     local x0 = imgui.GetCursorPosX();
+    local sx, sy = imgui.GetCursorScreenPos();
     row_label(text);
     local v = tonumber(cfg[key]) or 1;
     local bh = imgui.GetFrameHeight();
     local label = string.format('%d%%', math.floor(v * 100 + 0.5));
     local lw = imgui.CalcTextSize(label);
     local mid = math.max(50, lw + 16);                               -- room for the value between the arrows
+    local d = 0;
+    if YUI_NAV_REG then                                              -- (YunaUI's controller: confirm holds it, left / right step it)
+        YUI_NAV_REG('st' .. id, 'slider', sx, sy, sx + ROW_W, sy + bh);
+        local f = YUI_NAV_TAKE('st' .. id);
+        if f == 'left' then d = -1; elseif f == 'right' then d = 1; end
+    end
     imgui.SameLine(x0 + ROW_W - bh * 2 - mid);
-    if imgui.Button('<##' .. id, { bh, bh }) then cfg[key] = math.max(lo, math.floor((v - step) * 100 + 0.5) / 100); save(); end
+    if arrow_btn('<##' .. id, bh) then d = -1; end
     imgui.SameLine(x0 + ROW_W - bh - mid + (mid - lw) / 2);
     imgui.TextColored(C.text, esc(label));
     imgui.SameLine(x0 + ROW_W - bh);
-    if imgui.Button('>##' .. id, { bh, bh }) then cfg[key] = math.min(hi, math.floor((v + step) * 100 + 0.5) / 100); save(); end
+    if arrow_btn('>##' .. id, bh) then d = 1; end
+    if d ~= 0 then
+        local old = cfg[key];
+        cfg[key] = math.max(lo, math.min(hi, math.floor((v + d * step) * 100 + 0.5) / 100));
+        save();
+        if YUI_UNDO_PUSH then YUI_UNDO_PUSH(cfg, key, old, text, function() save(); end); end
+    end
 end
 
 -- "< value >" for a list of choices; step(dir) moves to the previous (-1) or next (1) one
 local function row_choice(id, text, value, step)
     local x0 = imgui.GetCursorPosX();
+    local sx, sy = imgui.GetCursorScreenPos();
     row_label(text);
     local bh = imgui.GetFrameHeight();
     local mid = math.max(90, imgui.CalcTextSize(value) + 16);
+    if YUI_NAV_REG then                                              -- (YunaUI's controller: confirm holds it, left / right the choice before / after)
+        YUI_NAV_REG('ch' .. id, 'slider', sx, sy, sx + ROW_W, sy + bh);
+        local f = YUI_NAV_TAKE('ch' .. id);
+        if f == 'left' then step(-1); save(); elseif f == 'right' then step(1); save(); end
+    end
     imgui.SameLine(x0 + ROW_W - bh * 2 - mid);
-    if imgui.Button('<##' .. id, { bh, bh }) then step(-1); save(); end
+    if arrow_btn('<##' .. id, bh) then step(-1); save(); end
     local vw = imgui.CalcTextSize(value);
     imgui.SameLine(x0 + ROW_W - bh - mid + (mid - vw) / 2);
     imgui.TextColored(C.text, esc(value));
     imgui.SameLine(x0 + ROW_W - bh);
-    if imgui.Button('>##' .. id, { bh, bh }) then step(1); save(); end
+    if arrow_btn('>##' .. id, bh) then step(1); save(); end
 end
 
 -- An outlined accent button (YGO's EXPORT / LOCKSTYLE style)
 local function accent_button(label, size)
+    if YUI_ACCENT then return YUI_ACCENT(label, size); end           -- (in YunaUI's panel: its own button)
     imgui.PushStyleColor(ImGuiCol_Button, { C.gold[1], C.gold[2], C.gold[3], 0.14 });
     imgui.PushStyleColor(ImGuiCol_ButtonHovered, { C.gold[1], C.gold[2], C.gold[3], 0.24 });
     imgui.PushStyleColor(ImGuiCol_ButtonActive, { C.gold[1], C.gold[2], C.gold[3], 0.32 });

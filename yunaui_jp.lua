@@ -592,10 +592,13 @@ function JP.settings_ui(section, accent_button, hint)
     section('LANGUAGE');
     local avail = 300;
     pcall(function() local a = imgui.GetContentRegionAvail(); avail = (type(a) == 'table' and a[1]) or tonumber(a) or avail; end);
+    if tonumber(YUI_ROW_W) then avail = math.min(avail, tonumber(YUI_ROW_W)); end   -- (on a card in the panel: the card's width)
     local bw = math.floor((avail - 16) / 3);
     for i, k in ipairs({ 'auto', 'en', 'ja' }) do
         if i > 1 then imgui.SameLine(); end
-        local label = ((JP.cfg.ui_lang == k) and '● ' or '') .. JP.t(LBL[k]) .. '##yui_lang_' .. k;
+        local nm = LBL[k];
+        if k == 'ja' and not JP.active then nm = 'Japanese'; end    -- (英語表示のフォントには日本語の字がない: "???" ではなく Japanese と出す)
+        local label = JP.t(nm) .. '##yui_lang_' .. k;                -- (the chosen one: its chip white, no dot)
         local ok, clicked = pcall(accent_button, label, { bw, 0 }, JP.cfg.ui_lang ~= k, true);
         if not ok then clicked = imgui.Button(label, { bw, 0 }); end
         if clicked and JP.cfg.ui_lang ~= k then JP.cfg.ui_lang = k; save_cfg(); end

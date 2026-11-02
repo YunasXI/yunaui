@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.20';
+addon.version = '1.1.21';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -280,6 +280,27 @@ function YUI_TIP(t)
     t = tostring(t or '');
     t = JP.t(t);   -- [JP]
     if not (imgui.BeginTooltip and imgui.EndTooltip) then imgui.SetTooltip(t); return; end
+    if YUI_PANEL_TIP then                                            -- (in the /yui panel: its own glass look - dark warm, round, a soft edge)
+        imgui.PushStyleVar(ImGuiStyleVar_WindowRounding, 10);
+        imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 11, 7 });
+        imgui.PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
+        imgui.PushStyleColor(ImGuiCol_PopupBg, { 0.095, 0.080, 0.070, 0.97 });
+        imgui.PushStyleColor(ImGuiCol_Border, { 1, 1, 1, 0.14 });
+        imgui.PushStyleColor(ImGuiCol_Text, { 1, 1, 1, 0.95 });
+        if imgui.BeginTooltip() ~= false then
+            imgui.SetWindowFontScale(0.86);
+            local first = true;
+            for line in (t .. '\n'):gmatch('([^\n]*)\n') do
+                if first then imgui.Text(line); else imgui.TextColored({ 1, 1, 1, 0.60 }, line); end
+                first = false;
+            end
+            imgui.SetWindowFontScale(1);
+            imgui.EndTooltip();
+        end
+        imgui.PopStyleColor(3);
+        imgui.PopStyleVar(3);
+        return;
+    end
     local hx = YUI_HEX and C.GOLDH ~= nil;                           -- (Hex link mode: square corners, a gold edge, the line gold to azure)
     imgui.PushStyleVar(ImGuiStyleVar_WindowRounding, hx and 0 or 6);
     imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 7, 3 });       -- (snug: just a little bigger than the text)
@@ -475,18 +496,19 @@ local function push_theme()
     local cols = {
         { ImGuiCol_WindowBg, { C.pbg[1], C.pbg[2], C.pbg[3], 0.92 } }, { ImGuiCol_ChildBg, { 0, 0, 0, 0 } }, { ImGuiCol_PopupBg, { C.pbg[1], C.pbg[2], C.pbg[3], 0.98 } },
         { ImGuiCol_Border, { 1, 1, 1, 0.08 } }, { ImGuiCol_Text, C.text }, { ImGuiCol_TextDisabled, C.muted },
-        { ImGuiCol_FrameBg, { C.pframe[1], C.pframe[2], C.pframe[3], 0.70 } }, { ImGuiCol_FrameBgHovered, { 0.22, 0.21, 0.27, 1 } }, { ImGuiCol_FrameBgActive, { 0.22, 0.21, 0.27, 1 } },
+        { ImGuiCol_FrameBg, { 1, 1, 1, 0.06 } }, { ImGuiCol_FrameBgHovered, { 1, 1, 1, 0.10 } }, { ImGuiCol_FrameBgActive, { C.acc[1], C.acc[2], C.acc[3], 0.14 } },   -- (glass boxes)
         { ImGuiCol_Button, { 1, 1, 1, 0.035 } }, { ImGuiCol_ButtonHovered, { 1, 1, 1, 0.08 } }, { ImGuiCol_ButtonActive, { 1, 1, 1, 0.12 } },
         { ImGuiCol_Separator, { 1, 1, 1, 0.07 } }, { ImGuiCol_ScrollbarBg, { 0, 0, 0, 0 } },
-        { ImGuiCol_ScrollbarGrab, { C.acc[1], C.acc[2], C.acc[3], 0.30 } }, { ImGuiCol_ScrollbarGrabHovered, { C.acc[1], C.acc[2], C.acc[3], 0.5 } },
+        { ImGuiCol_ScrollbarGrab, { 1, 1, 1, 0.07 } }, { ImGuiCol_ScrollbarGrabHovered, { C.acc[1], C.acc[2], C.acc[3], 0.55 } },   -- (the scrollbar: barely there
+        { ImGuiCol_ScrollbarGrabActive, { C.acc[1], C.acc[2], C.acc[3], 0.80 } },                                                     --  until the mouse is on it)
     };
     local nc, nv = 0, 0;                                             -- (any name this ImGui doesn't have is skipped)
     for _, c in ipairs(cols) do if c[1] ~= nil then imgui.PushStyleColor(c[1], c[2]); nc = nc + 1; end end
     local vars = {
-        { ImGuiStyleVar_WindowRounding, 12 }, { ImGuiStyleVar_FrameRounding, 8 },
+        { ImGuiStyleVar_WindowRounding, 12 }, { ImGuiStyleVar_FrameRounding, 10 },
         { ImGuiStyleVar_WindowPadding, { 20, 16 } }, { ImGuiStyleVar_FramePadding, { 10, 6 } },
         { ImGuiStyleVar_ItemSpacing, { 8, 8 } }, { ImGuiStyleVar_WindowBorderSize, 1 }, { ImGuiStyleVar_FrameBorderSize, 0 },
-        { ImGuiStyleVar_ScrollbarSize, 6 }, { ImGuiStyleVar_ScrollbarRounding, 3 },
+        { ImGuiStyleVar_ScrollbarSize, 5 }, { ImGuiStyleVar_ScrollbarRounding, 3 }, { ImGuiStyleVar_GrabMinSize, 30 },
     };
     for _, v in ipairs(vars) do if v[1] ~= nil then imgui.PushStyleVar(v[1], v[2]); nv = nv + 1; end end
     return nc, nv;
@@ -534,20 +556,205 @@ local function spaced_w(str, gap)
     for i = 1, #str do w = w + imgui.CalcTextSize(str:sub(i, i)) + gap; end
     return w - gap;
 end
+-- CONTROLS > Controller in the panel: the D-pad moves a ring from one setting to the next (up / down), left / right
+-- change it, confirm presses it, LB / RB (L1 / R1) turn the tabs, cancel closes the panel. Each control the panel draws
+-- puts itself in the list (C.nav_reg); a press is kept for the one the ring is on and done as it's drawn (C.nav_take).
+C.NAV = { list = {}, kinds = {}, nxt = {}, nkinds = {}, fire = {}, rects = {}, nrects = {} };
+C.BIND = { held = {} };                                             -- (CONTROLS > Open / close the panel: a key or button being picked, what's held)
+function C.nav_on() return C.UI and C.UI.open and cfg.panel_pad_nav ~= false and not C.BIND.listen; end
+function C.nav_reg(id, kind, x1, y1, x2, y2)                        -- (a control drawn: in the list; the ring round it when it's the one)
+    if not YUI_PANEL_TIP then return; end                            -- (the panel's own controls only)
+    local N = C.NAV;
+    N.nxt[#N.nxt + 1] = id;
+    N.nkinds[id] = kind;
+    N.nrects[id] = { x1, y1, x2, y2 };                               -- (where it is: the D-pad goes to the nearest one that way)
+    if N.active and N.zone == 'body' and N.cur == id then
+        if N.scroll == id then pcall(imgui.SetScrollHereY, 0.4); N.scroll = nil; end
+        local dl, ps = imgui.GetWindowDrawList(), C.ps;
+        local A = NEON2;
+        local br = 0.75 + 0.25 * math.sin(os.clock() * 4);         -- (a slow breath, so the eye finds it)
+        if kind == 'button' then                                     -- (a button: it lights as under the mouse - a thin ring hugging its pill)
+            local p = 3 * ps;
+            local r = (y2 - y1) / 2 + p;
+            DL.R(dl, x1 - p, y1 - p, x2 + p, y2 + p, U4(A[1], A[2], A[3], 0.18 * br), r, C.rall, 4 * ps);
+            DL.R(dl, x1 - p, y1 - p, x2 + p, y2 + p, U4(A[1], A[2], A[3], 0.95), r, C.rall, 1.5);
+        elseif N.edit == id then                                     -- (a slider held: brighter, and an arrow at each end - left / right change it)
+            local px, py = 8 * ps, 3 * ps;
+            local r = 10 * ps;
+            DL.RF(dl, x1 - px, y1 - py, x2 + px, y2 + py, U4(A[1], A[2], A[3], 0.16), r);
+            DL.R(dl, x1 - px, y1 - py, x2 + px, y2 + py, U4(A[1], A[2], A[3], 0.95), r, C.rall, 2);
+            local cy, q = (y1 + y2) / 2, 4 * ps;
+            DL.TF(dl, x1 - px + 2 * ps, cy, x1 - px + 2 * ps + q, cy - q, x1 - px + 2 * ps + q, cy + q, U4(A[1], A[2], A[3], 1));
+            DL.TF(dl, x2 + px - 2 * ps, cy, x2 + px - 2 * ps - q, cy + q, x2 + px - 2 * ps - q, cy - q, U4(A[1], A[2], A[3], 1));
+        else                                                         -- (a setting's row: a soft light across it)
+            local px, py = 8 * ps, 3 * ps;
+            local r = 10 * ps;
+            DL.RF(dl, x1 - px, y1 - py, x2 + px, y2 + py, U4(1, 1, 1, 0.05), r);
+            DL.RF(dl, x1 - px, y1 - py, x2 + px, y2 + py, U4(A[1], A[2], A[3], 0.06 * br), r);
+            DL.R(dl, x1 - px, y1 - py, x2 + px, y2 + py, U4(A[1], A[2], A[3], 0.45 * br), r, C.rall, 1);
+        end
+    end
+end
+function C.nav_take(id)                                              -- (a press waiting for this control: 'ok', 'left' or 'right')
+    if not YUI_PANEL_TIP then return nil; end
+    local N = C.NAV;
+    local f = N.fire[id];
+    if f then N.fire[id] = nil; end
+    return f;
+end
+function C.nav_input(w)                                              -- (one press: up / down / left / right / ok / back / lb / rb)
+    local N = C.NAV;
+    local was = N.active;
+    N.active = true;
+    N.zone = N.zone or 'rail';                                       -- (first the tabs on the left; confirm goes into the one you're on)
+    local n = #C.TABS;
+    if w == 'lb' or w == 'rb' then                                   -- (LB / RB: the tab before / after, from anywhere)
+        C.PANEL.pick(((C.UI.tab or 1) - 1 + ((w == 'rb') and 1 or -1)) % n + 1);
+        N.cur, N.first = nil, true;
+        return;
+    end
+    if N.zone == 'rail' then                                         -- (on the tabs: up / down choose one - it opens as you land on it -,
+        if not was then return; end                                  --  confirm or right goes into it, cancel closes the panel)
+        if w == 'up' or w == 'down' then
+            local t = (C.UI.tab or 1) + ((w == 'down') and 1 or -1);
+            if t >= 1 and t <= n then C.PANEL.pick(t); end
+        elseif w == 'ok' or w == 'right' then
+            N.zone, N.cur, N.first, N.held = 'body', nil, true, nil;
+        elseif w == 'back' then
+            C.UI.open = false; N.active, N.held = false, nil;
+        end
+        return;
+    end
+    if w == 'back' then                                              -- (in a tab: cancel lets a held slider go - else back to the tabs)
+        if N.edit then N.edit = nil; return; end
+        N.zone, N.cur, N.held = 'rail', nil, nil;
+        return;
+    end
+    local L = N.list;
+    if #L == 0 then return; end
+    local i = 0;
+    for k, id in ipairs(L) do if id == N.cur then i = k; end end
+    if i == 0 or not was then                                        -- (the first press: the ring shows, on the first one or where it was)
+        N.cur = (i > 0) and L[i] or L[1]; N.scroll = N.cur;
+        return;
+    end
+    local kind = N.kinds[N.cur];
+    if N.edit and N.edit == N.cur then                               -- (a slider held: left / right change it, confirm lets it go)
+        if w == 'left' or w == 'right' then N.fire[N.cur] = w; return; end
+        N.edit = nil;
+        if w == 'ok' then return; end
+    end
+    N.edit = nil;
+    if w == 'ok' then                                                -- (confirm: a slider is held - the rest are pressed / turned on or off / the next choice)
+        if kind == 'slider' then N.edit = N.cur; else N.fire[N.cur] = 'ok'; end
+        return;
+    end
+    local R = N.rects;                                               -- (up / down / left / right: the nearest one that way on screen - up / down
+    local c = R[N.cur];                                              --  keep to its column, left / right cross to the card beside it)
+    if not c then return; end
+    local cx, cy = (c[1] + c[3]) / 2, (c[2] + c[4]) / 2;
+    local best, bs = nil, nil;
+    for _, id in ipairs(L) do
+        local r = R[id];
+        if id ~= N.cur and r then
+            local x, y = (r[1] + r[3]) / 2, (r[2] + r[4]) / 2;
+            local dx, dy = x - cx, y - cy;
+            local fit, sc = false, 0;
+            local ov = math.min(r[3], c[3]) - math.max(r[1], c[1]);  -- (up / down: what's under or over it - side by side with it counts as
+            local gap = (ov > 0) and 0 or -ov;                       --  under, as a colour swatch under a slider - else the nearest column)
+            if w == 'down' then fit, sc = dy > 4, dy + 4 * gap + 0.01 * math.abs(dx);
+            elseif w == 'up' then fit, sc = dy < -4, -dy + 4 * gap + 0.01 * math.abs(dx);
+            elseif w == 'right' then fit, sc = r[1] >= c[3] - 2, (r[1] - c[3]) + 3 * math.abs(dy);
+            else fit, sc = r[3] <= c[1] + 2, (c[1] - r[3]) + 3 * math.abs(dy); end
+            if fit and (bs == nil or sc < bs) then best, bs = id, sc; end
+        end
+    end
+    if best then N.cur, N.scroll = best, best;
+    elseif w == 'left' then N.zone, N.cur, N.held = 'rail', nil, nil; end   -- (left from the left column: back to the tabs)
+end
+function C.nav_press(w)
+    local N = C.NAV;
+    if w == 'up' or w == 'down' or w == 'left' or w == 'right' then N.held = { w = w, nxt = os.clock() + 0.35 }; end   -- (held: it goes on)
+    C.nav_input(w);
+end
+function C.nav_release(w)
+    local N = C.NAV;
+    if N.held and (w == nil or N.held.w == w) then N.held = nil; end
+end
+function C.nav_frame()                                               -- (after the panel's body: this frame's list for the next presses; a held D-pad repeats)
+    local N = C.NAV;
+    N.list, N.kinds, N.nxt, N.nkinds = N.nxt, N.nkinds, {}, {};
+    N.rects, N.nrects = N.nrects, {};
+    if N.first and #N.list > 0 and N.zone == 'body' then N.first = false; if N.active then N.cur, N.scroll = N.list[1], N.list[1]; end end
+    if N.held and os.clock() >= N.held.nxt then N.held.nxt = os.clock() + 0.09; C.nav_input(N.held.w); end
+    pcall(function()                                                 -- (the mouse moved: the ring goes, till the next press)
+        local d = imgui.GetIO().MouseDelta;
+        local dx, dy = (type(d) == 'table') and (d.x or d[1]) or 0, (type(d) == 'table') and (d.y or d[2]) or 0;
+        if math.abs(tonumber(dx) or 0) + math.abs(tonumber(dy) or 0) > 2 then N.active = false; end
+    end);
+end
+function C.panel_toggle(pad)                                         -- (the key or button you picked: the panel opens - or closes)
+    local ui_ = C.UI;
+    ui_.open = not ui_.open;
+    if ui_.open then
+        ui_.min, C.PANEL.anim = false, nil;
+        C.NAV.cur, C.NAV.first, C.NAV.active, C.NAV.zone = nil, true, pad and cfg.panel_pad_nav ~= false, 'rail';   -- (opened: on the tabs)
+    end
+end
 local function switch(id, on)
     local x, y = imgui.GetCursorScreenPos();
-    local w, h = math.floor(52 * C.ps), math.floor(26 * C.ps);
+    local ps = C.ps;
+    local w, h = math.floor(52 * ps), math.floor(26 * ps);
     local clicked = imgui.InvisibleButton(id, { w, h });
+    C.nav_reg(id, 'switch', x + w - (YUI_ROW_W or 300), y - (imgui.GetFrameHeight() - h) / 2, x + w, y + h);   -- (the ring round its row)
+    local f_ = C.nav_take(id);
+    if f_ == 'ok' then clicked = true; end
     local hov = imgui.IsItemHovered();
     local dl = imgui.GetWindowDrawList();
-    -- the panel's own dark colour: on = a white knob on the right and a light edge, off = a grey knob on the left
-    DL.RF(dl, x, y, x + w, y + h, u32(on and { NEON[1] * 0.42, NEON[2] * 0.42, NEON[3] * 0.42, 1 } or (hov and { 0.14, 0.13, 0.18, 1 } or { 0.10, 0.095, 0.13, 1 })), h / 2);
-    DL.CF(dl, on and (x + w - h / 2) or (x + h / 2), y + h / 2, h / 2 - 4 * C.ps, u32(on and { 1, 1, 1, 1 } or { 0.55, 0.53, 0.62, 1 }), 24);
+    local A = C.SWA or {};                                           -- (each switch's knob glides over, its colour fading in)
+    C.SWA = A;
+    local v = A[id] or (on and 1 or 0);
+    v = v + ((on and 1 or 0) - v) * math.min(1, (tonumber(imgui.GetIO().DeltaTime) or 0.016) * 14);
+    A[id] = v;
+    -- 3D, from pictures made for YunaUI (images/panel/tog_*): the track pressed into the card - its shape tinted dark
+    -- off, the panel's colour on, its inner shadow over it - and a raised pill knob with its soft shadow
+    local c0, c1 = { 0.11, 0.095, 0.095 }, { NEON2[1] * 0.92, NEON2[2] * 0.92, NEON2[3] * 0.92 };
+    local tc = { c0[1] + (c1[1] - c0[1]) * v, c0[2] + (c1[2] - c0[2]) * v, c0[3] + (c1[3] - c0[3]) * v, 1 };
+    image(dl, C.tex_wh('panel/tog_track.png', w, h), x, y, x + w, y + h, tc);
+    image(dl, C.tex_wh('panel/tog_shade.png', w, h), x, y, x + w, y + h);
+    DL.R(dl, x - 0.5, y - 0.5, x + w + 0.5, y + h + 0.5, U4(0, 0, 0, 0.40), h / 2 + 0.5, C.rall, 1.2);   -- (a dark edge: it stands off any card)
+    local m = 2.5 * ps;                                              -- (the knob: a pill a little wider than tall; its picture has room for its shadow)
+    local kh = h - m * 2;
+    local kw = kh * 28 / 21;
+    local kx = x + m + (w - m * 2 - kw) * v;
+    local ky = y + m;
+    local pad = 6 * kh / 21;
+    local iw, ih = math.floor(kw + pad * 2 + 0.5), math.floor(kh + pad * 2 + 0.5);
+    image(dl, C.tex_wh('panel/tog_knob.png', iw, ih), kx - pad, ky - pad + kh / 21, kx - pad + iw, ky - pad + kh / 21 + ih, hov and { 1, 1, 1, 1 } or { 0.95, 0.95, 0.95, 1 });
     return clicked;
 end
 local ROW_W = 340;
 -- The controls below change YunaUI's own settings, or another table when given one (tbl) with on_change(key, value)
 -- called instead of saving (the EQUIP tab uses that to change YunaEquip)
+-- Undo (the panel): each switch, slider, choice and colour you change is kept (the last 20); the pill at the panel's foot
+-- and Ctrl+Z put the last one back
+C.UNDO = { list = {} };
+function C.undo_push(S, key, old, label, on_change)
+    if S[key] == old then return; end
+    local U = C.UNDO;
+    U.list[#U.list + 1] = { S = S, key = key, old = old, label = label, on_change = on_change };
+    if #U.list > 20 then table.remove(U.list, 1); end
+    U.t, U.undone = os.clock(), nil;
+end
+function C.undo_pop()
+    local U = C.UNDO;
+    local u = table.remove(U.list);
+    if not u then return; end
+    u.S[u.key] = u.old;
+    if u.on_change then pcall(u.on_change, u.key, u.old); else save(); end
+    if type(u.key) == 'string' and u.key:find('vol$') then C.SND.bufs = {}; end   -- (a volume: the sounds made again at it)
+    U.t, U.undone = os.clock(), u.label;
+end
 local function row_switch(id, text, key, hint, tbl, on_change)
     local S = tbl or cfg;
     if C.FIND.go then C.find_at(id); end                             -- (Search: the one picked glows)
@@ -557,8 +764,10 @@ local function row_switch(id, text, key, hint, tbl, on_change)
     if hint and imgui.IsItemHovered() then YUI_TIP(hint); end
     imgui.SameLine(x0 + ROW_W - math.floor(52 * C.ps));
     if switch(id, S[key] == true) then
+        local old = S[key];
         S[key] = not (S[key] == true);
         if on_change then on_change(key, S[key]); else save(); end
+        C.undo_push(S, key, old, text, on_change);
     end
 end
 -- A slider on one line: the name, a violet track, the value at the end. Double click puts it back to normal.
@@ -579,37 +788,64 @@ local function row_slider(id, text, key, lo, hi, step, fmt, tbl, on_change)
     local x, y = imgui.GetCursorScreenPos();
     local w, h = math.max(40, tr - tl), imgui.GetFrameHeight();
     imgui.InvisibleButton(id, { w, h });
+    do                                                               -- (the controller: left / right a step)
+        C.nav_reg(id, 'slider', x - tl, y, x - tl + ROW_W, y + h);
+        local f_ = C.nav_take(id);
+        if f_ == 'left' or f_ == 'right' then
+            local old = S[key];
+            local nv = math.max(lo, math.min(hi, (tonumber(S[key]) or lo) + ((f_ == 'right') and step or -step)));
+            nv = lo + math.floor((nv - lo) / step + 0.5) * step;
+            if nv ~= tonumber(S[key]) then
+                S[key] = nv; v = nv; label = string.format(fmt, v);
+                if on_change then on_change(key, S[key]); else save(); end
+                C.undo_push(S, key, old, text, on_change);
+            end
+        end
+    end
     local act, hov = imgui.IsItemActive(), imgui.IsItemHovered();
+    if imgui.IsItemActivated() then C.UNDO.drag = { old = S[key] }; end   -- (held: what it was, for Undo)
     if act then
         local mx = imgui.GetMousePos();
         local f = math.max(0, math.min(1, (mx - x) / w));
         local nv = lo + math.floor((f * (hi - lo)) / step + 0.5) * step;
         if math.abs(nv - v) > step * 0.01 then S[key] = nv; v = nv; label = string.format(fmt, v); end
     end
-    if imgui.IsItemDeactivated() then if on_change then on_change(key, S[key]); else save(); end end
-    if not tbl and hov and imgui.IsMouseDoubleClicked(0) then cfg[key] = defaults[key]; v = defaults[key]; save(); end
+    if imgui.IsItemDeactivated() then
+        if on_change then on_change(key, S[key]); else save(); end
+        if C.UNDO.drag then C.undo_push(S, key, C.UNDO.drag.old, text, on_change); C.UNDO.drag = nil; end
+    end
+    if not tbl and hov and imgui.IsMouseDoubleClicked(0) then
+        local old = cfg[key];
+        cfg[key] = defaults[key]; v = defaults[key]; save();
+        C.undo_push(cfg, key, old, text);
+    end
     local dl = imgui.GetWindowDrawList();
     local f = math.max(0, math.min(1, (v - lo) / (hi - lo)));
     local cy = y + h / 2;
-    local th = math.max(4, math.floor(6 * ps));
-    DL.RF(dl, x, cy - th / 2, x + w, cy + th / 2, U4(0.20, 0.19, 0.25, 1), th / 2);
-    local ok_ = pcall(function()
-        DL.RFM(dl, x, cy - th / 2, x + w * f, cy + th / 2, u32(NEON), u32(NEON2), u32(NEON2), u32(NEON));
-    end);
-    if not ok_ then DL.RF(dl, x, cy - th / 2, x + w * f, cy + th / 2, u32(NEON), th / 2); end
-    DL.CF(dl, x + w * f, cy, ((act or hov) and 13 or 11) * ps, U4(NEON[1], NEON[2], NEON[3], 0.30), 24);
-    DL.CF(dl, x + w * f, cy, 8 * ps, U4(1, 1, 1, 1), 24);
+    local th = math.max(4, math.floor(5 * ps));                      -- (a thin track, filled in the panel's colour; a dot only while you hold it)
+    DL.RF(dl, x, cy - th / 2, x + w, cy + th / 2, U4(1, 1, 1, 0.13), th / 2);
+    if f > 0 then DL.RF(dl, x, cy - th / 2, math.max(x + th, x + w * f), cy + th / 2, U4(NEON2[1], NEON2[2], NEON2[3], 1), th / 2); end
+    if act or hov then DL.CF(dl, x + w * f, cy, 6 * ps, U4(1, 1, 1, 1), 20); end
     imgui.SameLine(x0 + ROW_W - vw);
-    imgui.TextColored(C.text, label);
+    imgui.TextColored({ 1, 1, 1, 0.70 }, label);
 end
 -- A section's name: the name in spaced capitals, a faint line on to the edge
 local function section(text)
     if C.split then C.split(); end
+    if C.CARDS then pcall(C.card_next, text); end                    -- (the panel's body: each section on its own frosted card)
     imgui.Spacing(); imgui.Spacing();
     if C.FIND.go then C.find_at('sec:' .. text); end
     local ps = C.ps;
     local dl = imgui.GetWindowDrawList();
     local x0, y0 = imgui.GetCursorScreenPos();
+    if C.CARDS then                                                  -- (on a card: its name small and grey, as a card's title)
+        local pushed = push_font(fonts.chat or fonts.main, 13.5 * ps);
+        local lh = imgui.GetTextLineHeight();
+        spaced(dl, x0, y0, text:upper(), U4(1, 1, 1, 0.72), 1.2 * ps);
+        if pushed then imgui.PopFont(); end
+        imgui.Dummy({ ROW_W, lh + 2 * ps });
+        return;
+    end
     local pushed = push_font(fonts.semi, 17 * ps);
     local lh = imgui.GetTextLineHeight();
     local tw = spaced(dl, x0, y0, text:upper(), U4(0.93, 0.90, 1.00, 1), 2.5 * ps);
@@ -617,31 +853,61 @@ local function section(text)
     DL.L(dl, x0 + tw + 18 * ps, y0 + lh / 2, x0 + ROW_W, y0 + lh / 2, U4(1, 1, 1, 0.08), 1);
     imgui.Dummy({ ROW_W, lh + 2 * ps });
 end
--- A rounded button: violet-edged (the main one) or dark (quiet = true), its name in spaced capitals
+-- A pill button, its name in plain words: the main one filled in the panel's colour, a small one white (a chosen chip),
+-- quiet = true a glass chip
+function C.scase(name)                                               -- ('EXPORT MY UI' -> 'Export my UI')
+    local t = name:lower():gsub('^(%W*)(%a)', function(a, b) return a .. b:upper(); end);
+    for _, w in ipairs({ 'ui', 'hp', 'mp', 'tp', 'ws', 'pdf', 'rng', 'exp' }) do
+        t = t:gsub('%f[%w]' .. w .. '%f[%W]', w:upper());
+    end
+    return (t:gsub('Yunaui', 'YunaUI'):gsub('yunaui', 'YunaUI'));
+end
 local function accent_button(label, size, quiet, small)
     local ps = C.ps;
     if C.FIND.go then C.find_at(label); end
-    local w = (size and size[1] and size[1] > 0) and size[1] or (spaced_w(label, 3 * ps) + 40 * ps);
-    local h = (size and size[2] and size[2] > 0) and size[2] or math.floor(imgui.GetFrameHeight() * (small and 0.95 or 1.25));
+    local name = JP.t(label:gsub('##.*$', ''):upper());
+    if not JP.mb(name) then name = C.scase(name); end
+    if small then imgui.SetWindowFontScale((C.wfs or 1) * 0.86); end
+    local tw = imgui.CalcTextSize(name);
+    local w = (size and size[1] and size[1] > 0) and size[1] or (tw + 30 * ps);
+    if small then imgui.SetWindowFontScale(C.wfs or 1); end
+    local h = (size and size[2] and size[2] > 0) and size[2] or math.floor(imgui.GetFrameHeight() * (small and 0.95 or 1.1));
     local x, y = imgui.GetCursorScreenPos();
     local clicked = imgui.InvisibleButton(label, { w, h });
+    C.nav_reg(label, 'button', x, y, x + w, y + h);                 -- (the controller: confirm presses it)
+    if C.nav_take(label) == 'ok' then clicked = true; end
     local hov, act = imgui.IsItemHovered(), imgui.IsItemActive();
+    if YUI_PANEL_TIP and C.NAV.active and C.NAV.cur == label then hov = true; end   -- (the controller's ring on it: lit as under the mouse)
     local dl = imgui.GetWindowDrawList();
-    local rr = math.min(h * 0.45, 14 * ps);
-    local fill = { 0.10, 0.09, 0.13, 1 };                            -- the panel's dark colour inside (the violet edge stays)
-    if hov or act then fill = act and { 0.18, 0.17, 0.23, 1 } or { 0.15, 0.14, 0.19, 1 }; end
-    DL.RF(dl, x, y, x + w, y + h, u32(fill), rr);
-    local ec = u32(quiet and { 1, 1, 1, hov and 0.25 or 0.14 } or { NEON2[1], NEON2[2], NEON2[3], hov and 1 or 0.8 });
-    DL.R(dl, x, y, x + w, y + h, ec, rr, C.rall, quiet and 1 or 1.6);
-    local name = label:gsub('##.*$', ''):upper();
-    if small then imgui.SetWindowFontScale((C.wfs or 1) * 0.82); end -- (small: a smaller label, tighter letters)
-    local sp = (small and 2 or 3) * ps;
-    local lw = spaced_w(name, sp);
-    local lh = imgui.GetTextLineHeight();
-    spaced(dl, x + (w - lw) / 2, y + (h - lh) / 2, name, U4(0.93, 0.91, 0.98, 1), sp);
+    local rr = h / 2;
+    local tc;
+    if quiet and (hov or act) then                                   -- a glass chip under the mouse: white
+        DL.RF(dl, x, y, x + w, y + h, U4(1, 1, 1, act and 0.75 or 0.88), rr);
+        tc = U4(0.11, 0.08, 0.09, 1);
+    elseif quiet then                                                -- a glass chip
+        DL.RF(dl, x, y, x + w, y + h, U4(1, 1, 1, 0.07), rr);
+        DL.R(dl, x, y, x + w, y + h, U4(1, 1, 1, 0.13), rr, C.rall, 1);
+        tc = U4(1, 1, 1, 0.92);
+    elseif small then                                                -- the chosen chip: white
+        DL.RF(dl, x, y, x + w, y + h, U4(1, 1, 1, act and 0.80 or (hov and 1 or 0.94)), rr);
+        tc = U4(0.11, 0.08, 0.09, 1);
+    else                                                             -- the main one: glass, edged and lettered in the panel's colour
+        DL.RF(dl, x, y, x + w, y + h, U4(NEON2[1], NEON2[2], NEON2[3], act and 0.22 or (hov and 0.16 or 0.08)), rr);
+        DL.R(dl, x, y, x + w, y + h, U4(NEON2[1], NEON2[2], NEON2[3], hov and 0.95 or 0.65), rr, C.rall, 1.2);
+        tc = U4(NEON2[1], NEON2[2], NEON2[3], 1);
+    end
+    if small then imgui.SetWindowFontScale((C.wfs or 1) * 0.86); end
+    local lw, lh = imgui.CalcTextSize(name);
+    DL.T(dl, x + (w - lw) / 2, y + (h - lh) / 2, tc, name);
     if small then imgui.SetWindowFontScale(C.wfs or 1); end
     return clicked;
 end
+-- (for equip.lua's rows in the BARS tab - your HP / MP / TP: the panel's own switch, buttons, controller and Undo)
+YUI_SWITCH, YUI_ACCENT = switch, accent_button;
+function YUI_SWITCH_W() return math.floor(52 * C.ps); end
+function YUI_NAV_REG(...) return C.nav_reg(...); end
+function YUI_NAV_TAKE(id) return C.nav_take(id); end
+function YUI_UNDO_PUSH(...) return C.undo_push(...); end
 -- A choice: the name on the left, a dark pill on the right with the current one and a small arrow; click it for the list
 local function row_pick(id, text, key, opts, tbl, on_change)
     local S = tbl or cfg;
@@ -653,14 +919,35 @@ local function row_pick(id, text, key, opts, tbl, on_change)
     local cur = 1;
     for k, o in ipairs(opts) do if o[1] == S[key] then cur = k; end end
     local bw, bh = math.floor(math.min(ROW_W * 0.55, 320 * ps)), imgui.GetFrameHeight();
-    for _, o in ipairs(opts) do bw = math.max(bw, math.floor(imgui.CalcTextSize(o[2]) + 70 * ps)); end
-    imgui.SameLine(x0 + ROW_W - bw);
+    local need = 0;                                                  -- (the longest choice, with room for the arrow)
+    for _, o in ipairs(opts) do need = math.max(need, math.floor(imgui.CalcTextSize(o[2]) + 70 * ps)); end
+    bw = math.max(bw, need);
+    local room = math.floor(ROW_W - imgui.CalcTextSize(text) - 14 * ps);
+    if bw > room and need <= room then bw = room; end                -- (narrower, to sit beside its name)
+    if bw > room then                                                -- (no room beside its name: on the line under it, the whole width)
+        bw = ROW_W;
+        imgui.SetCursorPosX(x0);
+    else
+        imgui.SameLine(x0 + ROW_W - bw);
+    end
     local bx, by = imgui.GetCursorScreenPos();
     local clicked = imgui.InvisibleButton(id, { bw, bh });
+    do                                                               -- (the controller: left / right the choice before / after, confirm the next)
+        C.nav_reg(id, 'pick', bx + bw - ROW_W, by, bx + bw, by + bh);
+        local f_ = C.nav_take(id);
+        if f_ == 'ok' then                                           -- (confirm: the next choice)
+            local n_ = #opts;
+            local k_ = cur % n_ + 1;
+            local old = S[key];
+            S[key] = opts[k_][1];
+            if on_change then on_change(key, S[key]); else save(); end
+            C.undo_push(S, key, old, text, on_change);
+        end
+    end
     local hov = imgui.IsItemHovered();
     local dl = imgui.GetWindowDrawList();
-    DL.RF(dl, bx, by, bx + bw, by + bh, u32(hov and { 0.15, 0.14, 0.19, 1 } or { 0.10, 0.09, 0.13, 1 }), bh / 2);
-    DL.R(dl, bx, by, bx + bw, by + bh, u32(hov and { NEON2[1], NEON2[2], NEON2[3], 0.45 } or { 1, 1, 1, 0.10 }), bh / 2, C.rall, 1);
+    DL.RF(dl, bx, by, bx + bw, by + bh, U4(1, 1, 1, hov and 0.11 or 0.06), bh / 2);
+    DL.R(dl, bx, by, bx + bw, by + bh, u32(hov and { NEON2[1], NEON2[2], NEON2[3], 0.55 } or { 1, 1, 1, 0.16 }), bh / 2, C.rall, 1);
     local label = opts[cur][2];
     local lw, lh = imgui.CalcTextSize(label);
     DL.T(dl, bx + (bw - lw) / 2, by + (bh - lh) / 2, U4(0.93, 0.92, 0.98, 1), label);
@@ -683,8 +970,10 @@ local function row_pick(id, text, key, opts, tbl, on_change)
     if imgui.BeginPopup(id .. '_list') then
         for k, o in ipairs(opts) do
             if imgui.Selectable('  ' .. o[2] .. '##' .. id .. k, k == cur, 0, { bw, 0 }) then
+                local old = S[key];
                 S[key] = o[1];
                 if on_change then on_change(key, S[key]); else save(); end
+                C.undo_push(S, key, old, text, on_change);
             end
         end
         imgui.EndPopup();
@@ -1340,8 +1629,10 @@ local function member_buffs(i)
         local pt = AshitaCore:GetMemoryManager():GetParty();
         local z0, zi = pt:GetMemberZone(0) or 0, pt:GetMemberZone(i) or 0;
         if z0 ~= 0 and zi ~= 0 and zi ~= z0 then return out; end    -- (in another zone: no buffs shown - they're not seen from here)
-        local list = party_buffs[pt:GetMemberServerId(i)];
-        if list then for _, v in ipairs(list) do if v > 0 and v ~= 255 then out[#out + 1] = v; end end end
+        local sid_ = pt:GetMemberServerId(i);
+        local list = (C.peer_buffs and C.peer_buffs(sid_)) or party_buffs[sid_];   -- (one of your own characters: its YunaUI's list, at once -
+        if list then for _, v in ipairs(list) do if v > 0 and v ~= 255 then out[#out + 1] = v; end end end   --  the server's comes only when
+                                                                     --  a buff changes, and was empty when they joined)
     end
     -- debuffs first, so they're easy to spot; otherwise the game's own order (kept steady, so nothing swaps places)
     local deb, rest = {}, {};
@@ -1593,7 +1884,7 @@ end
 BUFFS.peer, BUFFS.opend = {}, {};
 function BUFFS.share()                                               -- (each second: your own timers to your other characters' YunaUI)
     local now = os.clock();
-    if now < (BUFFS.sh_at or 0) or cfg.party_buff_timers == false then return; end
+    if now < (BUFFS.sh_at or 0) then return; end
     BUFFS.sh_at = now + 1;
     local ok_, n_ = pcall(function() return #vana.clients.list(); end);
     if not ok_ or (n_ or 0) < 2 then return; end
@@ -1601,12 +1892,19 @@ function BUFFS.share()                                               -- (each se
     if sid == 0 then return; end
     BUFFS.mine();
     local parts = {};
-    for id, l in pairs(BUFFS.marr or {}) do
-        local a = {};
-        for k, v in ipairs(l) do a[k] = string.format('%.1f', v); end
-        parts[#parts + 1] = id .. '=' .. table.concat(a, ',');
+    if cfg.party_buff_timers ~= false then
+        for id, l in pairs(BUFFS.marr or {}) do
+            local a = {};
+            for k, v in ipairs(l) do a[k] = string.format('%.1f', v); end
+            parts[#parts + 1] = id .. '=' .. table.concat(a, ',');
+        end
     end
-    pcall(vana.ipc.send, 'bt ' .. sid .. ' ' .. table.concat(parts, ';'));
+    local ids = {};                                                  -- (and every buff you have, in the game's order: your other characters'
+    pcall(function()                                                 --  party cards show them at once, timer or not)
+        local ic = AshitaCore:GetMemoryManager():GetPlayer():GetStatusIcons();
+        for k = 0, 31 do local v = tonumber(ic[k]); if v and v > 0 and v ~= 255 then ids[#ids + 1] = v; end end
+    end);
+    pcall(vana.ipc.send, 'bt ' .. sid .. ' ' .. table.concat(parts, ';') .. ' L' .. table.concat(ids, ','));
 end
 function BUFFS.on_ipc(e)
     local sid, body = tostring(e and e.message or ''):match('^bt (%d+) ?(.*)$');
@@ -1619,7 +1917,10 @@ function BUFFS.on_ipc(e)
         arr[tonumber(id)] = a;
     end
     local old = BUFFS.peer[sid];
-    BUFFS.peer[sid] = { t = now, arr = arr };
+    local lst = nil;
+    local ls_ = body:match('L([%d,]*)');
+    if ls_ then lst = {}; for v in ls_:gmatch('%d+') do lst[#lst + 1] = tonumber(v); end end
+    BUFFS.peer[sid] = { t = now, arr = arr, list = lst };
     local new = old and BUFFS.diff(old.arr, old.t, arr, now) or {};
     for _, nv in ipairs(new) do                                      -- (a buff you cast on them just showed up there: its real length on others)
         for j = #BUFFS.opend, 1, -1 do
@@ -1634,6 +1935,11 @@ function BUFFS.on_ipc(e)
             end
         end
     end
+end
+function C.peer_buffs(sid)                                           -- (the buffs one of your own characters has, from its YunaUI a moment ago)
+    local P = BUFFS.peer[sid];
+    if P and P.list and os.clock() - P.t < 4 then return P.list; end
+    return nil;
 end
 function BUFFS.cast_on(actor, tid, buff, spell)
     local me = AshitaCore:GetMemoryManager():GetParty():GetMemberServerId(0) or 0;
@@ -2811,6 +3117,13 @@ local function read_message(e)
     if MSG_OFF[m] then enemy_off(target, param);
     elseif MSG_DEATH[m] then enemies[target] = nil; end
 end
+function C.locked_on()                                              -- (the camera locked on your target: the game's own flag)
+    local ok, v = pcall(function()
+        local t = AshitaCore:GetMemoryManager():GetTarget();         -- (GetLockedOnFlags only: asking for GetIsLockedOn, which VanaCore hasn't, logged a warning)
+        return bit.band(tonumber(t:GetLockedOnFlags()) or 0, 1) == 1;
+    end);
+    return ok and v == true;
+end
 -- What to show under the target bar: your own buffs, a party member's, or the debuffs seen landing on a monster
 local function target_buffs(idx)
     local ent = AshitaCore:GetMemoryManager():GetEntity();
@@ -3915,6 +4228,21 @@ local function draw_target(dt)
             local maxdx_ = w - pw0_ - nw - dw0_ - iw0_;
             if tdx > maxdx_ then tdx = math.floor(math.max(0, maxdx_)); end
         end
+        if not fake and cfg.target_lock ~= false and C.locked_on() then   -- TARGET > Lock-on mark: a padlock before the name while the camera's locked on
+            local isz = math.floor(nh * 0.92);
+            local L = C.LOCK or {};
+            C.LOCK = L;
+            if not L.on then L.on, L.t = true, os.clock(); end
+            local e = math.min(1, (os.clock() - L.t) / 0.22);           -- (it pops in)
+            local k = 1 + 0.35 * (1 - e) * (1 - e);
+            local A2 = link and C.GOLDH2 or NEON2;
+            local cx_, cy_ = x + tdx + isz / 2, y + tdy + nh / 2;
+            local q = isz * k / 2;
+            DL.CF(dl, cx_, cy_, isz * 0.70 * k, U4(0, 0, 0, 0.55 * nla), 24);   -- (a dark disc behind it: it reads on snow or sky)
+            DL.C(dl, cx_, cy_, isz * 0.70 * k, U4(A2[1], A2[2], A2[3], 0.75 * nla), 24, 1.4);
+            image(dl, C.tex_at('panel/lock.png', isz), cx_ - q, cy_ - q, cx_ + q, cy_ + q, { A2[1], A2[2], A2[3], nla });
+            tdx = tdx + isz + math.floor(6 * sc);                     -- (the name, its distance and the monster info after it)
+        elseif C.LOCK then C.LOCK.on = false; end
         local pcx_ = x + w - pw0_;                                    -- (where the HP % starts, on the name's line)
         if not link and math.abs(tdy) < nh and x + tdx + nw + dw0_ > pcx_ then   -- (Vex: a name (and its distance) running under the HP % is cut short of it)
             local room_ = pcx_ - (x + tdx) - dw0_;
@@ -7103,6 +7431,7 @@ local function draw_party(dt)
             ALLY.cur = 0;
             ALLY.hbtn, ALLY.tip = nil, nil;
             h, w = ALLY.spine(dl, list, x + 4, y + 4, psc, dt, tidx, 'PARTY', true);
+            C.PARTYR = { x = x, y = y, w = w, h = h, sc = psc, t = os.clock() };   -- (TREASURE POOL > Chest: it sits at the party list's top left)
             bl = 0;                                                  -- (the box is just the list; the buffs sit outside it)
             for name, r in pairs(ALLY.hbtn or {}) do                 -- the arrow and the anchor by PARTY
                 -- (kept inside the list's own width: while the party slides in from the right they'd reach past it, the window
@@ -13098,6 +13427,7 @@ end
 -- The old floating logo with its fan of buttons (no longer drawn: the violet logo at the top of the screen opens YunaUI)
 ----------------------------------------------------------------------------------------------------
 local ui = { open = false, fan = false, fan_t = 0, min = false };
+C.UI = ui;                                                           -- (for the code above it: CONTROLS' navigation)
 local FAN = {
     { 'btn_dps.png',   'Damage Meter', '/dps' },
 };
@@ -13252,7 +13582,7 @@ local function copy_section()
     imgui.SameLine(x0 + ROW_W - 150);
     local cur = list[COPY.pick] or list[1];
     local shown = cur:match('^(.+)_%d+$') or cur;
-    if accent_button(shown .. '##yui_copy_who', { 150, 0 }) then COPY.pick = COPY.pick % #list + 1; COPY.confirm = 0; end
+    if accent_button(shown .. '##yui_copy_who', { 150, 0 }, true, true) then COPY.pick = COPY.pick % #list + 1; COPY.confirm = 0; end
     if imgui.IsItemHovered() then YUI_TIP('Click for the next character'); end
     local sure = os.clock() < COPY.confirm;
     if accent_button((sure and ('SURE? THIS REPLACES ' .. shown:upper() .. '\'S SETTINGS') or 'COPY MY SETTINGS') .. '##yui_copy', { ROW_W, 0 }) then
@@ -13681,7 +14011,8 @@ function PET.draw(dt)
     end
 end
 
-local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 'DAMAGE METER', 'MINIMAP', 'TREASURE POOL', 'SOUND ALERTS', 'ACTION BARS', 'BUFFS' };
+local TABS = { 'GENERAL', 'TARGET', 'PARTY', 'BARS', 'CHAT', 'EQUIP', 'TIMERS', 'DAMAGE METER', 'MINIMAP', 'TREASURE POOL', 'SOUND ALERTS', 'ACTION BARS', 'BUFFS', 'CONTROLS' };
+C.TABS = TABS;
 -- the public version (public.flag in YunaUI's folder): Normal mode only, no Action Bars - what's still to come stays off
 YUI_PUBLIC = false;                                                  -- (since 1.0.79 everyone has the full YunaUI: a public.flag left by 1.0.71-1.0.78 - unzipping
 pcall(os.remove, (addon.path or '') .. 'public.flag');               --  over the old folder keeps it - hid the mode switch, Hex link and the Action Bars; removed)
@@ -13710,7 +14041,7 @@ function C.find_index()
     local function add(id, label, rest, md)
         if not tab or label == '' then return; end
         md = md or cur_mode();
-        local k = tab .. '|' .. label:lower() .. '|' .. tostring(md);
+        local k = tab .. '|' .. tostring(sec) .. '|' .. label:lower() .. '|' .. tostring(md) .. (id:find('^sec:') and '|s' or '');   -- (by section too: each Size of a tab its own - and a section SIZE isn't its slider Size)
         if seen[k] then return; end
         seen[k] = true;
         local extra = {};
@@ -14143,6 +14474,7 @@ function C.loot_flights(fg, sc)
             if sx == nil then sx, sy = W * 0.5, H * 0.62; end
             local win = L.win or { tonumber(cfg.loot_x) or 100, tonumber(cfg.loot_y) or 100, 360 * sc, 200 * sc };
             local tx, ty = win[1] + 2 * sc, L.rowy[f.slot] or (win[2] + win[4] * 0.5);
+            if L.chest_to then tx, ty = L.chest_to[1], L.chest_to[2]; end   -- (the chest shut: into it)
             local P = { { sx, sy }, { sx + (tx - sx) * 0.25, sy - 140 * sc }, { tx - 160 * sc, ty - 30 * sc }, { tx + 30 * sc, ty } };
             if t < 1 then
                 local pop = math.min(1, t / 0.18);                   -- (the pop: out of the monster, a touch past full size)
@@ -14179,6 +14511,7 @@ function C.loot_flights(fg, sc)
             elseif not f.done then
                 f.done = true;
                 L.flash[f.slot] = now;                               -- (it arrived: the line on the left lights up, the row slides out)
+                if L.chest_to then C.CHEST.shake = now; end          -- (into the shut chest: it gives a little jump)
             end
         end
     end
@@ -14262,6 +14595,151 @@ function C.loot_btn(dl, id, x, y, w, h, label, kind, on, lit)
     DL.T(dl, x + (w - tw_) / 2, y - up + (h - (tonumber(th_) or h)) / 2, U4(ink[1], ink[2], ink[3], a), label);
     return hit and on;
 end
+-- TREASURE POOL > Chest: when something drops, a small chest at the party list's top left instead of the whole list -
+-- glowing, the number of items on it, a jump when another lands in it. A click: the lid opens in a burst of light and
+-- the list comes out; its MINIMISE (or a click on the chest) sends it back in. Its pictures: images/panel/chest_*.png
+-- (Vex mode purple, Hex link gold - made from Yunas' own art).
+C.CHEST = { open = false, t = -9, shake = -9, n = 0, a = 0 };
+function C.chest_rect()                                              -- (where it is, and its size)
+    local sz = math.floor(44 * (tonumber(cfg.scale) or 1) * math.max(0.5, math.min(2.5, tonumber(cfg.loot_chest_size) or 1)));
+    local P = C.PARTYR;
+    local x, y;
+    if tonumber(cfg.chest_x) and tonumber(cfg.chest_y) then          -- (dragged: where you put it - on its own, the party list moving doesn't move it)
+        x, y = tonumber(cfg.chest_x), tonumber(cfg.chest_y);
+    elseif P and cfg.party and os.clock() - (P.t or -9) < 1 then     -- (not yet: in the party list's header row, left of the card icon and PARTY)
+        local ps = P.sc or 1;
+        x, y = P.x + P.w - 138 * ps - sz, P.y + 13 * ps - sz;
+    else
+        x, y = (tonumber(cfg.loot_x) or 100), (tonumber(cfg.loot_y) or 100) - sz - 6;   -- (no party list: over the pool's place)
+    end
+    local W, H = C.screen();
+    x, y = math.max(4, math.min(W - sz - 4, x)), math.max(4, math.min(H - sz - 4, y));
+    return x, y, sz;
+end
+function C.chest_draw(n, fake)                                       -- (the chest on the screen; gives back its middle)
+    local K = C.CHEST;
+    local fg = imgui.GetForegroundDrawList();
+    local now = os.clock();
+    local x, y, sz = C.chest_rect();
+    local cx, cy = x + sz / 2, y + sz / 2;
+    local hx = YUI_HEX;
+    local A = hx and { 1.0, 0.80, 0.36 } or { 0.92, 0.42, 0.95 };
+    K.a = math.min(1, K.a + 0.12);                                   -- (it fades in as the pool fills)
+    local a = K.a;
+    local e = math.min(1, (now - K.t) / (K.open and 0.45 or 0.35));  -- (opening / closing)
+    local op = K.open and e or (1 - e);                              -- (0 shut .. 1 open)
+    local mx, my = imgui.GetMousePos();
+    local over = mx >= x and mx <= x + sz and my >= y and my <= y + sz;
+    local k = over and 1.08 or 1;
+    if K.open and e < 1 then k = k * (1 + 0.20 * math.sin(e * math.pi)); end   -- (a pop as it opens)
+    if not K.open and e < 1 then k = k * (1 - 0.08 * math.sin(e * math.pi)); end   -- (a squash as it shuts)
+    local sh = math.max(0, 1 - (now - K.shake) / 0.5);              -- (a jump when an item lands in it)
+    local jx = math.sin((now - K.shake) * 45) * 3 * sh * (tonumber(cfg.scale) or 1);
+    local jy = -math.abs(math.sin((now - K.shake) * 14)) * 6 * sh * (tonumber(cfg.scale) or 1);
+    local rot = 0;                                                   -- (shut with loot in it: every 2.4 s a quick wiggle - a tilt side to side, dying away)
+    if not K.open and e >= 1 and (n or 0) > 0 then
+        local ph = (now - (K.wig0 or 0)) % 2.4;
+        if ph < 0.55 then rot = math.sin(ph * 34) * 0.20 * (1 - ph / 0.55); end
+    end
+    rot = rot + math.sin((now - K.shake) * 40) * 0.25 * sh;          -- (an item landing in it: a stronger rattle)
+    if op > 0.2 then                                                 -- (open: sparks rising out of it)
+        for i = 1, 6 do
+            local ph = ((now * 0.7 + i * 0.37) % 1);
+            local px = cx + math.sin(i * 2.3 + now) * sz * 0.18;
+            local py = cy - sz * 0.05 - ph * sz * 0.7;
+            DL.CF(fg, px, py, math.max(1, 1.8 * (tonumber(cfg.scale) or 1)), U4(1, 0.95, 0.8, (1 - ph) * 0.8 * op * a), 8);
+        end
+    end
+    local h2 = sz * k / 2;
+    local x1, y1 = cx - h2 + jx, cy - h2 + jy;
+    local tx_ = C.tex_at(hx and 'panel/chest_hex.png' or 'panel/chest_vex.png', math.floor(sz * 1.3));   -- (one picture: open, it glows brighter)
+    local function pic(al)                                           -- (the picture, turned round its foot by rot)
+        if not tx_ then return; end
+        local qx, qy = x1 + h2, y1 + h2 * 2;
+        local c_, s_ = math.cos(rot), math.sin(rot);
+        local function R(px, py) local dx, dy = px - qx, py - qy; return { qx + dx * c_ - dy * s_, qy + dx * s_ + dy * c_ }; end
+        if not pcall(function() fg:AddImageQuad(tx_.ptr, R(x1, y1), R(x1 + h2 * 2, y1), R(x1 + h2 * 2, y1 + h2 * 2), R(x1, y1 + h2 * 2),
+                { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, U4(1, 1, 1, al)); end) then
+            image(fg, tx_, x1, y1, x1 + h2 * 2, y1 + h2 * 2, { 1, 1, 1, al });
+        end
+    end
+    pic(a);
+    if op > 0 then pic(0.45 * op * a); end
+    do                                                               -- (a tiny window of its own over it: the click is YunaUI's, not the game's - and the
+                                                                     --  badge's text sized inside it: outside any window ImGui opened an empty "Debug" one)
+        imgui.SetNextWindowPos({ x, y }, ImGuiCond_Always);
+        imgui.SetNextWindowSize({ sz, sz }, ImGuiCond_Always);
+        imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
+        imgui.PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        if imgui.Begin('##yui_chest', { true }, bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoMove, ImGuiWindowFlags_NoScrollbar,
+                ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing)) then
+          if n and n > 0 and not K.open then                         -- (how many items: a small badge on its top right)
+            local t_ = tostring(n);                                  -- (just the number, small, in its bottom right corner: a soft white with a dark edge - no disc)
+            imgui.SetWindowFontScale(1.05);
+            local tw, th = imgui.CalcTextSize(t_);
+            local bx, by = x + sz * 0.99, y + sz * 0.74 - th / 2;   -- (just past the chest's bottom right corner: on the ground, not on it)
+            for ox = -2, 2 do for oy = -2, 2 do                     -- (a thick dark edge)
+                if (ox ~= 0 or oy ~= 0) and math.abs(ox) + math.abs(oy) <= 3 then DL.T(fg, bx + ox, by + oy, U4(0, 0, 0, 0.85 * a), t_); end
+            end end
+            DL.T(fg, bx, by, U4(1, 1, 1, a), t_);
+            DL.T(fg, bx + 0.6, by, U4(1, 1, 1, a), t_);              -- (a hair to the right again: bolder)
+            imgui.SetWindowFontScale(1);
+          end
+          if not fake then                                           -- (a preview: just the look, no clicks)
+            local clk_ = imgui.InvisibleButton('##yui_chestbtn', { sz, sz });
+            if imgui.IsItemActive() and not (cfg.locked and not EDIT.on) then   -- (held and moved: it's dragged - its own place from then on)
+                local d = imgui.GetIO().MouseDelta;
+                local ddx, ddy = tonumber(d and (d.x or d[1])) or 0, tonumber(d and (d.y or d[2])) or 0;
+                if ddx ~= 0 or ddy ~= 0 then
+                    K.drag = (K.drag or 0) + math.abs(ddx) + math.abs(ddy);
+                    if K.drag > 4 then cfg.chest_x, cfg.chest_y = math.floor(x + ddx), math.floor(y + ddy); end
+                end
+            end
+            if imgui.IsItemDeactivated() then if (K.drag or 0) > 4 then save(); clk_ = false; end K.drag = 0; end   -- (a drag isn't a click)
+            if clk_ and (K.drag or 0) <= 4 then K.open, K.t = not K.open, now; if K.open then C.LOOT.seen = {}; end end   -- (opened: the rows come out one after another)
+          end
+        end
+        imgui.End();
+        imgui.PopStyleVar(2);
+    end
+    return cx, cy;
+end
+C.CHEST.OUT = { start = 0.10, step = 0.08, fly = 0.38 };           -- (out of the chest: after the lid pops, one after another)
+C.CHEST.IN = { step = 0.06, fly = 0.32 };                            -- (back in: from the bottom up)
+function C.chest_flights(items)                                      -- (each item's icon between the chest and its row: out on opening, back on MINIMISE)
+    local L, K = C.LOOT, C.CHEST;
+    local c = L.chest_c;
+    if not c or not (L.copen or L.cclose) then return; end
+    local fg = imgui.GetForegroundDrawList();
+    local n = #items;
+    local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.loot_scale) or 1);
+    local A = YUI_HEX and { 1.0, 0.82, 0.40 } or { 1.0, 0.62, 0.86 };
+    for r_, it in ipairs(items) do
+        local rx, ry = L.rowx and L.rowx[it.slot], L.rowy and L.rowy[it.slot];
+        if rx and ry then
+            local t;                                                 -- (0 at the chest, 1 in its row)
+            if L.copen then t = (L.copen - K.OUT.start - (r_ - 1) * K.OUT.step) / K.OUT.fly;
+            else t = 1 - (L.cclose - (n - r_) * K.IN.step) / K.IN.fly; end
+            if t > 0 and t < 1 then
+                local e = L.copen and (1 - (1 - t) ^ 3) or (t * t);  -- (out: quick, settling - in: drawn in faster at the end)
+                local up = math.min(c[2], ry) - 50 * sc;
+                local P = { { c[1], c[2] }, { c[1] + (rx - c[1]) * 0.15, up }, { rx + (c[1] - rx) * 0.25, up + (ry - up) * 0.4 }, { rx, ry } };
+                local hx, hy = C.lw_bez(P, e);
+                local isz = (L.risz or 30 * sc) * (0.35 + 0.65 * e);
+                for k = 1, 4 do                                      -- (a short sparkling trail behind it)
+                    local tb = math.max(0, e - k * 0.05);
+                    local qx, qy = C.lw_bez(P, tb);
+                    DL.CF(fg, qx, qy, math.max(1, (3 - k * 0.5) * sc), U4(A[1], A[2], A[3], 0.45 * (1 - k / 5)), 10);
+                end
+                local h = isz / 2 + 3 * sc;
+                DL.RF(fg, hx - h, hy - h, hx + h, hy + h, U4(0.05, 0.04, 0.05, 0.85), 5 * sc);   -- (a small dark tile round the icon)
+                DL.R(fg, hx - h, hy - h, hx + h, hy + h, U4(A[1], A[2], A[3], 0.80), 5 * sc, C.rall, 1.2);
+                local ic = YUI_EQ_ICON and YUI_EQ_ICON(it.id) or nil;
+                if ic then pcall(function() DL.I(fg, ic.ptr, hx - isz / 2, hy - isz / 2, hx + isz / 2, hy + isz / 2, 0, 0, 1, 1, U4(1, 1, 1, 1)); end); end
+            end
+        end
+    end
+end
 function C.loot_win()
     C.loot_tick();
     local L = C.LOOT;
@@ -14271,8 +14749,38 @@ function C.loot_win()
     local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.loot_scale) or 1);
     if fg and #L.fly > 0 then pcall(C.loot_flights, fg, sc); end
     if cfg.loot_win == false then L.hov = nil; return; end
-    local fake = L.n == 0 and (EDIT.on or (ui.open and ui.tab == 10));   -- (its tab open, or Edit Mode: a preview to place it)
-    if L.n == 0 and not fake then L.hov = nil; return; end
+    local K = C.CHEST;
+    local try = L.n == 0 and K.try_until and now < K.try_until;      -- (TRY THE CHEST: a pretend pool - the chest works, the buttons don't send anything)
+    if not try and K.try_until then K.try_until = nil; K.open = false; end
+    local fake = try or (L.n == 0 and (EDIT.on or (ui.open and ui.tab == 10)));   -- (its tab open, or Edit Mode: a preview to place it)
+    local pv = fake and not try;                                     -- (a preview: always open, the chest not clickable)
+    local chest = cfg.loot_chest ~= false;
+    if L.n == 0 and not fake then L.hov, L.chest_to = nil, nil; K.open, K.n, K.a = false, 0, 0; return; end
+    local la = 1;                                                    -- (the list's own fade: in as it comes out of the chest, out as it goes back)
+    if chest then
+        if not fake and L.n > K.n and K.n > 0 and not K.open then K.shake = now; end   -- (another item: the shut chest jumps)
+        if not fake then K.n = L.n; end
+        local okc, ccx, ccy = pcall(C.chest_draw, fake and #L.FAKE or L.n, pv);
+        local cnt = fake and #L.FAKE or L.n;
+        local odur = K.OUT.start + K.OUT.step * math.max(0, cnt - 1) + K.OUT.fly;   -- (all out)
+        local cdur = K.IN.step * math.max(0, cnt - 1) + K.IN.fly + 0.05;            -- (all back in)
+        local e = math.min(1, (now - K.t) / (K.open and odur or cdur));
+        local opn = pv or K.open;
+        L.chest_to = (not opn and okc) and { ccx, ccy } or nil;
+        L.chest_c = okc and { ccx, ccy } or nil;
+        L.copen = (not pv and K.open and e < 1) and (now - K.t) or nil;   -- (the items flying out: how long since it opened)
+        L.cclose = (not pv and not K.open and e < 1) and (now - K.t) or nil;   -- (flying back in)
+        if not K.open and e >= 1 and not pv and K.was_closing then K.was_closing = nil; K.shake = now; end   -- (the last one in: a rattle)
+        if L.cclose then K.was_closing = true; end
+        if not opn and e >= 1 then L.hov = nil; return; end          -- (shut: just the chest)
+        la = pv and 1 or (K.open and math.min(1, (now - K.t) / 0.25) or math.max(0, 1 - (now - K.t) / cdur));   -- (its header: in quickly, out as the items go back)
+        if not pv and la <= 0.01 then
+            if K.open then L.hov = nil; if not L.win then la = 0.01; else return; end   -- (the very first time: drawn once, unseen, for its size)
+            else L.hov = nil; return; end
+        end
+    else
+        L.chest_to = nil;
+    end
     local items = {};
     if fake then
         for k, f in ipairs(L.FAKE) do items[#items + 1] = { slot = k - 1, id = f[1], name = f[2], at = os.time() - k * 70, fake = true }; end
@@ -14283,7 +14791,8 @@ function C.loot_win()
         end
     end
     first_place('loot_x', 'loot_y', 320, -560);
-    if not plain_window('YunaUI Treasure##yui_loot', 'loot_x', 'loot_y') then imgui.End(); imgui.PopStyleVar(2); return; end
+    imgui.PushStyleVar(ImGuiStyleVar_Alpha, math.max(0.01, la));
+    if not plain_window('YunaUI Treasure##yui_loot', 'loot_x', 'loot_y') then imgui.End(); imgui.PopStyleVar(3); return; end
     local dl = imgui.GetWindowDrawList();
     pcall(function() C.fullclip(dl); end);
     local x, y = imgui.GetCursorScreenPos();
@@ -14296,9 +14805,35 @@ function C.loot_win()
     local sl = rh * 0.30;                                            -- (the cards' lean, as the party's)
     local all = (#items > 1 or fake);
     local alts = fake and { 'Alt' } or ((#items > 0) and C.loot_alts() or {});   -- (your alts in the party: their own LOT ALL / PASS ALL under yours)
-    local H = math.max(1, #items) * (rh + gap) + (all and (th + 12 * sc) or 0) + #alts * (th + 6 * sc);
+    local hh = chest and math.floor(26 * sc) or 0;                   -- (the chest's way: a header - TREASURE POOL and MINIMISE)
+    local H = hh + math.max(1, #items) * (rh + gap) + (all and (th + 12 * sc) or 0) + #alts * (th + 6 * sc);
     L.win = { x, y, W, H };
-    local ry = math.floor(y + 0.5);
+    local ry = math.floor(y + 0.5) + hh;
+    if chest then
+        local A_ = YUI_HEX and { 1.0, 0.80, 0.36 } or { 1.0, 0.62, 0.86 };
+        imgui.SetWindowFontScale(fs * 0.62);
+        local hx_, hy_ = x + 4 * sc, y + (hh - (tonumber((select(2, imgui.CalcTextSize('A')))) or 12)) / 2 - 2 * sc;
+        for i = 1, #('TREASURE POOL') do
+            local ch = ('TREASURE POOL'):sub(i, i);
+            text(dl, hx_, hy_, ch, { A_[1], A_[2], A_[3], 1 });
+            hx_ = hx_ + imgui.CalcTextSize(ch) + 1.6 * sc;
+        end
+        local bs = math.floor(20 * sc);                                -- (MINIMISE: a round glass button, a line in it - back into the chest)
+        local bx, by = math.floor(x + W - bs - 2 * sc), math.floor(y + (hh - bs) / 2 - 2 * sc);   -- (whole pixels: the line centred in it at any size)
+        imgui.SetCursorScreenPos({ bx, by });
+        local clk = imgui.InvisibleButton('##yui_lootmin', { bs, bs });
+        local ov = imgui.IsItemHovered();
+        DL.CF(dl, bx + bs / 2, by + bs / 2, bs / 2, U4(1, 1, 1, ov and 0.20 or 0.10), 20);
+        DL.C(dl, bx + bs / 2, by + bs / 2, bs / 2, U4(A_[1], A_[2], A_[3], ov and 0.9 or 0.5), 20, 1.2);
+        do
+            local mcx, mcy = bx + bs / 2, by + bs / 2;
+            local lw, lt = math.floor(bs * 0.22), math.max(1, math.floor(1.6 * sc + 0.5));
+            DL.RF(dl, mcx - lw, mcy - lt / 2, mcx + lw, mcy + lt / 2, U4(1, 1, 1, ov and 1 or 0.85), lt / 2);
+        end
+        if clk and not pv then K.open, K.t = false, now; end
+        DL.L(dl, x, y + hh - 3 * sc, x + W, y + hh - 3 * sc, U4(1, 1, 1, 0.08), 1);
+        imgui.SetWindowFontScale(fs);
+    end
     local hov = nil;
     L.wtip = nil;
     local mx, my = imgui.GetMousePos();
@@ -14316,8 +14851,13 @@ function C.loot_win()
         local slot = it.slot;
         local key = it.key or ('f' .. slot);
         local seen = L.seen[key];
-        if seen == nil then seen = now + (r_ - 1) * 0.07; L.seen[key] = seen; end   -- (several at once: one after another)
+        if seen == nil then
+            if L.copen then seen = C.CHEST.t + C.CHEST.OUT.start + (r_ - 1) * C.CHEST.OUT.step + C.CHEST.OUT.fly * 0.85;   -- (out of the chest: as its item lands)
+            else seen = now + (r_ - 1) * 0.07; end                   -- (several at once: one after another)
+            L.seen[key] = seen;
+        end
         local ik = math.max(0, math.min(1, (now - seen) / 0.35));    -- (it slides in from the left, fading in)
+        if L.cclose and L.cclose >= (#items - r_) * C.CHEST.IN.step then ik = 0; end   -- (its item on its way back into the chest)
         ik = 1 - (1 - ik) ^ 3;
         local ox = -(1 - ik) * 30 * sc;
         local cy = ry + rh / 2;
@@ -14354,6 +14894,8 @@ function C.loot_win()
         local ic = YUI_EQ_ICON and YUI_EQ_ICON(it.id) or nil;
         local icx = x0 + (bw0 + sl) / 2 + 2 * sc;
         if ic then pcall(function() DL.I(dl, ic.ptr, icx - isz / 2, cy - isz / 2, icx + isz / 2, cy + isz / 2, 0, 0, 1, 1, U4(1, 1, 1, 1)); end); end
+        L.rowx = L.rowx or {};
+        L.rowx[slot], L.risz = icx + ox * -1, isz;                   -- (where its icon sits, for the chest's flights - without the slide's offset)
         local gp = 3 * sc;                                           -- the card: dark, a little see-through, a light along its top
         local c0 = x0 + bw0 + gp;
         local card = { { c0 + sl, ry }, { x0 + W, ry }, { x0 + W - sl, ry + rh }, { c0, ry + rh } };
@@ -14469,6 +15011,8 @@ function C.loot_win()
     imgui.SetCursorScreenPos({ x, y });
     imgui.Dummy({ W, H });
     end_plain('loot_x', 'loot_y');
+    imgui.PopStyleVar(1);                                            -- (the list's fade)
+    if chest then pcall(C.chest_flights, items); end                 -- (the items between the chest and the list)
 end
 -- The soft dark band (the item popup, Vex mode's treasure pool): images/brush/band_soft.png in three - its two ends fading
 -- out kept as they are, its middle stretched; soft at its top and foot too (tools\yunaui-modetext\make_band.py)
@@ -14937,9 +15481,9 @@ function LAYOUT.mine_rows()
             pcall(function() imgui.GetWindowDrawList():AddText({ mx + 8 * ps, my + 4 * ps }, U4(1, 1, 1, 0.30), 'Layout ' .. n .. (has and ' (saved)' or '')); end);
         end
         imgui.SameLine(0, 8);
-        if accent_button('SAVE##yui_lsave' .. n, { bw, 0 }, false, true) then LAYOUT.save_mine(n); end
+        if accent_button('SAVE##yui_lsave' .. n, { bw, 0 }, true, true) then LAYOUT.save_mine(n); end
         imgui.SameLine(0, 8);
-        if accent_button('LOAD##yui_lload' .. n, { bw, 0 }, not has, true) then LAYOUT.load_mine(n); end
+        if accent_button('LOAD##yui_lload' .. n, { bw, 0 }, true, true) and has then LAYOUT.load_mine(n); end
     end
 end
 function LAYOUT.capture()                                            -- where everything is now, and every size
@@ -15182,15 +15726,15 @@ function LAYOUT.share_undo()
     LAYOUT.smsg = 'Your own UI is back.';
 end
 function LAYOUT.share_rows()
-    if accent_button('EXPORT MY UI (COPY THE CODE)##yui_shx', { ROW_W, 0 }, false, true) then pcall(LAYOUT.share_export); LAYOUT.sure = nil; end
+    if accent_button('EXPORT MY UI (COPY THE CODE)##yui_shx', { ROW_W, 0 }, true, true) then pcall(LAYOUT.share_export); LAYOUT.sure = nil; end
     if imgui.IsItemHovered() then YUI_TIP('Copies a code with your whole UI: settings, places, sizes, your bars, the Damage Meter\nSend it to anyone: they import it'); end
     local sure = LAYOUT.sure and os.clock() - LAYOUT.sure < 4;
-    if accent_button((sure and 'SURE? CLICK AGAIN TO IMPORT' or 'IMPORT A UI FROM THE CLIPBOARD') .. '##yui_shi', { ROW_W, 0 }, false, true) then
+    if accent_button((sure and 'SURE? CLICK AGAIN TO IMPORT' or 'IMPORT A UI FROM THE CLIPBOARD') .. '##yui_shi', { ROW_W, 0 }, true, true) then
         if sure then LAYOUT.sure = nil; pcall(LAYOUT.share_import);
         else LAYOUT.sure = os.clock(); LAYOUT.smsg = 'Copy someone\'s code first, then click again: your UI changes to theirs (UNDO brings yours back).'; end
     end
     if type(cfg.share_backup) == 'string' then
-        if accent_button('UNDO LAST IMPORT##yui_shu', { ROW_W, 0 }, false, true) then pcall(LAYOUT.share_undo); end
+        if accent_button('UNDO LAST IMPORT##yui_shu', { ROW_W, 0 }, true, true) then pcall(LAYOUT.share_undo); end
     end
     return LAYOUT.smsg or 'Share your UI: EXPORT copies a code (also saved as a file), the other person copies it and clicks IMPORT. Places fit any screen size.';
 end
@@ -15235,6 +15779,7 @@ end
 -- Minimised, it's just the logo at the top of the screen: click it to open the panel again (drag it to move it).
 ----------------------------------------------------------------------------------------------------
 local PANEL = { h = {}, col = 1 };
+C.PANEL = PANEL;                                                     -- (for the code above it: CONTROLS' navigation)
 function PANEL.split()
     if PANEL.col ~= 1 or (PANEL.split_at or 0) <= 0 then return; end
     local _, cy = imgui.GetCursorScreenPos();
@@ -15320,97 +15865,110 @@ PANEL.GOLD, PANEL.GOLD2 = C.GOLDH, C.GOLDH2;
 function C.normcol(k)                                                -- (Normal mode's panel colour, from your HP bar - NEON is gold in Hex link mode)
     return (type(YUI_HP_COL) == 'table' and YUI_HP_COL[k]) or ((k == 2) and { 0.86, 0.24, 0.86 } or { 1.00, 0.42, 0.72 });
 end
-function PANEL.modes(dl, x, y)                                       -- NORMAL MODE | HEX LINK MODE, top of the panel
-    if YUI_PUBLIC then return; end                                   -- (the public version: Normal mode only)
-    local ps = C.ps;
-    local HX = cfg.target_fx == 'link';
-    imgui.SetWindowFontScale(C.wfs * 0.8);
-    local labels = { 'VEX MODE', 'HEX LINK MODE' };
-    local sp = 2 * ps;
-    local bw = math.floor(math.max(spaced_w(labels[1], sp), spaced_w(labels[2], sp)) + 34 * ps);
-    local bh = math.floor(26 * ps);
-    local _, th = imgui.CalcTextSize('A');
-    local mx, my = imgui.GetMousePos();
-    for i = 1, 2 do
-        local bx = x + (i - 1) * bw;
-        local on = (i == 2) == HX;
-        local over = mx >= bx and mx < bx + bw and my >= y and my < y + bh;
-        local ac = (i == 2) and PANEL.GOLD or C.normcol(2);
-        local ac2 = (i == 2) and PANEL.GOLD2 or C.normcol(3);
-        if i == 2 then                                               -- (Hex link's half: hexagon ends)
-            local c = bh / 2;
-            local pts = { { bx, y }, { bx + bw - c, y }, { bx + bw, y + c }, { bx + bw - c, y + bh }, { bx, y + bh } };
-            local fill = u32(on and { ac[1], ac[2], ac[3], 0.22 } or (over and { 1, 1, 1, 0.06 } or { 0.10, 0.09, 0.13, 1 }));
-            if not pcall(function() dl:AddConvexPolyFilled(pts, fill); end) then
-                for t_ = 2, #pts - 1 do dl:AddTriangleFilled(pts[1], pts[t_], pts[t_ + 1], fill); end
+function PANEL.card(dl, x1, y1, x2, y2, hero, hov)                   -- (a card: darker glass; hero - the tab's first - filled with the panel's colour;
+    local ps = C.ps;                                                 --  hov: the mouse over it - its edge lights up)
+    local bga = math.max(0.15, math.min(1, tonumber(cfg.panel_alpha) or 0.95));
+    local r = 16 * ps;
+    if hero then                                                     -- (dark glass, a faint wash and an edge in the panel's colour - a solid fill was too heavy)
+        DL.RF(dl, x1, y1, x2, y2, U4(0.045, 0.036, 0.030, 0.70 * bga), r);
+        DL.RF(dl, x1, y1, x2, y2, U4(NEON2[1], NEON2[2], NEON2[3], 0.10), r);
+        DL.RF(dl, x1, y1, x2, y1 + math.min(90 * ps, (y2 - y1) * 0.45), U4(NEON2[1], NEON2[2], NEON2[3], 0.05), r);   -- (a little more at the top)
+        local ph = (os.clock() % 6) / 1.1;                           -- (every 6 s a soft light sweeps across it)
+        if ph < 1 then
+            local bw = 70 * ps;
+            local sx = x1 - bw * 2 + (x2 - x1 + bw * 3) * ph;
+            if pcall(function() dl:PushClipRect({ x1 + 2, y1 + 2 }, { x2 - 2, y2 - 2 }, true); end) then
+                pcall(function() dl:AddConvexPolyFilled({ { sx + bw, y1 }, { sx + bw * 2, y1 }, { sx + bw, y2 }, { sx, y2 } }, U4(1, 1, 1, 0.06 * math.sin(ph * math.pi))); end);
+                dl:PopClipRect();
             end
-            for k = 1, #pts do dl:AddLine(pts[k], pts[k % #pts + 1], U4(ac2[1], ac2[2], ac2[3], on and 0.95 or 0.35), on and 1.6 or 1); end
-        else                                                         -- (Normal's half: a round end)
-            DL.RF(dl, bx, y, bx + bw, y + bh, u32(on and { ac[1], ac[2], ac[3], 0.30 } or (over and { 1, 1, 1, 0.06 } or { 0.10, 0.09, 0.13, 1 })), bh / 2, C.rleft);
-            DL.R(dl, bx, y, bx + bw, y + bh, U4(ac2[1], ac2[2], ac2[3], on and 0.95 or 0.35), bh / 2, C.rleft, on and 1.6 or 1);
         end
-        local lw = spaced_w(labels[i], sp);
-        spaced(dl, bx + (bw - lw) / 2, y + (bh - th) / 2, labels[i], u32(on and { 1, 1, 1, 1 } or (over and C.text or C.muted)), sp);
-        imgui.SetCursorScreenPos({ bx, y });
-        if imgui.InvisibleButton('##yui_mode' .. i, { bw, bh }) and not on then C.setmode(i == 2); end
-        if over then YUI_TIP((i == 2) and 'Hex link: the target bar over its head with a line to it, hexagon bars, the skillchain banner at the top.' or 'Vex: the YunaUI target bar, skillchain fan and Magic Burst card.'); end
-    end
-    imgui.SetWindowFontScale(C.wfs);
-end
-function PANEL.hexframe(dl, x, y, w, h, SW)                          -- Hex link mode's panel: cut corners, a gold edge, hexagons
-    local ps = C.ps;
-    local c = 30 * ps;
-    x, y, w, h = x + 5, y + 5, w - 10, h - 10;
-    local bga = math.max(0.15, math.min(1, tonumber(cfg.panel_alpha) or 0.95));
-    local pts = { { x + c, y }, { x + w - c, y }, { x + w, y + c }, { x + w, y + h - c }, { x + w - c, y + h }, { x + c, y + h }, { x, y + h - c }, { x, y + c } };
-    local fill = U4(0.032, 0.030, 0.046, bga);
-    if not pcall(function() dl:AddConvexPolyFilled(pts, fill); end) then
-        for t_ = 2, #pts - 1 do dl:AddTriangleFilled(pts[1], pts[t_], pts[t_ + 1], fill); end
-    end
-    local G, G2 = PANEL.GOLD, PANEL.GOLD2;
-    for k = 3, 1, -1 do                                              -- (the glow: faint wide strokes on the edge)
-        for i = 1, 8 do dl:AddLine(pts[i], pts[i % 8 + 1], U4(G[1], G[2], G[3], 0.05 * (4 - k)), (2 + k * 2.2) * ps); end
-    end
-    for i = 1, 8 do dl:AddLine(pts[i], pts[i % 8 + 1], U4(G2[1], G2[2], G2[3], 0.85), 1.4); end
-    for i = 2, 8, 2 do                                               -- (a small hexagon on each cut corner)
-        local a_, b_ = pts[i], pts[i % 8 + 1];
-        local mx_, my_ = (a_[1] + b_[1]) / 2, (a_[2] + b_[2]) / 2;
-        C.hexdot(dl, mx_, my_, 4.5 * ps, U4(0.032, 0.030, 0.046, 1));
-        C.hexring(dl, mx_, my_, 4.5 * ps, U4(G2[1], G2[2], G2[3], 0.95), 1.2);
-    end
-    for row = 0, 3 do                                                -- (a faint honeycomb in the top left corner, fading out)
-        for col = 0, 5 - row do
-            local r_ = 13 * ps;
-            local hx = x + 26 * ps + col * r_ * 1.732 + ((row % 2 == 1) and r_ * 0.866 or 0);
-            local hy = y + 22 * ps + row * r_ * 1.5;
-            C.hexring(dl, hx, hy, r_, U4(G[1], G[2], G[3], 0.07 * (1 - (row + col) / 7)), 1);
-        end
-    end
-    local sx = x + SW + 6 * ps;                                      -- (the sidebar's edge: a straight line, a hexagon at each end)
-    DL.L(dl, sx, y + 30 * ps, sx, y + h - 30 * ps, U4(1, 1, 1, 0.07), 1);
-    DL.L(dl, sx, y + 30 * ps, sx, y + 30 * ps + (h - 60 * ps) * 0.28, U4(G2[1], G2[2], G2[3], 0.8), 1.4);
-    for _, yy in ipairs({ y + 30 * ps, y + h - 30 * ps }) do
-        C.hexdot(dl, sx, yy, 3.5 * ps, U4(G2[1], G2[2], G2[3], 0.9));
+        DL.R(dl, x1, y1, x2, y2, U4(NEON2[1], NEON2[2], NEON2[3], hov and 0.85 or 0.60), r, C.rall, 1);
+        DL.L(dl, x1 + r, y1 + 0.5, x2 - r, y1 + 0.5, U4(1, 0.92, 0.90, 0.55), 1);
+    else
+        DL.RF(dl, x1, y1, x2, y2, U4(0.045, 0.036, 0.030, 0.62 * bga), r);
+        if hov then DL.RF(dl, x1, y1, x2, y2, U4(1, 1, 1, 0.025), r); end
+        DL.R(dl, x1, y1, x2, y2, hov and U4(NEON2[1], NEON2[2], NEON2[3], 0.35) or U4(1, 1, 1, 0.09), r, C.rall, 1);
+        DL.L(dl, x1 + r, y1 + 0.5, x2 - r, y1 + 0.5, U4(1, 1, 1, 0.12), 1);
     end
 end
-function PANEL.frame(dl, x, y, w, h, SW)                         -- rounded, with a soft violet glow all round
-    if cfg.target_fx == 'link' then return PANEL.hexframe(dl, x, y, w, h, SW); end
+-- The body's cards: section() closes the one before (its height kept for the next frame) and draws the new one's card
+-- behind it, the size it was last frame - so the card is there before what's on it is drawn
+C.CARDH, C.CARDCOL = {}, {};
+function C.card_close(y)
+    local K = C.CARDS;
+    if not (K and K.key) then return; end
     local ps = C.ps;
-    local r = 30 * ps;
+    if not y then local _, y_ = imgui.GetCursorScreenPos(); y = y_; end
+    local h = y - K.y0 + 6 * ps;
+    C.CARDH[K.key] = h;
+    K.cb[K.col] = K.y0 - (K.off or 0) + h + K.gap;                   -- (where the next one in this column goes: as if this one had landed)
+    if K.hints then                                                  -- (the card's notes: an i in its corner, the notes when the mouse is over it)
+        local dl = imgui.GetWindowDrawList();
+        local sz = math.floor(16 * ps);
+        local ix, iy = K.cx1 + K.cw - K.pad - sz, K.y0 + 13 * ps;
+        local mx, my = imgui.GetMousePos();
+        local over = mx >= ix - 3 and mx <= ix + sz + 3 and my >= iy - 3 and my <= iy + sz + 3;
+        image(dl, C.tex_at('panel/info.png', sz), ix, iy, ix + sz, iy + sz, { 1, 1, 1, over and 0.95 or 0.45 });
+        if over then YUI_TIP(table.concat(K.hints, '\n\n')); end
+    end
+    K.key, K.hints = nil, nil;
+end
+function C.card_next(text)
+    local K = C.CARDS;
+    local _, y = imgui.GetCursorScreenPos();
+    C.card_close(y);
+    if not K.cb then K.cb = { y, y }; end                            -- (the first card: both columns start here)
+    local key = tostring(K.tab) .. ':' .. tostring(text);
+    local h = C.CARDH[key] or 0;
+    local col = (K.cb[2] < K.cb[1] - 1) and 2 or 1;                  -- (the shorter column - but a card keeps the column it had unless
+    local was = C.CARDCOL[key];                                      --  the other is much shorter: two cards the same height swapped every frame)
+    if was and math.abs(K.cb[1] - K.cb[2]) < 60 * C.ps then col = was; end
+    C.CARDCOL[key] = col;
+    local off = 0;                                                   -- (a new tab: the cards slide up into place, one after another)
+    do
+        local age = os.clock() - (C.CARD_T0 or -9) - K.n * 0.035;
+        if age < 0.30 then local e = math.max(0, age) / 0.30; off = (1 - (1 - (1 - e) ^ 3)) * 16 * C.ps; end
+    end
+    local y0 = K.cb[col] + off;
+    local want = (col - 1) * (K.cw + K.gap);                         -- (the indent moved to that column)
+    if want > K.ind then imgui.Indent(want - K.ind); elseif want < K.ind then imgui.Unindent(K.ind - want); end
+    K.ind = want;
+    ROW_W = K.colw; YUI_ROW_W = ROW_W;
+    imgui.PopTextWrapPos();
+    local x1 = K.x1 + want;
+    imgui.SetCursorScreenPos({ x1 + K.pad, y0 });
+    imgui.PushTextWrapPos(imgui.GetCursorPosX() + ROW_W);
+    K.n = K.n + 1;
+    K.key, K.y0, K.col, K.cx1, K.hints, K.off = key, y0, col, x1, nil, off;
+    if h > 0 then
+        local mx, my = imgui.GetMousePos();
+        local hov = mx >= x1 and mx <= x1 + K.cw and my >= y0 and my <= y0 + h and imgui.IsWindowHovered();
+        PANEL.card(imgui.GetWindowDrawList(), x1, y0, x1 + K.cw, y0 + h, K.n == 1, hov);
+    end
+end
+function C.cards_end(bx)                                             -- (the body's end: back to one column, under the longer one)
+    local K = C.CARDS;
+    if not K then return; end
+    C.card_close();
+    if K.cb then
+        if K.ind > 0 then imgui.Unindent(K.ind); K.ind = 0; end
+        ROW_W = K.full; YUI_ROW_W = ROW_W;
+        imgui.PopTextWrapPos();
+        imgui.SetCursorScreenPos({ bx + K.pad, math.max(K.cb[1], K.cb[2]) });
+        imgui.PushTextWrapPos(imgui.GetCursorPosX() + ROW_W);
+    end
+    C.CARDS = nil;
+end
+function PANEL.frame(dl, x, y, w, h, SW)                         -- dark warm glass, a soft light edge, two warm lights in it
+    local ps = C.ps;
+    local r = 22 * ps;
     x, y, w, h = x + 5, y + 5, w - 10, h - 10;
     local bga = math.max(0.15, math.min(1, tonumber(cfg.panel_alpha) or 0.95));
-    DL.RF(dl, x, y, x + w, y + h, U4(0.035, 0.032, 0.050, bga), r);
-    for k = 3, 1, -1 do                                              -- the glow: a few wide faint strokes on the edge
-        DL.R(dl, x, y, x + w, y + h, U4(NEON[1], NEON[2], NEON[3], 0.07 * (4 - k)), r, C.rall, (2 + k * 2.2) * ps);
-    end
-    DL.R(dl, x, y, x + w, y + h, U4(NEON2[1], NEON2[2], NEON2[3], 0.85), r, C.rall, 1.6);
-    -- the sidebar's slanted edge: faint all the way down, bright near the top
-    local tx, bx = x + SW + 30 * ps, x + SW - 60 * ps;
-    DL.L(dl, tx, y + 24 * ps, bx, y + h - 24 * ps, U4(1, 1, 1, 0.08), 1);
-    local k = 0.28;
-    local mx2, my2 = tx + (bx - tx) * k, y + 24 * ps + (h - 48 * ps) * k;
-    DL.L(dl, tx, y + 24 * ps, mx2, my2, U4(NEON[1], NEON[2], NEON[3], 0.25), 6 * ps);
-    DL.L(dl, tx, y + 24 * ps, mx2, my2, U4(NEON2[1], NEON2[2], NEON2[3], 0.9), 1.6);
+    DL.RF(dl, x, y, x + w, y + h, U4(0.085, 0.070, 0.060, 0.80 * bga), r);
+    for k = 1, 8 do DL.CF(dl, x + w - 150 * ps, y + 150 * ps, 140 * ps * k / 8, U4(0.90, 0.70, 0.45, 0.011), 48); end
+    for k = 1, 8 do DL.CF(dl, x + 230 * ps, y + h - 120 * ps, 110 * ps * k / 8, U4(0.90, 0.70, 0.45, 0.009), 48); end
+    DL.R(dl, x, y, x + w, y + h, U4(1, 1, 1, 0.13), r, C.rall, 1);
+    DL.L(dl, x + r, y + 1, x + w - r, y + 1, U4(1, 1, 1, 0.16), 1);
 end
 -- The beta testers (bottom left of the panel) and the heart by YUNA UI: thanks, and a link to the author's Ko-fi
 PANEL.TESTERS = { 'rezzattack', 'Loudnoises', 'Chadbrowick', 'Rusbando', 'Ramtough', 'Totsuki', 'Fluffenphux', 'Daeloth', 'Arestia',
@@ -15421,80 +15979,15 @@ function PANEL.heart(dl, cx, cy, r, col)                             -- (a small
     DL.CF(dl, cx + r * 0.5, cy - r * 0.15, r * 0.55, col, 16);
     DL.TF(dl, cx - r * 1.02, cy + r * 0.02, cx + r * 1.02, cy + r * 0.02, cx, cy + r * 1.05, col);
 end
-function PANEL.sidebar(dl, x0, y0, SW, bottom)
+function PANEL.search(dl, x0, top, SW, bh)                           -- the Search box
     local ps = C.ps;
-    local y = y0 + 2 * ps;                                           -- YUNA UI at the top (no logo)
-    local pushed = push_font(fonts.title, 24 * ps);                  -- YUNA UI, centred
-    if not pushed then imgui.SetWindowFontScale(1.4 * C.wfs); end
-    local tw = imgui.CalcTextSize('YUNA UI');
-    if pushed then imgui.PopFont(); else imgui.SetWindowFontScale(C.wfs); end
-    imgui.SetCursorScreenPos({ x0 + (SW - tw) / 2, y });
-    title(dl, 'YUNA UI');
-    local _, ty = imgui.GetCursorScreenPos();
-    do                                                               -- the heart, left of YUNA UI: a soft beat; over it, thanks; a click opens Ko-fi
-        local r = math.floor(7 * ps);
-        local hx, hy = x0 + (SW - tw) / 2 - r * 2 - 8 * ps, y + (ty - y) * 0.45;
-        local mx_, my_ = imgui.GetMousePos();
-        local over = mx_ >= hx - r * 1.6 and mx_ <= hx + r * 1.6 and my_ >= hy - r * 1.6 and my_ <= hy + r * 1.6;
-        local beat = 1 + 0.08 * math.max(0, math.sin(os.clock() * 3.2)) ^ 8;
-        if over then PANEL.heart(dl, hx, hy, r * 1.55 * beat, U4(1, 0.42, 0.72, 0.22)); end
-        PANEL.heart(dl, hx, hy, (r + 1.5) * beat, U4(0, 0, 0, 0.8));
-        PANEL.heart(dl, hx, hy, r * beat, u32(over and { 1, 0.55, 0.80, 1 } or { 1, 0.42, 0.70, 0.95 }));
-        imgui.SetCursorScreenPos({ hx - r * 1.6, hy - r * 1.6 });
-        if imgui.InvisibleButton('##yui_kofi', { r * 3.2, r * 3.2 }) then pcall(function() ashita.misc.open_url(PANEL.KOFI); end); end
-        if over then YUI_TIP("Thank you for joining the YunaUI beta test!\nYunaUI is free. If you'd like to support the project,\nclick the heart to open my Ko-fi: ko-fi.com/yunasxi"); end
-        imgui.SetCursorScreenPos({ x0, ty });
-    end
-    local vs = 'v' .. addon.version;
-    local vw, vh = imgui.CalcTextSize(vs);
-    DL.T(dl, x0 + (SW - vw) / 2, ty, u32(C.muted), vs);
-    y = ty + vh + 34 * ps;
-    -- the tabs: the chosen one lit, with a violet glow fading to the right
-    local ih = math.floor(40 * ps);
-    local gap = 8 * ps;
-    if bottom then                                                   -- (the Search box always has its room at the bottom: short of space - a smaller
-        local room = bottom - y - math.floor(imgui.GetFrameHeight() * 1.1) - 12 * ps;   --  screen, the panel bigger - the tabs get shorter, not it)
-        local step = room / #TABS;
-        if step < ih + gap then
-            gap = math.max(2, math.floor(step * 0.15));
-            ih = math.max(math.floor(18 * ps), math.floor(step - gap));
-        end
-    end
-    local mx, my = imgui.GetMousePos();
-    for k, n in ipairs(TABS) do
-        local on = (ui.tab or 1) == k;
-        local over = mx >= x0 and mx < x0 + SW and my >= y and my < y + ih;
-        if on then
-            local A1 = (cfg.target_fx == 'link') and PANEL.GOLD or NEON;     -- (Hex link mode: gold, and a hexagon for the marker)
-            local A2 = (cfg.target_fx == 'link') and PANEL.GOLD2 or NEON2;
-            pcall(function()
-                DL.RFM(dl, x0, y, x0 + SW, y + ih, U4(A1[1], A1[2], A1[3], 0.30), U4(A1[1], A1[2], A1[3], 0), U4(A1[1], A1[2], A1[3], 0), U4(A1[1], A1[2], A1[3], 0.30));
-                DL.RFM(dl, x0, y + ih - 2, x0 + SW, y + ih, U4(A2[1], A2[2], A2[3], 1), U4(A2[1], A2[2], A2[3], 0), U4(A2[1], A2[2], A2[3], 0), U4(A2[1], A2[2], A2[3], 1));
-            end);
-            if cfg.target_fx == 'link' then C.hexdot(dl, x0 + 6 * ps, y + ih / 2, 4 * ps, U4(A2[1], A2[2], A2[3], 1));
-            else DL.RF(dl, x0, y, x0 + 3, y + ih, U4(0.92, 0.80, 1, 1)); end
-        elseif over then
-            DL.RF(dl, x0, y, x0 + SW, y + ih, U4(1, 1, 1, 0.04));
-        end
-        local tw0 = imgui.CalcTextSize(n);
-        local room = SW - 34 * ps;
-        local fit = (tw0 > room) and (room / tw0) or 1;
-        if fit < 1 then imgui.SetWindowFontScale(C.wfs * fit); end
-        local _, nh = imgui.CalcTextSize(n);
-        DL.T(dl, x0 + 20 * ps, y + (ih - nh) / 2, u32(on and { 0.97, 0.94, 1, 1 } or (over and { 1, 1, 1, 1 } or C.text)), n);   -- (the same white as YUNA)
-        if fit < 1 then imgui.SetWindowFontScale(C.wfs); end
-        imgui.SetCursorScreenPos({ x0, y });
-        if imgui.InvisibleButton('##yui_side' .. k, { SW, ih }) then ui.tab = k; end
-        y = y + ih + gap;
-    end
-    if bottom then                                                   -- the search box at the bottom (it took BETA TESTERS' place)
+    local y = top;
+    do
         local F = C.FIND;
-        local bh = math.floor(imgui.GetFrameHeight() * 1.1);
-        local top = bottom - bh;
-        if top > y - 4 * ps then
+        if true then
             local A2 = (cfg.target_fx == 'link') and PANEL.GOLD2 or NEON2;
             local act = F.active;
-            DL.RF(dl, x0, top, x0 + SW, top + bh, U4(0.10, 0.09, 0.13, 1), bh / 2);
+            DL.RF(dl, x0, top, x0 + SW, top + bh, U4(1, 1, 1, 0.06), bh / 2);
             DL.R(dl, x0, top, x0 + SW, top + bh, act and U4(A2[1], A2[2], A2[3], 0.8) or U4(1, 1, 1, 0.12), bh / 2, C.rall, act and 1.4 or 1);
             local gx, gy, gr = x0 + bh * 0.55, top + bh * 0.46, bh * 0.17;   -- (a magnifying glass)
             local gc = U4(0.85, 0.83, 0.95, act and 1 or 0.7);
@@ -15531,51 +16024,368 @@ function PANEL.sidebar(dl, x0, y0, SW, bottom)
     end
     return y;
 end
-function PANEL.buttons(dl, wx, wy, ww)                               -- size arrows, - (minimise) and X (close), top right
+PANEL.SUB = { 'Layout, size, your own layouts and this panel', 'The target bar, casts and skillchains, the enemy list',
+    'The party and alliance cards', 'Your HP, MP and TP bars', 'The chat windows, their tabs and colours', 'Your gear',
+    'Buff and recast timers', "Your party's damage", 'The map, its zoom and its marks', 'Loot as it drops', 'Sounds for what matters',
+    'Your macros round your character', 'Buff icons, and the ones to hide', 'Keys and buttons: open this panel, use it with a controller' };
+function PANEL.tcase(n)                                              -- ('DAMAGE METER' -> 'Damage Meter')
+    return (n:lower():gsub('(%a)([%w]*)', function(a, b) return a:upper() .. b; end));
+end
+PANEL.ICON = { GENERAL = 'general', TARGET = 'target', PARTY = 'party', BARS = 'bars', CHAT = 'chat', EQUIP = 'equip', TIMERS = 'timers',
+    ['DAMAGE METER'] = 'damage', MINIMAP = 'minimap', ['TREASURE POOL'] = 'treasure', ['SOUND ALERTS'] = 'sound', ['ACTION BARS'] = 'actionbars',
+    BUFFS = 'buffs', CONTROLS = 'controls' };                                               -- (images/panel: the tabs' pictures, outline icons drawn for YunaUI after Tabler Icons, MIT)
+function PANEL.pick(k)                                               -- (a tab chosen: its cards slide in, a soft sound)
+    if (ui.tab or 1) ~= k then
+        ui.tab = k;
+        C.CARD_T0 = os.clock();
+        if cfg.panel_sound ~= false then pcall(C.snd_play, 'panel_tab', 'panel_sound_vol'); end
+    end
+    C.FIND.q[1] = '';
+end
+function PANEL.rail(dl, x, y, bottom)                                -- the tabs: a dark rail of icons down the left; the chosen one in a white circle
     local ps = C.ps;
-    local bs = math.floor(22 * ps);
-    local by = wy + 10 * ps;
-    -- the panel's size: < 100% >, 5% a click (a slider here made the window jump about under the mouse)
-    local right = wx + ww - 14 * ps - (bs + 6 * ps) - 12 * ps;
+    local RW = math.floor(48 * ps);
+    local A = NEON2;
+    local dt = math.min(0.1, tonumber(imgui.GetIO().DeltaTime) or 0.016);
+    DL.RF(dl, x, y, x + RW, bottom, U4(0.02, 0.015, 0.02, 0.55), RW / 2);
+    DL.R(dl, x, y, x + RW, bottom, U4(1, 1, 1, 0.08), RW / 2, C.rall, 1);
+    local cx = x + RW / 2;
+    local bs = math.floor(32 * ps);                                  -- (the badge on top: YUI in the panel's colour, a soft glow breathing round it)
+    local by = y + 9 * ps;
+    local br = 0.5 + 0.5 * math.sin(os.clock() * 1.6);
+    for k = 3, 1, -1 do DL.R(dl, cx - bs / 2 - k, by - k, cx + bs / 2 + k, by + bs + k, U4(A[1], A[2], A[3], (0.05 + 0.07 * br) * (4 - k) / 3), 9 * ps + k, C.rall, 2); end
+    DL.RF(dl, cx - bs / 2, by, cx + bs / 2, by + bs, U4(A[1], A[2], A[3], 0.95), 9 * ps);
+    do
+        local pushed = push_font(fonts.chat or fonts.main, 14 * ps);
+        local tw, th = imgui.CalcTextSize('YUI');
+        DL.T(dl, cx - tw / 2, by + (bs - th) / 2, U4(0.12, 0.05, 0.09, 1), 'YUI');
+        if pushed then imgui.PopFont(); end
+    end
+    local top, foot = by + bs + 14 * ps, bottom - 44 * ps;           -- (the icons between the badge and the heart)
+    local d = math.floor(34 * ps);
+    local step = math.min(d + 8 * ps, (foot - top) / #TABS);
+    d = math.min(d, math.floor(step - 2 * ps));
+    local ty = top + ((ui.tab or 1) - 0.5) * step;                   -- (the white circle glides to the chosen one)
+    PANEL.ry = PANEL.ry and (PANEL.ry + (ty - PANEL.ry) * math.min(1, dt * 16)) or ty;
+    if math.abs(PANEL.ry - ty) < 0.5 then PANEL.ry = ty; end
+    DL.CF(dl, cx, PANEL.ry, d / 2, U4(1, 1, 1, 0.95), 32);
+    if C.NAV.active and (C.NAV.zone or 'rail') == 'rail' then        -- (the controller on the tabs: a ring breathing round the chosen one)
+        local br = 0.75 + 0.25 * math.sin(os.clock() * 4);
+        DL.C(dl, cx, PANEL.ry, d / 2 + 4 * ps, U4(A[1], A[2], A[3], 0.20 * br), 32, 5 * ps);
+        DL.C(dl, cx, PANEL.ry, d / 2 + 4 * ps, U4(A[1], A[2], A[3], 0.95), 32, 1.6);
+    end
+    local isz = math.floor(d * 0.60);
+    local mx, my = imgui.GetMousePos();
+    for k, n in ipairs(TABS) do
+        local cy = top + (k - 0.5) * step;
+        local under = math.abs(PANEL.ry - cy) < d * 0.45;            -- (the circle over it: a dark icon)
+        local over = math.abs(mx - cx) < d / 2 + 2 and math.abs(my - cy) < step / 2;
+        if over and not under then DL.CF(dl, cx, cy, d / 2, U4(1, 1, 1, 0.10), 32); end
+        local t = C.tex_at('panel/' .. (PANEL.ICON[n] or 'general') .. '.png', isz);
+        image(dl, t, cx - isz / 2, cy - isz / 2, cx + isz / 2, cy + isz / 2, under and { 0.10, 0.07, 0.09, 1 } or { 1, 1, 1, over and 0.95 or 0.60 });
+        imgui.SetCursorScreenPos({ x, cy - step / 2 });
+        if imgui.InvisibleButton('##yui_side' .. k, { RW, step }) then PANEL.pick(k); end
+        if over then YUI_TIP(PANEL.tcase(n)); end
+    end
+    do                                                               -- the heart at the foot: a soft beat; over it, thanks; a click opens Ko-fi
+        local hs = math.floor(20 * ps);
+        local hx, hy = cx, bottom - 22 * ps;
+        local over = math.abs(mx - hx) < hs * 0.7 and math.abs(my - hy) < hs * 0.7;
+        local beat = 1 + 0.08 * math.max(0, math.sin(os.clock() * 3.2)) ^ 8;
+        local q = hs * beat / 2;
+        image(dl, C.tex_at('panel/heart.png', hs), hx - q, hy - q, hx + q, hy + q, over and { 1, 0.55, 0.80, 1 } or { 1, 1, 1, 0.60 });
+        imgui.SetCursorScreenPos({ hx - hs * 0.7, hy - hs * 0.7 });
+        if imgui.InvisibleButton('##yui_kofi', { hs * 1.4, hs * 1.4 }) then pcall(function() ashita.misc.open_url(PANEL.KOFI); end); end
+        if over then YUI_TIP("Thank you for using YunaUI!\nYunaUI is free. If you'd like to support the project,\nclick the heart to open my Ko-fi: ko-fi.com/yunasxi"); end
+    end
+end
+function PANEL.pill(dl, x1, y1, x2, y2, hov)                         -- (a glass pill on the top bar)
+    local h = y2 - y1;
+    DL.RF(dl, x1, y1, x2, y2, U4(1, 1, 1, hov and 0.12 or 0.07), h / 2);
+    DL.R(dl, x1, y1, x2, y2, U4(1, 1, 1, hov and 0.26 or 0.14), h / 2, C.rall, 1);
+end
+function PANEL.topbar(dl, x, y, w, tab)                              -- where you are, the search box, Edit mode, the panel's size, close
+    local ps = C.ps;
+    local bh = math.floor(30 * ps);
+    imgui.SetWindowFontScale(C.wfs * 0.82);
+    local _, th = imgui.CalcTextSize('A');
+    local mx, my = imgui.GetMousePos();
+    local function over(x1, x2) return mx >= x1 and mx < x2 and my >= y and my < y + bh; end
+    -- YunaUI > General
+    local nm = (C.find_q() ~= '') and 'Search' or PANEL.tcase(TABS[tab] or 'GENERAL');   -- (searching: Search, not the tab you were on)
+    local w1, w2 = imgui.CalcTextSize('YunaUI'), imgui.CalcTextSize(nm);
+    local cw = 14 * ps + w1 + 20 * ps + w2 + 14 * ps;
+    PANEL.pill(dl, x, y, x + cw, y + bh);
+    DL.T(dl, x + 14 * ps, y + (bh - th) / 2, U4(1, 1, 1, 0.80), 'YunaUI');
+    local vx, vy, r = x + 14 * ps + w1 + 10 * ps, y + bh / 2, 3 * ps;
+    DL.L(dl, vx - r * 0.5, vy - r, vx + r * 0.5, vy, U4(1, 1, 1, 0.45), 1.3);
+    DL.L(dl, vx + r * 0.5, vy, vx - r * 0.5, vy + r, U4(1, 1, 1, 0.45), 1.3);
+    DL.T(dl, x + 14 * ps + w1 + 20 * ps, y + (bh - th) / 2, U4(1, 1, 1, 0.92), nm);
+    -- X: close
+    local x2 = x + w;
+    local x1 = x2 - bh;
+    local o = over(x1, x2);
+    PANEL.pill(dl, x1, y, x2, y + bh, o);
+    do
+        local cx, cy, q = x1 + bh / 2, y + bh / 2, bh * 0.15;
+        DL.L(dl, cx - q, cy - q, cx + q, cy + q, U4(1, 1, 1, o and 1 or 0.8), 1.5 * ps);
+        DL.L(dl, cx - q, cy + q, cx + q, cy - q, U4(1, 1, 1, o and 1 or 0.8), 1.5 * ps);
+    end
+    imgui.SetCursorScreenPos({ x1, y });
+    if imgui.InvisibleButton('##yui_tb1', { bh, bh }) then ui.open, ui.min, PANEL.anim = false, false, nil; end
+    if o then YUI_TIP('Close (type /yunaui to open it again)'); end
+    -- 90%: the panel's size (the left half smaller, the right half bigger; the wheel too)
     local pct = string.format('%d%%', math.floor(ps * 100 + 0.5));
-    local pw, ph = imgui.CalcTextSize(pct);
-    local spots = { { -1, right - bs - 6 * ps - pw - 6 * ps - bs, 'Smaller panel' }, { 1, right - bs, 'Bigger panel' } };
-    for _, a in ipairs(spots) do
-        local ax = a[2];
-        imgui.SetCursorScreenPos({ ax, by });
-        local clicked = imgui.InvisibleButton('##yui_sz' .. a[1], { bs, bs });
-        local hov = imgui.IsItemHovered();
-        if hov then
-            DL.RF(dl, ax, by, ax + bs, by + bs, U4(C.acc[1], C.acc[2], C.acc[3], 0.22), bs / 2);
-            YUI_TIP(a[3]);
+    local pw = imgui.CalcTextSize(pct);
+    x2 = x1 - 8 * ps; x1 = x2 - (pw + 30 * ps);
+    o = over(x1, x2);
+    PANEL.pill(dl, x1, y, x2, y + bh, o);
+    DL.T(dl, x1 + (x2 - x1 - pw) / 2, y + (bh - th) / 2, U4(1, 1, 1, 0.92), pct);
+    if o then
+        local q = 3 * ps;
+        DL.TF(dl, x1 + 12 * ps, y + bh / 2 - q, x1 + 12 * ps, y + bh / 2 + q, x1 + 8 * ps, y + bh / 2, U4(1, 1, 1, 0.8));
+        DL.TF(dl, x2 - 12 * ps, y + bh / 2 - q, x2 - 8 * ps, y + bh / 2, x2 - 12 * ps, y + bh / 2 + q, U4(1, 1, 1, 0.8));
+    end
+    imgui.SetCursorScreenPos({ x1, y });
+    local step = 0;
+    if imgui.InvisibleButton('##yui_szp', { x2 - x1, bh }) then step = (mx < (x1 + x2) / 2) and -1 or 1; end
+    if o then
+        local wh = tonumber(imgui.GetIO().MouseWheel) or 0;
+        if wh > 0 then step = 1; elseif wh < 0 then step = -1; end
+        YUI_TIP('Panel size: click the left side for smaller, the right side for bigger (or use the wheel)');
+    end
+    if step ~= 0 then
+        cfg.panel_scale = math.max(0.7, math.min(1.8, math.floor((ps + step * 0.05) * 100 + 0.5) / 100));
+        save();
+    end
+    -- Edit mode: filled in the panel's colour
+    local A = NEON2;
+    local ew_ = imgui.CalcTextSize('Edit mode');
+    x2 = x1 - 8 * ps; x1 = x2 - (14 * ps + 12 * ps + 7 * ps + ew_ + 14 * ps);
+    o = over(x1, x2);
+    DL.RF(dl, x1, y, x2, y + bh, U4(A[1], A[2], A[3], o and 1 or 0.90), bh / 2);
+    do
+        local gx, gy, g = x1 + 14 * ps, y + bh / 2 - 6 * ps, 5 * ps;        -- (four little squares)
+        local gc = U4(0.16, 0.06, 0.10, 1);
+        for k = 0, 3 do
+            local qx, qy = gx + (k % 2) * (g + 2 * ps), gy + math.floor(k / 2) * (g + 2 * ps);
+            DL.R(dl, qx, qy, qx + g, qy + g, gc, 1.5, C.rall, 1.2);
         end
-        local col = u32(hov and { 1, 1, 1, 1 } or { 0.80, 0.78, 0.90, 0.9 });
-        local cx, cy, r = ax + bs / 2, by + bs / 2, bs * 0.18;
-        if a[1] < 0 then DL.TF(dl, cx + r * 0.7, cy - r, cx + r * 0.7, cy + r, cx - r * 0.8, cy, col);
-        else DL.TF(dl, cx - r * 0.7, cy - r, cx + r * 0.8, cy, cx - r * 0.7, cy + r, col); end
-        if clicked then
-            cfg.panel_scale = math.max(0.7, math.min(1.8, math.floor((ps + a[1] * 0.05) * 100 + 0.5) / 100));
-            save();
+        DL.T(dl, x1 + 14 * ps + 12 * ps + 7 * ps, y + (bh - th) / 2, gc, 'Edit mode');
+    end
+    imgui.SetCursorScreenPos({ x1, y });
+    if imgui.InvisibleButton('##yui_editmode', { x2 - x1, bh }) then EDIT.on = true; ui.open = false; end
+    if o then YUI_TIP('Shows every piece with a grid; drag them and they snap into line\nAlso: /yui edit'); end
+    imgui.SetWindowFontScale(C.wfs);
+    -- the search box between them
+    local sx1, sx2 = x + cw + 12 * ps, x1 - 12 * ps;
+    if sx2 - sx1 > 280 * ps then local m = (sx1 + sx2) / 2; sx1, sx2 = m - 140 * ps, m + 140 * ps; end
+    if sx2 - sx1 > 80 * ps then PANEL.search(dl, sx1, y, sx2 - sx1, bh); end
+end
+function PANEL.undo_ui(dl, xr, ytop)                                -- the pill by the tab's name after a change: what changed, and Undo; Ctrl+Z too
+    local U, ps = C.UNDO, C.ps;
+    local io_ = imgui.GetIO();
+    if io_.KeyCtrl and not io_.WantTextInput and imgui.IsKeyPressed(ImGuiKey_Z or 90, false) then C.undo_pop(); end
+    if not U.t or os.clock() - U.t > 5 then return; end
+    local last = U.list[#U.list];
+    local what = U.undone and (tostring(U.undone) .. ': put back') or (last and (tostring(last.label) .. ': changed')) or nil;
+    if not what then return; end
+    imgui.SetWindowFontScale(C.wfs * 0.86);
+    local tw, th = imgui.CalcTextSize(what);
+    local uw = (U.undone or not last) and 0 or (imgui.CalcTextSize('Undo') + 26 * ps);
+    local h = th + 14 * ps;
+    local w = tw + 30 * ps + uw;
+    local a = math.min(1, (5 - (os.clock() - U.t)) / 0.4);           -- (fades out at the end)
+    local x, y = xr - w, ytop;
+    DL.RF(dl, x, y, x + w, y + h, U4(0.06, 0.05, 0.045, 0.94 * a), h / 2);
+    DL.R(dl, x, y, x + w, y + h, U4(1, 1, 1, 0.14 * a), h / 2, C.rall, 1);
+    DL.T(dl, x + 15 * ps, y + 7 * ps, U4(1, 1, 1, 0.9 * a), what);
+    if uw > 0 then
+        local ux = x + 15 * ps + tw + 14 * ps;
+        local mx, my = imgui.GetMousePos();
+        local ov = mx >= ux - 6 * ps and mx <= x + w and my >= y and my <= y + h;
+        DL.L(dl, ux - 7 * ps, y + 6 * ps, ux - 7 * ps, y + h - 6 * ps, U4(1, 1, 1, 0.15 * a), 1);
+        DL.T(dl, ux, y + 7 * ps, U4(NEON2[1], NEON2[2], NEON2[3], (ov and 1 or 0.85) * a), 'Undo');
+        imgui.SetCursorScreenPos({ ux - 6 * ps, y });
+        if imgui.InvisibleButton('##yui_undo', { x + w - ux + 6 * ps, h }) then C.undo_pop(); end
+        if ov then YUI_TIP('Put it back as it was (Ctrl+Z)'); end
+    end
+    imgui.SetWindowFontScale(C.wfs);
+end
+-- CONTROLS > Open / close the panel: the names of keys and buttons, the rows to pick them, and the listening
+C.DIK_NAME = { [0x01] = 'Esc', [0x0E] = 'Backspace', [0x0F] = 'Tab', [0x1C] = 'Enter', [0x39] = 'Space', [0x29] = '`', [0x0C] = '-', [0x0D] = '=',
+    [0x1A] = '[', [0x1B] = ']', [0x2B] = '\\', [0x27] = ';', [0x28] = "'", [0x33] = ',', [0x34] = '.', [0x35] = '/', [0xD2] = 'Insert', [0xD3] = 'Delete',
+    [0xC7] = 'Home', [0xCF] = 'End', [0xC9] = 'Page Up', [0xD1] = 'Page Down', [0xC5] = 'Pause', [0x46] = 'Scroll Lock', [0xC8] = 'Up', [0xD0] = 'Down',
+    [0xCB] = 'Left', [0xCD] = 'Right', [0x37] = 'Num *', [0x4A] = 'Num -', [0x4E] = 'Num +', [0xB5] = 'Num /', [0x9C] = 'Num Enter', [0x53] = 'Num .',
+    [0x52] = 'Num 0', [0x4F] = 'Num 1', [0x50] = 'Num 2', [0x51] = 'Num 3', [0x4B] = 'Num 4', [0x4C] = 'Num 5', [0x4D] = 'Num 6', [0x47] = 'Num 7', [0x48] = 'Num 8', [0x49] = 'Num 9' };
+do
+    local rows = { { 0x10, 'QWERTYUIOP' }, { 0x1E, 'ASDFGHJKL' }, { 0x2C, 'ZXCVBNM' } };
+    for _, r in ipairs(rows) do for i = 1, #r[2] do C.DIK_NAME[r[1] + i - 1] = r[2]:sub(i, i); end end
+    for i = 1, 9 do C.DIK_NAME[0x01 + i] = tostring(i); end
+    C.DIK_NAME[0x0B] = '0';
+    for i = 1, 10 do C.DIK_NAME[0x3A + i] = 'F' .. i; end
+    C.DIK_NAME[0x57], C.DIK_NAME[0x58] = 'F11', 'F12';
+end
+C.XPAD_NAME = { [0] = 'D-pad up', [1] = 'D-pad down', [2] = 'D-pad left', [3] = 'D-pad right', [4] = 'Start', [5] = 'Back', [6] = 'Left stick',
+    [7] = 'Right stick', [8] = 'LB', [9] = 'RB', [12] = 'A', [13] = 'B', [14] = 'X', [15] = 'Y' };
+function C.bind_name(kind)
+    if kind == 'kb' then
+        local K = cfg.panel_kb;
+        if type(K) ~= 'table' or not K.dik then return nil; end
+        local t = {};
+        if K.ctrl then t[#t + 1] = 'Ctrl'; end
+        if K.alt then t[#t + 1] = 'Alt'; end
+        if K.shift then t[#t + 1] = 'Shift'; end
+        t[#t + 1] = C.DIK_NAME[K.dik] or string.format('Key %02X', K.dik);
+        return table.concat(t, ' + ');
+    end
+    local P = cfg[C.BIND_KEY[kind] or 'panel_pad'];
+    if type(P) ~= 'table' or #P == 0 then return nil; end
+    local t = {};
+    for _, id in ipairs(P) do
+        local k_, n_ = id:sub(1, 1), tonumber(id:sub(2)) or 0;
+        t[#t + 1] = (k_ == 'x') and (C.XPAD_NAME[n_] or ('Button ' .. n_)) or ('Button ' .. (n_ - 47));
+    end
+    return table.concat(t, ' + ');
+end
+C.BIND_KEY = { pad = 'panel_pad', tprev = 'panel_tabprev', tnext = 'panel_tabnext' };   -- (each controller pick's setting: none by default -
+C.BIND_LABEL = { kb = 'Keyboard', pad = 'Controller', tprev = 'Tab before', tnext = 'Tab after' };   --  LB / RB are many players' macro buttons)
+function C.bind_row(kind)                                            -- (Keyboard / Controller / Tab before / after: what it is now, CHANGE (then press it), CLEAR)
+    local B, ps = C.BIND, C.ps;
+    if B.listen and os.clock() - (B.listen_t or 0) > 10 then B.listen = nil; end   -- (nothing pressed: given up)
+    local x0 = imgui.GetCursorPosX();
+    imgui.AlignTextToFramePadding();
+    imgui.TextColored(C.text, C.BIND_LABEL[kind] or kind);
+    local cw_, clw_ = math.floor(76 * ps), math.floor(64 * ps);
+    imgui.SameLine(x0 + ROW_W - cw_ - clw_ - 6 * ps);
+    if accent_button('CHANGE##yui_bind' .. kind, { cw_, 0 }, true, true) then B.listen, B.listen_t, B.got, B.held = kind, os.clock(), nil, {}; end
+    imgui.SameLine(0, 6 * ps);
+    if accent_button('CLEAR##yui_bclr' .. kind, { clw_, 0 }, true, true) then
+        if kind == 'kb' then cfg.panel_kb = nil; else cfg[C.BIND_KEY[kind]] = nil; end
+        save();
+    end
+    local listening = B.listen == kind;                              -- (the line under it: the key or button - or "press it now")
+    local txt = listening and ((kind == 'kb') and 'Press a key... (Esc: cancel)' or ((kind == 'pad') and 'Press a button, or two together...' or 'Press a button...')) or (C.bind_name(kind) or 'Not set');
+    local x, y = imgui.GetCursorScreenPos();
+    local h = imgui.GetFrameHeight();
+    local dl = imgui.GetWindowDrawList();
+    local A = NEON2;
+    local pu = 0.5 + 0.5 * math.sin(os.clock() * 5);
+    DL.RF(dl, x, y, x + ROW_W, y + h, listening and U4(A[1], A[2], A[3], 0.10 + 0.10 * pu) or U4(1, 1, 1, 0.05), h / 2);
+    DL.R(dl, x, y, x + ROW_W, y + h, listening and U4(A[1], A[2], A[3], 0.9) or U4(1, 1, 1, 0.12), h / 2, C.rall, 1);
+    local tw, th = imgui.CalcTextSize(txt);
+    DL.T(dl, x + (ROW_W - tw) / 2, y + (h - th) / 2, listening and U4(A[1], A[2], A[3], 1) or U4(1, 1, 1, C.bind_name(kind) and 0.95 or 0.45), txt);
+    imgui.Dummy({ ROW_W, h });
+end
+function C.bind_key(k, down)                                         -- (each key: picked while listening, or the one that opens the panel; true = the game doesn't get it)
+    local B = C.BIND;
+    local MOD = { [0x1D] = 1, [0x9D] = 1, [0x2A] = 1, [0x36] = 1, [0x38] = 1, [0xB8] = 1 };
+    if B.listen == 'kb' then
+        if MOD[k] then return false; end                             -- (Ctrl / Alt / Shift alone: waiting for the key with them)
+        if not down then return true; end
+        if k == 0x01 then B.listen = nil; return true; end
+        local io_ = imgui.GetIO();
+        cfg.panel_kb = { dik = k, ctrl = io_.KeyCtrl and true or nil, alt = io_.KeyAlt and true or nil, shift = io_.KeyShift and true or nil };
+        save();
+        B.listen, B.kheld = nil, k;
+        return true;
+    end
+    local K = cfg.panel_kb;
+    if type(K) ~= 'table' or K.dik ~= k then return false; end
+    if not down then
+        if B.kheld == k then B.kheld = nil; return true; end
+        return false;
+    end
+    if B.kheld == k then return true; end                            -- (held: once)
+    local io_ = imgui.GetIO();
+    if (K.ctrl == true) ~= (io_.KeyCtrl == true) or (K.alt == true) ~= (io_.KeyAlt == true) or (K.shift == true) ~= (io_.KeyShift == true) then return false; end
+    if C.mb_typing() then return false; end                          -- (typing in the chat: it's a letter)
+    B.kheld = k;
+    C.panel_toggle(false);
+    return true;
+end
+function C.pad_event(kind, b, st)                                    -- (each controller button: picked while listening, the open / close combo, the panel's own; true = the game doesn't get it)
+    local B, N = C.BIND, C.NAV;
+    if kind == 'd' and b == 32 then                                  -- (a PlayStation-style D-pad: an angle)
+        if not C.nav_on() then return false; end
+        local dir = (st == 0 and 'up') or (st == 18000 and 'down') or (st == 27000 and 'left') or (st == 9000 and 'right') or nil;
+        N.last = N.last or {};
+        if dir then
+            if (not N.held or N.held.w ~= dir) and os.clock() - (N.last[dir] or -9) > 0.15 then N.last[dir] = os.clock(); C.nav_press(dir); end
+        else C.nav_release(); end
+        return true;
+    end
+    if kind == 'd' and b < 48 then return false; end                 -- (a stick: not a button)
+    local down = (kind == 'x') and (st ~= 0) or (st >= 128);
+    local id = kind .. b;
+    if B.listen and B.listen ~= 'kb' then                            -- (picking: every button held together - one for a tab button - kept as you let go)
+        if down then
+            B.held[id] = true;
+            B.got = B.got or {};
+            local have = false;
+            for _, v in ipairs(B.got) do if v == id then have = true; end end
+            if not have and #B.got < ((B.listen == 'pad') and 2 or 1) then B.got[#B.got + 1] = id; end
+        else
+            B.held[id] = nil;
+            if B.got and next(B.held) == nil then cfg[C.BIND_KEY[B.listen]] = B.got; save(); B.listen, B.pfired = nil, false; end   -- (all let go: the next press of it opens the panel)
+        end
+        return true;
+    end
+    C.PADHELD = C.PADHELD or {};
+    local was_ = C.PADHELD[id] == true;
+    C.PADHELD[id] = down or nil;
+    local P = cfg.panel_pad;
+    if type(P) == 'table' and #P > 0 then                            -- (the open / close combo: all of it held)
+        local inP, all = false, true;
+        for _, v in ipairs(P) do if v == id then inP = true; end if not C.PADHELD[v] then all = false; end end
+        if inP then
+            if down and all and not B.pfired then B.pfired = true; C.panel_toggle(true); return true; end
+            if not down and not all then local any = false; for _, v in ipairs(P) do if C.PADHELD[v] then any = true; end end if not any then B.pfired = false; end end
+            if B.pfired then return true; end
         end
     end
-    DL.T(dl, right - bs - 6 * ps - pw, by + (bs - ph) / 2, U4(0.85, 0.83, 0.93, 1), pct);
-    for k, b in ipairs({ { 'x', 'Close (type /yunaui to open it again)' } }) do
-        local bx = wx + ww - 14 * ps - bs;
-        imgui.SetCursorScreenPos({ bx, by });
-        local clicked = imgui.InvisibleButton('##yui_tb' .. k, { bs, bs });
-        local hov = imgui.IsItemHovered();
-        if hov then
-            DL.RF(dl, bx, by, bx + bs, by + bs, U4(1, 0.36, 0.62, 0.30), bs / 2);
-            YUI_TIP(b[2]);
+    if C.nav_on() then                                               -- (the panel open: the D-pad, confirm, cancel and the shoulders are its)
+        local PB = C.padbtn();
+        local w;
+        if kind == 'x' then
+            w = ({ [0] = 'up', [1] = 'down', [2] = 'left', [3] = 'right' })[b];
+            if b == PB.x_ok then w = 'ok'; elseif b == PB.x_back then w = 'back'; end
+        else
+            if b == PB.d_ok then w = 'ok'; elseif b == PB.d_back then w = 'back'; end
         end
-        local col = u32(hov and { 1, 1, 1, 1 } or { 0.80, 0.78, 0.90, 0.9 });
-        local cx, cy, r = bx + bs / 2, by + bs / 2, bs * 0.22;
-        do
-            DL.L(dl, cx - r, cy - r, cx + r, cy + r, col, 1.6 * ps);
-            DL.L(dl, cx - r, cy + r, cx + r, cy - r, col, 1.6 * ps);
+        if not w then                                                -- (the tab buttons you picked, if any)
+            if id == (cfg.panel_tabprev or {})[1] then w = 'lb'; elseif id == (cfg.panel_tabnext or {})[1] then w = 'rb'; end
         end
-        if clicked then ui.open, ui.min, PANEL.anim = false, false, nil; end
+        if w then                                                    -- (once per press: a button held reports again, and a pad seen both as
+            if down then                                             --  DirectInput and XInput (DS4Windows, Steam) sends each press twice)
+                local N = C.NAV;
+                N.last = N.last or {};
+                if not was_ and os.clock() - (N.last[w] or -9) > 0.15 then N.last[w] = os.clock(); C.nav_press(w); end
+            else
+                C.nav_release(w);
+            end
+            return true;
+        end
     end
+    return false;
+end
+function PANEL.heading(dl, x, y, w, tab)                             -- the tab's name, big; a line under it; the mode switch on the right. Gives back its foot.
+    local ps = C.ps;
+    local pushed = push_font(fonts.chat or fonts.title, 27 * ps);   -- (the panel's own font - Bahnschrift looked blocky beside it)
+    if not pushed then imgui.SetWindowFontScale(1.6 * C.wfs); end
+    local nm = (C.find_q() ~= '') and 'Search' or PANEL.tcase(TABS[tab] or 'GENERAL');   -- (searching: Search, not the tab you were on)
+    local _, th = imgui.CalcTextSize(nm);
+    local e = math.min(1, (os.clock() - (C.CARD_T0 or -9)) / 0.30);  -- (a new tab: its name slides in from the right, fading in)
+    local u = 1 - (1 - e) ^ 3;
+    DL.T(dl, x + (1 - u) * 14 * ps, y, U4(1, 1, 1, 0.2 + 0.8 * u), nm);
+    DL.T(dl, x + (1 - u) * 14 * ps + 0.6 * ps, y, U4(1, 1, 1, 0.2 + 0.8 * u), nm);   -- (drawn twice, a hair apart: bolder)
+    if pushed then imgui.PopFont(); else imgui.SetWindowFontScale(C.wfs); end
+    imgui.SetWindowFontScale(C.wfs * 0.80);
+    local sub = ((C.find_q() ~= '') and ('Settings that match "' .. C.find_q() .. '"') or (PANEL.SUB[tab] or '')) .. ' - v' .. tostring(addon.version);
+    local _, sh = imgui.CalcTextSize(sub);
+    DL.T(dl, x + 1 * ps, y + th + 1 * ps, U4(1, 1, 1, 0.55), sub);
+    imgui.SetWindowFontScale(C.wfs);
+    return y + th + 1 * ps + sh;
 end
 -- The mode switch: a small icon (top middle at first - drag it anywhere) showing the mode you're in - Vex mode's
 -- vortex of pink and violet arms, or Hex link's gold hexagon; a click folds it into a flash and the other mode opens
@@ -15858,13 +16668,25 @@ local function draw_window()
     if not ui.open then return; end                                 -- (closed: /yunaui or /yui opens it)
     C.ps = math.max(0.7, math.min(1.8, tonumber(cfg.panel_scale) or 1));   -- GENERAL > Settings panel size
     local ps = C.ps;
-    local SW = math.floor(220 * ps);                                 -- the sidebar
-    ROW_W = math.floor(560 * ps);                                    -- the settings column
+    local SW = math.floor(80 * ps);                                  -- the icon rail
+    local PAD, COLW, GAP = math.floor(16 * ps), math.floor(330 * ps), math.floor(12 * ps);   -- the cards: two columns
+    local CARDW = COLW + PAD * 2;
+    ROW_W = CARDW * 2 + GAP - PAD * 2;                               -- (the whole width, until the first card - then a card's)
     YUI_ROW_W = ROW_W;                                               -- (the EQUIP tab's own rows, in equip.lua)
-    local MARGIN = math.floor(8 * ps);                               -- a little room on the left of the column
-    local WIN_W = SW + math.floor(30 * ps) + MARGIN + ROW_W + math.floor(50 * ps);
+    local MARGIN = 2 + PAD;
+    local CW = CARDW * 2 + GAP + 4;
+    local WIN_W = SW + CW + math.floor(40 * ps);
     local ds = imgui.GetIO().DisplaySize;
     local WIN_H = math.floor(math.min(((ds and ds.y) or 1080) - 40, 820 * ps));
+    do                                                               -- (as tall as this tab needs - what it took last time - never shorter than the rail)
+        local bh = PANEL.bh and PANEL.bh[(C.find_q() ~= '') and 'find' or (ui.tab or 1)];
+        local want = WIN_H;
+        if bh then want = math.max(math.min(WIN_H, 640 * ps), math.min(WIN_H, (PANEL.toff or 130 * ps) + bh + 24 * ps)); end
+        local dt = math.min(0.1, tonumber(imgui.GetIO().DeltaTime) or 0.016);
+        PANEL.wh = PANEL.wh and (PANEL.wh + (want - PANEL.wh) * math.min(1, dt * 12)) or want;
+        if math.abs(PANEL.wh - want) < 0.5 then PANEL.wh = want; end
+        WIN_H = math.floor(PANEL.wh);
+    end
     -- minimising / opening: the panel fades into the icon (or out of it) with the chosen look (GENERAL > Minimise animation)
     local palpha = 1;
     local an = PANEL.anim;
@@ -15950,9 +16772,12 @@ local function draw_window()
     imgui.SetNextWindowSize({ WIN_W, WIN_H }, ImGuiCond_Always);
     local flags = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_NoSavedSettings,
         ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoScrollbar, ImGuiWindowFlags_NoScrollWithMouse);
-    local pushed = push_font(fonts.chat or fonts.main, 18 * C.ps);
+    local pushed = push_font(fonts.chat or fonts.main, 15 * C.ps);  -- (a step under the card titles' weight: room round every row)
     local open = { true };
+    YUI_PANEL_TIP = true;                                            -- (the panel's tooltips in its own look)
     if imgui.Begin('YunaUI##yui_main', open, flags) then
+        if os.clock() - (PANEL.was_open or -9) > 0.5 then C.CARD_T0 = os.clock(); end   -- (opened: the cards slide in)
+        PANEL.was_open = os.clock();
         local dl = imgui.GetWindowDrawList();
         local pf = fonts.chat or fonts.main;
         C.wfs = 1;                                                   -- older ImGui can't size a font: scale the window's text
@@ -15960,18 +16785,22 @@ local function draw_window()
         JP.panel_wfs(C, pf, cfg);   -- [JP]
         local wx, wy = imgui.GetWindowPos();
         PANEL.frame(dl, wx, wy, WIN_W, WIN_H, SW);
-        PANEL.sidebar(dl, wx + 26 * ps, wy + 34 * ps, SW - 40 * ps, wy + WIN_H - 30 * ps);
-        PANEL.buttons(dl, wx, wy + 6 * ps, WIN_W - 10 * ps);
-        pcall(PANEL.modes, dl, wx + SW + math.floor(30 * ps) + MARGIN, wy + math.floor(18 * ps));   -- NORMAL MODE | HEX LINK MODE
         if (ui.tab or 1) > #TABS then ui.tab = 1; end                -- (the old HEX LINK tab's number)
+        PANEL.rail(dl, wx + 20 * ps, wy + 20 * ps, wy + WIN_H - 20 * ps);   -- the tabs: icons down the left
         local tab = ui.tab or 1;
-        -- the settings, in one column that scrolls (the sidebar stays put)
-        local cx = wx + SW + math.floor(30 * ps);
-        local ctop = wy + math.floor(54 * ps);
-        local ch = WIN_H - math.floor(54 * ps) - math.floor(84 * ps);
+        local cx = wx + SW;                                          -- the right: the top bar, the tab's name, its cards
+        PANEL.topbar(dl, cx, wy + 22 * ps, CW, tab);
+        local ctop = math.floor(PANEL.heading(dl, cx + 6 * ps, wy + 76 * ps, CW - 6 * ps, tab) + 14 * ps);
+        PANEL.toff = ctop - wy;
+        local ch = wy + WIN_H - math.floor(22 * ps) - ctop;
         imgui.SetCursorScreenPos({ cx, ctop });
-        imgui.BeginChild('##yui_body', { MARGIN + ROW_W + math.floor(14 * ps), ch }, false);
+        imgui.BeginChild('##yui_body', { CW + math.floor(12 * ps), ch }, false);
         if C.wfs ~= 1 then imgui.SetWindowFontScale(C.wfs); end
+        do
+            local bx_ = imgui.GetWindowPos();
+            C.CARDS = { x1 = bx_ + 2, cw = CARDW, gap = GAP, pad = PAD, colw = COLW, full = ROW_W, ind = 0, n = 0, tab = (C.find_q() ~= '') and 'find' or tab };
+            C.CARDS.bx = bx_;
+        end
         imgui.Indent(MARGIN);
         imgui.PushTextWrapPos(imgui.GetCursorPosX() + ROW_W);         -- long hints wrap inside the column
         -- a colour row: the name, a swatch to pick the colour, R to put it back
@@ -15980,35 +16809,58 @@ local function draw_window()
             imgui.AlignTextToFramePadding();
             local cur = (type(cfg[key]) == 'table') and cfg[key] or def;
             imgui.TextColored(name_col and { cur[1], cur[2], cur[3], 1 } or C.text, label);
-            imgui.SameLine(x0 + ROW_W - 64);
+            local fh = imgui.GetFrameHeight();
+            imgui.SameLine(x0 + ROW_W - fh * 2 - 6 * ps);
             local edit = { cur[1], cur[2], cur[3] };
-            if imgui.ColorEdit3('##' .. key, edit, bit.bor(ImGuiColorEditFlags_NoInputs, ImGuiColorEditFlags_NoLabel)) then
-                cfg[key] = { edit[1], edit[2], edit[3] };
-                ui.col_dirty = true;
+            do                                                       -- (a round swatch, as everything on the panel; a click opens the colour picker)
+                local sx, sy = imgui.GetCursorScreenPos();
+                local swc_ = imgui.InvisibleButton('##sw' .. key, { fh, fh });
+                C.nav_reg('##sw' .. key, 'button', sx, sy, sx + fh, sy + fh);
+                if C.nav_take('##sw' .. key) == 'ok' then swc_ = true; end
+                if swc_ then imgui.OpenPopup('##cp' .. key); C.UNDO.col = { key = key, old = cfg[key], label = label }; end
+                local hs = imgui.IsItemHovered();
+                local dl_ = imgui.GetWindowDrawList();
+                DL.CF(dl_, sx + fh / 2, sy + fh / 2, fh / 2 - 1, U4(cur[1], cur[2], cur[3], 1), 32);
+                DL.C(dl_, sx + fh / 2, sy + fh / 2, fh / 2 - 0.5, U4(1, 1, 1, hs and 0.75 or 0.30), 32, 1.2);
+                if hs then YUI_TIP('Pick a colour'); end
+                if imgui.BeginPopup('##cp' .. key) then
+                    local ok_, ch_ = pcall(imgui.ColorPicker3, '##cpp' .. key, edit, bit.bor(ImGuiColorEditFlags_NoInputs or 0, ImGuiColorEditFlags_NoSidePreview or 0));
+                    if not ok_ then ch_ = imgui.ColorEdit3('##cpp' .. key, edit); end
+                    if ch_ then cfg[key] = { edit[1], edit[2], edit[3] }; ui.col_dirty = true; end
+                    imgui.EndPopup();
+                elseif C.UNDO.col and C.UNDO.col.key == key then         -- (the picker closed: the colour before it, for Undo)
+                    C.undo_push(cfg, key, C.UNDO.col.old, C.UNDO.col.label);
+                    C.UNDO.col = nil;
+                end
             end
-            imgui.SameLine(x0 + ROW_W - 30);
-            if imgui.Button('R##r' .. key, { 30, 0 }) then cfg[key] = nil; save(); end
+            imgui.SameLine(x0 + ROW_W - fh);
+            if accent_button('R##r' .. key, { fh, fh }, true, true) then local old = cfg[key]; cfg[key] = nil; save(); C.undo_push(cfg, key, old, label); end
             if imgui.IsItemHovered() then YUI_TIP('Back to the normal colour'); end
         end
-        local function hint(s) imgui.TextColored(C.muted, s); end
+        local function hint(s)                                       -- (on a card: kept for its i in the corner; else grey words)
+            local K = C.CARDS;
+            if K and K.key then K.hints = K.hints or {}; K.hints[#K.hints + 1] = s; return; end
+            imgui.TextColored(C.muted, s);
+        end
         if C.find_q() ~= '' then                                     -- (something in the Search box: what matches, in place of the tab)
             C.find_results();
         elseif tab == 1 then
             ------------------------------------------------------------------ GENERAL
             section('LAYOUT');
-            do
-                local bw3 = math.floor((ROW_W - 16) / 3);
-                if accent_button('CLASSIC##yui_lay1', { bw3, 0 }, false, true) then LAYOUT.use('classic'); end
-                if imgui.IsItemHovered() then YUI_TIP('Your bars side by side at the bottom middle\nParty top right, timers on the left, chat bottom left'); end
-                imgui.SameLine(0, 8);
-                if accent_button('RAID##yui_lay2', { bw3, 0 }, false, true) then LAYOUT.use('raid'); end
-                if imgui.IsItemHovered() then YUI_TIP('Party and alliance top left, your bars stacked bottom middle\nTimers top right, chat bottom right'); end
-                imgui.SameLine(0, 8);
-                if accent_button('COMPACT##yui_lay3', { bw3, 0 }, false, true) then LAYOUT.use('compact'); end
-                if imgui.IsItemHovered() then YUI_TIP('Everything close round your bars, a little below the middle\nParty on their right, timers on their left'); end
-                if accent_button('EDIT MODE##yui_editmode', { ROW_W, 0 }, false, true) then EDIT.on = true; ui.open = false; end
-                if imgui.IsItemHovered() then YUI_TIP('Shows every piece with a grid; drag them and they snap into line\nAlso: /yui edit'); end
-                hint(LAYOUT.msg or 'One click moves every piece of the UI for your screen size. Move anything afterwards as you like.');
+            do                                                       -- (the hero card: the layout in use, big; the three as chips)
+                local cur = cfg.layout_pick;
+                local pushed_ = push_font(fonts.title, 26 * ps);
+                if not pushed_ then imgui.SetWindowFontScale(1.5 * C.wfs); end
+                imgui.Text(cur and PANEL.tcase(cur) or 'Your own');
+                if pushed_ then imgui.PopFont(); else imgui.SetWindowFontScale(C.wfs); end
+                for i, L in ipairs({ { 'classic', 'Your bars side by side at the bottom middle\nParty top right, timers on the left, chat bottom left' },
+                    { 'raid', 'Party and alliance top left, your bars stacked bottom middle\nTimers top right, chat bottom right' },
+                    { 'compact', 'Everything close round your bars, a little below the middle\nParty on their right, timers on their left' } }) do
+                    if i > 1 then imgui.SameLine(0, 6 * ps); end
+                    if accent_button(L[1]:upper() .. '##yui_lay' .. i, nil, cur ~= L[1], true) then LAYOUT.use(L[1]); cfg.layout_pick = L[1]; save(); end
+                    if imgui.IsItemHovered() then YUI_TIP(L[2]); end
+                end
+                hint(LAYOUT.msg or 'One click moves every piece of the UI for your screen size. Move anything afterwards as you like. Edit mode is at the top.');
             end
             section('SIZE');                                         -- every piece at once (each one's own Size on top of it)
             row_slider('##yui_gscale', 'Size of everything', 'scale', 0.5, 4.0, 0.05, '%.2fx');
@@ -16021,7 +16873,7 @@ local function draw_window()
                     if imgui.IsItemHovered() then YUI_TIP('Everything at ' .. pr[1] .. ' - for ' .. pr[3]); end
                 end
                 imgui.SameLine(0, 8);
-                if accent_button('FIT##yui_gsfit', { bw5, 0 }, false, true) then
+                if accent_button('FIT##yui_gsfit', { bw5, 0 }, true, true) then
                     local _, sh = C.screen();
                     cfg.scale = math.max(0.5, math.min(4, math.floor(sh / 1080 / 0.05 + 0.5) * 0.05));
                     save();
@@ -16047,9 +16899,23 @@ local function draw_window()
                 row_switch('##yui_modei', 'Mode switch icon', 'mode_icon', 'On: YUNA UI on the screen shows your mode - its UI pink in Vex mode, gold in Hex link - and a click turns it over to the other one. Drag it anywhere.');
             end
             JP.settings_ui(section, accent_button, hint);   -- [JP]
+            if not YUI_PUBLIC then                                   -- (the mode: a card of its own - it was at the top of the panel)
+                section('MODE');
+                local HX_ = cfg.target_fx == 'link';
+                if accent_button('VEX##yui_mvex', nil, HX_, true) and HX_ then C.setmode(false); end
+                if imgui.IsItemHovered() then YUI_TIP('Vex: the YunaUI target bar, skillchain fan and Magic Burst card.'); end
+                imgui.SameLine(0, 6 * ps);
+                if accent_button('HEX LINK##yui_mhex', nil, not HX_, true) and not HX_ then C.setmode(true); end
+                if imgui.IsItemHovered() then YUI_TIP('Hex link: the target bar over its head with a line to it, hexagon bars, the skillchain banner at the top.'); end
+            end
             section('THIS PANEL');
             row_slider('##yui_palpha', 'Background', 'panel_alpha', 0.15, 1.0, 0.05, '%.2f');
             hint('How see-through the panel is: lower shows more of the game behind it. Double click to put it back.');
+            if cfg.panel_sound == nil then cfg.panel_sound = true; end
+            if cfg.panel_sound_vol == nil then cfg.panel_sound_vol = 0.5; end
+            row_switch('##yui_psnd', 'Tab sound', 'panel_sound', 'On: a soft sound when you open another tab of this panel.');
+            if cfg.panel_sound then row_slider('##yui_psndv', 'Tab sound volume', 'panel_sound_vol', 0.05, 1.5, 0.05, '%.2fx', nil,
+                function() save(); pcall(C.snd_play, 'panel_tab', 'panel_sound_vol'); end); end
             copy_section();
         elseif tab == 2 then
             ------------------------------------------------------------------ TARGET
@@ -16058,6 +16924,8 @@ local function draw_window()
             row_switch('##yui_t', 'Show', 'target');
             row_slider('##yui_s_t', 'Size', 'target_scale', 0.6, 2.0, 0.05, '%.2fx');
             row_slider('##yui_tnsc', 'Target name size', 'target_name_scale', 0.5, 2.5, 0.05, '%.2fx');
+            if cfg.target_lock == nil then cfg.target_lock = true; end
+            row_switch('##yui_tlock', 'Lock-on mark', 'target_lock', "On: a padlock before your target's name while the camera is locked on it (as the game's own target lock).");
             row_switch('##yui_tarrow', 'YunaUI target marker', 'tarrow', "On: YunaUI's own marker takes the place of the game's arrow over whatever you target - Vex mode the party cards' pink triangle, Hex link a white prism. Off: the game's own arrow.", nil, function() C.TAR_last = nil; end);
             row_switch('##yui_mobinfo', 'Monster info', 'mob_info', "On: after a monster's name, its level range (gold: a notorious monster) and how it aggros - red icons for what it notices (an eye: sight, waves: sound, a star: magic, a drop: low HP, wisps: scent), a green dot when it isn't aggressive, a chain when it links. From the mobdb addon's data: without mobdb nothing shows.");
             if cfg.mob_info ~= false then row_slider('##yui_mobisz', 'Monster info icon size', 'mob_icon_scale', 0.5, 3.0, 0.05, '%.2fx'); end
@@ -16210,8 +17078,8 @@ local function draw_window()
             end
             local docked = YMAP.dock_on and YMAP.dock_on();          -- (EXP, gil and bag built into the minimap: their own pieces never show)
             if docked then
-                section('EXP, GIL AND BAG');
-                hint('They are built into the minimap: your EXP (or merits), gil and bag show on it. Want them as windows of their own? MINIMAP > EXP, gil and bag on the map: Off.');
+                section('EXP, GIL AND BAG');                         -- (its words in the card, not under the i: there's nothing else on it)
+                imgui.TextColored(C.muted, 'They are built into the minimap: your EXP (or merits), gil and bag show on it. Want them as windows of their own? MINIMAP > EXP, gil and bag on the map: Off.');
             else
             section('EXP BAR');
             row_switch('##yui_e', 'Show', 'expbar', 'Experience, or limit points and merits when limit mode is on.');
@@ -16401,8 +17269,7 @@ local function draw_window()
             C.sound_rows();
         elseif tab == 13 then
             ------------------------------------------------------------------ BUFFS
-            section('HIDE ON PARTY CARDS');
-            hint('Tick a status to keep it off every party card (yours included). Nothing is hidden unless you tick it.');
+            local hide_hint_ = 'Hide on party cards: tick a status to keep it off every party card (yours included). Nothing is hidden unless you tick it.';
             local function brow(id_, key_, label_, tip_)              -- (its icon and name, the switch at the row's end as every other)
                 local dl_ = imgui.GetWindowDrawList();
                 local x0_ = imgui.GetCursorPosX();
@@ -16419,6 +17286,7 @@ local function draw_window()
             end
             for _, sec in ipairs(C.BUFF_HIDE) do
                 section(sec[1]);
+                if hide_hint_ then hint(hide_hint_); hide_hint_ = nil; end   -- (on the first card: there's no empty card above them)
                 for _, b in ipairs(sec[2]) do brow(type(b[1]) == 'table' and b[1][1] or b[1], b[2], b[3], 'On: ' .. b[3] .. (type(b[1]) == 'table' and ' are' or ' is') .. ' not shown on the party cards. ' .. b[4]); end
             end
         elseif tab == 12 then
@@ -16443,6 +17311,20 @@ local function draw_window()
             section('TREASURE POOL');
             row_switch('##yui_lootw', 'Show the pool', 'loot_win', "On: when something drops, YunaUI's own treasure pool shows it: time left, who is winning, and Lot / Pass buttons. Click an item to keep it picked.");
             row_slider('##yui_s_loot', 'Pool size', 'loot_scale', 0.6, 2.0, 0.05, '%.2fx');
+            if cfg.loot_chest == nil then cfg.loot_chest = true; end
+            row_switch('##yui_lootch', 'Chest', 'loot_chest', "On: when something drops, a small treasure chest shows at the party list's top left instead of the whole list - click it and the list comes out; MINIMISE sends it back in. Off: the list shows by itself, as before.");
+            if cfg.loot_chest ~= false then
+                row_slider('##yui_s_chest', 'Chest size', 'loot_chest_size', 0.5, 2.5, 0.05, '%.2fx');
+                hint('Drag the chest to move it anywhere: it stays where you put it.');
+                local trying_ = C.CHEST.try_until and os.clock() < C.CHEST.try_until;
+                if accent_button((trying_ and 'STOP THE TRY' or 'TRY THE CHEST') .. '##yui_chesttry', { ROW_W, 0 }, true) then   -- (a pretend pool for a minute - or stop it)
+                    if trying_ then C.CHEST.try_until, C.CHEST.open = nil, false;
+                    else
+                        C.CHEST.try_until, C.CHEST.open, C.CHEST.a, C.CHEST.n = os.clock() + 60, false, 0, 0;
+                        ui.open = false;
+                    end
+                end
+            end
             if cfg.loot_got == nil then cfg.loot_got = true; end
             row_switch('##yui_lootg', 'Item popup', 'loot_got', 'On: an item that goes to you - a drop, or the pool won - pops up - WON and its name - for a few seconds. Move it in Edit Mode.');
             if cfg.loot_got ~= false and accent_button('TRY THE ITEM POPUP##yui_gottry', { ROW_W, 0 }, true) then   -- (a pretend item won: see it come in and go)
@@ -16450,6 +17332,29 @@ local function draw_window()
                 C.got_add(L_[math.random(#L_)][1]);
             end
             hint("With an item picked (the mouse over it or a click in the pool, or the cursor on it in the game's own pool), everyone's lot shows on their party card: a number, -- for a pass, ? for still to go, the highest in gold.");
+        elseif tab == 14 then
+            ------------------------------------------------------------------ CONTROLS
+            section('OPEN / CLOSE THE PANEL');
+            pcall(C.bind_row, 'kb');
+            pcall(C.bind_row, 'pad');
+            hint('A key (with Ctrl, Alt or Shift if you like) or a controller button - or two pressed together, such as Back + Start - that opens and closes this panel. Pick one the game doesn\'t use. /yui always works too.');
+            section('CONTROLLER IN THE PANEL');
+            if cfg.panel_pad_nav == nil then cfg.panel_pad_nav = true; end
+            row_switch('##yui_pnav', 'Use the controller here', 'panel_pad_nav', 'On: while this panel is open your controller moves through it (the game doesn\'t get those buttons). Off: the controller stays the game\'s.');
+            if cfg.panel_pad_nav ~= false then
+                pcall(C.bind_row, 'tprev');                          -- (the buttons that turn the tabs: yours to pick, none at first)
+                pcall(C.bind_row, 'tnext');
+                imgui.Dummy({ 1, 4 * C.ps });
+                local x0_ = imgui.GetCursorPosX();
+                for _, r_ in ipairs({ { 'Choose a tab', 'D-pad up / down' }, { 'Into the tab', 'Confirm or D-pad right' }, { 'Move', 'D-pad (any way)' },
+                                      { 'Press / turn on or off', 'Confirm (A / Cross)' }, { 'A slider', 'Confirm, then left / right' },
+                                      { 'Back to the tabs', 'Cancel (B / Circle)' }, { 'Close the panel', 'Cancel, on the tabs' }, { 'Tab buttons', ((C.bind_name('tprev') and C.bind_name('tnext')) and (C.bind_name('tprev') .. ' / ' .. C.bind_name('tnext'))) or 'Picked above' } }) do
+                    imgui.AlignTextToFramePadding();
+                    imgui.TextColored(C.text, r_[1]);
+                    imgui.SameLine(x0_ + ROW_W - (tonumber((imgui.CalcTextSize(r_[2]))) or 100));
+                    imgui.TextColored({ 1, 1, 1, 0.55 }, r_[2]);
+                end
+            end
         else
             ------------------------------------------------------------------ DAMAGE METER
             local D = YUI_DPS;
@@ -16479,14 +17384,30 @@ local function draw_window()
                     imgui.AlignTextToFramePadding();
                     local cur = (type(ds[key]) == 'table') and ds[key] or def;
                     imgui.TextColored({ cur[1], cur[2], cur[3], 1 }, label);
-                    imgui.SameLine(x0 + ROW_W - 64);
+                    local fh = imgui.GetFrameHeight();                   -- (a round swatch and a round R, as the panel's other colours)
+                    imgui.SameLine(x0 + ROW_W - fh * 2 - 6 * ps);
                     local edit = { cur[1], cur[2], cur[3] };
-                    if imgui.ColorEdit3('##dm_' .. key, edit, bit.bor(ImGuiColorEditFlags_NoInputs, ImGuiColorEditFlags_NoLabel)) then
-                        ds[key] = { edit[1], edit[2], edit[3] };
-                        ui.dm_dirty = true;
+                    local sx, sy = imgui.GetCursorScreenPos();
+                    local swc_ = imgui.InvisibleButton('##dmsw' .. key, { fh, fh });
+                    C.nav_reg('##dmsw' .. key, 'button', sx, sy, sx + fh, sy + fh);
+                    if C.nav_take('##dmsw' .. key) == 'ok' then swc_ = true; end
+                    if swc_ then imgui.OpenPopup('##dmcp' .. key); C.UNDO.col = { key = key, old = ds[key], label = label, ds = true }; end
+                    local hs = imgui.IsItemHovered();
+                    local dl_ = imgui.GetWindowDrawList();
+                    DL.CF(dl_, sx + fh / 2, sy + fh / 2, fh / 2 - 1, U4(cur[1], cur[2], cur[3], 1), 32);
+                    DL.C(dl_, sx + fh / 2, sy + fh / 2, fh / 2 - 0.5, U4(1, 1, 1, hs and 0.75 or 0.30), 32, 1.2);
+                    if hs then YUI_TIP('Pick a colour'); end
+                    if imgui.BeginPopup('##dmcp' .. key) then
+                        local ok_, ch_ = pcall(imgui.ColorPicker3, '##dmcpp' .. key, edit, bit.bor(ImGuiColorEditFlags_NoInputs or 0, ImGuiColorEditFlags_NoSidePreview or 0));
+                        if not ok_ then ch_ = imgui.ColorEdit3('##dmcpp' .. key, edit); end
+                        if ch_ then ds[key] = { edit[1], edit[2], edit[3] }; ui.dm_dirty = true; end
+                        imgui.EndPopup();
+                    elseif C.UNDO.col and C.UNDO.col.key == key and C.UNDO.col.ds then   -- (the picker closed: the colour before it, for Undo)
+                        C.undo_push(ds, key, C.UNDO.col.old, C.UNDO.col.label, function() dsave(); end);
+                        C.UNDO.col = nil;
                     end
-                    imgui.SameLine(x0 + ROW_W - 30);
-                    if imgui.Button('R##dmr' .. key, { 30, 0 }) then ds[key] = nil; dsave(); end
+                    imgui.SameLine(x0 + ROW_W - fh);
+                    if accent_button('R##dmr' .. key, { fh, fh }, true, true) then local old = ds[key]; ds[key] = nil; dsave(); C.undo_push(ds, key, old, label, function() dsave(); end); end
                     if imgui.IsItemHovered() then YUI_TIP('Back to the normal colour'); end
                 end
                 dcol('col_name', 'Names', { 1, 1, 1 });
@@ -16502,19 +17423,21 @@ local function draw_window()
             end
         end
         if ui.col_dirty and not imgui.IsMouseDown(0) then ui.col_dirty = false; save(); end   -- colours: saved once you let go
-        imgui.Spacing();
+        local bkey_ = C.CARDS and C.CARDS.tab or tab;
+        do local bx_ = C.CARDS and C.CARDS.bx or cx; pcall(C.cards_end, bx_); end
+        pcall(C.nav_frame);                                          -- (CONTROLS: the controller's list for the next presses)
+        C.CARDS = nil;
+        imgui.Dummy({ 1, 6 * ps });
+        PANEL.bh = PANEL.bh or {};
+        PANEL.bh[bkey_] = imgui.GetCursorPosY();                     -- (how tall this tab's cards are: the panel fits it next frame)
         imgui.PopTextWrapPos();
         imgui.Unindent(MARGIN);
         imgui.EndChild();
-        -- the bottom: a faint line, and CLOSE
-        local by = wy + WIN_H - math.floor(70 * ps);
-        DL.L(dl, cx + MARGIN - 20 * ps, by - 10 * ps, cx + MARGIN + ROW_W, by - 10 * ps, U4(1, 1, 1, 0.08), 1);
-        local cw = math.floor(260 * ps);
-        imgui.SetCursorScreenPos({ cx + MARGIN + (ROW_W - cw) / 2, by });
-        if accent_button('CLOSE##yui_close', { cw, math.floor(40 * ps) }, true) then ui.open = false; end
         cfg.win_x, cfg.win_y = wx, wy;
+        pcall(PANEL.undo_ui, dl, cx + CW - 4 * ps, wy + 80 * ps);       -- (on the title's row, at the right)
     end
     imgui.End();
+    YUI_PANEL_TIP = false;
     if pushed then imgui.PopFont(); end
     imgui.PopStyleVar(nv);
     imgui.PopStyleColor(nc);
@@ -20687,6 +21610,7 @@ end);
 
 ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStation and other DirectInput pads
     local b, st = e.button, e.state or 0;
+    do local okp_, blk_ = pcall(C.pad_event, 'd', b, st); if okp_ and blk_ then e.blocked = true; return; end end   -- (CONTROLS: the panel's)
     local bl_, br_ = 54, 55;                                         -- (MACRO BAR: L2 / R2 held - or L1 / R1, as the player picked)
     if C.mb_l1() then bl_, br_ = 52, 53; end
     if b == bl_ then C.MB.dl2 = st >= 128; elseif b == br_ then C.MB.dr2 = st >= 128; end
@@ -20811,6 +21735,21 @@ ashita.events.register('xinput_state', 'yui_pad_xs', function(e)    -- Xbox (XIn
             if down ~= was then M.xb[q[1]] = down; C.mb_xpad(q[1], down, was); end
         end
     end);
+    if e.state_modified ~= nil and (C.nav_on() or C.BIND.listen == 'pad' or C.BIND.pfired) then   -- (CONTROLS: the panel open, a button being picked,
+        pcall(function()                                             --  the open combo held - the game doesn't read those buttons either)
+            local g = ffi.cast('YUI_XSTATE*', e.state_modified).Gamepad;
+            if C.BIND.listen == 'pad' then g.wButtons = 0; return; end
+            local PB = C.padbtn();
+            local mask = bit.bor(0x000F, bit.lshift(1, PB.x_ok), bit.lshift(1, PB.x_back));
+            for _, tb_ in ipairs({ (cfg.panel_tabprev or {})[1], (cfg.panel_tabnext or {})[1] }) do   -- (and the tab buttons you picked)
+                local n_ = tb_ and tb_:sub(1, 1) == 'x' and tonumber(tb_:sub(2));
+                if n_ then mask = bit.bor(mask, bit.lshift(1, n_)); end
+            end
+            if C.BIND.pfired then for _, v in ipairs(cfg.panel_pad or {}) do local n_ = tonumber(v:sub(2)); if v:sub(1, 1) == 'x' and n_ then mask = bit.bor(mask, bit.lshift(1, n_)); end end end
+            if not C.nav_on() and C.BIND.pfired then mask = 0; for _, v in ipairs(cfg.panel_pad or {}) do local n_ = tonumber(v:sub(2)); if v:sub(1, 1) == 'x' and n_ then mask = bit.bor(mask, bit.lshift(1, n_)); end end end
+            g.wButtons = bit.band(g.wButtons, bit.bnot(mask));
+        end);
+    end
     if M.okheld and e.state_modified ~= nil then                     -- (held: the game never sees it - it would target what's in front)
         pcall(function() local g = ffi.cast('YUI_XSTATE*', e.state_modified).Gamepad; g.wButtons = bit.band(g.wButtons, bit.bnot(bit.lshift(1, C.padbtn().x_ok))); end);
     end
@@ -20833,6 +21772,7 @@ ashita.events.register('xinput_state', 'yui_pad_xs', function(e)    -- Xbox (XIn
 end);
 ashita.events.register('xinput_button', 'yui_pad_x', function(e)    -- Xbox (XInput) pads
     local b, st = e.button, e.state or 0;
+    do local okp_, blk_ = pcall(C.pad_event, 'x', b, st); if okp_ and blk_ then e.blocked = true; return; end end   -- (CONTROLS: the panel's)
     if (b == 8 or b == 9) and C.mb_l1() and st ~= 0 and C.mb_mine() and not ((C.MB.xl or 0) > 60 and (C.MB.xr or 0) > 60) then   -- (L1 / R1 picked: one shoulder never the game's)
         e.blocked = true; return;
     end
@@ -20976,6 +21916,7 @@ function C.mb_kbrun(row, slot)
 end
 ashita.events.register('key_data', 'yui_kb', function(e)
     local k = e.key;
+    do local okb_, blk_ = pcall(C.bind_key, k, e.down); if okb_ and blk_ then e.blocked = true; return; end end   -- (CONTROLS: the key that opens the panel, or one being picked)
     local dslot = C.MB_DIK[k];
     if dslot ~= nil then
         local M = C.MB;
@@ -21029,6 +21970,7 @@ ashita.events.register('key_data', 'yui_kb', function(e)
 end);
 ashita.events.register('key_state', 'yui_kb_state', function(e)    -- (the game also reads held keys from here)
     local keys = ffi.cast('uint8_t*', e.data_raw);
+    if C.BIND.kheld then if keys[C.BIND.kheld] == 0 then C.BIND.kheld = nil; else keys[C.BIND.kheld] = 0; end end   -- (the panel's key: hidden from the game down to its release)
     for dk, vk in pairs(C.MB.kdig or {}) do                          -- (a digit that ran a macro: the game never sees it, down to its release)
         if C.mb_key(vk) then keys[dk] = 0; else C.MB.kdig[dk] = nil; end
     end
