@@ -73,7 +73,7 @@ settings.register('equip', 'ye_settings_update', function(s)
     ui.sb_reset = true;                                              -- (logging in switches to your character's settings: the HP / MP / TP bars
 end);                                                                --  go back to its places, measured again - see JOBS.statbars)
 
-local function msg(t) print(chat.header(addon.name):append(chat.message(t))); end
+local function msg(t) if YUI_JP_T then t = YUI_JP_T(t); end print(chat.header(addon.name):append(chat.message(t))); if YUI_CHAT_ADD then pcall(YUI_CHAT_ADD, 1, '[' .. addon.name .. '] ' .. tostring(t)); end end   -- [JP]
 local function save() settings.save('equip'); end
 
 ----------------------------------------------------------------------------------------------------

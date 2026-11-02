@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.21';
+addon.version = '1.1.22';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -2460,15 +2460,14 @@ function FIGHT.on_skill(actor, kind, param, m, tid, ap, first)
         if pre and FIGHT.sc[tid] == pre.st then FIGHT.sc[tid] = old.prev; end
         old = old.prev;
     end
-    local delay = sk.delay or 3;
     if prop and FIGHT.CHAIN[prop] then                               -- it made a skillchain
         local step = ((old and old.step) or 1) + 1;
         local level = FIGHT.CHAIN[prop][1];
         if level == 3 and old and old.property and old.property[1] == prop then level = 4; end
-        FIGHT.sc[tid] = { en = sk.en, property = { prop }, ts = now, dur = 8 - step + delay, wait = delay, step = step,
+        FIGHT.sc[tid] = { en = sk.en, property = { prop }, ts = now, dur = math.max(3, 11 - step), wait = 3, step = step,   -- (the server: 10 s less 1 per chain, next one after 3)
                           closed = (level == 4), chain = prop, elems = FIGHT.CHAIN[prop][2] };
     elseif FIGHT.MSG[m] and (kind ~= 4 or rdy) then                  -- the first step: it opens its own properties (a spell: under Immanence / Chain Affinity)
-        FIGHT.sc[tid] = { en = sk.en, property = sk.skillchain or {}, ts = now, dur = 7 + delay, wait = delay, step = 1 };
+        FIGHT.sc[tid] = { en = sk.en, property = sk.skillchain or {}, ts = now, dur = 10, wait = 3, step = 1 };   -- (the server: 10 s, a chain from 3 s)
     elseif m == 529 then                                             -- "... is chainbound" (SAM Konzen-ittai, DNC Wild Flourish): opens theirs
         FIGHT.sc[tid] = { en = sk.en, property = sk.skillchain or {}, ts = now, dur = 9, wait = 2, step = 1 };
     end
@@ -2946,10 +2945,15 @@ function FIGHT.fan_size(sc) return 420 * sc, 260 * sc; end
 function FIGHT.preview(id)
     id = id or -1;
     local now = os.clock();
-    local t0 = now - (now % 6);
+    local cyc = now % 14;
+    local t0 = now - cyc;
     FIGHT.casts[id] = { name = 'Firaga III', t0 = t0, dur = 4, kind = 'spell', tid = 0, pretend = true };
-    FIGHT.sc[id] = { en = 'Savage Blade', property = { 'Fusion' }, ts = t0, dur = 8, wait = 2, step = 2, chain = 'Fusion',
-                     elems = { 'Fire', 'Light' }, pretend = true };
+    if cyc < 5 then                                                  -- (the opener: GET READY, then CHAIN NOW / START CASTING)
+        FIGHT.sc[id] = { en = 'Red Lotus Blade', property = { 'Liquefaction' }, ts = t0, dur = 10, wait = 3, step = 1, pretend = true };
+    else                                                             -- (the chain: MAGIC BURST and its 9 s)
+        FIGHT.sc[id] = { en = 'Savage Blade', property = { 'Fusion' }, ts = t0 + 5, dur = 9, wait = 3, step = 2, chain = 'Fusion',
+                         elems = { 'Fire', 'Light' }, pretend = true };
+    end
 end
 -- TARGET > "Show them to place them": while it's on, the fan, the Magic Burst line and the enemy cast show all the time
 -- (on a pretend target when you have none), so you can see where they sit
@@ -3062,6 +3066,7 @@ local function read_action(e)
     local kind = bits(4);
     local param;
     if kind == 8 or kind == 9 then param = bits(16); bits(16); else param = bits(32); end
+    if YUI_JP_ACT then pcall(YUI_JP_ACT, actor, kind, param, e); end   -- [JP]
     bits(32);
     if (kind == 6 or kind == 11 or kind == 14 or kind == 15) and C.MOB2HR[param] and not is_party_id(actor) then
         local e = DEBUFF_DB.ja and DEBUFF_DB.ja[param];              -- (a monster's 2-hour - "uses Mighty Strikes": the message names the move,
@@ -3483,13 +3488,14 @@ function FIGHT.ps_alt(sid, st, t)
     end
     local LVC = { 0.96, 0.92, 0.82 };
     local function lv(o) return 'Lv. ' .. tostring(o[3] or 1); end   -- (the skillchain's level: 1, 2, 3 - 4 for a double Light / Darkness)
-    local function mbline(cy_, a)                                    -- (the element gems, MAGIC BURST, the chain's name - centred)
-        local pc = FIGHT.PCOL[st.chain] or WH;
+    local function mbline(cy_, a)                                    -- (after a chain: the elements to burst with, then - small - the next weapon skill's moment)
         local m = #(st.elems or {});
         local gw = m * 14 * s_;
-        local w1 = wid('MAGIC BURST', 9 * s_, 2 * s_);
-        local w2 = wid(tostring(st.chain), 12 * s_);
-        local tot = gw + 8 * s_ + w1 + 8 * s_ + w2;
+        local ew, etot = {}, 0;
+        for k, e in ipairs(st.elems or {}) do ew[k] = wid(e, 15 * s_); etot = etot + ew[k] + ((k < m) and 10 * s_ or 0); end
+        local nx = (not st.closed) and ('NEXT WS  ' .. (go and 'CHAIN NOW' or ('GET READY ' .. tostring(secs)))) or nil;
+        local w2 = nx and wid(nx, 10 * s_, 1.5 * s_) or 0;
+        local tot = gw + 8 * s_ + etot + (nx and (24 * s_ + w2) or 0);
         local x_ = mx - tot / 2;
         for k, e in ipairs(st.elems or {}) do
             local ec = FIGHT.ELEM[e] or WH;
@@ -3499,40 +3505,60 @@ function FIGHT.ps_alt(sid, st, t)
             C.hexdot(fg, gx, cy_, 5 * s_ * u, c32(ec, a));
             if u < 1 then C.hexring(fg, gx, cy_, 5 * s_ + (1 - u) * 8 * s_, c32(ec, a * (1 - u)), 1.5); end
         end
-        local _, h1 = wid('A', 9 * s_);
-        local _, h2 = wid('A', 12 * s_);
-        local ua = a * cl01((t - 0.5) / 0.3);
-        txt('MAGIC BURST', 9 * s_, x_ + gw + 8 * s_, cy_ - h1 / 2, { 0.98, 0.94, 0.86 }, ua, 2 * s_);
-        txt(show(tostring(st.chain), (t - 0.5) / 0.3, 77), 12 * s_, x_ + gw + 8 * s_ + w1 + 8 * s_, cy_ - h2 / 2, { pc[1] * 0.4 + 0.6, pc[2] * 0.4 + 0.6, pc[3] * 0.4 + 0.6 }, ua);
+        local _, h1 = wid('A', 15 * s_);
+        local _, h2 = wid('A', 10 * s_);
+        local ua = a * cl01((t - 0.3) / 0.3);
+        local ex = x_ + gw + 8 * s_;
+        for k, e in ipairs(st.elems or {}) do                        -- (each element's name in its colour)
+            local ec = FIGHT.ELEM[e] or WH;
+            txt(e, 15 * s_, ex, cy_ - h1 / 2, { ec[1] * 0.5 + 0.5, ec[2] * 0.5 + 0.5, ec[3] * 0.5 + 0.5 }, ua);
+            ex = ex + ew[k] + 10 * s_;
+        end
+        if nx then
+            local xd = x_ + gw + 8 * s_ + etot + 12 * s_;
+            C.hexdot(fg, xd, cy_, 2 * s_, c32(gold, 0.85 * ua));
+            txt(nx, 10 * s_, xd + 12 * s_, cy_ - h2 / 2, go and gold or rose, ua * 0.9, 1.5 * s_);
+        end
     end
-    local state = go and 'CHAIN NOW' or 'GET READY';
+    local function castline(cy_, a)                                  -- (before the chain, once the closer can go: a nuke started now lands in the burst)
+        local s0 = 'START CASTING';
+        local w = wid(s0, 14 * s_, 3 * s_);
+        local _, h = wid('A', 14 * s_);
+        txt(s0, 14 * s_, mx - w / 2, cy_ - h / 2, gold, a * (0.75 + 0.25 * math.sin(now * 6)), 3 * s_);
+    end
+    local burst = mb_on and true or false;                           -- (a chain went off: it's the mages' moment - MAGIC BURST on top, its seconds, its lines)
+    local bleft = math.max(0, st.dur - t);
+    local hc = burst and gold or col;
+    local fr_ = burst and cl01(bleft / math.max(0.1, st.dur)) or frac;
+    local cast_on = (not burst) and go and cfg.show_mb ~= false and not st.closed;
+    local state = burst and 'MAGIC BURST' or (go and 'CHAIN NOW' or 'GET READY');
     do
         local y_ = 22 * s_ - (1 - inn) * 14 * s_ + (FIGHT.psy or OY);   -- (FIGHT.psy: the guide's slide moves it down)
         local title = st.chain and tostring(st.chain):upper() or 'SKILLCHAIN';
         local tc = st.chain and (FIGHT.PCOL[st.chain] or WH) or col;
-        local sp = (6 + 18 * (1 - inn)) * s_;                         -- (tracking in: the letters close up as it arrives)
+        local sp = (4 + 14 * (1 - inn)) * s_;                         -- (tracking in: the letters close up as it arrives)
         local _, hs = wid('A', 10 * s_);
-        local ss_ = tostring(secs);
+        local ss_ = burst and string.format('%.1f', bleft) or tostring(secs);
         local nw_, nh_ = wid(ss_, 24 * s_);                          -- (the seconds: big, beside the small CHAIN NOW / GET READY)
         local sw = wid(state, 10 * s_, 2 * s_);
         local lx_ = mx - (sw + 8 * s_ + nw_) / 2;
         y_ = y_ - (nh_ - hs) * 0.5;
-        txt(state, 10 * s_, lx_, y_ + (nh_ - hs) * 0.62, col, A * pulse, 2 * s_);
+        txt(state, 10 * s_, lx_, y_ + (nh_ - hs) * 0.62, hc, A * pulse, 2 * s_);
         txt(ss_, 24 * s_, lx_ + sw + 8 * s_ + 1.5, y_ + 1.5, { 0, 0, 0 }, A * 0.5);
-        txt(ss_, 24 * s_, lx_ + sw + 8 * s_, y_, { col[1] * 0.4 + 0.6, col[2] * 0.4 + 0.6, col[3] * 0.4 + 0.6 }, A);
+        txt(ss_, 24 * s_, lx_ + sw + 8 * s_, y_, { hc[1] * 0.4 + 0.6, hc[2] * 0.4 + 0.6, hc[3] * 0.4 + 0.6 }, A);
         local ty_ = y_ + nh_ + 1 * s_;
-        local tw_, th_ = wid(title, 30 * s_, sp);
-        txt(title, 30 * s_, mx - tw_ / 2 + 2, ty_ + 2, { 0, 0, 0 }, A * 0.45, sp);   -- (a soft shadow)
-        txt(title, 30 * s_, mx - tw_ / 2, ty_, { tc[1] * 0.3 + 0.7, tc[2] * 0.3 + 0.7, tc[3] * 0.3 + 0.7 }, A, sp);
+        local tw_, th_ = wid(title, 22 * s_, sp);
+        txt(title, 22 * s_, mx - tw_ / 2 + 2, ty_ + 2, { 0, 0, 0 }, A * 0.45, sp);   -- (a soft shadow)
+        txt(title, 22 * s_, mx - tw_ / 2, ty_, { tc[1] * 0.3 + 0.7, tc[2] * 0.3 + 0.7, tc[3] * 0.3 + 0.7 }, A, sp);
         local ly = ty_ + th_ * 0.52;                                  -- (the time: a line each side, shrinking in towards the name)
-        local L = 170 * s_ * frac * inn;
+        local L = 170 * s_ * fr_ * inn;                               -- (after a chain: the burst's seconds draining)
         for _, dir in ipairs({ -1, 1 }) do
             local x0_ = mx + dir * (tw_ / 2 + 12 * s_);
             local x1_ = x0_ + dir * L;
             DL.L(fg, x0_, ly, x1_, ly, c32({ 0, 0, 0 }, 0.5 * A), 3.5);
-            DL.L(fg, x0_, ly, x1_, ly, c32(col, A * pulse), 1.5);
+            DL.L(fg, x0_, ly, x1_, ly, c32(hc, A * pulse), 1.5);
             C.hexdot(fg, x1_, ly, 3 * s_, c32(WH, A));
-            C.hexring(fg, x0_ + dir * 6 * s_ * 0, ly, 2.5 * s_, c32(col, A * 0.6), 1);
+            C.hexring(fg, x0_ + dir * 6 * s_ * 0, ly, 2.5 * s_, c32(hc, A * 0.6), 1);
         end
         local oy = ty_ + th_ + 6 * s_;                                -- (the weapon skills, in one line)
         FIGHT.bnhw = 0;
@@ -3540,34 +3566,34 @@ function FIGHT.ps_alt(sid, st, t)
             local parts, tot = {}, 0;
             for i = 1, n do
                 local o = opts[i];
-                local w1, w2, w3 = wid(o[1], 12 * s_), wid(o[2], 11 * s_), wid(lv(o), 9 * s_);
+                local w1, w2, w3 = wid(tostring(o[1]):upper(), 17 * s_), wid(o[2], 15 * s_), wid(lv(o), 12 * s_);
                 parts[i] = { w1, w2, w3 };
-                tot = tot + w1 + 6 * s_ + w2 + 4 * s_ + w3 + ((i < n) and 22 * s_ or 0);
+                tot = tot + w1 + 7 * s_ + w2 + 5 * s_ + w3 + ((i < n) and 26 * s_ or 0);
             end
             local x_ = mx - tot / 2;
             FIGHT.bnhw = tot / 2;
-            local _, h1 = wid('A', 12 * s_);
+            local _, h1 = wid('A', 17 * s_);
             for i = 1, n do
                 local o, pw = opts[i], parts[i];
                 local pc = FIGHT.PCOL[o[2]] or WH;
                 local best = go and i == 1 and (o[3] or 0) >= 3;
                 local u = ease((t - 0.2 - 0.08 * i) / 0.3);
-                txt(show(o[1], (t - 0.2 - 0.08 * i) / 0.35, i * 10), 12 * s_, x_, oy, best and gold or WH, A * u);
-                txt(o[2], 11 * s_, x_ + pw[1] + 6 * s_, oy + 1 * s_, pc, A * u);
-                txt(lv(o), 9 * s_, x_ + pw[1] + 6 * s_ + pw[2] + 4 * s_, oy + 3 * s_, LVC, A * u);
+                txt(show(tostring(o[1]):upper(), (t - 0.2 - 0.08 * i) / 0.35, i * 10), 17 * s_, x_, oy, best and gold or { 0.93, 0.80, 0.62 }, A * u);   -- (names: soft champagne, the best one gold - not white)
+                txt(o[2], 15 * s_, x_ + pw[1] + 7 * s_, oy + 1.5 * s_, pc, A * u);
+                txt(lv(o), 12 * s_, x_ + pw[1] + 7 * s_ + pw[2] + 5 * s_, oy + 3.5 * s_, LVC, A * u);
                 if best then DL.L(fg, x_, oy + h1 + 1, x_ + pw[1], oy + h1 + 1, c32(gold, A * u * (0.6 + 0.4 * math.sin(now * 4))), 1.5); end
-                x_ = x_ + pw[1] + 6 * s_ + pw[2] + 4 * s_ + pw[3];
+                x_ = x_ + pw[1] + 7 * s_ + pw[2] + 5 * s_ + pw[3];
                 if i < n then
-                    C.hexdot(fg, x_ + 11 * s_, oy + h1 * 0.55, 3 * s_, c32({ 0, 0, 0 }, 0.7 * A * u));
-                    C.hexdot(fg, x_ + 11 * s_, oy + h1 * 0.55, 2 * s_, c32(gold, 0.85 * A * u));
-                    x_ = x_ + 22 * s_;
+                    C.hexdot(fg, x_ + 13 * s_, oy + h1 * 0.55, 3 * s_, c32({ 0, 0, 0 }, 0.7 * A * u));
+                    C.hexdot(fg, x_ + 13 * s_, oy + h1 * 0.55, 2 * s_, c32(gold, 0.85 * A * u));
+                    x_ = x_ + 26 * s_;
                 end
             end
             oy = oy + h1 + 8 * s_;
         end
-        if mb_on then mbline(oy + 8 * s_, A); end
+        if mb_on then mbline(oy + 10 * s_, A); elseif cast_on then castline(oy + 10 * s_, A); end
         local half_ = math.max(tw_ / 2 + 190 * s_, 300 * s_);
-        FIGHT.drawn.bn = { mx - half_, y_ - 4, half_ * 2, (oy + (mb_on and 22 * s_ or 0)) - y_ + 8, os.clock() };   -- (for the guide's box)
+        FIGHT.drawn.bn = { mx - half_, y_ - 4, half_ * 2, (oy + ((mb_on or cast_on) and 30 * s_ or 0)) - y_ + 8, os.clock() };   -- (for the guide's box)
     end
     if EDIT.on and not FIGHT.psy then pcall(FIGHT.bn_drag, fg); end     -- (Edit Mode: drag it anywhere)
 end
@@ -6305,7 +6331,9 @@ function ALLY.nflip(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live, f)
             local fsn = (FS or 1) * 0.80 * 0.70;
             local nm = (m.name or '?'):upper():sub(1, 5):gsub('%s+$', '');   -- (the first 5 letters: two Fluffs or two Irons told apart)
             imgui.SetWindowFontScale(fsn);
-            local room = tw_ - sl * 0.3 - 5 * sc;                    -- (still too wide: smaller, then its last letters left off - no dot)
+            local lsc = sc * 0.8;                                    -- (the leader's dots before the name, as on the front - a little smaller)
+            local ldw = (m.leader or m.aleader) and ((m.aleader and 4.5 * lsc * 2.6 or 4.5 * lsc * 2) + 4 * sc) or 0;
+            local room = tw_ - sl * 0.3 - 5 * sc - ldw;              -- (still too wide: smaller, then its last letters left off - no dot)
             local w0 = tonumber((imgui.CalcTextSize(nm))) or 0;
             if w0 > room then
                 imgui.SetWindowFontScale(fsn * math.max(0.56, room / math.max(1, w0)));
@@ -6314,7 +6342,8 @@ function ALLY.nflip(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live, f)
             local _, h1 = imgui.CalcTextSize(nm);
             h1 = tonumber(h1) or 10;
             local ny_ = hastp and (y1 + ((ny - y1) - h1) / 2 + 1 * sc) or (ny - h1 / 2);   -- (with TP: the top half)
-            text(dl, nx0 + 4 * sc, ny_, nm, { 1, 1, 1, v * ta * (m.inzone and 1 or 0.55) });
+            if ldw > 0 then pcall(ALLY.lead, dl, m, nx0 + 4 * sc, ny_ + h1 / 2, lsc, v * ta); end
+            text(dl, nx0 + 4 * sc + ldw, ny_, nm, { 1, 1, 1, v * ta * (m.inzone and 1 or 0.55) });
             imgui.SetWindowFontScale(FS or 1);
             if hastp then                                            -- ("TP 2250" on one line in the bottom half, gold from 1000)
                 local tp = tonumber(m.tp) or 0;
@@ -8514,6 +8543,7 @@ function C.mb_wsname(id)                                             -- (the wea
     M.wsn[id] = { sig = sig, at = os.clock(), nm = nm };
     return nm;
 end
+if JP.ws then pcall(JP.ws, FIGHT, C); end   -- [JP]
 function C.mb_fight(now)                                             -- (what's open on your target now: { close = { ws lower -> { result, level } }, burst = { element -> true }, go })
     local M = C.MB;
     if M.fakesc and now - M.fakesc.ts < M.fakesc.dur then return M.fakesc; end
@@ -10315,6 +10345,7 @@ function C.cf_slog(sl)
 end
 function C.cf_sort(line)                                             -- (who did it, and what it is)
     local sl = line:gsub('[\1\2]', '');
+    if YUI_JP_CF then local ja, jt = YUI_JP_CF(sl); if ja or jt then return ja and C.cf_who(ja) or nil, jt; end end   -- [JP]
     local sa, st = C.cf_slog(sl);                                    -- (simplelog's way of writing them)
     if sa or st then return sa and C.cf_who(sa) or nil, st; end
     local nm = sl:match("^%d+ of (.-)'s shadow") or sl:match('^(.-) hits? ') or sl:match('^(.-) miss') or sl:match('^(.-) casts ')
@@ -10465,6 +10496,7 @@ local function chat_add(mode, raw)
             local cut_ = false;
             if is_combat(mode) then local okc, r = pcall(C.combat_skip, raw_line); cut_ = okc and r; end   -- (CHAT > COMBAT FILTERS)
             if not cut_ and mode >= 20 then local okw, r = pcall(C.wear_skip, raw_line); cut_ = okw and r; end
+            YUI_JP_MODE, YUI_JP_WHOLE = mode, s;   -- [JP]
             local ctype = nil;
             if not cut_ and is_combat(mode) then                     -- (CHAT > COMBAT LOG)
                 local okk, who, what = pcall(C.cf_sort, raw_line);
@@ -10488,6 +10520,7 @@ local function chat_add(mode, raw)
                 local cat_ = cat_of(mode);                            -- (an addon's own message - "[Name] ..." on a channel nobody talks on: Addons)
                 if cat_ ~= 'combat' and raw_line:match('^%[[%a][%w%s%._:%-]*%]') then cat_ = 'addon'; end   -- (any channel: players' lines never start so - a linkshell's is "[1]<Name>")
                 CHATLOG.add(log_, { text = line, raw = raw_line, cat = cat_, t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode, tslen = #pre, ctype = ctype });
+                if YUI_JP_CFE and is_combat(mode) then pcall(YUI_JP_CFE, log_[#log_]); end   -- [JP]
                 if n_ == 1 then chat_seen_new(mode); end
                 if n_ == 1 and cfg.chat3 and C.c3_has(log_[#log_]) then   -- (a line for the third chat: its ground darkens a moment;
                     cw[3].last3 = os.clock();                        --  scrolled back, the view stays still)
@@ -11535,9 +11568,9 @@ function C.chat_copy(e, itip)                                        -- (CHAT: a
     if first and P.msg_t and os.clock() - P.msg_t < 1.0 then         -- ("Copied" by the mouse, a moment)
         local fg = imgui.GetForegroundDrawList();
         local a = 1 - math.max(0, (os.clock() - P.msg_t) - 0.6) / 0.4;
-        local tw = tonumber((imgui.CalcTextSize('Copied'))) or 40;
+        local tw = tonumber((imgui.CalcTextSize(JP.t('Copied')))) or 40;   -- [JP]
         DL.RF(fg, P.mx + 12, P.my - 22, P.mx + 22 + tw, P.my - 2, U4(0.05, 0.045, 0.08, 0.9 * a), 5);
-        DL.T(fg, P.mx + 17, P.my - 20, U4(1, 1, 1, a), 'Copied');
+        DL.T(fg, P.mx + 17, P.my - 20, U4(1, 1, 1, a), JP.t('Copied'));   -- [JP]
     end
 end
 local function draw_chat(n)
@@ -11606,6 +11639,14 @@ local function draw_chat(n)
         st.relink = true;
     end
     local w, h = math.max(200, tonumber(cfg[p .. 'w']) or 600), math.max(80, tonumber(cfg[p .. 'h']) or 260);
+    do                                                               -- (never bigger than most of the screen: one as tall as the screen
+        local SW_, SH_ = C.screen();                                 --  was held on it - stuck, and could no longer be moved)
+        if SW_ and SW_ > 200 and SH_ and SH_ > 200 then
+            local mw, mh = math.floor(SW_ * 0.9), math.floor(SH_ * 0.8);
+            if w > mw then w = mw; cfg[p .. 'w'] = mw; end
+            if h > mh then h = mh; cfg[p .. 'h'] = mh; end
+        end
+    end
     local big = (n == 1) and legacy.pad.big;                         -- (the pad's big chat: Triangle, then X)
     if n == 1 then C.bigchat = big; end
     if big then
@@ -11909,6 +11950,7 @@ local function draw_chat(n)
                         st.vis_n = math.max(st.vis_n or 0, vis);
                         -- readable on any ground (snow, sand, bright floors): a full dark outline round every letter
                         local c = (cfg.cf_cols and e.ctype and C.cf_col(e.ctype)) or chat_col(e.cat);   -- (CHAT > COMBAT LOG > Colour by kind)
+                        if cfg.cf_cols and e.cside and JP.cf_col then c = JP.cf_col(cfg, e, c); end   -- [JP]
                         local cg = math.max(0.6, math.min(2.0, tonumber(cfg.chat_bright) or 1));   -- CHAT > COLOURS > Brightness
                         if cg ~= 1 then c = { math.min(1, c[1] * cg), math.min(1, c[2] * cg), math.min(1, c[3] * cg) }; end
                         if bright >= 1 then                          -- brighter: toward white; dimmer: toward dark
@@ -12042,8 +12084,8 @@ local function draw_chat(n)
                 -- just the words (no boxes): the chosen tab bright with a short line under it, the others dimmer
                 local ty_ = by + (bar - 4 - lh + 2) / 2;
                 local ta = (on and 1 or (over and 0.85 or 0.5)) * thv;
-                DL.T(dl, bx + 9, ty_ + 1, U4(0, 0, 0, 0.8 * ta), label);
-                DL.T(dl, bx + 8, ty_, U4(col[1], col[2], col[3], ta), label);
+                YUI_JP_CHAN = true; DL.T(dl, bx + 9, ty_ + 1, U4(0, 0, 0, 0.8 * ta), label);   -- [JP]
+                DL.T(dl, bx + 8, ty_, U4(col[1], col[2], col[3], ta), label); YUI_JP_CHAN = nil;   -- [JP]
                 if on then
                     local tw_ = imgui.CalcTextSize(label);
                     local uc = YUI_HEX and (C.GOLDH or col) or col;     -- (Hex link: the chosen tab underlined in gold)
@@ -12145,6 +12187,11 @@ local function draw_chat(n)
                 local dx, dy = imgui.GetMouseDragDelta(0);
                 if dx ~= 0 or dy ~= 0 then
                     local nw, nh = math.max(200, gl and (w - dx) or (w + dx)), math.max(80, h - dy);
+                    do                                               -- (the top stops at the screen's top, the side at its edge - the bottom
+                        local SW_, SH_ = C.screen();                 --  stays where it is; no bigger than most of the screen)
+                        nh = math.min(nh, math.max(80, y + h), math.floor((SH_ or 1080) * 0.8));
+                        nw = math.min(nw, math.max(200, gl and (x + w) or ((SW_ or 1920) - x)), math.floor((SW_ or 1920) * 0.9));
+                    end
                     cfg[p .. 'w'], cfg[p .. 'h'] = nw, nh;
                     imgui.SetWindowPos({ gl and (x + (w - nw)) or x, y + (h - nh) });   -- (the grip on the left: the right edge stays)
                     if cfg.chat_link and cfg.chat_split and n == 2 then -- (anchored: resizing the combat log resizes the chat too, its bottom kept)
@@ -14537,9 +14584,9 @@ function C.loot_wait_card(w, sc)
     cw = cw + 18 * sc;
     local pad = 10 * sc;
     local head = lh + 10 * sc;
-    local htxt = 'WAITING ON ' .. n;                                 -- (its title: spaced letters, measured at the size they're drawn)
+    local htxt = JP.t('WAITING ON ' .. n);   -- [JP]                                 -- (its title: spaced letters, measured at the size they're drawn)
     local hw = 0;
-    for i = 1, #htxt do hw = hw + imgui.CalcTextSize(htxt:sub(i, i)) + 1.6 * sc; end
+    if JP.mb(htxt) then hw = JP.spaced_w(htxt, 1.6 * sc) + 1.6 * sc; else for i = 1, #htxt do hw = hw + imgui.CalcTextSize(htxt:sub(i, i)) + 1.6 * sc; end end   -- [JP]
     local Wc = math.max(cols * cw + (cols - 1) * 8 * sc, hw + 14 * sc) + pad * 2;
     local Hc = head + per * (lh + 3 * sc) + pad * 1.6;
     local SW, SH = C.screen();
@@ -14554,11 +14601,12 @@ function C.loot_wait_card(w, sc)
     local q = 0.75 + 0.25 * math.sin(os.clock() * 3);
     DL.CF(fg, x + pad + 3 * sc, y + pad + lh / 2, 2.6 * sc, U4(AM[1], AM[2], AM[3], q), 10);
     local hx = x + pad + 12 * sc;
+    if JP.mb(htxt) then JP.spaced(fg, hx, y + pad, htxt, YUI_HEX and { 1.0, 0.74, 0.38, 1 } or { 1.0, 0.72, 0.90, 1 }, 1.6 * sc, function(d, a, b, c, t) text(d, a, b, t, c); end) else   -- [JP]
     for i = 1, #htxt do
         local ch = htxt:sub(i, i);
         text(fg, hx, y + pad, ch, YUI_HEX and { 1.0, 0.74, 0.38, 1 } or { 1.0, 0.72, 0.90, 1 });
         hx = hx + imgui.CalcTextSize(ch) + 1.6 * sc;
-    end
+    end end   -- [JP]
     DL.L(fg, x + pad, y + pad + head - 4 * sc, x + Wc - pad, y + pad + head - 4 * sc, U4(1, 1, 1, 0.08), 1);
     for k, r in ipairs(rows_) do
         local c_ = math.floor((k - 1) / per);
@@ -14591,6 +14639,7 @@ function C.loot_btn(dl, id, x, y, w, h, label, kind, on, lit)
         DL.RF(dl, x, y - up, x + w, y + h - up, U4(f[1], f[2], f[3], a * (pink and 0.92 or 0.85)), r);
         DL.R(dl, x, y - up, x + w, y + h - up, U4(0, 0, 0, 0.55 * a), r, C.rall, 1);
     end
+    label = JP.t(label);   -- [JP]
     local tw_, th_ = imgui.CalcTextSize(label);
     DL.T(dl, x + (w - tw_) / 2, y - up + (h - (tonumber(th_) or h)) / 2, U4(ink[1], ink[2], ink[3], a), label);
     return hit and on;
@@ -14638,8 +14687,8 @@ function C.chest_draw(n, fake)                                       -- (the che
     local jy = -math.abs(math.sin((now - K.shake) * 14)) * 6 * sh * (tonumber(cfg.scale) or 1);
     local rot = 0;                                                   -- (shut with loot in it: every 2.4 s a quick wiggle - a tilt side to side, dying away)
     if not K.open and e >= 1 and (n or 0) > 0 then
-        local ph = (now - (K.wig0 or 0)) % 2.4;
-        if ph < 0.55 then rot = math.sin(ph * 34) * 0.20 * (1 - ph / 0.55); end
+        local ph = (now - (K.wig0 or 0)) % 3.0;
+        if ph < 0.85 then rot = math.sin(ph * 20) * 0.20 * (1 - ph / 0.85); end   -- (a slower sway)
     end
     rot = rot + math.sin((now - K.shake) * 40) * 0.25 * sh;          -- (an item landing in it: a stronger rattle)
     if op > 0.2 then                                                 -- (open: sparks rising out of it)
@@ -14823,12 +14872,15 @@ function C.loot_win()
         imgui.SetCursorScreenPos({ bx, by });
         local clk = imgui.InvisibleButton('##yui_lootmin', { bs, bs });
         local ov = imgui.IsItemHovered();
+        DL.CF(dl, bx + bs / 2, by + bs / 2, bs / 2 + 1.5, U4(0, 0, 0, 0.75), 20);   -- (dark under it and a black edge: it reads on snow too)
         DL.CF(dl, bx + bs / 2, by + bs / 2, bs / 2, U4(1, 1, 1, ov and 0.20 or 0.10), 20);
-        DL.C(dl, bx + bs / 2, by + bs / 2, bs / 2, U4(A_[1], A_[2], A_[3], ov and 0.9 or 0.5), 20, 1.2);
+        DL.C(dl, bx + bs / 2, by + bs / 2, bs / 2, U4(A_[1], A_[2], A_[3], ov and 1 or 0.85), 20, 1.4);
+        DL.C(dl, bx + bs / 2, by + bs / 2, bs / 2 + 1.5, U4(0, 0, 0, 0.9), 20, 1.2);
         do
             local mcx, mcy = bx + bs / 2, by + bs / 2;
             local lw, lt = math.floor(bs * 0.22), math.max(1, math.floor(1.6 * sc + 0.5));
-            DL.RF(dl, mcx - lw, mcy - lt / 2, mcx + lw, mcy + lt / 2, U4(1, 1, 1, ov and 1 or 0.85), lt / 2);
+            DL.RF(dl, mcx - lw - 1, mcy - lt / 2 - 1, mcx + lw + 1, mcy + lt / 2 + 1, U4(0, 0, 0, 0.85), lt / 2 + 1);   -- (the line's black edge)
+            DL.RF(dl, mcx - lw, mcy - lt / 2, mcx + lw, mcy + lt / 2, U4(1, 1, 1, 1), lt / 2);
         end
         if clk and not pv then K.open, K.t = false, now; end
         DL.L(dl, x, y + hh - 3 * sc, x + W, y + hh - 3 * sc, U4(1, 1, 1, 0.08), 1);
@@ -14933,8 +14985,9 @@ function C.loot_win()
                 bx_ = bx_ - bw_ - 8 * sc;
             end
             local s_ = (mine < 0) and 'PASSED' or ('YOU ' .. mine);
+            s_ = JP.t(s_);   -- [JP]
             local sw_ = 0;
-            for i = 1, #s_ do sw_ = sw_ + imgui.CalcTextSize(s_:sub(i, i)) + 1 * sc; end
+            if JP.mb(s_) then sw_ = JP.spaced_w(s_, 1 * sc) + 1 * sc; else for i = 1, #s_ do sw_ = sw_ + imgui.CalcTextSize(s_:sub(i, i)) + 1 * sc; end end   -- [JP]
             letters(bx_ - sw_, cy - 7 * sc, s_, (mine < 0) and { 0.66, 0.64, 0.78, 1 } or { 1, 0.90, 0.96, 1 }, 1 * sc);
             bx_ = bx_ - sw_ - 10 * sc;
         end
@@ -16029,6 +16082,7 @@ PANEL.SUB = { 'Layout, size, your own layouts and this panel', 'The target bar, 
     'Buff and recast timers', "Your party's damage", 'The map, its zoom and its marks', 'Loot as it drops', 'Sounds for what matters',
     'Your macros round your character', 'Buff icons, and the ones to hide', 'Keys and buttons: open this panel, use it with a controller' };
 function PANEL.tcase(n)                                              -- ('DAMAGE METER' -> 'Damage Meter')
+    if JP.active and JP.t(n) ~= n then return JP.t(n); end   -- [JP]
     return (n:lower():gsub('(%a)([%w]*)', function(a, b) return a:upper() .. b; end));
 end
 PANEL.ICON = { GENERAL = 'general', TARGET = 'target', PARTY = 'party', BARS = 'bars', CHAT = 'chat', EQUIP = 'equip', TIMERS = 'timers',
@@ -16381,7 +16435,7 @@ function PANEL.heading(dl, x, y, w, tab)                             -- the tab'
     DL.T(dl, x + (1 - u) * 14 * ps + 0.6 * ps, y, U4(1, 1, 1, 0.2 + 0.8 * u), nm);   -- (drawn twice, a hair apart: bolder)
     if pushed then imgui.PopFont(); else imgui.SetWindowFontScale(C.wfs); end
     imgui.SetWindowFontScale(C.wfs * 0.80);
-    local sub = ((C.find_q() ~= '') and ('Settings that match "' .. C.find_q() .. '"') or (PANEL.SUB[tab] or '')) .. ' - v' .. tostring(addon.version);
+    local sub = ((C.find_q() ~= '') and JP.t('Settings that match "' .. C.find_q() .. '"') or JP.t(PANEL.SUB[tab] or '')) .. ' - v' .. tostring(addon.version);   -- [JP]
     local _, sh = imgui.CalcTextSize(sub);
     DL.T(dl, x + 1 * ps, y + th + 1 * ps, U4(1, 1, 1, 0.55), sub);
     imgui.SetWindowFontScale(C.wfs);
@@ -17156,6 +17210,7 @@ local function draw_window()
             row_switch('##yui_cfcols', 'Colour by kind', 'cf_cols', 'On: each kind of battle line in its own colour (set them below).');
             if cfg.cf_cols then
                 for _, w in ipairs(C.CF_WHAT) do colour_row('cf_col_' .. w[1], w[2], w[3], true); end
+                if JP.cf_enemy_ui then JP.cf_enemy_ui(colour_row, hint, C.CF_WHAT); end   -- [JP]
             end
             section('LOOK');
             row_pick('##yui_clook', 'Look', 'chat_look', { { 'clear', 'Clear' }, { 'classic', 'Classic' } });
@@ -17165,10 +17220,10 @@ local function draw_window()
                 for i_ = 2, #CHANNELS do names[#names + 1] = CHANNELS[i_][1]; end
                 names[#names + 1] = 'Combat';
                 hint('Tabs to show (All always shows):');
-                for _, nm in ipairs(names) do
+                YUI_JP_CHAN = true; for _, nm in ipairs(names) do   -- [JP]
                     if cfg.chat_tabs_on[nm] == nil then cfg.chat_tabs_on[nm] = true; end
                     row_switch('##yui_ctab_' .. nm, nm == 'Combat' and 'Combat (the combat log)' or nm, nm, nil, cfg.chat_tabs_on);
-                end
+                end YUI_JP_CHAN = nil;   -- [JP]
             end
             row_switch('##yui_ctbr', 'Back to All when it closes', 'chat_tab_reset', 'On: a tab you pick in the full screen chat (Say, Party, Shout...) goes back to All when you leave it, so command results (/find...) show again. A tab picked anywhere else stays.');
             row_switch('##yui_ctabs', 'Always show tabs', 'chat_tabs_always', 'On: the channel tabs (All, Say, Party...) stay at the bottom of the chat all the time. Off: they show while the mouse is over the chat or you type.');
@@ -17211,7 +17266,7 @@ local function draw_window()
             hint('Each channel\'s colour is used for its text and (Clear look) for the bar on the left of its messages.');
             row_slider('##yui_cbri', 'Brightness', 'chat_bright', 0.6, 2.0, 0.05, '%.2fx');
             hint('Makes every chat colour brighter (or darker), for screens where the colours are hard to see.');
-            for _, cc in ipairs(CHAT_COLS) do colour_row('col_' .. cc[1], cc[2], cc[3], true); end
+            YUI_JP_CHAN = true; for _, cc in ipairs(CHAT_COLS) do colour_row('col_' .. cc[1], cc[2], cc[3], true); end YUI_JP_CHAN = nil;   -- [JP]
         elseif tab == 6 then
             equip_tab();
         elseif tab == 7 then
@@ -17312,6 +17367,7 @@ local function draw_window()
             row_switch('##yui_lootw', 'Show the pool', 'loot_win', "On: when something drops, YunaUI's own treasure pool shows it: time left, who is winning, and Lot / Pass buttons. Click an item to keep it picked.");
             row_slider('##yui_s_loot', 'Pool size', 'loot_scale', 0.6, 2.0, 0.05, '%.2fx');
             if cfg.loot_chest == nil then cfg.loot_chest = true; end
+            cfg.loot_auto = nil;
             row_switch('##yui_lootch', 'Chest', 'loot_chest', "On: when something drops, a small treasure chest shows at the party list's top left instead of the whole list - click it and the list comes out; MINIMISE sends it back in. Off: the list shows by itself, as before.");
             if cfg.loot_chest ~= false then
                 row_slider('##yui_s_chest', 'Chest size', 'loot_chest_size', 0.5, 2.5, 0.05, '%.2fx');
@@ -17613,6 +17669,7 @@ end
 -- a macro line as text a command can take: its auto-translate words ({Accession}, {Cure IV}: 0xFD + 4 bytes + 0xFD in
 -- the macro) made plain - in quotes when more than one word and not quoted already, as the game reads them
 function C.mb_plain(ln)
+    if JP.active then local r = JP.mb_plain(ln); if r then return r; end end   -- [JP]
     if not ln:find('\253', 1, true) then return ln; end
     local out, i = {}, 1;
     while true do
@@ -17739,6 +17796,7 @@ function C.mb_edit_open(id)
         E.lines[l + 1] = { E.plain[l + 1] };
     end
     E.name0 = E.name[1];
+    JP.me_open(E);   -- [JP]
     C.ME = E;
 end
 function C.mb_editor()                                               -- (the panel: Ctrl 3 - its name, its 6 lines, TEST / SAVE / CANCEL)
@@ -17758,6 +17816,7 @@ function C.mb_editor()                                               -- (the pan
     local open = { true };
     local row = (E.id >= 10) and 'ALT' or 'CTRL';
     local key = tostring((E.id % 10 + 1) % 10);
+    local jpf_ = JP.active and JP.me_font and JP.me_font();   -- [JP]
     if imgui.Begin('##yui_medit', open, bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_NoSavedSettings)) then
         local pushed = sized('chat', 15 * ps);
         local dl = imgui.GetWindowDrawList();
@@ -17771,7 +17830,7 @@ function C.mb_editor()                                               -- (the pan
         imgui.TextColored({ 0.70, 0.68, 0.80, 1 }, 'Name');
         imgui.SameLine(LC);
         imgui.PushItemWidth(180);
-        imgui.InputText('##yui_mename', E.name, 9);
+        imgui.InputText('##yui_mename', E.name, JP.active and 33 or 9);   -- [JP]
         imgui.PopItemWidth();
         imgui.SameLine(0, 10 * ps);                                  -- (TIDY NAMES: every name on this page neat - "MEIKYO" -> "Meikyo")
         if accent_button('TIDY NAMES##yui_metidy', { 0, 0 }, true, true) then
@@ -17792,7 +17851,7 @@ function C.mb_editor()                                               -- (the pan
             imgui.TextColored({ 0.70, 0.68, 0.80, 1 }, 'Line ' .. l);
             imgui.SameLine(LC);
             imgui.PushItemWidth(-1);
-            imgui.InputText('##yui_meline' .. l, E.lines[l], math.max(61, #E.plain[l] + 1));   -- (room for a line whose auto-translate words, made plain, run past 60: not cut short)
+            imgui.InputText('##yui_meline' .. l, E.lines[l], math.max(JP.active and 181 or 61, #E.plain[l] + 1));   -- [JP]   -- (room for a line whose auto-translate words, made plain, run past 60: not cut short)
             imgui.PopItemWidth();
         end
         if E.err then imgui.TextColored({ 1, 0.45, 0.50, 1 }, E.err); end
@@ -17815,7 +17874,7 @@ function C.mb_editor()                                               -- (the pan
             if bk ~= E.book or pg ~= E.page then
                 E.err = 'The macro page changed - open the macro again to edit it.';
             else
-                local ok, er = C.mb_write(E.id, E.name[1], lines_out());
+                local ok, er = C.mb_write(E.id, JP.me_name(E.name[1]), JP.me_lines(E, lines_out()));   -- [JP]
                 if ok then msg(string.format('Macro %s %s saved.', row, key)); C.ME = nil;
                 else E.err = 'Not saved: ' .. tostring(er); end
             end
@@ -17824,6 +17883,7 @@ function C.mb_editor()                                               -- (the pan
         if accent_button('CANCEL##yui_mecancel', { bw, 0 }, true) or imgui.IsKeyPressed(ImGuiKey_Escape or 0x1B) then C.ME = nil; end
     end
     imgui.End();
+    if jpf_ then pcall(imgui.PopFont); end   -- [JP]
     imgui.PopStyleVar(3);
     imgui.PopStyleColor(3);
     if not open[1] then C.ME = nil; end
@@ -17889,7 +17949,7 @@ function C.mb_tick()                                                -- (the play
     local verb = (q.cmd:match('^%s*/(%a+)') or ''):lower();
     local mode = C.MB_TCMD[verb] and 2 or -1;
     local done_ = (verb == 'assist' or verb == 'as') and C.mb_assist(q.cmd);
-    if not done_ then pcall(function() AshitaCore:GetChatManager():QueueCommand(mode, q.cmd); end); end
+    if not done_ then pcall(function() AshitaCore:GetChatManager():QueueCommand(mode, JP.cmd(q.cmd)); end); end   -- [JP]
     if M.dbg then msg(string.format('[mb] +%.2fs (cpu +%.2fs) line: %s', now - (M.qt0 or now), os.clock() - (M.qc0 or os.clock()), q.cmd)); end
     local bare = q.cmd:gsub('"[^"]*"', '');
     if mode == 2 and (bare:match('<st>') or bare:match('<stal>') or bare:match('<stnpc>') or bare:match('<stpc>') or bare:match('<stpt>')) then
@@ -18848,6 +18908,15 @@ function YMAP.hpsg_draw(dl, zid, P, sc, inside, myz)              -- (a pale blu
         end
     end
 end
+-- Your target is a player outside your party / alliance (players are entity 0x400-0x6FF; the party has its own dots)
+YMAP.PCCOL = { 0.80, 0.88, 1.0, 1 };
+function YMAP.tgt_pc(party, zid, tidx)
+    if tidx < 0x400 or tidx > 0x6FF then return false; end
+    for i = 0, 17 do
+        if party:GetMemberIsActive(i) ~= 0 and party:GetMemberZone(i) == zid and party:GetMemberTargetIndex(i) == tidx then return false; end
+    end
+    return true;
+end
 -- What sits on the map: monsters, the party in their role colours, the target, and you (the glowing arrow)
 function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
     local tidx = target_index() or 0;
@@ -18900,6 +18969,7 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
         local ok, tx, ty = pcall(function() return ent:GetLocalPositionX(tidx), ent:GetLocalPositionY(tidx); end);
         if ok and tx then
             local sx, sy = tomap(tx, ty);
+            if inside(sx, sy) and YMAP.tgt_pc(party, zid, tidx) then dot(tx, ty, YMAP.PCCOL, 3.2 * sc, false); end   -- (a player outside the party: a pale blue dot)
             if inside(sx, sy) then DL.C(dl, sx, sy, 5 * sc, U4(1, 1, 1, 0.95), 16, 1.6); end
         end
     end
@@ -19241,6 +19311,10 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
                 dot(ent:GetLocalPositionX(idx) or 0, ent:GetLocalPositionY(idx) or 0, ent:GetLocalPositionZ(idx) or 0, col, 3.4 * sc, idx == tidx);
             end
         end
+    end
+    if tidx ~= 0 and tidx ~= me and YMAP.tgt_pc(party, zid, tidx) then   -- (your target, a player outside the party: a pale blue dot with the ring)
+        local ok, tx, ty, tz = pcall(function() return ent:GetLocalPositionX(tidx), ent:GetLocalPositionY(tidx), ent:GetLocalPositionZ(tidx); end);
+        if ok and tx then dot(tx, ty, tz or Z, YMAP.PCCOL, 3.4 * sc, true); end
     end
     do                                                               -- you: the arrow, laid on the ground and turned your way
         local gy = 0;

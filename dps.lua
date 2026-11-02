@@ -181,7 +181,7 @@ local function clock_text(sec)
     return string.format('%d:%02d', sec / 60, sec % 60);
 end
 
-local function msg(text) print(chat.header('Damage Meter'):append(chat.message(text))); end
+local function msg(text) if YUI_JP_T then text = YUI_JP_T(text); end print(chat.header('Damage Meter'):append(chat.message(text))); if YUI_CHAT_ADD then pcall(YUI_CHAT_ADD, 1, '[Damage Meter] ' .. tostring(text)); end end   -- [JP]
 
 -- Wall clock in seconds (os.clock is wall time on Windows)
 local function now() return os.clock(); end
