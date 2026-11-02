@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.17';
+addon.version = '1.1.18';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1422,6 +1422,63 @@ function BUFFS.tick()
     BUFFS.dt = BUFFS.last and math.min(0.1, now - BUFFS.last) or 0;
     BUFFS.last = now;
 end
+-- Your enhancing magic duration from your gear, read from the game: each piece's description ("Enhancing magic effect
+-- duration +30%"); the pieces whose text gives no number take the CatsEyeXI server's value (catseyexi.com item mods 890).
+-- Read several times a second and kept for a few seconds, so the cast's set - worn only while casting - is the one counted.
+BUFFS.ENH_FIX = { [11148] = 20, [11248] = 10, [11383] = 25, [11575] = 3, [16204] = 10, [27947] = 15 };   -- Estq. Houseaux +2 / +1,
+BUFFS.ENH_ID = {};                                                   --  Mirage Charuqs +1, Grapevine Cape, Estoqueur's Cape, Atrophy Gloves
+function BUFFS.enh_of(id)                                            -- (one item's %, read once)
+    local v = BUFFS.ENH_ID[id];
+    if v ~= nil then return v; end
+    v = BUFFS.ENH_FIX[id] or 0;
+    if not BUFFS.ENH_FIX[id] then
+        pcall(function()
+            local r = AshitaCore:GetResourceManager():GetItemById(id);
+            local d = ((r and r.Description and r.Description[1]) or ''):lower():gsub('[\r\n]', ' ');
+            local n = d:match('enhancing magic[%a%s%.]-duration%s*%+%s*(%d+)') or d:match('enh%.? mag%.? eff%.? dur%.?%s*%+%s*(%d+)');
+            v = tonumber(n) or 0;
+        end);
+    end
+    BUFFS.ENH_ID[id] = v;
+    return v;
+end
+function BUFFS.enh_now()                                             -- (all your equipped pieces together, %)
+    local t = 0;
+    pcall(function()
+        local inv = AshitaCore:GetMemoryManager():GetInventory();
+        for slot = 0, 15 do
+            local e = inv:GetEquippedItem(slot);
+            if e and (e.Index or 0) ~= 0 then
+                local it = inv:GetContainerItem(bit.rshift(bit.band(e.Index, 0xFF00), 8), bit.band(e.Index, 0x00FF));
+                if it and it.Id and it.Id ~= 0 and it.Id ~= 65535 then t = t + BUFFS.enh_of(it.Id); end
+            end
+        end
+    end);
+    return t;
+end
+function BUFFS.enh_sample()                                          -- (a few times a second: the highest of the last few seconds is the cast's)
+    local now = os.clock();
+    if now - (BUFFS.enh_t or -9) < 0.15 then return; end
+    BUFFS.enh_t = now;
+    local H = BUFFS.enh_h or {};
+    BUFFS.enh_h = H;
+    H[#H + 1] = { now, BUFFS.enh_now() };
+    while #H > 0 and now - H[1][1] > 4 do table.remove(H, 1); end
+end
+function BUFFS.enh_recent()
+    local m = 0;
+    for _, x in ipairs(BUFFS.enh_h or {}) do if x[2] > m then m = x[2]; end end
+    return m;
+end
+BUFFS.SP_BASE = { [107] = 240, [110] = 60, [111] = 60 };            -- (a spell's own base where its buff's is another's: Phalanx II, Regen II / III)
+function BUFFS.gear_len(spell, buff)                                -- (an enhancing spell you cast on someone: its base length times your gear's bonus)
+    local base = BUFFS.SP_BASE[spell] or BUFFS.DUR[buff];
+    if not base then return nil; end
+    local sk = nil;
+    pcall(function() local r = AshitaCore:GetResourceManager():GetSpellById(spell); sk = r and r.Skill; end);
+    if sk ~= 34 then return nil; end                                 -- (enhancing magic only: songs and the rest keep their own lengths)
+    return math.floor(base * (1 + BUFFS.enh_recent() / 100) + 0.5);
+end
 function BUFFS.off(key) return type(cfg.buffs_off) == 'table' and cfg.buffs_off[key] == true; end
 -- PARTY > Buff timers: your own buffs' time left, as the game's own icons show it (the server tells only yours). The game's
 -- clock in memory (XIUI's way); a timer is in 1/60 s since 2002, wrapping at 32 bits. { [buff id] = seconds }, -1 never ends.
@@ -1569,7 +1626,9 @@ function BUFFS.cast_on(actor, tid, buff, spell)
     BUFFS.opend[#BUFFS.opend + 1] = { t = os.clock(), tid = tid, buff = buff, sp = spell };   -- (learned when it shows up on them)
     if #BUFFS.opend > 30 then table.remove(BUFFS.opend, 1); end
     pcall(BUFFS.forget_once);
-    local dur = BUFFS.learned(spell, true) or BUFFS.DUR[buff];
+    local Lo_ = type(cfg.buff_learn) == 'table' and tonumber(cfg.buff_learn['o' .. tostring(spell)]) or nil;   -- (seen on one of your own characters: exact)
+    local okg_, g_ = pcall(BUFFS.gear_len, spell, buff);
+    local dur = Lo_ or (okg_ and g_) or BUFFS.learned(spell, true) or BUFFS.DUR[buff];   -- (else your gear's length, read from the game)
     local wait = nil;                                                -- (no known length: it waits a moment for yours - the same cast on you too,
     if not dur then dur, wait = 6, true; end                         --  Accession, a -ra: your own timer gives it; none comes: no guessed timer)
     BUFFS.cast[tid] = BUFFS.cast[tid] or {};
@@ -17031,6 +17090,7 @@ function C.macrobar()
         end
         if M.kother then held = 0; end
     end
+    if M.kbrun_lock and (not C.mb_key(0x0D) or os.clock() - M.kbrun_lock > 5) then M.kbrun_lock = nil; end   -- (Enter let go: the next press can run one)
     M.ktog = 0;                                                      -- (the keyboard is always hold to show, as the game: a Ctrl / Alt tap never keeps it open - Press to show is the controller's only)
     M.kbk = M.kbk or {};                                             -- (Ctrl / Alt held: the arrows move the pick, Enter runs it - read as the digits are)
     for vk, w in pairs(C.MB_VK or {}) do
@@ -20454,6 +20514,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         C.fc = (C.fc or 0) + 1;                                      -- (game memory read and written every 6th frame, not every one: plenty)
         pcall(C.mb_tick);
         pcall(BUFFS.share);                                          -- (PARTY > Buff timers: yours to your other characters, each second)                                            -- (ACTION BARS: a macro run from YunaUI, line by line)
+        pcall(BUFFS.enh_sample);                                     -- (PARTY > Buff timers: your gear's enhancing duration, a few times a second)
         if C.fc % 6 == 0 then pcall(C.tarrow_sync); pcall(C.mb_sync); end   -- (TARGET > YunaUI target arrow, BARS > MACRO BAR: set again only when they change)
         pcall(C.gu_sync);                                            -- (the game's party / alliance lists, Target window: hidden while YunaUI's are on)
         local okv, byvc = pcall(C.vchat_sync);                       -- (VanaCore hides them itself: nothing written into the game's windows)
@@ -20770,8 +20831,10 @@ function C.mb_kbact(what, row)                                       -- ('run' /
     local M = C.MB;
     local now = os.clock();
     if M.kbact_w == what and now - (M.kbact_t or -9) < 0.05 then return; end   -- (the same press seen by two inputs: once)
-    M.kbact_w, M.kbact_t = what, now;
+    if what == 'run' and M.kbrun_lock then return; end              -- (Enter still down since it ran one: not again till it's let go - held a moment,
+    M.kbact_w, M.kbact_t = what, now;                                --  a flicker of Ctrl ran the macro twice: /sk stop twice, the party line twice)
     if what == 'run' then
+        M.kbrun_lock = now;
         local id = (row - 1) * 10 + (M.sel or 0);
         if (M.names[id] or '') ~= '' then
             M.flash[id] = now; pcall(C.mb_run, row, M.sel or 0);
