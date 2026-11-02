@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.19';
+addon.version = '1.1.20';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1470,14 +1470,33 @@ function BUFFS.enh_recent()
     for _, x in ipairs(BUFFS.enh_h or {}) do if x[2] > m then m = x[2]; end end
     return m;
 end
-BUFFS.SP_BASE = { [107] = 240, [110] = 60, [111] = 60 };            -- (a spell's own base where its buff's is another's: Phalanx II, Regen II / III)
+BUFFS.SP_BASE = { [107] = 180, [110] = 60, [111] = 60 };
+function BUFFS.sane(len, spell, buff)                                -- (a measured length that fits what the spell can last: base x your gear x factor,
+    if not len then return nil; end                                  --  well within half to double - a wrong match (another's cast, a renewal) is left out)
+    local ok, g = pcall(BUFFS.gear_len, spell, buff);
+    if not ok or not g then return len; end
+    if len < g * 0.55 or len > g * 2.0 then return nil; end
+    return len;
+end
+function BUFFS.learn_factor(spell, buff, real)                       -- (an enhancing spell's real length against base x your gear: the rest of your bonus, kept)
+    local base = BUFFS.SP_BASE[spell] or BUFFS.DUR[buff];
+    if not base or not real or real < 10 then return; end
+    local sk = nil;
+    pcall(function() local r = AshitaCore:GetResourceManager():GetSpellById(spell); sk = r and r.Skill; end);
+    if sk ~= 34 then return; end
+    local f = real / (base * (1 + BUFFS.enh_recent() / 100));
+    if f < 0.6 or f > 2.5 then return; end                           -- (way off: something else - another caster's, a renewal)
+    BUFFS.keep('factor', math.floor(f * 1000 + 0.5) / 1000);
+end            -- (a spell's own base where its buff's is another's: Phalanx II, Regen II / III)
 function BUFFS.gear_len(spell, buff)                                -- (an enhancing spell you cast on someone: its base length times your gear's bonus)
     local base = BUFFS.SP_BASE[spell] or BUFFS.DUR[buff];
     if not base then return nil; end
     local sk = nil;
     pcall(function() local r = AshitaCore:GetResourceManager():GetSpellById(spell); sk = r and r.Skill; end);
     if sk ~= 34 then return nil; end                                 -- (enhancing magic only: songs and the rest keep their own lengths)
-    return math.floor(base * (1 + BUFFS.enh_recent() / 100) + 0.5);
+    local L = type(cfg.buff_learn) == 'table' and cfg.buff_learn or {};
+    local f = math.max(0.5, math.min(3, tonumber(L.factor) or 1));   -- (what your casts on yourself showed beyond the gear's text: traits, merits, the server's own)
+    return math.floor(base * (1 + BUFFS.enh_recent() / 100) * f + 0.5);
 end
 function BUFFS.off(key) return type(cfg.buffs_off) == 'table' and cfg.buffs_off[key] == true; end
 -- PARTY > Buff timers: your own buffs' time left, as the game's own icons show it (the server tells only yours). The game's
@@ -1608,7 +1627,9 @@ function BUFFS.on_ipc(e)
             if now - o.t > 5 then table.remove(BUFFS.opend, j);
             elseif o.tid == sid and o.buff == nv[1] then
                 table.remove(BUFFS.opend, j);
-                BUFFS.keep('o' .. tostring(o.sp), math.floor(nv[2] + (now - o.t) + 0.5));
+                local ol_ = math.floor(nv[2] + (now - o.t) + 0.5);
+                if BUFFS.sane(ol_, o.sp, o.buff) then BUFFS.keep('o' .. tostring(o.sp), ol_); end
+                pcall(BUFFS.learn_factor, o.sp, o.buff, nv[2] + (now - o.t));
                 break;
             end
         end
@@ -1628,7 +1649,17 @@ function BUFFS.cast_on(actor, tid, buff, spell)
     pcall(BUFFS.forget_once);
     local Lo_ = type(cfg.buff_learn) == 'table' and tonumber(cfg.buff_learn['o' .. tostring(spell)]) or nil;   -- (seen on one of your own characters: exact)
     local okg_, g_ = pcall(BUFFS.gear_len, spell, buff);
-    local dur = Lo_ or (okg_ and g_) or BUFFS.learned(spell, true) or BUFFS.DUR[buff];   -- (else your gear's length, read from the game)
+    Lo_ = BUFFS.sane(Lo_, spell, buff);
+    local Ls_ = BUFFS.sane(BUFFS.learned(spell, false), spell, buff); -- (measured on you - under Composure a third - when it fits)
+    local dur = Lo_ or Ls_ or (okg_ and g_) or BUFFS.DUR[buff];      -- (else your gear's length, read from the game, times what your own casts taught)
+    if BUFFS.dbg then                                                -- (/yui buffdebug: how this timer was worked out)
+        local nm = tostring(spell);
+        pcall(function() nm = AshitaCore:GetResourceManager():GetSpellById(spell).Name[1]; end);
+        local src = (Lo_ and 'seen on your own character') or (Ls_ and 'learned on you') or ((okg_ and g_) and 'base x gear x factor') or (BUFFS.learned(spell, true) and 'learned on you') or 'default';
+        local Lf_ = type(cfg.buff_learn) == 'table' and tonumber(cfg.buff_learn.factor) or nil;
+        msg(string.format('[buffs] %s on %s: %s s (%s; base %s, gear +%d%%, factor %s, composure %s)', nm, tostring(tid), tostring(dur), src,
+            tostring(BUFFS.SP_BASE[spell] or BUFFS.DUR[buff]), BUFFS.enh_recent(), Lf_ and string.format('%.2f', Lf_) or '-', tostring(BUFFS.composure())));
+    end
     local wait = nil;                                                -- (no known length: it waits a moment for yours - the same cast on you too,
     if not dur then dur, wait = 6, true; end                         --  Accession, a -ra: your own timer gives it; none comes: no guessed timer)
     BUFFS.cast[tid] = BUFFS.cast[tid] or {};
@@ -1649,6 +1680,7 @@ function BUFFS.learn_from()                                         -- (a spell 
             f.used = true;
             BUFFS.pend[spell] = nil;
             local len = math.floor(f.v + 0.5);
+            pcall(BUFFS.learn_factor, spell, buff, BUFFS.composure() and len / 3 or len);
             if BUFFS.composure() then                                -- (lengthened by Composure: kept apart - a third of it on others; a Red Mage's
                 BUFFS.keep('c' .. tostring(spell), len);             --  Refresh / Haste on the party were timed three times too long)
                 len = math.floor(len / 3 + 0.5);
@@ -7140,7 +7172,11 @@ local function draw_party(dt)
             local anch = cfg.ally_anchor and cfg.party and not (C.GST and C.GST.noparty);   -- anchored: stacked on the party, right edges lined up
             if anch then
                 local ds = imgui.GetIO().DisplaySize;
-                local up = (tonumber(cfg.party_y) or 0) > ((ds and ds.y) or 1080) * 0.45;   -- (party low on screen: they go above it)
+                local SH_ = (ds and ds.y) or 1080;                    -- (party low on screen: they go above it - judged by an edge that stays put:
+                local pref_ = (cfg.party_up and tonumber(cfg.party_bot)) or tonumber(cfg.party_y) or 0;   --  its bottom when it grows upward, else its top;
+                if ALLY.aup == nil then ALLY.aup = pref_ > SH_ * 0.45; end   --  a margin either side, so members coming and going don't flip them over)
+                if ALLY.aup and pref_ < SH_ * 0.35 then ALLY.aup = false; elseif not ALLY.aup and pref_ > SH_ * 0.55 then ALLY.aup = true; end
+                local up = ALLY.aup;
                 local ref = (n == 1) and 'party' or 'alliance';      -- (below the party: party, Alliance 1, Alliance 2 downward)
                 if up and has2 then ref = (n == 1) and 'ally2' or 'party'; end   -- (above it: Alliance 1 on top, then 2, then the party - the order the
                                                                      --  game's cursor goes down in (party, 1, 2, back to the party): it flows down
@@ -7194,7 +7230,8 @@ local CHAT_COLS = {
     { 'say', 'Say', { 1, 1, 1 } }, { 'party', 'Party', { 0.50, 0.84, 1 } }, { 'ls', 'Linkshell', { 1, 1, 1 } },
     { 'ls2', 'Linkshell 2', { 0.62, 1, 0.55 } }, { 'shout', 'Shout', { 1, 0.45, 0.45 } }, { 'yell', 'Yell', { 1, 0.6, 0.45 } },
     { 'tell', 'Tell', { 0.86, 0.48, 1 } }, { 'emote', 'Emote', { 0.80, 0.65, 1 } }, { 'unity', 'Unity', { 0.95, 0.88, 0.55 } },
-    { 'system', 'System / loot / exp', { 1, 0.95, 0.82 } }, { 'error', 'Errors', { 1, 0.35, 0.65 } },
+    { 'system', 'System / loot / key items', { 1, 0.95, 0.82 } }, { 'exp', 'Experience / gil / merits', { 1, 0.84, 0.50 } },
+    { 'error', 'Errors', { 1, 0.35, 0.65 } },
     { 'combat', 'Combat (combat log)', { 0.80, 0.86, 0.95 } }, { 'roe', 'Records of Eminence', { 0.62, 0.92, 0.78 } },
     { 'addon', 'Addons and plugins ([Name] ...)', { 0.56, 0.84, 0.96 } },
     { 'other', 'Everything else', { 0.92, 0.92, 0.94 } },
@@ -7212,6 +7249,7 @@ local function cat_of(m)
     elseif m == 7 or m == 15 then return 'emote';
     elseif m == 211 or m == 212 then return 'unity';
     elseif m == 123 or m == 157 then return 'error';
+    elseif m == 131 then return 'exp';                                 -- (experience, gil, limit and merit points: a colour of their own, as the game's)
     elseif m == 121 or (m >= 127 and m <= 148) then return 'system';
     elseif m >= 20 and m <= 122 then return 'combat';
     elseif (m >= 162 and m <= 188) or m == 191 then return 'combat';   -- (the other parties of the alliance)
@@ -7270,6 +7308,7 @@ C.CHAT_COMBAT = #CHANNELS + 1;                                       -- (the Com
 C.TAB_CM = { Say = 'say', Party = 'party', LS = 'ls', LS2 = 'ls2', Shout = 'shout', Yell = 'shout', Tell = 'tell' };   -- (CHAT > Main chat shows: a channel off, its tab gone too)
 function C.tab_on(name)
     if name == 'All' then return true; end
+    if name == 'RoE' and cfg.chat_roe_all then return false; end     -- (CHAT > Records of Eminence in All: they're in All, no tab of their own)
     if C.TAB_CM[name] and cfg['cm_' .. C.TAB_CM[name]] == false then return false; end
     return type(cfg.chat_tabs_on) ~= 'table' or cfg.chat_tabs_on[name] ~= false;
 end
@@ -9736,7 +9775,7 @@ C.SPAM = { 'experience points', 'limit points', 'EXP chain', 'Obtained %d[%d,]* 
 function C.battle_spam(mode, line)
     if is_combat(mode) then return false; end
     local cat = cat_of(mode);
-    if cat ~= 'system' and cat ~= 'other' and cat ~= 'error' and cat ~= 'say' then return false; end
+    if cat ~= 'system' and cat ~= 'exp' and cat ~= 'other' and cat ~= 'error' and cat ~= 'say' then return false; end
     local sl = line:gsub('[\1\2]', '');
     if cat == 'say' and sl:find(' : ', 1, true) then return false; end   -- (somebody really talking)
     for _, pat in ipairs(C.SPAM) do if sl:find(pat) then return true; end end
@@ -11139,6 +11178,39 @@ function C.c3_free()                                                 -- (the thi
     end
     save();
 end
+function C.chat_copy(e, itip)                                        -- (CHAT: a click on a line - not a drag - copies its words, without the time)
+    local P = C.CPY or {};
+    C.CPY = P;
+    local mx, my = imgui.GetMousePos();
+    local fc = tonumber(imgui.GetFrameCount and imgui.GetFrameCount()) or os.clock();
+    local first = P.fc ~= fc;                                        -- (called once per chat window each frame: only the one under the mouse counts)
+    P.fc = fc;
+    if imgui.IsMouseClicked(0) then
+        if first then P.e = nil; end
+        if e and not itip then P.e, P.x, P.y = e, mx, my; end
+    elseif imgui.IsMouseReleased(0) and P.e and e == P.e then
+        local pe = P.e;
+        P.e = nil;
+        if math.abs(mx - (P.x or mx)) < 4 and math.abs(my - (P.y or my)) < 4 then
+            local t = tostring(pe.text or pe.raw or '');
+            if (pe.tslen or 0) > 0 and #t > pe.tslen then t = t:sub(pe.tslen + 1); end
+            t = t:gsub('\1', '{'):gsub('\2', '}'):gsub('[%z\3-\31]', ''):gsub('^%s+', ''):gsub('%s+$', '');
+            if t ~= '' then
+                local out = t;
+                if YUI_JP then pcall(function() local r = vana.encoding.to_shift_jis(t); if type(r) == 'string' then out = r; end end); end
+                local ok = pcall(vana.system.set_clipboard, out);
+                if ok then pe.flash = os.clock(); P.msg_t, P.mx, P.my = os.clock(), mx, my; end
+            end
+        end
+    end
+    if first and P.msg_t and os.clock() - P.msg_t < 1.0 then         -- ("Copied" by the mouse, a moment)
+        local fg = imgui.GetForegroundDrawList();
+        local a = 1 - math.max(0, (os.clock() - P.msg_t) - 0.6) / 0.4;
+        local tw = tonumber((imgui.CalcTextSize('Copied'))) or 40;
+        DL.RF(fg, P.mx + 12, P.my - 22, P.mx + 22 + tw, P.my - 2, U4(0.05, 0.045, 0.08, 0.9 * a), 5);
+        DL.T(fg, P.mx + 17, P.my - 20, U4(1, 1, 1, a), 'Copied');
+    end
+end
 local function draw_chat(n)
     if n == 1 then
         local sig = tostring(cfg.chat_time) .. tostring(cfg.chat_time_sec) .. tostring(cfg.chat_time_12) .. tostring(cfg.chat_time_case);
@@ -11423,6 +11495,7 @@ local function draw_chat(n)
         st.vis_n = 0;
         pcall(C.items_index);                                         -- (the game's item names, read a little each frame until done)
         local itip = nil;                                            -- (an item icon under the mouse: its card, after the text)
+        local hov_e = nil;                                           -- (the line under the mouse: a click copies it)
         -- the text, from the bottom up
         local size = (tonumber(cfg.chat_size) or 16) * YUI_GS();   -- (CHAT > Size, times GENERAL > Size of everything)
         local pushed = sized('chat', size);
@@ -11473,7 +11546,7 @@ local function draw_chat(n)
         while i >= 1 and ly > y - lh do
             local e = log[i];
             if tab ~= 1 and TAB_OF[e.mode or 0] ~= tab then i = i - 1; goto next_line; end
-            if tab == 1 and e.mode == C.ROE_MODE then i = i - 1; goto next_line; end   -- (RoE: only in its own tab)
+            if tab == 1 and e.mode == C.ROE_MODE and not cfg.chat_roe_all then i = i - 1; goto next_line; end   -- (RoE: only in its own tab - unless CHAT > Records of Eminence in All)
             if only and ((only == 'combat') ~= is_combat(e.mode or 0)) then i = i - 1; goto next_line; end
             if n == 3 then                                           -- (CHAT > Third chat: only the channels picked for it...)
                 if not C.c3_has(e) then i = i - 1; goto next_line; end
@@ -11521,7 +11594,7 @@ local function draw_chat(n)
                         if cl_ then                                  -- clear look: the channel's bar, the time on the first row, the words after them
                             local th0 = lh - math.max(0, math.min(16, tonumber(cfg.chat_gap) or 6));
                             local bc = chat_col(e.cat);
-                            if e.cat == 'system' or e.cat == 'other' or e.cat == 'combat' then bc = { 0.40, 0.38, 0.46 }; end
+                            if e.cat == 'system' or e.cat == 'exp' or e.cat == 'other' or e.cat == 'combat' then bc = { 0.40, 0.38, 0.46 }; end
                             if e.cat == 'ls' or e.cat == 'ls2' then          -- (a linkshell's line: its pearl's colour)
                                 local li_ = C.ls_info((e.cat == 'ls') and 1 or 2);
                                 if li_ and li_.col then bc = li_.col; end
@@ -11537,6 +11610,10 @@ local function draw_chat(n)
                         end
                         local tw_ = e.feed and C.feed_draw(dl, px, ly, e, a, lh, true, cl_, k) or line_w(txt);
                         local th = lh - math.max(0, math.min(16, tonumber(cfg.chat_gap) or 6));
+                        do                                           -- (the line under the mouse: a click copies it)
+                            local mx_, my_ = imgui.GetMousePos();
+                            if a > 0.3 and mx_ >= x and mx_ <= x + w and my_ >= ly - 1 and my_ < ly + lh - 1 then hov_e = e; end
+                        end
                         if glow > 0.01 then                          -- (new, or a feed line that just grew: a soft glow in its colour)
                             DL.RF(dl, px - 5, ly - 2, px + tw_ + 5, ly + th + 1, U4(c[1], c[2], c[3], 0.22 * glow * glow * a), 4);
                         end
@@ -11592,6 +11669,7 @@ local function draw_chat(n)
         st.used_h = (vrows > 0) and (vrows * lh + (CL and CL.extra or 0) + barv + pad + type_h) or 0;   -- (how tall the resting ground is: the rows still showing - none, no ground)
         imgui.PopClipRect();
         if itip then pcall(C.item_card, itip); end
+        pcall(C.chat_copy, hov_e, itip);
         if typing then                                               -- the typing line: a dark strip, your text, a blinking caret
             local tx0, ty0 = x + pad - 4, y + h - barv - type_h - 2;
             local tw0, th0 = maxw + 8, lh + 6;
@@ -16226,6 +16304,7 @@ local function draw_window()
             end
             row_switch('##yui_ctbr', 'Back to All when it closes', 'chat_tab_reset', 'On: a tab you pick in the full screen chat (Say, Party, Shout...) goes back to All when you leave it, so command results (/find...) show again. A tab picked anywhere else stays.');
             row_switch('##yui_ctabs', 'Always show tabs', 'chat_tabs_always', 'On: the channel tabs (All, Say, Party...) stay at the bottom of the chat all the time. Off: they show while the mouse is over the chat or you type.');
+            row_switch('##yui_croe', 'Records of Eminence in All', 'chat_roe_all', 'On: Records of Eminence lines show in the All tab, and the RoE tab goes away. Off: they show only in their own RoE tab.');
             if cfg.chat_look ~= 'classic' then
                 hint('Clear: a dark rounded panel, a thin bar in each channel\'s colour, the time small on the left, long messages kept in one block.');
                 row_slider('##yui_cpa', 'Panel darkness', 'chat_panel_a', 0.0, 1.0, 0.05, '%.2f');
@@ -21032,6 +21111,8 @@ ashita.events.register('command', 'yui_command', function(e)
                 tostring(hd and math.floor(hd[1])), tostring(hd and math.floor(hd[2])), tostring(bp_ and math.floor(bp_[1])), tostring(bp_ and math.floor(bp_[2])),
                 tostring(tsz and math.floor(tsz[1])), tostring(tsz and math.floor(tsz[2])), tostring(cfg.target_x), tostring(cfg.target_y), tostring(cfg.target_fx)));
         end);
+    elseif sub == 'buffdebug' then                                   -- (PARTY > buff timers: say how each one you cast on someone is worked out)
+        BUFFS.dbg = not BUFFS.dbg; msg('Buff timer debug ' .. (BUFFS.dbg and 'on' or 'off'));
     elseif sub == 'mbdebug' then                                     -- (ACTION BARS: say what the keyboard does to the bar)
         C.MB.dbg = not C.MB.dbg; msg('Macro bar debug ' .. (C.MB.dbg and 'on' or 'off'));
     elseif sub == 'lootmenu' then                                    -- (which game menus were open with something in the pool)
