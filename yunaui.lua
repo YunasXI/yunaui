@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.14';
+addon.version = '1.1.15';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -128,7 +128,7 @@ local defaults = T{
     chat3 = false, chat3_x = -1, chat3_y = -1, chat3_w = 460, chat3_h = 260, c3_tell = true, c3_ls = true, c3_ls2 = true,
     c3_party = false, c3_say = false, c3_shout = false, c3_unity = false,
     cm_tell = true, cm_ls = true, cm_ls2 = true, cm_party = true, cm_say = true, cm_shout = true, cm_unity = true,
-    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, card_shake = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', party_buff_row = 8, exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, map_gp = true, map_npcs = false, mob_icon_scale = 1.6, mob_info = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_lines = 'hp', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_fade_w1 = true, chat_fade_w2 = true, chat_fade_w3 = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_fight = false, head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, tarrow = true, macrobar = true, mb_show = 'hold', mb_always = false, mb_pad = 'hold', mb_btn = 'l2', mb_scale = 1.0, mb_look = 'strip', mb_style = 'cards', hp_by_job = false, mb_timers = true, mb_wave = 'bars', mb_text = 1.0, mb_both = true, mb_frame = 'arc', mb_view = 'pills', mbp_x = -1, mbp_y = -1, mb_brush = 'all', mb_layout = 'lens', mb_wcol = 'gold', mb_nstyle = 'wave', mb_wavecol = 'job', mb_sound = true, mb_snd_vol = 0.6, mb_voice = true, mb_voice_vol = 0.8, mb_cards_at = 'feet', mb_dn = 'hd_circle', mb_dh = 'hd_sigil', mb_x = -1, mb_y = -1, mbs_x = -1, mbs_y = -1, mbc_x = -1, mbc_y = -1, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
+    chat_fade = true, spine_edge_anim = 'shine', card_shape = 'blade', card_theme = 'pearl', card_fx = 'sheen', card_low = true, card_shake = true, mb_scale = 1.0, tag_look = 'role', target_buff_scale = 1.0, target_name_scale = 1.0, ecast_font = 1.0, target_look = 'dd2', spine_line = true, ecast_scale = 0.75, spine_trace = true, card_style = 'clean', bracket_look = 'glass', card_h = 1.0, fan_scale = 1.0, hp_outline = true, target_hp_color = 'pink', party_look = 'spine', spine_edge = 'thin', spine_edge_col = 'black', ally1_icon = 1.0, ally2_icon = 1.0, ally_anchor = false, ally_select_fx = 'chroma', ally_style = 'full', ally_smart_hp = 75, strip_show = true, hp_color = 'pink', fight_info = true, fan_layout = 'fan', fan_shape = 'blade', fan_accent = 'slash', fan_tint = 'dark', target_bar_h = 4, fan_place = 'bar', ecast_place = 'bar', fan_x = -1, fan_y = -1, ecast_x = -1, ecast_y = -1, buffs_off = {}, party_bar_h = 3, party_vgap = 0, chat_save = false, chat_gap = 6, chat_outline = 'outline', chat_ground = true, chat_ground_a = 0.5, chat_linebg = true, party_dim_far = true, party_range = 20.8, party_dist = true, party_buff_side = 'left', party_buff_row = 8, exp_text = 1.0, target_fx = 'blade', minimap = true, map_size = 220, map_zoom = 60, map_mobs = true, map_gp = true, map_hpsg = true, map_npcs = false, mob_icon_scale = 1.6, mob_info = true, bigmap_size = 640, map_color = 'white', map_title = 'fade', map3d_size = 560, map_style = '2d', map3d_follow = true, map_ground = 'none', map_replace = false, map_arrow_color = 'lines', map_lines = 'hp', chat_time_dim = true, chat_hold = 12, chat_bright = 1.0, chat_tab = 1, chat_anim = true, chat_feed = true, chat_bubbles = true, chat_fade_old = true, chat_fade_w1 = true, chat_fade_w2 = true, chat_fade_w3 = true, chat_f_others = true, chat_f_debuff = true, chat_f_wear = true, cf_w_me = true, cf_w_party = true, cf_w_alliance = true, cf_w_trust = true, cf_w_monster = true, cf_w_npc = true, cf_t_melee = true, cf_t_ranged = true, cf_t_magic = true, cf_t_uses = true, cf_t_healing = true, cf_t_defence = true, cf_t_effects = true, cf_t_items = true, cf_cols = false, party_zone = true, loot_win = true, loot_scale = 1.0, loot_coin_scale = 1.0, chat_time_sec = false, chat_time_12 = false, chat_time_case = 'lower', target_bar_anim = true, map_hub = false, chat_look = 'clear', head_bars = 'fixed', head_fight = false, head_bars_scale = 1.0, head_bars_y = 0, head_nums = 'always', hl_path = 'elbow', hl_line = 'neon', hl_lcol = 'match', hl_lw = 0.6, hl_rest = 'hide', hl_pulse = false, hl_head = 'none', hl_icon = 'diamond', hl_isz = 0.65, hl_mcol = 'gold', hl_fcol = 'mint', hl_ianim = 'pulse', hl_fan = 0.8, show_fan = true, show_mb = true, hl_pct = 1.0, hl_cast = 0.8, hl_tot = 0.8, hl_hidename = true, hl_claim = true, map_tilt = true, party_buff_ffxi = true, party_tag_col = 'job', party_hp_th = 1.0, party_mp_th = 1.0, target_buff_tips = true, buff_timer_scale = 1.0, tp_sound = true, tp_sound_vol = 0.6, loot_voice = true, loot_voice_vol = 0.8, tarrow = true, macrobar = true, mb_show = 'hold', mb_always = false, mb_pad = 'hold', mb_btn = 'l2', mb_scale = 1.0, mb_look = 'strip', mb_style = 'cards', hp_by_job = false, mb_timers = true, mb_wave = 'bars', mb_text = 1.0, mb_both = true, mb_frame = 'arc', mb_view = 'pills', mbp_x = -1, mbp_y = -1, mb_brush = 'all', mb_layout = 'lens', mb_wcol = 'gold', mb_nstyle = 'wave', mb_wavecol = 'job', mb_sound = true, mb_snd_vol = 0.6, mb_voice = true, mb_voice_vol = 0.8, mb_cards_at = 'feet', mb_dn = 'hd_circle', mb_dh = 'hd_sigil', mb_x = -1, mb_y = -1, mbs_x = -1, mbs_y = -1, mbc_x = -1, mbc_y = -1, chat_panel_a = 0.72, chat_msg_gap = 5,  map_dock = true, enemy_buff_scale = 1.0, enemy_buff_text = 1.0, chat_tab_reset = true, chat_rounds = true, hex_party = true, setup_done = false,
     hide_game_chat = true, chat_time = false, hide_game_input = false, chat_typing = true, min_anim = 'fly', dps_backdrop = 0.55, dps_title_b = 1.0, dps_detail_b = 1.0,
     target_scale = 1.0, party_scale = 1.0, alliance_scale = 1.0, buff_scale = 1.0,
     locked = false, panel_scale = 1.0, panel_alpha = 0.95, mini_x = -1, mini_y = -1,
@@ -5855,7 +5855,7 @@ function ALLY.nflip(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live, f)
         if ta > 0 then
             local hastp = m.inzone and m.tp ~= nil;                  -- (alliance members too: the game sends their TP)
             local fsn = (FS or 1) * 0.80 * 0.70;
-            local nm = (m.name or '?'):upper():sub(1, 4):gsub('%s+$', '');   -- (the first 4 letters only, as Hex link's turned plate)
+            local nm = (m.name or '?'):upper():sub(1, 5):gsub('%s+$', '');   -- (the first 5 letters: two Fluffs or two Irons told apart)
             imgui.SetWindowFontScale(fsn);
             local room = tw_ - sl * 0.3 - 5 * sc;                    -- (still too wide: smaller, then its last letters left off - no dot)
             local w0 = tonumber((imgui.CalcTextSize(nm))) or 0;
@@ -16216,6 +16216,7 @@ local function draw_window()
             row_switch('##yui_mmtilt', 'Tilt the map', 'map_tilt', 'On: in zones with no 3D shape (most of the open country) the map lies on the ground under you, seen from behind you like the cities\' 3D look. Off: the flat map from above.');
             row_switch('##yui_mmm', 'Monsters', 'map_mobs', 'On: monsters near you show as red dots.');
             row_switch('##yui_mmgp', 'Gathering points', 'map_gp', 'On: Mining, Harvesting, Logging, Excavation and Clamming Points near you show as gold diamonds.');
+            row_switch('##yui_mmhp', 'Home Points / Survival Guides', 'map_hpsg', 'On: Home Points show as a pale blue crystal and Survival Guides as a small book, all over the zone - as on the game\'s map.');
             row_switch('##yui_mmnpc', 'NPCs', 'map_npcs', 'On: NPCs near you (the ones you can talk to) show as small green dots.');
             row_switch('##yui_mmx', 'Zone exits', 'map_exits', 'On: the way out of the zone shows as a gold line, with the name of the zone it leads to.');
             if cfg.target_fx ~= 'link' then                          -- (Normal mode: the lines in your HP bar's colour, or white)
@@ -17503,7 +17504,8 @@ function YMAP.npcs_near(ent)                                         -- MINIMAP 
             if not n or n == '' then return; end
             local kind = nil;
             if YMAP.GP[n] then kind = 'gp';
-            elseif wn and bit.band(fl, 0x02) ~= 0 and bit.band(fl, 0x30) == 0 and n:sub(1, 1) ~= '_' then kind = 'npc'; end
+            elseif wn and bit.band(fl, 0x02) ~= 0 and bit.band(fl, 0x30) == 0 and n:sub(1, 1) ~= '_'
+                and not (cfg.map_hpsg ~= false and (n:find('^Home Point') or n == 'Survival Guide')) then kind = 'npc'; end
             if kind then out[#out + 1] = { ent:GetLocalPositionX(i), ent:GetLocalPositionY(i), i, ent:GetLocalPositionZ(i) or 0, kind }; end
         end);
     end
@@ -17618,6 +17620,143 @@ function YMAP.exits_draw(dl, zid, P, sc, inside, myz)
         end
     end
 end
+YMAP.HPSG = {                                                       -- (MINIMAP > Home Points / Survival Guides: zone -> { kind, x, north, height } - from
+                                                                     --  LandSandBoat's zone NPC lists: the towns' first Home Points and the Survival Guides)
+    [2] = { {'sg',225,-528,-2} },
+    [4] = { {'sg',495,728,-3} },
+    [11] = { {'sg',-262,-54,8} },
+    [24] = { {'sg',-554,-56,-6.2} },
+    [25] = { {'sg',-61,261,-30} },
+    [26] = { {'hp',-1.25,107.425,-27.907}, {'sg',-5,102,-28} },
+    [27] = { {'sg',252,-266,0} },
+    [28] = { {'sg',-220,57,-12} },
+    [50] = { {'hp',-21.13,-20.944,0}, {'sg',134,17,0} },
+    [51] = { {'sg',-839,98,-20} },
+    [53] = { {'hp',-19.86,-25.441,0}, {'sg',-20,-33,0} },
+    [54] = { {'sg',475,-20,-15.85} },
+    [62] = { {'sg',504,241,-0.41} },
+    [65] = { {'sg',218,-104,-24} },
+    [68] = { {'sg',4,-91,20.5} },
+    [79] = { {'sg',-659,340,-13} },
+    [80] = { {'hp',-85.468,-66.454,1}, {'sg',82,-68,1} },
+    [81] = { {'sg',661,-599,-19} },
+    [82] = { {'sg',-196,-498,-7.1} },
+    [83] = { {'sg',-521,207,-32.5} },
+    [84] = { {'sg',-404,-163,-16} },
+    [87] = { {'hp',-293.048,-102.558,-10}, {'sg',-247,95,0} },
+    [88] = { {'sg',-289,533,38.5} },
+    [89] = { {'sg',794,772,71.5} },
+    [90] = { {'sg',549,-341,24.5} },
+    [91] = { {'sg',-37,-866,0.61} },
+    [94] = { {'hp',-32.022,131.741,-5}, {'sg',-58,216,-5.368} },
+    [95] = { {'sg',83,567,-25} },
+    [96] = { {'sg',126,606,-21.2} },
+    [97] = { {'sg',734,-10,-33.63} },
+    [98] = { {'sg',476,-437,-8} },
+    [100] = { {'sg',-452.571,-217.97,-19.807} },
+    [102] = { {'sg',775,-18,28.5} },
+    [103] = { {'sg',137,98,-7.46} },
+    [104] = { {'sg',63,-14,0.4} },
+    [105] = { {'sg',-67,449,-2} },
+    [106] = { {'sg',-582.687,52.281,40.107} },
+    [108] = { {'sg',-222,827,71.2} },
+    [109] = { {'sg',467,410,24.49} },
+    [110] = { {'sg',-228,386,4.12} },
+    [111] = { {'sg',-28,-125,-59.56} },
+    [112] = { {'sg',204,-203,-24} },
+    [113] = { {'sg',-188,-67,8} },
+    [114] = { {'sg',-260,-265,8.5} },
+    [115] = { {'sg',-13.322,315.696,-12.459} },
+    [117] = { {'sg',-160,648,47} },
+    [118] = { {'sg',-485.7,46.2,-32} },
+    [119] = { {'sg',-297,423,16.852} },
+    [120] = { {'sg',344,-256,5.66} },
+    [121] = { {'sg',-45,-151,0.2} },
+    [122] = { {'sg',15,53,-28} },
+    [123] = { {'sg',-239.5,-404,0} },
+    [124] = { {'sg',197,-81,0} },
+    [125] = { {'sg',420,11,-3.29} },
+    [126] = { {'sg',-252,297,-20} },
+    [127] = { {'sg',336,-74,26.13} },
+    [128] = { {'sg',-167,24,-8.26} },
+    [130] = { {'sg',13,-593,-54} },
+    [136] = { {'sg',-144,234,-80} },
+    [138] = { {'sg',372,-25,-12} },
+    [141] = { {'sg',-143,7,-20} },
+    [147] = { {'sg',-264,107,1.55} },
+    [149] = { {'sg',223,-10,-0.7} },
+    [151] = { {'sg',-221,-13,0.25} },
+    [154] = { {'sg',-61,-33,-1.4} },
+    [159] = { {'sg',60,57,-8} },
+    [161] = { {'sg',372,-25,-12} },
+    [164] = { {'sg',-303,127.5,-6.118} },
+    [166] = { {'sg',-146,-298,4.11} },
+    [167] = { {'sg',-11.7,25.377,0.02} },
+    [169] = { {'sg',-308.216,262,15.999} },
+    [171] = { {'sg',364,-23,-32.4} },
+    [172] = { {'sg',-10,7,0} },
+    [173] = { {'sg',-463,-23,-10} },
+    [174] = { {'sg',-16,-237,-20.81} },
+    [175] = { {'sg',418,-99.5,-52.5} },
+    [176] = { {'sg',223,335,-24} },
+    [184] = { {'sg',464,-51,0} },
+    [190] = { {'sg',-119,248.5,0} },
+    [191] = { {'sg',-24,1,-0.35} },
+    [192] = { {'sg',453,182.3,-8} },
+    [193] = { {'sg',-104,633,-0.22} },
+    [195] = { {'sg',418,-99.5,-52.5} },
+    [196] = { {'sg',60,-266,-68} },
+    [197] = { {'sg',364,-23,-32.4} },
+    [198] = { {'sg',-338,-179,-12.35} },
+    [200] = { {'sg',-383,363.5,-6.118} },
+    [205] = { {'sg',89,-297,0.26} },
+    [212] = { {'sg',296,64,-40.7} },
+    [213] = { {'sg',-63,-280,-20.26} },
+    [230] = { {'hp',-85.468,-66.454,1} },
+    [231] = { {'hp',-178.101,71.279,4}, {'sg',-174,80,4} },
+    [232] = { {'hp',-38,-63,-4} },
+    [234] = { {'hp',39.189,-42.618,0}, {'sg',20,-115,0} },
+    [235] = { {'hp',-344,-155,-10} },
+    [236] = { {'hp',126,8,8.5} },
+    [238] = { {'hp',-32.022,131.741,-5} },
+    [240] = { {'hp',-188,101,-4}, {'sg',-220,179,-8.284} },
+    [241] = { {'hp',9.088,-0.383,-2.5} },
+    [243] = { {'sg',43,-69,10} },
+    [244] = { {'hp',-98.981,167.569,0} },
+    [245] = { {'hp',-98.588,-183.416,0} },
+    [246] = { {'hp',37.076,8.831,0} },
+    [247] = { {'hp',-29.276,-76.585,0}, {'sg',-3.5,-95,-2.502} },
+    [248] = { {'hp',36.117,34.635,-10.729} },
+    [249] = { {'hp',-12.75,87.286,-15.791} },
+    [250] = { {'hp',77.654,-94.457,-13}, {'sg',-40,-93,-10} },
+    [252] = { {'hp',-26.91,-47.164,0.296}, {'sg',-13,-34,1} },
+    [257] = { {'sg',-50,-120,0} },
+};
+function YMAP.hpsg_draw(dl, zid, P, sc, inside, myz)              -- (a pale blue crystal: a Home Point; a small tan book: a Survival Guide - always, as the game's map: the game only knows NPCs near you)
+    if cfg.map_hpsg == false then return; end
+    local L = YMAP.HPSG[zid];
+    if not L then return; end
+    for _, o in ipairs(L) do
+        local fa = 1;
+        if myz then fa = 1 - math.max(0, math.min(1, (math.abs(o[4] - myz) - 8) / 6)); end   -- (on another floor: faded)
+        fa = math.max(fa, 0.35);
+        local cx, cy = P(o[2], o[3], o[4]);
+        if cx and inside(cx, cy) then
+            if o[1] == 'hp' then
+                local r = 3.4 * sc;
+                local function gem(k) return { { cx, cy - r * 1.6 - k }, { cx + r + k, cy }, { cx, cy + r * 1.6 + k }, { cx - r - k, cy } }; end
+                ALLY.poly(dl, gem(1.3), U4(0, 0, 0, 0.85 * fa));
+                ALLY.poly(dl, gem(0), U4(0.55, 0.80, 1.0, fa));
+                ALLY.poly(dl, { { cx, cy - r * 1.6 }, { cx, cy + r * 1.6 }, { cx - r, cy } }, U4(0.85, 0.95, 1.0, fa));   -- (its lit facet)
+            else
+                local w, h = 4.2 * sc, 3.2 * sc;
+                DL.RF(dl, cx - w - 1.2, cy - h - 1.2, cx + w + 1.2, cy + h + 1.2, U4(0, 0, 0, 0.85 * fa), 1.5 * sc);
+                DL.RF(dl, cx - w, cy - h, cx + w, cy + h, U4(0.93, 0.80, 0.55, fa), 1.2 * sc);
+                DL.RF(dl, math.floor(cx) - 0.5, cy - h, math.floor(cx) + 0.5, cy + h, U4(0.35, 0.25, 0.12, fa), 0);   -- (its spine)
+            end
+        end
+    end
+end
 -- What sits on the map: monsters, the party in their role colours, the target, and you (the glowing arrow)
 function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
     local tidx = target_index() or 0;
@@ -17675,6 +17814,7 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
     end
     local px, py = tomap(ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0);
     pcall(YMAP.exits_draw, dl, zid, function(wx, wy) return tomap(wx, wy); end, sc, inside, ent:GetLocalPositionZ(me));   -- (MINIMAP > Zone exits)
+    pcall(YMAP.hpsg_draw, dl, zid, function(wx, wy) return tomap(wx, wy); end, sc, inside, ent:GetLocalPositionZ(me));    -- (MINIMAP > Home Points / Survival Guides)
     pcall(YMAP.track_draw, dl, ent, tomap, sc, inside, px, py);     -- (Widescan > Track: the monster you track)
     local yaw = 0;
     pcall(function() yaw = ent:GetLocalPositionYaw(me) or 0; end);
@@ -18043,6 +18183,7 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
             return ex * ex + ey * ey <= 0.80;
         end
         pcall(YMAP.exits_draw, dl, zid, function(wx, wy, wz) local a_, b_ = proj(wx, wz * hs, wy); return a_, b_; end, sc, inside, Z);   -- (MINIMAP > Zone exits)
+        pcall(YMAP.hpsg_draw, dl, zid, function(wx, wy, wz) local a_, b_ = proj(wx, wz * hs, wy); return a_, b_; end, sc, inside, Z);    -- (MINIMAP > Home Points / Survival Guides)
         local px_, py_ = proj(X, th, Y);
         if px_ then pcall(YMAP.track_draw, dl, ent, tomap, sc, inside, px_, py_); end
     end
