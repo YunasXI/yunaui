@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.16';
+addon.version = '1.1.17';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1480,7 +1480,9 @@ function BUFFS.composure()                                           -- (Composu
 end
 function BUFFS.learned(spell, other)                                -- (saved per spell: 's' .. its id on you, 'o' .. its id on someone else -
     local L = type(cfg.buff_learn) == 'table' and cfg.buff_learn or {};   --  seen on one of your own characters: Pianissimo songs, sung in other
-    return (other and tonumber(L['o' .. tostring(spell)])) or tonumber(L['s' .. tostring(spell)]);   --  gear, last longer than yours)
+    local c_ = tonumber(L['c' .. tostring(spell)]);                  --  gear, last longer than yours; 'c' .. its id on you under Composure: three
+    return (other and tonumber(L['o' .. tostring(spell)])) or tonumber(L['s' .. tostring(spell)])   --  times its length elsewhere - a Red Mage who always
+        or (c_ and math.floor(c_ / 3 + 0.5)) or nil;                 --  casts with it up still gets their gear's length)
 end
 function BUFFS.forget_once()                                         -- (once: the lengths learned on you before Composure was told apart - some were
     if cfg.buff_learn_v2 then return; end                            --  three times too long; they're learned again at the next casts)
@@ -1588,8 +1590,14 @@ function BUFFS.learn_from()                                         -- (a spell 
             f.used = true;
             BUFFS.pend[spell] = nil;
             local len = math.floor(f.v + 0.5);
-            if BUFFS.composure() then                                -- (lengthened by Composure: kept apart - never the length on others; a Red Mage's
+            if BUFFS.composure() then                                -- (lengthened by Composure: kept apart - a third of it on others; a Red Mage's
                 BUFFS.keep('c' .. tostring(spell), len);             --  Refresh / Haste on the party were timed three times too long)
+                len = math.floor(len / 3 + 0.5);
+                for _, bs in pairs(BUFFS.cast) do
+                    for _, e in ipairs(bs[buff] or {}) do
+                        if e.sp == spell and math.abs(e.t0 - t) < 4 and (e.wait or e.dur ~= len) then e.dur, e.wait = len, nil; end
+                    end
+                end
                 goto next_pend;
             end
             BUFFS.keep('s' .. tostring(spell), len);
