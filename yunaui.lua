@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.15';
+addon.version = '1.1.16';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1470,9 +1470,24 @@ BUFFS.DUR = { [40] = 1800, [41] = 1800, [33] = 180, [43] = 150, [42] = 75, [116]
               [195] = 120, [196] = 120, [197] = 120, [198] = 120, [199] = 120, [200] = 120, [201] = 120, [214] = 120, [215] = 120,
               [216] = 120, [217] = 120, [218] = 120, [219] = 120, [222] = 120, [223] = 120,
               [178] = 180, [179] = 180, [180] = 180, [181] = 180, [182] = 180, [183] = 180, [184] = 180, [185] = 180 };   -- (SCH's storms)
+function BUFFS.composure()                                           -- (Composure on you: your own enhancing spells last about 3 times longer on you only)
+    local on = false;
+    pcall(function()
+        local b = AshitaCore:GetMemoryManager():GetPlayer():GetBuffs();
+        for i = 0, 31 do if b[i] == 419 then on = true; break; end end
+    end);
+    return on;
+end
 function BUFFS.learned(spell, other)                                -- (saved per spell: 's' .. its id on you, 'o' .. its id on someone else -
     local L = type(cfg.buff_learn) == 'table' and cfg.buff_learn or {};   --  seen on one of your own characters: Pianissimo songs, sung in other
     return (other and tonumber(L['o' .. tostring(spell)])) or tonumber(L['s' .. tostring(spell)]);   --  gear, last longer than yours)
+end
+function BUFFS.forget_once()                                         -- (once: the lengths learned on you before Composure was told apart - some were
+    if cfg.buff_learn_v2 then return; end                            --  three times too long; they're learned again at the next casts)
+    local L = {};
+    if type(cfg.buff_learn) == 'table' then for k, v in pairs(cfg.buff_learn) do if type(k) == 'string' and k:sub(1, 1) == 'o' then L[k] = v; end end end
+    cfg.buff_learn, cfg.buff_learn_v2 = L, true;
+    pcall(save);
 end
 function BUFFS.keep(key, len)
     local L = {};
@@ -1551,6 +1566,7 @@ function BUFFS.cast_on(actor, tid, buff, spell)
     end
     BUFFS.opend[#BUFFS.opend + 1] = { t = os.clock(), tid = tid, buff = buff, sp = spell };   -- (learned when it shows up on them)
     if #BUFFS.opend > 30 then table.remove(BUFFS.opend, 1); end
+    pcall(BUFFS.forget_once);
     local dur = BUFFS.learned(spell, true) or BUFFS.DUR[buff];
     local wait = nil;                                                -- (no known length: it waits a moment for yours - the same cast on you too,
     if not dur then dur, wait = 6, true; end                         --  Accession, a -ra: your own timer gives it; none comes: no guessed timer)
@@ -1572,6 +1588,10 @@ function BUFFS.learn_from()                                         -- (a spell 
             f.used = true;
             BUFFS.pend[spell] = nil;
             local len = math.floor(f.v + 0.5);
+            if BUFFS.composure() then                                -- (lengthened by Composure: kept apart - never the length on others; a Red Mage's
+                BUFFS.keep('c' .. tostring(spell), len);             --  Refresh / Haste on the party were timed three times too long)
+                goto next_pend;
+            end
             BUFFS.keep('s' .. tostring(spell), len);
             local Lo = type(cfg.buff_learn) == 'table' and tonumber(cfg.buff_learn['o' .. tostring(spell)]) or nil;   -- (its length on others, if ever seen -
             for _, bs in pairs(BUFFS.cast) do                       --  not BUFFS.learned: that has the length on you just kept, and none was fixed)
@@ -1581,6 +1601,7 @@ function BUFFS.learn_from()                                         -- (a spell 
             end
         elseif now - t > 4 then BUFFS.pend[spell] = nil;
         end
+        ::next_pend::
     end
 end
 function BUFFS.mine()
