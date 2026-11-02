@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.18';
+addon.version = '1.1.19';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -20954,6 +20954,7 @@ ashita.events.register('key_state', 'yui_kb_state', function(e)    -- (the game 
         if C.mb_key(vk) then keys[dk] = 0; else C.MB.kdig[dk] = nil; end
     end
     if C.mb_kbrow() ~= 0 then for k in pairs(C.MB_ARROWS) do keys[k] = 0; end keys[0x1C] = 0; keys[0x9C] = 0; end   -- (Ctrl / Alt + arrows / Enter: the bar's)
+    if C.mb_kbrow() ~= 0 then for dk in pairs(C.MB_DIK) do keys[dk] = 0; end end   -- (and the digits, every read: the game read the state before the key's event came - Ctrl + 7 ran its macro too)
     if C.mb_kbtog() then keys[0xC8] = 0; keys[0xD0] = 0; end         -- (open by a tap: up / down too)
     if C.MB.kbok then                                                -- (the Enter that ran a macro: hidden from the game down to its release)
         if keys[0x1C] == 0 and keys[0x9C] == 0 and not C.mb_key(0x0D) then C.MB.kbok = false; else keys[0x1C] = 0; keys[0x9C] = 0; end
