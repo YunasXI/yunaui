@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.23';
+addon.version = '1.1.24';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -161,6 +161,7 @@ local function save()
         local disk = own_file('settings.lua');                       --  saving now wrote our old ones over them, the copy lost: it took several tries)
         if disk and disk ~= WATCH.own then WATCH.at = 0; return; end
     end
+    YUI_NSAVE = (YUI_NSAVE or 0) + 1;                                -- (/yui prof: how often the settings are written)
     settings.save();
     WATCH.own = own_file('settings.lua');                          -- our own change: not "from outside"
 end
@@ -1060,10 +1061,13 @@ local function end_plain(kx, ky)
         if c_ == nil or now_ - c_[3] > 1 then c_ = { sw, sh, now_ }; WATCH.calm[kx] = c_;
         else c_[1], c_[2] = math.min(c_[1], sw), math.min(c_[2], sh); end   -- (each second it starts again from now: a real grow is seen)
     end
-    if math.abs(wx - (tonumber(cfg[kx]) or 0)) > 0.5 or math.abs(wy - (tonumber(cfg[ky]) or 0)) > 0.5 then
-        cfg[kx], cfg[ky] = wx, wy;
+    local follow_ = type(kx) == 'string' and kx:sub(1, 1) == '_';   -- (_tx, _sbx: placed every frame by what they follow - never saved: on some
+    if not follow_ and (math.abs(wx - (tonumber(cfg[kx]) or 0)) > 0.5 or math.abs(wy - (tonumber(cfg[ky]) or 0)) > 0.5) then   --  PCs the game set them a hair
+        cfg[kx], cfg[ky] = wx, wy;                                   --  off, and the settings were written to disk every frame - the frame rate fell)
         if EDIT.on then EDIT.drag = kx; end                           -- (Edit Mode: this one is being dragged)
-        if not imgui.IsMouseDown(0) then save(); end
+        if not imgui.IsMouseDown(0) then
+            if os.clock() - (WATCH.saved or 0) > 1 then WATCH.saved = os.clock(); save(); else WATCH.later = true; end   -- (at most once a second)
+        end
     end
     if EDIT.on and EDIT.drag == kx and type(sw) == 'number' then
         local nx, ny, guides = EDIT.snap(kx, wx, wy, sw, sh);
@@ -21910,6 +21914,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         if p == nil or p:GetMemberIsActive(0) == 0 then return; end   -- not logged in / zoning
         if YUI_OUT() then return; end
         -- each piece on its own: a problem in one (shown once in chat) never stops the others, the logo or the window
+        if C.PROF then C.PROF_N = (C.PROF_N or 0) + 1; end           -- (/yui prof: frames counted)
         local function piece(fn, ...)
             if YUI_PRES and not YUI_PRES[(C.PF and C.PF[fn]) or '-'] then return; end   -- (the guide: only the slide's own pieces)
             local ma = C.MT.t0 and C.mt_alpha(C.PF and C.PF[fn]) or nil;   -- (a mode's entrance: it fades in as the wave reaches it)
@@ -21917,7 +21922,9 @@ ashita.events.register('d3d_present', 'yui_present', function()
                 if ma <= 0.01 then return; end
                 imgui.PushStyleVar(ImGuiStyleVar_Alpha, ma);
             end
+            local t0_ = C.PROF and os.clock();
             local ok2, e2 = pcall(fn, ...);
+            if t0_ then local k_ = (C.PF and C.PF[fn]) or tostring(fn); C.PROF[k_] = (C.PROF[k_] or 0) + (os.clock() - t0_); end   -- (/yui prof: each piece's time)
             if ma then imgui.PopStyleVar(); end
             if not ok2 then
                 YUI_ERRLOG('draw', e2);
@@ -22542,6 +22549,20 @@ ashita.events.register('command', 'yui_command', function(e)
                 tostring(ent:GetName(idx)), px, py, pz, tostring(a1), tostring(a2), tostring(a3), mh or 0, tostring(hb), C.tall(idx, ent)));
         end);
         if not ok then msg('Tall info failed: ' .. tostring(err)); end
+    elseif sub == 'prof' then                                        -- (/yui prof: 10 s of how long each piece takes to draw - for a frame-rate report)
+        C.PROF, C.PROF_T, C.PROF_N, YUI_NSAVE = {}, os.clock(), 0, 0;
+        msg('Measuring for 10 seconds - keep playing as usual (target something if that is when it slows down)...');
+        ashita.tasks.once(10, function()
+            local el = math.max(0.1, os.clock() - (C.PROF_T or os.clock()));
+            local r = {};
+            for k, v in pairs(C.PROF or {}) do r[#r + 1] = { k, v }; end
+            table.sort(r, function(a_, b_) return a_[2] > b_[2]; end);
+            local fps = (C.PROF_N or 0) / el;
+            local out = string.format('FPS %.0f, saves %d. Per frame:', fps, YUI_NSAVE or 0);
+            for q = 1, math.min(6, #r) do out = out .. string.format(' %s %.2fms', tostring(r[q][1]), r[q][2] / math.max(1, C.PROF_N or 1) * 1000); end
+            C.PROF = nil;
+            msg(out);
+        end);
     elseif sub == 'mapinfo' then                                     -- (for a minimap report: where you are, and which map is shown)
         local ok, err = pcall(C.map_info);                           -- (always says something: the line, or why it couldn't)
         if not ok then msg('Map info failed: ' .. tostring(err)); end
