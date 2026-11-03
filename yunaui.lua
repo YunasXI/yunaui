@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.28';
+addon.version = '1.1.29';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -8820,7 +8820,15 @@ function C.w2s(wx, wy, wz)
     local cw = x * pj._14 + y * pj._24 + z * pj._34 + pj._44;
     if cw < 0.1 then return nil; end
     local ds = imgui.GetIO().DisplaySize;
-    return (cx / cw + 1) * 0.5 * ds.x, (1 - cy / cw) * 0.5 * ds.y;
+    local W, H = ds.x, ds.y;
+    local U = C.UISZ;                                                -- (VanaCore's own interface size, once a second: on some PCs ImGui says 3840 x 2160
+    if not U or os.clock() - U.t > 1 then                            --  while the game and its interface are 2560 x 1440 - every bar over a head landed
+        U = { t = os.clock() };                                      --  half as far again from the screen's corner, off to the right and down)
+        pcall(function() local a_, b_ = vana.ui.screen(); U.w, U.h = tonumber(a_), tonumber(b_); end);
+        C.UISZ = U;
+    end
+    if U.w and U.h and U.w > 200 and U.h > 200 and U.w < W - 1 and U.h < H - 1 then W, H = U.w, U.h; end   -- (only when the interface is the smaller one)
+    return (cx / cw + 1) * 0.5 * W, (1 - cy / cw) * 0.5 * H;
 end
 -- Text broken into rows of at most maxw (at most 3 rows; the last one cut with "...")
 function C.pop_rows(msg, maxw)
