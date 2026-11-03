@@ -8,7 +8,7 @@
 local imgui = require('imgui');
 local L = require('yunaui_lang');
 
-local JP = { active = false, cfg = { ui_lang = 'auto', font_scale = 1.0, minimap_text_scale = 1.3 } };
+local JP = { active = false, cfg = { ui_lang = 'auto', font_scale = 1.0, minimap_text_scale = 1.3, keep_fonts = false } };
 local good, install_core_proxy;   -- (前方宣言)
 local JA, UP = L.JA, {};
 local memo, memo_n = {}, 0;
@@ -25,12 +25,13 @@ local function load_cfg()
         if s and s >= 0.8 and s <= 1.4 then JP.cfg.font_scale = s; end
         local m = tonumber(t.minimap_text_scale);
         if m and m >= 0.5 and m <= 2.0 then JP.cfg.minimap_text_scale = m; end
+        JP.cfg.keep_fonts = t.keep_fonts == true;
     end
 end
 local function save_cfg()
     local f = io.open(CFG_FILE, 'w');
     if not f then return; end
-    f:write(string.format('return { ui_lang = %q, font_scale = %.2f, minimap_text_scale = %.2f };\n', JP.cfg.ui_lang, JP.cfg.font_scale, JP.cfg.minimap_text_scale or 1.3));
+    f:write(string.format('return { ui_lang = %q, font_scale = %.2f, minimap_text_scale = %.2f, keep_fonts = %s };\n', JP.cfg.ui_lang, JP.cfg.font_scale, JP.cfg.minimap_text_scale or 1.3, tostring(JP.cfg.keep_fonts == true)));
     f:close();
 end
 
@@ -152,6 +153,7 @@ local function fexists(p)
 end
 function JP.map_font(path)
     if not JP.active or type(path) ~= 'string' then return path; end
+    if JP.cfg.keep_fonts then return path; end                       -- (Keep YunaUI fonts: English letters and numbers in YunaUI's own fonts - the Japanese merged in)
     local base = (path:match('[^/\\]+$') or path):lower();
     local to = FONTMAP[base];
     if not to then return path; end
@@ -618,6 +620,14 @@ function JP.settings_ui(section, accent_button, hint)
         if clicked and JP.cfg.ui_lang ~= k then JP.cfg.ui_lang = k; save_cfg(); end
     end
     hint(JP.t('Auto follows the game client. Reload the addon after changing (/addon reload yunaui).'));
+    if JP.active then                                                -- (Japanese: keep YunaUI's own fonts for English letters and numbers)
+        local on = JP.cfg.keep_fonts == true;
+        local label = JP.t(on and 'Keep YunaUI fonts: On' or 'Keep YunaUI fonts: Off') .. '##yui_jp_keepf';
+        local ok, clicked = pcall(accent_button, label, { avail, 0 }, not on, true);
+        if not ok then clicked = imgui.Button(label, { avail, 0 }); end
+        if clicked then JP.cfg.keep_fonts = not on; save_cfg(); end
+        hint(JP.t("On: HP, MP, numbers and English names keep YunaUI's own fonts; menus, items and weapon skills stay in Japanese. Reload the addon after changing."));
+    end
 end
 
 -------------------------------------------------------------------- /yui lang
