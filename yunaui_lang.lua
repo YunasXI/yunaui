@@ -88,6 +88,9 @@ M.JA = {
     -- 言語設定
     ['LANGUAGE'] = '言語', ['Auto'] = '自動', ['English'] = 'English', ['日本語'] = '日本語',
     ['Auto follows the game client. Reload the addon after changing (/addon reload yunaui).'] = '自動はゲームクライアントの言語に合わせます。変更後はアドオンを再読み込みしてください（/addon reload yunaui）。',
+    ['Turned cards'] = '裏返したカード',
+    ['Job box on the right'] = 'ジョブ枠を右に',
+    ['Job tag on the name, TP on the left'] = 'ジョブタグを名前の前に・TPを左に',
     ['Keep YunaUI fonts: On'] = 'YunaUIのフォントを使う：オン',
     ['Keep YunaUI fonts: Off'] = 'YunaUIのフォントを使う：オフ',
     ["On: HP, MP, numbers and English names keep YunaUI's own fonts; menus, items and weapon skills stay in Japanese. Reload the addon after changing."] = 'オン：HP・MP・数字・英語の名前はYunaUIのフォントのまま、メニュー・アイテム・WSは日本語で表示します。変更後はアドオンを再読み込みしてください。',
