@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.25';
+addon.version = '1.1.26';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -5960,6 +5960,7 @@ function ALLY.tag(dl, m, i, x, ny, ch, sc, v, live, mir, cap)       -- (mir: x i
         local kc = math.min(cap[3] or 0, th * 0.45);
         local ln = th * (cap[4] or 0);
         pts = { { x + ln, y0 }, { x + tw, y0 }, { x + tw, y0 + th - kc }, { x + tw - kc, y0 + th }, { x, y0 + th } };
+        if kc < 0.5 then pts = { { x + ln, y0 }, { x + tw, y0 }, { x + tw, y0 + th }, { x, y0 + th } }; end   -- (no cut corner: no doubled point - a faded tag showed a seam)
         jx = x + (tw + ln * 0.5 - kc * 0.4 - jw) / 2;
     end
     local f, ink = tc[1], tc[2];
@@ -6329,7 +6330,7 @@ function ALLY.vback(dl, m, i, x1, tip, ny, ch, sc, v, party, live, k, ta, tgt, l
     local ch_ = math.max(1, y2 - y1);
     local function lean(y) return sl * (y - y1) / ch_; end
     local tw_ = ALLY.tagw(ch, sc);
-    local cut_ = tw_ + 6 * sc;
+    local cut_ = 0;                                                  -- (the full length, as a card not turned: the job is in its right box)
     local nx0 = x1 + 2 * sc + cut_;
     ALLY.nroom = ALLY.nroom or {};
     ALLY.nroom[i] = -cut_;
@@ -6876,7 +6877,7 @@ function ALLY.hexrow(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     local hh = ch / 2 * k;
     local y1, y2 = ny - hh, ny + hh;
     local K = math.min(9 * sc, ch * 0.32) * k;                        -- (the corner cut)
-    local bk = face and m.inzone;                                    -- (turned: the front's plate, its TP and job tag swapped - TP on the left,
+    local bk = face;                                                 -- (in another zone too: turned like the others - its zone where the bars are)                                    -- (turned: the front's plate, its TP and job tag swapped - TP on the left,
     local TWb = bk and ALLY.tagw(ch * 0.78, sc) or 0;                --  the tag in the right box - the name smaller, HP / MP numbers in their bars)
     local RW = 0;                                                    -- (turned: the right box - the job's letters and the leader's dots)
     if bk then
@@ -6886,14 +6887,14 @@ function ALLY.hexrow(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     ALLY.nroom = ALLY.nroom or {};
     ALLY.nroom[i] = 0;
     if bk then                                                       -- (turned: no TP block on the left - the plate that much shorter, taken off its LEFT end so
-        local cut_ = TWb + 10 * sc - RW + 30 * sc;                   --  the right ends stay lined up on the line with the alliances; the buffs and
+        local cut_ = 0;                                              -- (full length now: the job tag is back, in the right box)                   --  the right ends stay lined up on the line with the alliances; the buffs and
         x1 = x1 + cut_;                                              --  the prism follow it in)
         ALLY.nroom[i] = -cut_;
     end
     -- the plate (one piece; your party's TP in a compartment at its right end)
     local plate = { { x1 + K, y1 }, { tip, y1 }, { tip, y2 - K }, { tip - K, y2 }, { x1, y2 }, { x1, y1 + K } };
     local TPt = nil;                                                 -- (turned: the TP in a small tab on the top edge, just left of the right box)
-    if bk and ta > 0 and k >= 0.9 and m.tp ~= nil then
+    if bk and ta > 0 and k >= 0.9 and m.tp ~= nil and m.inzone then
         imgui.SetWindowFontScale(fs0 * 0.46);
         local lw_, lhh_ = imgui.CalcTextSize('TP');
         imgui.SetWindowFontScale(fs0 * 0.66);
@@ -7085,7 +7086,13 @@ function ALLY.hexrow(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
         local nbot = top + nh * (nfk or 1);                          -- (the name's foot: the TP goes under it)
         local ry = bk and (top + 1 * sc) or (top + nh + 1.5 * sc);   -- (under the name: the bars, or the numbers - turned, from the top beside it)
         if not m.inzone then
-            pcall(C.zone_line, dl, m, bx, ry, bw, sc, v * ta);
+            local zy_ = ry;
+            if bk then                                               -- (turned: in the middle of the plate, where the bars are)
+                imgui.SetWindowFontScale((FS or 1) * 0.80 * 0.70);
+                zy_ = ny - imgui.GetTextLineHeight() / 2;
+                imgui.SetWindowFontScale(fs0);
+            end
+            pcall(C.zone_line, dl, m, bx + (bk and 4 * sc or 0), zy_, bw, sc, v * ta);
         elseif not face then                                         -- FRONT: Hex link's HP bar, the MP under it
             if v > 0.3 then
                 local dt = imgui.GetIO().DeltaTime or 0.016;
@@ -7513,7 +7520,7 @@ function ALLY.spine(dl, list, x, y, sc, dt, tidx, n, party)
         for _, e_ in ipairs(list) do
             local m_ = e_[1];
             local f_ = m_ and ALLY.FL[m_.name or ('m' .. tostring(e_[2]))];
-            if f_ and f_.back and m_.inzone then ALLY.tabroom = lh80 * 0.5 + 2 * sc; gap = gap + ALLY.tabroom - (party and 4 or 2) * sc; break; end   -- (the tab's height - ALLY.tabgeo; the cards closer: 2 px of air)
+            if f_ and f_.back and m_.inzone then ALLY.tabroom = lh80 * 0.5 + 2 * sc; gap = gap + ALLY.tabroom - (party and 4 or 0) * sc; break; end   -- (the tab's height - ALLY.tabgeo; the cards closer: 2 px of air)
         end
     end
     if party then ALLY.pgap, ALLY.pn = gap, #list; end               -- (PARTY > Grow upward: how far a full party reaches)
@@ -7552,8 +7559,10 @@ function ALLY.spine(dl, list, x, y, sc, dt, tidx, n, party)
         local py1_ = y0 + 10 * sc - ach / 2;                         -- (the first plate's top edge)
         local K_ = math.min(9 * sc, ach * 0.32);
         C.fullclip(dl);
-        local tx_ = YUI_HEX and (lx - 10 * sc - K_ - 6 * sc - lw) or (lx - 10 * sc - lw);   -- (Vex: at the right end, past the TP tab)
-        text(dl, tx_, py1_ - labh - 2 * sc, lab, { C.muted[1], C.muted[2], C.muted[3], 0.95 });
+        local tx_ = lx - 4 * sc - lw;                                -- (at the plate's right end - clear of the TP; white on a black outline: readable on any ground)
+        local ty_ = py1_ - labh - 2 * sc;
+        for _, d in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } }) do DL.T(dl, tx_ + d[1], ty_ + d[2], U4(0, 0, 0, 0.9), lab); end
+        DL.T(dl, tx_, ty_, U4(1, 1, 1, 0.95), lab);
         dl:PopClipRect();
     end
     imgui.SetWindowFontScale(fs);
