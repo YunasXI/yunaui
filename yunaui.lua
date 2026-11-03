@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.26';
+addon.version = '1.1.27';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -3386,7 +3386,9 @@ function C.thead(idx, ent, sc)
     pcall(function()
         local px, py, pz, obj = C.tpos(idx, ent);
         if px == nil then return; end
-        sx, sy = C.w2s(px, pz - (obj and 0.8 or C.tall(idx, ent)), py);   -- (a door / object: a little over its own point)
+        local th_ = obj and 0.8 or C.tall(idx, ent);
+        if th_ > 4.5 then th_ = 4.5 + (th_ - 4.5) * 0.35; end         -- (a huge monster - a dragon, 8.5 yalms: the bar lower, by its body, not far over its head)
+        sx, sy = C.w2s(px, pz - th_, py);                             -- (a door / object: a little over its own point)
     end);
     local W, H = C.screen();
     if not sx or sx < -40 or sx > W + 40 or sy > H + 40 then C.TH = nil; return nil; end
@@ -5834,7 +5836,7 @@ end
 function ALLY.sbh(sc) return math.max(1, math.floor(3 * sc * math.max(0.5, math.min(3, tonumber(cfg.party_hp_th) or 1)) + 0.5)); end   -- (PARTY > HP bar thickness)
 function ALLY.hexrows() return YUI_HEX and true or false; end    -- (Hex link: always the Hex plates - the cards are Normal mode's)
 function ALLY.ch(lh, sc, party)
-    if ALLY.hexrows() then return lh + (party and 22 or 16) * sc; end   -- (Hex link plates: the name, the HP bar, the MP bar)
+    if ALLY.hexrows() then return lh + 22 * sc; end                   -- (the alliances' plates as tall as the party's: the same bars everywhere)   -- (Hex link plates: the name, the HP bar, the MP bar)
     local m = math.max(0.7, math.min(1.3, tonumber(cfg.card_h) or 1));
     if (cfg.card_style or 'plate') ~= 'filled' then
         local bars = ALLY.sbh(sc) + (party and (2 * sc + math.max(2, math.floor(2.2 * sc + 0.5))) or 0);
@@ -6460,7 +6462,6 @@ function ALLY.vback(dl, m, i, x1, tip, ny, ch, sc, v, party, live, k, ta, tgt, l
             if f_ < 1 then
                 local fx_ = bx0_ + (bx2_ - bx0_) * f_;
                 local ep_ = ALLY.clip_x(o_, fx_, bx2_);
-                if #ep_ >= 3 then pcall(function() dl:AddConvexPolyFilled(ep_, U4(c1[1] * 0.30, c1[2] * 0.30, c1[3] * 0.30, 0.92 * v * ta)); end); end
                 if f_ > 0 then DL.L(dl, fx_, y0_ + 0.5, fx_, y1_ - 0.5, U4(1, 1, 1, 0.9 * v * ta), 1.5); end
             end
             local oc_ = U4(0, 0, 0, 0.9 * v * ta);
@@ -7108,8 +7109,8 @@ function ALLY.hexrow(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
                 end
                 C.hexbar(dl, bx, hy - 1, bw, 2, hp, lagged('hx' .. i, hp, dt), i, { c1 = hc1, c2 = hc2, band = hb, al = v * ta });
                 if party or (m.mp or 0) > 0 then
-                    local my = hy + hb / 2 + 3 * sc;
                     local mh = math.max(1, 3 * sc * mth);
+                    local my = hy + hb / 2 + 3 * sc;
                     DL.RF(dl, bx + 3 * sc, my, bx + bw - 3 * sc, my + mh, U4(0.05, 0.10, 0.14, 0.9 * v * ta), mh / 2);
                     if mpp > 0 then DL.RF(dl, bx + 3 * sc, my, bx + 3 * sc + (bw - 6 * sc) * mpp, my + mh, U4(AZ[1], AZ[2], AZ[3], 0.95 * v * ta), mh / 2); end
                 end
@@ -7134,12 +7135,12 @@ function ALLY.hexrow(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
             local hy0_ = hasmp and (ry + ((yb_ - ry) - (hh_ + mhh_ * 0.90)) / 2) or (ry + ((yb_ - ry) - hh_) / 2);
             local my0_ = hy0_ + hh_ - mhh_ * 0.10;                   -- (only its top edge over the HP's foot: the numbers clear of each other)   -- (HP the taller, MP under it in the same shape, a little shorter - each
             local dt_ = imgui.GetIO().DeltaTime or 0.016;                    --  its number in its middle)
-            C.hexbar(dl, bx, hy0_ + hh_ / 2 - 1, bw, 2, m.hpp or 0, lagged('hx' .. i, m.hpp or 0, dt_), i, { c1 = hc1, c2 = hc2, band = hh_, al = v * ta, empty = 0.30 });
+            C.hexbar(dl, bx, hy0_ + hh_ / 2 - 1, bw, 2, m.hpp or 0, lagged('hx' .. i, m.hpp or 0, dt_), i, { c1 = hc1, c2 = hc2, band = hh_, al = v * ta });
             if hasmp then
                 local my_, mh_ = my0_, mhh_;                            -- (its top over the HP's foot: laid on it)
                 local mw_ = bw * 0.88;
                 C.hexbar(dl, bx + bw * 0.12, my_ + mh_ / 2 - 1, mw_, 2, mpp, lagged('mx' .. i, mpp, dt_), i + 50,   -- (moved ahead: its right point under the HP's)
-                    { c1 = AZ, c2 = { AZ[1] * 0.55, AZ[2] * 0.70, AZ[3] * 0.95 }, band = mh_, al = v * ta, empty = 0.30 });
+                    { c1 = AZ, c2 = { AZ[1] * 0.55, AZ[2] * 0.70, AZ[3] * 0.95 }, band = mh_, al = v * ta });
             end
             local function mid_num(cs, x0_, w_, y0_, h_, fr_, bc_)   -- (a number alone in a bar's middle: as big as the bar lets it - fr_/bc_: two-tone)
                 local k_ = 1;
@@ -7705,7 +7706,7 @@ function ALLY.spine(dl, list, x, y, sc, dt, tidx, n, party)
         ALLY.bracket(dl, tostring(n), lx - 10 * sc - (wide and 250 or 180) * sc - 6 * sc, y0 + 10 * sc - chb / 2, y0 + 10 * sc + (#list - 1) * gap + chb / 2, sc, ee, now, lx);
     end
     if clipped then pcall(function() dl:PopClipRect(); end); end
-    return y1 - y + 4 * sc, w;
+    return y1 - y + 4 * sc + math.max(0, ach / 2 - 10 * sc + 2 * sc), w;   -- (the whole last card inside the window: its foot - the MP bar - was cut off)
 end
 function ALLY.hex(dl, list, x, y, sc, dt, tidx)
     local Rh = 24 * sc;
