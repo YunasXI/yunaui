@@ -7996,6 +7996,7 @@ local CHAT_COLS = {
     { 'error', 'Errors', { 1, 0.35, 0.65 } },
     { 'combat', 'Combat (combat log)', { 0.80, 0.86, 0.95 } }, { 'roe', 'Records of Eminence', { 0.62, 0.92, 0.78 } },
     { 'addon', 'Addons and plugins ([Name] ...)', { 0.56, 0.84, 0.96 } },
+    { 'finder', 'Party Finder', { 0.80, 0.95, 0.45 } },
     { 'other', 'Everything else', { 0.92, 0.92, 0.94 } },
 };
 local CHAT_DEF = {};
@@ -10922,7 +10923,7 @@ local function chat_add(mode, raw)
                 local pre = cfg.chat_time and C.ts_text(os.time()) or '';
                 line = pre .. line;
                 local cat_ = cat_of(mode);                            -- (an addon's own message - "[Name] ..." on a channel nobody talks on: Addons)
-                if cat_ ~= 'combat' and raw_line:match('^%[[%a][%w%s%._:%-]*%]') then cat_ = 'addon'; end   -- (any channel: players' lines never start so - a linkshell's is "[1]<Name>")
+                if cat_ ~= 'combat' and raw_line:match('^%[[%a][%w%s%._:%-]*%]') then cat_ = raw_line:match('^%[PartyFinder%]') and 'finder' or 'addon'; end   -- (the server's Party Finder: its own colour - the addons' blue was the party's)   -- (any channel: players' lines never start so - a linkshell's is "[1]<Name>")
                 CHATLOG.add(log_, { text = line, raw = raw_line, cat = cat_, t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode, tslen = #pre, ctype = ctype });
                 if YUI_JP_CFE and is_combat(mode) then pcall(YUI_JP_CFE, log_[#log_]); end   -- [JP]
                 if n_ == 1 then chat_seen_new(mode); end
