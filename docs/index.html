@@ -6,6 +6,7 @@
 <title>YunaUI — a modern HUD for CatsEyeXI</title>
 <meta name="description" content="YunaUI is a complete, clean HUD for CatsEyeXI (VanaCore): target bar, skillchains, party and alliances, chat, damage meter and an Edit Mode to place everything.">
 <meta property="og:title" content="YunaUI — a modern HUD for CatsEyeXI">
+<meta property="og:image" content="https://yunasxi.github.io/yunaui/shots/hex-1.webp">
 <meta property="og:description" content="Thin glowing bars, one font everywhere, every piece where you want it.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230d0c12'/%3E%3Cpath d='M16 14l16 20 16-20M32 34v16' stroke='%23e0409a' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
@@ -36,12 +37,12 @@ nav ul a:hover{color:var(--paper)}
 @media(max-width:720px){nav ul li:not(:last-child){display:none}}
 
 /* hero */
-.hero{padding:72px 24px 90px;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+.hero{padding:80px 24px 40px;text-align:center}.hero .lead{margin:0 auto}.hero .cta{justify-content:center}
 @media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:40px}}
 .kicker{font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:var(--mag)}
 h1{font-weight:400;font-size:clamp(48px,8vw,92px);line-height:1;letter-spacing:.02em;margin:14px 0 18px}
 h1 span{background:linear-gradient(90deg,#fff,#f2b7da 55%,var(--vio));-webkit-background-clip:text;background-clip:text;color:transparent}
-.lead{font-size:19px;color:#cfc8d8;max-width:34ch}
+.lead{font-size:19px;color:#cfc8d8;max-width:46ch}
 .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
 .btn{display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border-radius:4px;text-decoration:none;
   letter-spacing:.08em;text-transform:uppercase;font-size:14px;border:1px solid var(--line);transition:.2s}
@@ -50,48 +51,26 @@ h1 span{background:linear-gradient(90deg,#fff,#f2b7da 55%,var(--vio));-webkit-ba
 .btn:not(.primary):hover{border-color:var(--mag)}
 .btn small{opacity:.8;text-transform:none;letter-spacing:0}
 .meta{margin-top:16px;font-size:13px;color:var(--muted)}
-.art{position:relative;display:flex;justify-content:center}
-.art::after{content:"";position:absolute;inset:-10%;border-radius:50%;background:radial-gradient(rgba(224,64,154,.18),transparent 65%);z-index:-1}
 @keyframes float{50%{transform:translateY(-10px)}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important}}
 
-/* HUD mock */
-.hud{width:100%;animation:float 7s ease-in-out infinite;border:1px solid var(--line);border-radius:10px;padding:34px;position:relative;overflow:hidden;
-  background:linear-gradient(160deg,#1a1622,#0f0e14 60%),#111}
-.hud-grid{display:grid;grid-template-columns:1fr;max-width:620px;gap:34px;position:relative}
-@media(max-width:820px){.hud-grid{grid-template-columns:1fr}}
-.cap{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
-.target .name{display:flex;justify-content:space-between;font-size:18px;letter-spacing:.04em}
-.target .name em{font-style:normal;color:var(--muted);font-size:14px}
-.band{margin:8px 0 10px;height:14px;border-radius:2px;background:linear-gradient(90deg,rgba(224,64,154,.5),rgba(163,92,255,.25));
-  position:relative;box-shadow:0 0 18px rgba(224,64,154,.35)}
-.band i{position:absolute;left:0;top:50%;height:2px;width:64%;transform:translateY(-50%);background:#fff;
-  box-shadow:0 0 8px #fff,0 0 16px var(--mag);animation:hp 6s ease-in-out infinite}
-@keyframes hp{0%,100%{width:64%}50%{width:41%}}
-.casting{font-size:14px;color:#f2b7da}
-.debuffs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.debuffs span{font-size:12px;padding:3px 8px;border:1px solid var(--line);border-radius:3px;color:#cfc8d8}
-.debuffs span b{font-weight:400;color:var(--muted);margin-left:6px}
-.sc{margin-top:24px;border-left:2px solid var(--vio);padding:10px 14px;background:rgba(163,92,255,.08)}
-.sc strong{font-weight:400;font-size:17px;letter-spacing:.06em}
-.sc p{font-size:13px;color:var(--muted)}
-.party{display:flex;flex-direction:column;gap:10px}
-.mem{display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:center}
-.mem img{width:40px;height:40px}
-.mem .top{display:flex;justify-content:space-between;font-size:14px}
-.mem .top em{font-style:normal;font-size:11px;letter-spacing:.12em;padding:0 6px;border-radius:2px}
-.bars{display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-top:4px}
-.bar{height:3px;background:#2a2633;position:relative;border-radius:2px}
-.bar i{position:absolute;inset:0 auto 0 0;border-radius:2px}
-.bar.h i{background:var(--hp);box-shadow:0 0 6px rgba(255,255,255,.6)}
-.bar.m i{background:var(--mp)}.bar.t i{background:var(--tp)}
-.mem.low .bar.h i{background:var(--red);box-shadow:0 0 8px var(--red);animation:beat 1s infinite}
-.mem.low{animation:shake .35s infinite}
-@keyframes beat{50%{opacity:.4}}
-@keyframes shake{25%{transform:translateX(-1px)}75%{transform:translateX(1px)}}
-.tank{background:rgba(111,182,255,.18);color:#9fcbff}.heal{background:rgba(120,230,150,.16);color:#9fe8b2}
-.dd{background:rgba(216,32,58,.2);color:#ff98a6}.sup{background:rgba(243,199,74,.16);color:#f6d77f}
-.note{font-size:12px;color:var(--muted);margin-top:18px;position:relative}
+
+/* showcase */
+.show{padding:10px 0 90px}
+.modes{display:flex;justify-content:center;gap:0;margin:0 auto 22px;width:max-content;border:1px solid var(--line);border-radius:999px;padding:4px;background:#110f17}
+.modes button{font:inherit;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:none;border:0;padding:10px 24px;border-radius:999px;cursor:pointer;transition:.2s}
+.modes button[aria-pressed=true]{color:#fff;background:linear-gradient(90deg,var(--red),var(--mag));box-shadow:0 0 22px rgba(224,64,154,.4)}
+.modes button[data-mode=vex][aria-pressed=true]{background:linear-gradient(90deg,var(--mag),var(--vio));box-shadow:0 0 22px rgba(163,92,255,.45)}
+.frame{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 60px rgba(224,64,154,.12);background:#000}
+.frame img{display:block;width:100%;height:auto;transition:opacity .35s}
+.frame img.fade{opacity:0}
+.thumbs{display:flex;justify-content:center;gap:14px;margin-top:16px}
+.thumbs button{padding:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;cursor:pointer;background:none;opacity:.55;transition:.2s;width:160px}
+.thumbs button img{display:block;width:100%}
+.thumbs button[aria-pressed=true]{opacity:1;border-color:var(--mag);box-shadow:0 0 14px rgba(224,64,154,.4)}
+.modecap{text-align:center;color:var(--muted);font-size:15px;max-width:62ch;margin:18px auto 0}
+.modecap b{font-weight:400;color:var(--paper)}
+@media(max-width:600px){.thumbs button{width:44%}.modes button{padding:9px 16px}}
 
 /* sections */
 section{padding:70px 0;border-top:1px solid var(--line)}
@@ -130,6 +109,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
 <nav><div class="wrap">
   <a class="brand" href="#">Yuna<b>UI</b></a>
   <ul>
+    <li><a href="#showcase">Screenshots</a></li>
     <li><a href="#features">Features</a></li>
     <li><a href="https://github.com/YunasXI/yunaui">GitHub</a></li>
   </ul>
@@ -141,31 +121,22 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
     <h1><span>YunaUI</span></h1>
     <p class="lead">One modern interface for Final Fantasy XI: thin glowing bars, one clean font everywhere, and every piece placed exactly where you like.</p>
     <div class="cta">
-      <a class="btn primary" href="#features">See what's inside</a>
+      <a class="btn primary" href="#showcase">See it in game</a>
       <a class="btn" href="https://github.com/YunasXI/yunaui">GitHub</a>
     </div>
     <p class="meta">Made for CatsEyeXI · built for VanaCore, the CatsEyeXI client</p>
   </div>
-  <div class="art">
-  <div class="hud" aria-label="Illustration of YunaUI's target bar">
-    <div class="hud-grid">
-      <div class="target">
-        <div class="cap">Target</div>
-        <div class="name">Glavoid <em>12.4'</em></div>
-        <div class="band"><i></i></div>
-        <div class="casting">Readying · Gravity Wheel</div>
-        <div class="debuffs"><span>Dia II<b>1:42</b></span><span>Slow<b>2:10</b></span><span>Paralyze<b>0:48</b></span><span>Elegy<b>2:55</b></span></div>
-        <div class="sc">
-          <div class="cap" style="margin:0 0 4px">Magic Burst</div>
-          <strong>Light · Fire / Wind / Thunder</strong>
-          <p>Burst window open — 6s left</p>
-        </div>
-      </div>
-    </div>
-    <p class="note">An illustration of the style — the real thing runs in game.</p>
-  </div>
-  </div>
 </header>
+
+<div class="wrap show" id="showcase">
+  <div class="modes" role="group" aria-label="Interface style">
+    <button data-mode="hex" aria-pressed="true">Hex Link</button>
+    <button data-mode="vex" aria-pressed="false">Vex</button>
+  </div>
+  <div class="frame"><img id="shot" src="shots/hex-1.webp" width="1920" height="1222" alt="YunaUI in Hex Link mode, in combat in Yorcia Weald"></div>
+  <div class="thumbs" id="thumbs"></div>
+  <p class="modecap" id="modecap"></p>
+</div>
 
 
 <section id="features"><div class="wrap">
@@ -192,5 +163,22 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
   <span>Fan-made addon for CatsEyeXI. FINAL FANTASY XI is a trademark of Square Enix; not affiliated.</span>
 </div></footer>
 
+<script>
+const MODES={
+  hex:{shots:["hex-1","hex-2"],alt:"YunaUI in Hex Link mode",cap:"<b>Hex Link</b> — angular gold plates for the party, the skillchain banner across the top and your action bars in one clean strip."},
+  vex:{shots:["vex-1","vex-2"],alt:"YunaUI in Vex mode",cap:"<b>Vex</b> — slim glowing bars in magenta and violet, a long target line across the top and your HP / MP / TP front and centre."}
+};
+const shot=document.getElementById("shot"),thumbs=document.getElementById("thumbs"),cap=document.getElementById("modecap");
+let mode="hex";
+function show(name){shot.classList.add("fade");setTimeout(()=>{shot.src="shots/"+name+".webp";shot.onload=()=>shot.classList.remove("fade")},180);
+  thumbs.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.shot===name))}
+function setMode(m){mode=m;document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m));
+  shot.alt=MODES[m].alt;cap.innerHTML=MODES[m].cap;
+  thumbs.innerHTML=MODES[m].shots.map((n,i)=>`<button data-shot="${n}" aria-pressed="${i==0}" aria-label="Screenshot ${i+1}"><img src="shots/${n}-thumb.webp" alt=""></button>`).join("");
+  thumbs.querySelectorAll("button").forEach(b=>b.onclick=()=>show(b.dataset.shot));show(MODES[m].shots[0])}
+document.querySelectorAll(".modes button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+["hex-2","vex-1","vex-2"].forEach(n=>{const i=new Image();i.src="shots/"+n+".webp"});
+setMode("hex");
+</script>
 </body>
 </html>
