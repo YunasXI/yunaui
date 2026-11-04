@@ -37,7 +37,7 @@ nav ul a:hover{color:var(--paper)}
 @media(max-width:720px){nav ul li:not(:last-child){display:none}}
 
 /* hero */
-.hero{padding:110px 24px 100px;text-align:center}.hero .lead{margin:0 auto}.hero .cta{justify-content:center}
+.hero{padding:100px 24px 50px;text-align:center}.hero .lead{margin:0 auto}.hero .cta{justify-content:center}
 @media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:40px}}
 .kicker{font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:var(--mag)}
 h1{font-weight:400;font-size:clamp(48px,8vw,92px);line-height:1;letter-spacing:.02em;margin:14px 0 18px}
@@ -57,12 +57,14 @@ h1 span{background:linear-gradient(90deg,#fff,#f2b7da 55%,var(--vio));-webkit-ba
 
 /* showcase */
 .show{padding:0 24px}
+#video{padding-bottom:90px}
 .modes{display:flex;justify-content:center;gap:0;margin:0 auto 22px;width:max-content;border:1px solid var(--line);border-radius:999px;padding:4px;background:#110f17}
 .modes button{font:inherit;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:none;border:0;padding:10px 24px;border-radius:999px;cursor:pointer;transition:.2s}
 .modes button[aria-pressed=true]{color:#fff;background:linear-gradient(90deg,var(--red),var(--mag));box-shadow:0 0 22px rgba(224,64,154,.4)}
-.modes button[data-mode=vex][aria-pressed=true]{background:linear-gradient(90deg,var(--mag),var(--vio));box-shadow:0 0 22px rgba(163,92,255,.45)}
+.modes button[data-mode=vex][aria-pressed=true],.modes button[data-v=vex][aria-pressed=true]{background:linear-gradient(90deg,var(--mag),var(--vio));box-shadow:0 0 22px rgba(163,92,255,.45)}
 .frame{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 60px rgba(224,64,154,.12);background:#000}
-.frame img{display:block;width:100%;height:auto;transition:opacity .35s}
+.frame img,.frame video{display:block;width:100%;height:auto;transition:opacity .35s}
+.frame video{cursor:pointer;aspect-ratio:16/9;background:#000}
 .frame img.fade{opacity:0}
 .thumbs{display:flex;justify-content:center;gap:14px;margin-top:16px}
 .thumbs button{padding:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;cursor:pointer;background:none;opacity:.55;transition:.2s;width:160px}
@@ -141,6 +143,15 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
     <p class="meta">Made for CatsEyeXI · built for VanaCore, the CatsEyeXI client</p>
   </div>
 </header>
+<div class="wrap show" id="video">
+  <div class="modes" id="vmodes" role="group" aria-label="Video style">
+    <button data-v="hex" aria-pressed="true">Hex Link</button>
+    <button data-v="vex" aria-pressed="false">Vex</button>
+  </div>
+  <div class="frame"><video id="vid" src="video/hex.mp4" poster="video/hex-poster.jpg" width="1600" height="900" autoplay muted loop playsinline preload="metadata" aria-label="YunaUI in action, Hex Link mode"></video></div>
+  <p class="modecap">In a real fight on CatsEyeXI. Click the video to pause it.</p>
+</div>
+
 
 
 
@@ -253,13 +264,21 @@ const shot=document.getElementById("shot"),thumbs=document.getElementById("thumb
 let mode="hex";
 function show(name){shot.classList.add("fade");setTimeout(()=>{shot.src="shots/"+name+".webp";shot.onload=()=>shot.classList.remove("fade")},180);
   thumbs.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.shot===name))}
-function setMode(m){mode=m;document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m));
+function setMode(m){mode=m;document.querySelectorAll(".modes button[data-mode]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m));
   shot.alt=MODES[m].alt;cap.innerHTML=MODES[m].cap;
   thumbs.innerHTML=MODES[m].shots.map((n,i)=>`<button data-shot="${n}" aria-pressed="${i==0}" aria-label="Screenshot ${i+1}"><img src="shots/${n}-thumb.webp" alt=""></button>`).join("");
   thumbs.querySelectorAll("button").forEach(b=>b.onclick=()=>show(b.dataset.shot));show(MODES[m].shots[0])}
-document.querySelectorAll(".modes button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+document.querySelectorAll(".modes button[data-mode]").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 ["hex-2","vex-1","vex-2"].forEach(n=>{const i=new Image();i.src="shots/"+n+".webp"});
 setMode("hex");
+</script>
+<script>
+const vid=document.getElementById("vid");
+document.querySelectorAll("#vmodes button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#vmodes button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  const m=b.dataset.v;vid.poster="video/"+m+"-poster.jpg";vid.src="video/"+m+".mp4";
+  vid.setAttribute("aria-label","YunaUI in action, "+(m=="hex"?"Hex Link":"Vex")+" mode");vid.play().catch(()=>{})});
+vid.onclick=()=>vid.paused?vid.play().catch(()=>{}):vid.pause();
 </script>
 </body>
 </html>
