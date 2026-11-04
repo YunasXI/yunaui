@@ -91,6 +91,7 @@ M.JA = {
     ['Turned cards'] = '裏返したカード',
     ['Job box on the right'] = 'ジョブ枠を右に',
     ['Job tag on the name, TP on the left'] = 'ジョブタグを名前の前に・TPを左に',
+    ['No frame: HP and MP on one line'] = 'フレームなし：HPとMPを1行に',
     ['Keep YunaUI fonts: On'] = 'YunaUIのフォントを使う：オン',
     ['Keep YunaUI fonts: Off'] = 'YunaUIのフォントを使う：オフ',
     ["On: HP, MP, numbers and English names keep YunaUI's own fonts; menus, items and weapon skills stay in Japanese. Reload the addon after changing."] = 'オン：HP・MP・数字・英語の名前はYunaUIのフォントのまま、メニュー・アイテム・WSは日本語で表示します。変更後はアドオンを再読み込みしてください。',
