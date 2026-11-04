@@ -1,0 +1,6 @@
+// Cloudflare deploy settings for the yunaui.com website (only on the "website" branch).
+{
+  "name": "patient-disk-8c87",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "./docs" }
+}
