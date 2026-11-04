@@ -297,10 +297,11 @@ local function add_stat(c, dmg, kind)
 end
 
 local function actor_of(seg, who)
-    local a = seg.actors[who.key];
+    local k = (type(who.name) == 'string' and who.name ~= '') and who.name or who.key;   -- (one row per name: a trust called again gets a new id - August was listed twice, the rows on top of each other)
+    local a = seg.actors[k];
     if a == nil then
         a = { name = who.name, job = who.job, me = who.me, total = 0, cats = {}, abil = {} };
-        seg.actors[who.key] = a;
+        seg.actors[k] = a;
     end
     if who.job and who.job > 0 then a.job = who.job; end
     return a;
