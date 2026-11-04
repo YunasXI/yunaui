@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.33';
+addon.version = '1.1.34';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -2678,7 +2678,8 @@ function FIGHT.draw_fan(dl, sid, hx, hy, sc)
     local lh = imgui.GetTextLineHeight();
     local all = ImDrawFlags_RoundCornersAll or ImDrawCornerFlags_All or 15;
     local go = t >= (st.wait or 3);
-    local r = 10 * sc;
+    local hk = math.max(0.5, math.min(2.5, tonumber(cfg.fan_hub) or 1));   -- (TARGET > Fan timer size: the countdown the fan branches off)
+    local r = 10 * sc * hk;
     -- the hub
     if t < 0.6 then                                                  -- a ripple as the chain opens
         local q = t / 0.6;
@@ -2693,7 +2694,7 @@ function FIGHT.draw_fan(dl, sid, hx, hy, sc)
     local seg = 64;                                                  -- the ring: smooth, a glow under it
     local fr = math.max(0, math.min(1, f));
     for pass = 1, 2 do
-        local th, ca = (pass == 1) and 5 or 2.4, (pass == 1) and 0.22 or 1;
+        local th, ca = ((pass == 1) and 5 or 2.4) * math.sqrt(hk), (pass == 1) and 0.22 or 1;
         for k = 0, math.floor(seg * fr) - 1 do
             local a0, a1 = -math.pi / 2 + k / seg * math.pi * 2, -math.pi / 2 + (k + 1.15) / seg * math.pi * 2;   -- (a little overlap: no seams)
             DL.L(dl, hx + math.cos(a0) * r, hy + math.sin(a0) * r, hx + math.cos(a1) * r, hy + math.sin(a1) * r, U4(col[1], col[2], col[3], ca), th);
@@ -2703,7 +2704,7 @@ function FIGHT.draw_fan(dl, sid, hx, hy, sc)
         local secs = math.max(0, math.ceil(go and (st.dur - t) or ((st.wait or 3) - t)));
         local str = tostring(secs);
         local fs0 = FS or 1;
-        imgui.SetWindowFontScale(fs0 * 0.62);
+        imgui.SetWindowFontScale(fs0 * 0.62 * hk);
         local tw_, th_ = imgui.CalcTextSize(str);
         text(dl, math.floor(hx - tw_ / 2 + 0.5), math.floor(hy - th_ * 0.397 + 0.5), str, { col[1] * 0.3 + 0.7, col[2] * 0.3 + 0.7, col[3] * 0.3 + 0.7, 1 });   -- (the digits' own middle sits at 0.397 of the line in this font)
         imgui.SetWindowFontScale(fs0);
@@ -2728,7 +2729,7 @@ function FIGHT.draw_fan(dl, sid, hx, hy, sc)
         pcall(function() dl:PopClipRect(); end);
         return true;
     end
-    local R = 70 * sc;
+    local R = 70 * sc + (r - 10 * sc);                               -- (a bigger timer: the cards start further out)
     local a0 = math.rad(158);                                        -- the first one: left and a little down
     local da = math.rad(n > 1 and math.min(14, 46 / (n - 1)) or 0);   -- each next one further down (down-left, not straight left)
     do                                                               -- (its full size once open, for the guide)
@@ -6517,11 +6518,11 @@ function ALLY.vback(dl, m, i, x1, tip, ny, ch, sc, v, party, live, k, ta, tgt, l
             local oc_ = U4(0, 0, 0, 0.9 * v * ta);
             for q = 1, 4 do dl:AddLine(o_[q], o_[q % 4 + 1], oc_, 1.2); end
         end
-        local function num(cs, x0t, x2t, y0_, y1_, xl_)
+        local function num(cs, x0t, x2t, y0_, y1_, xl_, kh_)
             local h_ = y1_ - y0_;
             imgui.SetWindowFontScale(fs0 * 1.2);
             local _, nh_ = imgui.CalcTextSize(cs); nh_ = tonumber(nh_) or 10;
-            local k_ = math.max(0.5, math.min(1.15, h_ * 1.05 / nh_));
+            local k_ = math.max(0.5, math.min(1.15, h_ * (kh_ or 1.05) / nh_));
             imgui.SetWindowFontScale(fs0 * 1.2 * k_);
             local nw_, nh2 = imgui.CalcTextSize(cs); nw_, nh2 = tonumber(nw_) or 0, tonumber(nh2) or 10;
             local cx_ = (x0t + x2t) / 2 - lean((y0_ + y1_) / 2);
@@ -6534,7 +6535,7 @@ function ALLY.vback(dl, m, i, x1, tip, ny, ch, sc, v, party, live, k, ta, tgt, l
         end
         bar(L0, R0, hy0, hy0 + hh_, m.hpp, hc, h2);
         bar(mx0, R0, my0, my0 + mh_, m.mpp, { 0.86, 0.55, 1 }, { 0.62, 0.30, 0.92 });
-        local he_ = num(tostring(m.hp or 0), L0, R0, hy0, hy0 + hh_);
+        local he_ = num(tostring(m.hp or 0), L0, R0, hy0, hy0 + hh_, nil, 0.80);   -- (the HP number smaller than the bar: it filled it, too big)
         num(tostring(m.mp or 0), mx0, R0, my0, my0 + mh_, he_ + 4 * sc - lean(my0 + mh_ / 2) + lean(hy0 + hh_ / 2));
     end
     C.fullclip(dl);
@@ -16557,7 +16558,7 @@ function LAYOUT.apply(o, eq, dps)
     if dps and YUI_DPS and YUI_DPS.place then pcall(YUI_DPS.place, dps[1], dps[2]); end
 end
 -- What MY LAYOUTS keep besides the places: every size, length and thickness (and, since 1.1.33, every other setting too - see save_mine)
-LAYOUT.SIZES = { 'scale', 'target_scale', 'target_name_scale', 'target_w', 'target_bar_h', 'fan_scale', 'mb_scale', 'mbar_scale', 'ecast_scale',
+LAYOUT.SIZES = { 'scale', 'target_scale', 'target_name_scale', 'target_w', 'target_bar_h', 'fan_scale', 'fan_hub', 'mb_scale', 'mbar_scale', 'ecast_scale',
     'ecast_font', 'target_buff_scale', 'sub_scale', 'sub_w', 'enemy_scale', 'enemy_w', 'party_scale', 'icon_scale', 'ally1_scale',
     'ally1_icon', 'ally2_scale', 'ally2_icon', 'buff_scale', 'party_buff_scale', 'party_timer_scale', 'party_bar_h', 'party_vgap', 'ally_gap', 'card_h', 'card_w', 'party_tp_text', 'party_dist_text', 'party_dist_x', 'timers_text', 'timers_mob_scale', 'timers_mob_text', 'timers_mob_w', 'timers_mob_h', 'exp_scale', 'exp_w', 'cast_scale',
     'cast_w', 'cast_h', 'pet_scale', 'pet_w', 'gb_scale', 'gil_scale', 'exp_text', 'chat_size', 'chat_gap', 'timers_scale', 'timers_w', 'timers_h', 'strip_icon' };
@@ -18078,6 +18079,8 @@ local function draw_window()
                     hint('The enemy cast size is a share of the target bar size.');
                 else
                     row_slider('##yui_fansc', 'Skillchain fan size', 'fan_scale', 0.4, 2.0, 0.05, '%.2fx');
+                    if cfg.fan_hub == nil then cfg.fan_hub = 1.0; end
+                    row_slider('##yui_fanhub', 'Fan timer size', 'fan_hub', 0.5, 2.5, 0.05, '%.2fx');   -- (the countdown the fan branches off)
                     row_slider('##yui_mbsc', 'Magic Burst size', 'mb_scale', 0.5, 2.5, 0.05, '%.2fx');
                     row_slider('##yui_ecsc', 'Enemy cast size', 'ecast_scale', 0.4, 2.0, 0.05, '%.2fx');
                     row_slider('##yui_ecft', 'Enemy cast text', 'ecast_font', 0.5, 2.5, 0.05, '%.2fx');
