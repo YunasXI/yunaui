@@ -4975,16 +4975,19 @@ end
 -- Edit Mode: where a piece of size w x h at (x, y) should snap. Lines up its left / middle / right (and top / middle /
 -- bottom) with the other pieces' and with the screen's middle when within 10 px; otherwise the 8 px grid.
 EDIT.NAMES = { target_x = 'Target', sub_x = 'Sub-target', enemy_x = 'Enemies', party_x = 'Party', alliance_x = 'Alliance 1',
-               ally2_x = 'Alliance 2', exp_x = 'Exp', gil_x = 'Gil', bag_x = 'Bag', cast_x = 'Cast bar', timer_x = 'Timers',
+               ally2_x = 'Alliance 2', exp_x = 'Exp', gil_x = 'Gil', bag_x = 'Bag', cast_x = 'Cast bar', timer_x = 'Timers', mobt_x = 'Debuff timers',
                pet_x = 'Pet', doll_x = 'Equipment', strip_x = 'Gear strip', logo_x = 'Logo', mini_x = 'Logo',
                fan_x = 'Skillchain fan', ecast_x = 'Enemy cast', tn_x = 'Target name', mb_x = 'Magic Burst', fo_x = 'Skillchain', co_x = 'Enemy cast',
                loot_x = 'Treasure pool', mi_x = 'Monster info' };
 EDIT.HEXOFF = { mi_x = true, tn_x = true, mb_x = true, fo_x = true, co_x = true, fan_x = true, ecast_x = true, sub_x = true };   -- (Hex link: these follow the
-function EDIT.listed(k) return EDIT.NAMES[k] and not (cfg.target_fx == 'link' and EDIT.HEXOFF[k]); end       --  target bar or the top - not placed)
+function EDIT.listed(k)
+    if k == 'mobt_x' and not (cfg.timers_mob == true and cfg.timers_mob_sep == true) then return false; end   -- (the Debuff timers window: only while it's on)
+    return EDIT.NAMES[k] and not (cfg.target_fx == 'link' and EDIT.HEXOFF[k]);
+end       --  target bar or the top - not placed)
 EDIT.SIZE = { target_x = { 'target_scale', 0.6, 2.0 }, sub_x = { 'sub_scale', 0.6, 2.0 }, enemy_x = { 'enemy_scale', 0.6, 2.0 },
               party_x = { 'party_scale', 0.6, 2.0 }, alliance_x = { 'ally1_scale', 0.6, 2.0 }, ally2_x = { 'ally2_scale', 0.6, 2.0 },
               exp_x = { 'exp_scale', 0.5, 2.5 }, gil_x = { 'gb_scale', 0.5, 2.5 }, bag_x = { 'gb_scale', 0.5, 2.5 },
-              cast_x = { 'cast_scale', 0.6, 2.0 }, timer_x = { 'timers_scale', 0.6, 2.0 }, pet_x = { 'pet_scale', 0.6, 2.0 },
+              cast_x = { 'cast_scale', 0.6, 2.0 }, timer_x = { 'timers_scale', 0.6, 2.0 }, mobt_x = { 'timers_scale', 0.6, 2.0 }, pet_x = { 'pet_scale', 0.6, 2.0 },
               loot_x = { 'loot_scale', 0.6, 2.0 }, fan_x = { 'fan_scale', 0.4, 2.0 }, fo_x = { 'fan_scale', 0.4, 2.0 },
               ecast_x = { 'ecast_scale', 0.4, 2.0 }, co_x = { 'ecast_scale', 0.4, 2.0 }, mb_x = { 'mb_scale', 0.5, 2.5 },
               tn_x = { 'target_name_scale', 0.5, 2.5 }, mi_x = { 'mob_icon_scale', 0.5, 3.0 } };
@@ -6362,8 +6365,12 @@ end
 -- leaning as the card); in the card only the bars - HP, a thin MP under it moved ahead (always there, empty for a member
 -- with none), the bar's own colour, dark, where it's missing; the MP's number just after the HP's. The card shorter by
 -- the old name box, taken off its left (the right ends stay on the line); the leader's dots past its right end
-function C.tpk() return math.max(0.6, math.min(2.0, tonumber(cfg.party_tp_text) or 1)); end   -- (PARTY > TP text size: turned cards)
-function C.dk() return math.max(0.6, math.min(2.0, tonumber(cfg.party_dist_text) or 1)); end -- (PARTY > Distance text size: turned cards)
+function C.tlim()                                                    -- (how big these texts may get on the turned look in use: past it they ran into the bars)
+    if YUI_HEX and (cfg.turn_look == 'tab' or cfg.turn_look == 'bare') then return 1.15; end
+    return 1.4;
+end
+function C.tpk() return math.max(0.6, math.min(C.tlim(), tonumber(cfg.party_tp_text) or 1)); end   -- (PARTY > TP text size: turned cards)
+function C.dk() return math.max(0.6, math.min(C.tlim(), tonumber(cfg.party_dist_text) or 1)); end -- (PARTY > Distance text size: turned cards)
 function ALLY.vback(dl, m, i, x1, tip, ny, ch, sc, v, party, live, k, ta, tgt, low)
     local fs0 = (FS or 1) * 0.80;
     local hh = ch / 2 * k;
@@ -7230,7 +7237,7 @@ function ALLY.tabgeo1(m, i, x1, tip, y1, K, sc, k)
     local fs = (FS or 1) * 0.74;
     local dist = (cfg.party_dist ~= false and i ~= 0 and m.inzone) and (m.dist or (m.fake and (m.far and 32.4 or (3 + (i * 3.7) % 15))) or nil) or nil;
     local ds = dist and string.format('%.1f', dist) or nil;
-    imgui.SetWindowFontScale(fs * 0.80);
+    imgui.SetWindowFontScale(fs * 0.80 * C.dk());
     local dw = ds and (tonumber((imgui.CalcTextSize(ds))) or 0) or 0;
     imgui.SetWindowFontScale(fs);
     local _, nh = imgui.CalcTextSize('A'); nh = tonumber(nh) or 12;
@@ -7266,7 +7273,7 @@ function ALLY.nametop1(dl, T, m, i, y1, sc, a, nc, v, live, fill)
     for _, d in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { 1, 1 } }) do spaced(dl, x + d[1], ty + d[2], T.nm, oc, T.sp); end
     local nw = spaced(dl, x, ty, T.nm, U4(nc[1], nc[2], nc[3], a), T.sp);
     if T.ds then                                                     -- (how far, in yalms - pink out of range)
-        imgui.SetWindowFontScale(T.fs * 0.80);
+        imgui.SetWindowFontScale(T.fs * 0.80 * C.dk());
         local _, lh_ = imgui.CalcTextSize(T.ds);
         lh_ = tonumber(lh_) or T.nh;
         local dx, dy = x + nw + 6 * sc, ty + T.nh * 0.78 - lh_ * 0.78;   -- (on the name's baseline)
@@ -7404,7 +7411,7 @@ function ALLY.hexrow1(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     -- the job's tag (its click folds the buffs; while turning: a stripe of its colour)
     local tend;
     if bk then
-        imgui.SetWindowFontScale(fs0 * 0.78);                        -- (the TP where the tag is on the front: its block just as wide as "3000" -
+        imgui.SetWindowFontScale(fs0 * 0.78 * C.tpk());                        -- (the TP where the tag is on the front: its block just as wide as "3000" -
         local w3_ = tonumber((imgui.CalcTextSize('3000'))) or 30;    --  the name is over the plate now, the bars get the rest; the alliance's too)
         imgui.SetWindowFontScale(fs0);
         tend = x1 + K * 0.5 + 4 * sc + w3_ + 2 * sc;
@@ -7541,15 +7548,15 @@ function ALLY.hexrow1(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
                 DL.L(dl, vx_, y1 + 3 * sc, vx_, y2 - 3 * sc, lc_, 1);   -- (the divider beside the bars)
                 local full = tp >= 1000;
                 local cx_ = (x1 + K * 0.3 + vx_) / 2;
-                imgui.SetWindowFontScale(fs0 * 0.50);
+                imgui.SetWindowFontScale(fs0 * 0.50 * C.tpk());
                 local lw, lhh = imgui.CalcTextSize('TP');
-                imgui.SetWindowFontScale(fs0 * 0.78);
+                imgui.SetWindowFontScale(fs0 * 0.78 * C.tpk());
                 local ts = tostring(tp);
                 local vw, vh = imgui.CalcTextSize(ts);
                 lw, lhh, vw, vh = tonumber(lw) or 8, tonumber(lhh) or 8, tonumber(vw) or 20, tonumber(vh) or 12;
                 local top_ = ny - (lhh * 1.1 + vh) / 2 + 3 * sc;           -- (a little lower, "TP" clear of the number)
                 text(dl, cx_ - vw / 2, top_ + lhh * 1.1, ts, full and { GO2[1], GO2[2], GO2[3], v * ta } or { 0.80, 0.79, 0.88, 0.85 * v * ta });
-                imgui.SetWindowFontScale(fs0 * 0.50);
+                imgui.SetWindowFontScale(fs0 * 0.50 * C.tpk());
                 text(dl, cx_ - lw / 2, top_, 'TP', full and { GO[1], GO[2], GO[3], 0.85 * v * ta } or { 0.62, 0.60, 0.72, 0.8 * v * ta });
                 imgui.SetWindowFontScale(fs0);
             end
@@ -14706,27 +14713,32 @@ function TIMERS.colour(kind)
     if kind == 'mob' then return { 1.00, 0.45, 0.45 }; end           -- (a debuff on your target: red)
     return (type(cfg.timers_cja) == 'table') and cfg.timers_cja or { 1.00, 0.85, 0.45 };
 end
-function TIMERS.draw()
+function TIMERS.drawmob() return TIMERS.draw(true); end
+function TIMERS.draw(mobwin)
     if not cfg.timers then return; end
+    local sep = cfg.timers_mob == true and cfg.timers_mob_sep == true;   -- (TIMERS > In their own window: the debuffs moved out, placed anywhere)
+    if mobwin and not sep then return; end
     local pl = AshitaCore:GetMemoryManager():GetPlayer();
     if pl == nil or (pl:GetMainJob() or 0) == 0 then return; end
     local now = os.clock();
     if now >= TIMERS.at then TIMERS.at = now + 0.25; pcall(TIMERS.scan); end
     local list = {};
-    if TIMERS.preview then                                           -- the TIMERS tab is open: pretend ones
+    if TIMERS.preview and mobwin then                                -- (the TIMERS tab open: a pretend debuff, to place the window)
+        list[#list + 1] = { 'Dia II', (55 - (now % 50)) * 60, 120 * 60, 'mob', nil, 'Target' };
+    elseif TIMERS.preview then                                       -- the TIMERS tab is open: pretend ones
         for k, f in ipairs(TIMERS.FAKE) do
             local secs = f[2] * (0.9 - ((now * (f[2] > 600 and 20 or 1) / f[2] + k * 0.17) % 0.85));
             list[#list + 1] = { f[1], math.max(1, secs) * 60, f[2] * 60, f[3] };
         end
     else
         local gone = (now - TIMERS.snap) * 60;                      -- smooth between the looks
-        for _, src in ipairs({ TIMERS.abils, TIMERS.spells }) do
+        for _, src in ipairs(mobwin and {} or { TIMERS.abils, TIMERS.spells }) do
             for _, e in pairs(src) do
                 local left = e.left - gone;
                 if left > 0 then list[#list + 1] = { e.name, left, e.full, e.kind }; end
             end
         end
-        if cfg.timers_mob == true then                               -- TIMERS > Debuffs on your target: how long each lasts on it
+        if cfg.timers_mob == true and (mobwin or not sep) then       -- TIMERS > Debuffs on your target: how long each lasts on it
             pcall(function()
                 local idx = target_index();
                 if not idx or idx == 0 or idx >= 0x400 then return; end
@@ -14744,9 +14756,11 @@ function TIMERS.draw()
             end);
         end
     end
-    for name, r in pairs(TIMERS.ready) do
-        if cfg.timers_flash ~= false and now - r[1] < 2 then list[#list + 1] = { name, 0, 1, r[2], now - r[1] };
-        else TIMERS.ready[name] = nil; end
+    if not mobwin then
+        for name, r in pairs(TIMERS.ready) do
+            if cfg.timers_flash ~= false and now - r[1] < 2 then list[#list + 1] = { name, 0, 1, r[2], now - r[1] };
+            else TIMERS.ready[name] = nil; end
+        end
     end
     if #list == 0 then return; end
     table.sort(list, function(a, b) if a[2] ~= b[2] then return a[2] < b[2]; end return a[1] < b[1]; end);
@@ -14754,12 +14768,15 @@ function TIMERS.draw()
     local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.timers_scale) or 1);
     local w = (tonumber(cfg.timers_w) or 260) * sc;
     local bh = math.max(2, math.floor((tonumber(cfg.timers_h) or 4) * sc));
-    first_place('timer_x', 'timer_y', -w / 2 - 420, -420);
-    if plain_window('YunaUI Timers##yui_timers', 'timer_x', 'timer_y') then
+    local kx_, ky_ = mobwin and 'mobt_x' or 'timer_x', mobwin and 'mobt_y' or 'timer_y';
+    if mobwin then w = w * 1.35 * math.max(1, math.min(2.0, tonumber(cfg.timers_text) or 1)); end   -- (the debuff window wider: a spell, an arrow and a monster's name - and wider with bigger text)
+    if mobwin then first_place(kx_, ky_, -w / 2 - 420 + w + 30, -420);
+    else first_place('timer_x', 'timer_y', -w / 2 - 420, -420); end
+    if plain_window(mobwin and 'YunaUI Debuff timers##yui_mobt' or 'YunaUI Timers##yui_timers', kx_, ky_) then
         local dl = imgui.GetWindowDrawList();
         local x, y = imgui.GetCursorScreenPos();
         x, y = x + 8, y + 6;
-        local pushed = sized('chat', 15 * sc);
+        local pushed = sized('chat', 15 * sc * math.max(0.6, math.min(2.0, tonumber(cfg.timers_text) or 1)));   -- (TIMERS > Text size: the words alone)
         local lh = imgui.GetTextLineHeight();
         local rowh = lh + 3 * sc + bh + 6 * sc;
         local n = math.min(#list, maxn);
@@ -14780,9 +14797,15 @@ function TIMERS.draw()
                 outlined(dl, x + w - imgui.CalcTextSize(rs), ry, rs, { c[1], c[2], c[3], a });
                 DL.RF(dl, x, by, x + w, by + bh, U4(c[1], c[2], c[3], a * pulse), bh / 2);
             else
-                outlined(dl, x, ry, e[1], { tc[1], tc[2], tc[3], 1 });
+                local nm_ = e[1];                                    -- (a long name cut short before its time - never over it)
+                local room_ = w - imgui.CalcTextSize(TIMERS.clock(e[2])) - 8 * sc - ((e[6] and e[6] ~= '') and (imgui.CalcTextSize('Abc.') + 14 * sc) or 0);   -- (the spell's name first: the monster's gets what's left)
+                if imgui.CalcTextSize(nm_) > room_ then
+                    while #nm_ > 2 and imgui.CalcTextSize(nm_ .. '.') > room_ do nm_ = nm_:sub(1, -2); end
+                    nm_ = nm_ .. '.';
+                end
+                outlined(dl, x, ry, nm_, { tc[1], tc[2], tc[3], 1 });
                 if e[6] and e[6] ~= '' then                          -- (a debuff on your target: an arrow, then the monster it's on)
-                    local ax_ = x + imgui.CalcTextSize(e[1]) + 6 * sc;
+                    local ax_ = x + imgui.CalcTextSize(nm_) + 6 * sc;
                     local ay_ = ry + lh * 0.55;
                     local tw_, th_ = 5 * sc, 3.5 * sc;                    -- (a small white triangle, a light black edge - no shaft)
                     local P1, P2, P3 = { ax_ + tw_, ay_ }, { ax_, ay_ - th_ }, { ax_, ay_ + th_ };
@@ -14806,7 +14829,7 @@ function TIMERS.draw()
         end
         unsized(pushed);
         imgui.Dummy({ w + 16, (cfg.timers_up and maxn or n) * rowh + 10 });
-        end_plain('timer_x', 'timer_y');
+        end_plain(kx_, ky_);
     else
         imgui.End(); imgui.PopStyleVar(2);
     end
@@ -16497,7 +16520,7 @@ end
 -- What MY LAYOUTS keep besides the places: every size, length and thickness (the look, colours and on / off stay as they are)
 LAYOUT.SIZES = { 'scale', 'target_scale', 'target_name_scale', 'target_w', 'target_bar_h', 'fan_scale', 'mb_scale', 'mbar_scale', 'ecast_scale',
     'ecast_font', 'target_buff_scale', 'sub_scale', 'sub_w', 'enemy_scale', 'enemy_w', 'party_scale', 'icon_scale', 'ally1_scale',
-    'ally1_icon', 'ally2_scale', 'ally2_icon', 'buff_scale', 'party_buff_scale', 'party_timer_scale', 'party_bar_h', 'party_vgap', 'ally_gap', 'card_h', 'card_w', 'party_tp_text', 'party_dist_text', 'party_dist_x', 'exp_scale', 'exp_w', 'cast_scale',
+    'ally1_icon', 'ally2_scale', 'ally2_icon', 'buff_scale', 'party_buff_scale', 'party_timer_scale', 'party_bar_h', 'party_vgap', 'ally_gap', 'card_h', 'card_w', 'party_tp_text', 'party_dist_text', 'party_dist_x', 'timers_text', 'exp_scale', 'exp_w', 'cast_scale',
     'cast_w', 'cast_h', 'pet_scale', 'pet_w', 'gb_scale', 'gil_scale', 'exp_text', 'chat_size', 'chat_gap', 'timers_scale', 'timers_w', 'timers_h', 'strip_icon' };
 LAYOUT.EQ_SIZES = { 'sb_scale', 'sb_thick', 'sb_hp_size', 'sb_hp_len', 'sb_mp_thick', 'sb_mp_size', 'sb_mp_len', 'sb_tp_size', 'sb_tp_len' };
 function LAYOUT.use(name) LAYOUT.apply(LAYOUT.build(name)); LAYOUT.msg = 'Layout: ' .. name; end
@@ -18058,17 +18081,19 @@ local function draw_window()
             end);
             row_switch('##yui_pp', 'Pretend members (to place it)', 'party', 'Fills the empty places so you can place and size the list when alone.', PREVIEW, function() end);
             row_slider('##yui_s_p', 'Size', 'party_scale', 0.6, 2.0, 0.05, '%.2fx');
-            if cfg.card_w == nil then cfg.card_w = 1.0; end
-            if cfg.card_h == nil then cfg.card_h = 1.0; end
-            row_slider('##yui_s_pcw', 'Turned card length', 'card_w', 0.6, 1.6, 0.05, '%.2fx');
-            row_slider('##yui_s_pch', 'Turned card height', 'card_h', 0.7, 1.6, 0.05, '%.2fx');
-            if cfg.party_tp_text == nil then cfg.party_tp_text = 1.0; end
-            if cfg.party_dist_text == nil then cfg.party_dist_text = 1.0; end
-            row_slider('##yui_s_ptpt', 'TP text size', 'party_tp_text', 0.6, 2.0, 0.05, '%.2fx');
-            row_slider('##yui_s_pdt', 'Distance text size', 'party_dist_text', 0.6, 2.0, 0.05, '%.2fx');
-            if not YUI_HEX then                                      -- (Vex: the yalms after the name, slid back or forward)
-                if cfg.party_dist_x == nil then cfg.party_dist_x = 0; end
-                row_slider('##yui_s_pdx', 'Distance position', 'party_dist_x', -40, 120, 1, '%d');
+            if ALLY.ALLB then                                        -- (the turned cards' own settings: only while the cards are turned - they change only them)
+                if cfg.card_w == nil then cfg.card_w = 1.0; end
+                if cfg.card_h == nil then cfg.card_h = 1.0; end
+                row_slider('##yui_s_pcw', 'Turned card length', 'card_w', 0.6, 1.6, 0.05, '%.2fx');
+                row_slider('##yui_s_pch', 'Turned card height', 'card_h', 0.7, 1.6, 0.05, '%.2fx');
+                if cfg.party_tp_text == nil then cfg.party_tp_text = 1.0; end
+                if cfg.party_dist_text == nil then cfg.party_dist_text = 1.0; end
+                row_slider('##yui_s_ptpt', 'TP text size', 'party_tp_text', 0.6, C.tlim(), 0.05, '%.2fx');
+                if cfg.party_dist ~= false then row_slider('##yui_s_pdt', 'Distance text size', 'party_dist_text', 0.6, C.tlim(), 0.05, '%.2fx'); end
+                if not YUI_HEX and cfg.party_dist ~= false then      -- (Vex: the yalms after the name, slid back or forward)
+                    if cfg.party_dist_x == nil then cfg.party_dist_x = 0; end
+                    row_slider('##yui_s_pdx', 'Distance position', 'party_dist_x', -40, 120, 1, '%d');
+                end
             end
             if cfg.party_vgap == nil then cfg.party_vgap = 0; end
             if cfg.ally_gap == nil then cfg.ally_gap = 0; end
@@ -18096,11 +18121,13 @@ local function draw_window()
                 if cfg.turn_look == nil then cfg.turn_look = 'box'; end
                 row_pick('##yui_pturn', 'Turned cards', 'turn_look', { { 'box', 'Job box on the right' }, { 'tab', 'Job tag on the name, TP on the left' }, { 'bare', 'No frame: HP and MP on one line' } });
             end
-            if cfg.target_fx ~= 'link' then                          -- (Hex link: the plates' bars, front and turned, are their own size - these did nothing there)
+            if cfg.target_fx ~= 'link' and not ALLY.ALLB then        -- (Vex, cards not turned only: Hex link's plates and the turned cards' bars are their own size)
                 row_slider('##yui_phth', 'HP bar thickness', 'party_hp_th', 0.5, 3.0, 0.05, '%.2fx');
                 row_slider('##yui_pmth', 'MP bar thickness', 'party_mp_th', 0.5, 3.0, 0.05, '%.2fx');
             end
             row_switch('##yui_pdist', 'Distance', 'party_dist', 'On: how far each member is (in yalms), small, after the name. Pink when out of range.');
+            hint(ALLY.ALLB and 'Turned cards: Turned card length / height, TP text size and the distance settings change only them. Turn them back (the card icon by PARTY) for the other card settings.'
+                or 'Turn the cards over (the card icon by PARTY) for their own settings: length, height, TP and distance text.');
             row_switch('##yui_pzone', 'Zone of members elsewhere', 'party_zone', 'On: a member in another zone shows where they are, under their name (party and alliance).');
             if cfg.party_invite == nil then cfg.party_invite = true; end
             row_switch('##yui_pinv', 'Party invite alert', 'party_invite', 'On: when someone invites you to a party or alliance, a card shows who (with /join to accept); if you are in another window, the game flashes in the taskbar. Move the card in Edit Mode (it sits with the item popup). Its sound: SOUND ALERTS.');
@@ -18302,11 +18329,16 @@ local function draw_window()
             row_switch('##yui_tma', 'Job abilities', 'timers_abils');
             row_switch('##yui_tms', 'Spells', 'timers_spells');
             row_switch('##yui_tmmob', 'Debuffs on your target', 'timers_mob', 'On: the debuffs YOU put on the monster you target (Dia, Slow, Paralyze...) show here too, in red, with how long they have left - so you know when to cast them again.');
+            if cfg.timers_mob == true then
+                row_switch('##yui_tmsep', 'Debuffs in their own window', 'timers_mob_sep', 'On: the debuffs on your target get a window of their own - drag it anywhere (Edit Mode, or here while this tab is open). Off: they show in the Timers list.');
+            end
             row_switch('##yui_tmr', 'READY flash', 'timers_flash', 'A short flash with READY when a cooldown comes back.');
             row_switch('##yui_tmu', 'Grow upward', 'timers_up', 'On: the shortest sits at the bottom and the list grows up from there.');
             row_pick('##yui_tmf', 'Time', 'timers_fmt', { { 'short', '4:51' }, { 'clock', '00:04:51' } });
             section('SIZE');
             row_slider('##yui_tmsc', 'Size', 'timers_scale', 0.6, 2.0, 0.05, '%.2fx');
+            if cfg.timers_text == nil then cfg.timers_text = 1.0; end
+            row_slider('##yui_tmtx', 'Text size', 'timers_text', 0.6, 2.0, 0.05, '%.2fx');   -- (the names and times only - the bars stay)
             row_slider('##yui_tmw', 'Length', 'timers_w', 120, 600, 10, '%d px');
             row_slider('##yui_tmh', 'Thickness', 'timers_h', 2, 12, 1, '%d px');
             row_slider('##yui_tmn', 'Most shown', 'timers_max', 3, 20, 1, '%d');
@@ -22608,7 +22640,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         elseif EDIT.was then PREVIEW.party, PREVIEW.alliance = false, false; end
         EDIT.was = EDIT.on;
         C.PF = C.PF or { [draw_target] = 'tgt', [draw_subtarget] = 'sub', [draw_enemies] = 'enemy', [draw_chat] = 'chat',
-            [draw_party] = 'party', [draw_exp] = 'exp', [draw_cast] = 'cast', [PET.draw] = 'pet', [TIMERS.draw] = 'timers',
+            [draw_party] = 'party', [draw_exp] = 'exp', [draw_cast] = 'cast', [PET.draw] = 'pet', [TIMERS.draw] = 'timers', [TIMERS.drawmob] = 'timers',
             [C.head_bars] = 'heads', [draw_strip] = 'strip', [draw_gil] = 'gil', [draw_bag] = 'bag', [YMAP.draw] = 'map', [C.macrobar] = 'mbar', [C.loot_win] = 'loot', [C.got_win] = 'got', [C.modesw] = 'modesw',
             [EDIT.G.dim] = 'all', [EDIT.G.draw] = 'all', [EDIT.G.splash] = 'all', [C.MD.draw] = 'all' };   -- (the guide: which slide shows what)
         piece(EDIT.G.dim);                                           -- (the guide: the screen dimmed under the slide's pieces)
@@ -22652,6 +22684,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(YMAP.draw);                                            -- the minimap (BARS > MINIMAP)
         TIMERS.preview = (ui.open and ui.tab == 7) or EDIT.on;      -- the TIMERS tab (and Edit Mode) show a preview of it
         piece(TIMERS.draw);
+        piece(TIMERS.drawmob);                                       -- (TIMERS > Debuffs in their own window)
         piece(C.loot_win);                                           -- (TREASURE POOL)
         piece(C.got_win);                                            -- (TREASURE POOL > Item popup)
         piece(C.bubble_draw);                                        -- (CHAT > Speech bubbles)
