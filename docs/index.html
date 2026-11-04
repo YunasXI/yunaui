@@ -7,8 +7,7 @@
 <meta name="description" content="YunaUI is a complete, clean HUD for CatsEyeXI (VanaCore): target bar, skillchains, party and alliances, chat, damage meter and an Edit Mode to place everything.">
 <meta property="og:title" content="YunaUI — a modern HUD for CatsEyeXI">
 <meta property="og:description" content="Thin glowing bars, one font everywhere, every piece where you want it.">
-<meta property="og:image" content="assets/logo.png">
-<link rel="icon" href="assets/favicon.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230d0c12'/%3E%3Cpath d='M16 14l16 20 16-20M32 34v16' stroke='%23e0409a' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
 @font-face{font-family:"Adventor";src:url("assets/texgyreadventor-regular.otf") format("opentype");font-display:swap}
 :root{
@@ -37,8 +36,8 @@ nav ul a:hover{color:var(--paper)}
 @media(max-width:720px){nav ul li:not(:last-child){display:none}}
 
 /* hero */
-.hero{padding:72px 24px 40px;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
-@media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:40px}.art img{width:70%}}
+.hero{padding:72px 24px 90px;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+@media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:40px}}
 .kicker{font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:var(--mag)}
 h1{font-weight:400;font-size:clamp(48px,8vw,92px);line-height:1;letter-spacing:.02em;margin:14px 0 18px}
 h1 span{background:linear-gradient(90deg,#fff,#f2b7da 55%,var(--vio));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -52,15 +51,13 @@ h1 span{background:linear-gradient(90deg,#fff,#f2b7da 55%,var(--vio));-webkit-ba
 .btn small{opacity:.8;text-transform:none;letter-spacing:0}
 .meta{margin-top:16px;font-size:13px;color:var(--muted)}
 .art{position:relative;display:flex;justify-content:center}
-.art img{width:min(420px,90%);filter:drop-shadow(0 0 40px rgba(216,32,58,.25));animation:float 7s ease-in-out infinite}
-.art::after{content:"";position:absolute;inset:15% 10%;border-radius:50%;background:radial-gradient(rgba(224,64,154,.18),transparent 65%);z-index:-1}
+.art::after{content:"";position:absolute;inset:-10%;border-radius:50%;background:radial-gradient(rgba(224,64,154,.18),transparent 65%);z-index:-1}
 @keyframes float{50%{transform:translateY(-10px)}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important}}
 
 /* HUD mock */
-.hud{margin:30px 0 80px;border:1px solid var(--line);border-radius:10px;padding:34px;position:relative;overflow:hidden;
+.hud{width:100%;animation:float 7s ease-in-out infinite;border:1px solid var(--line);border-radius:10px;padding:34px;position:relative;overflow:hidden;
   background:linear-gradient(160deg,#1a1622,#0f0e14 60%),#111}
-.hud::before{content:"";position:absolute;inset:0;background:url("assets/logo.png") right -60px bottom -80px/360px no-repeat;opacity:.06}
 .hud-grid{display:grid;grid-template-columns:1fr;max-width:620px;gap:34px;position:relative}
 @media(max-width:820px){.hud-grid{grid-template-columns:1fr}}
 .cap{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
@@ -131,7 +128,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
 <body>
 
 <nav><div class="wrap">
-  <a class="brand" href="#"><img src="assets/logo.png" alt="">Yuna<b>UI</b></a>
+  <a class="brand" href="#">Yuna<b>UI</b></a>
   <ul>
     <li><a href="#features">Features</a></li>
     <li><a href="https://github.com/YunasXI/yunaui">GitHub</a></li>
@@ -149,10 +146,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
     </div>
     <p class="meta">Made for CatsEyeXI · built for VanaCore, the CatsEyeXI client</p>
   </div>
-  <div class="art"><img src="assets/logo.png" alt="YunaUI emblem: a samurai with a red-bladed katana"></div>
-</header>
-
-<div class="wrap">
+  <div class="art">
   <div class="hud" aria-label="Illustration of YunaUI's target bar">
     <div class="hud-grid">
       <div class="target">
@@ -170,7 +164,9 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
     </div>
     <p class="note">An illustration of the style — the real thing runs in game.</p>
   </div>
-</div>
+  </div>
+</header>
+
 
 <section id="features"><div class="wrap">
   <h2>Everything on one screen</h2>
