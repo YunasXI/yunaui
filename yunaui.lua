@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.31';
+addon.version = '1.1.32';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -11486,21 +11486,25 @@ local function chat_add(mode, raw)
                 if not is_combat(mode) then pcall(C.chat_pop, mode, raw_line); end   -- (CHAT > Speech bubbles)
                 local pre = cfg.chat_time and C.ts_text(os.time()) or '';
                 line = pre .. line;
+                local motd_ = false;                                 -- (the message of the day: its linkshell's tab only, not All)
                 do                                                   -- (a linkshell's message of the day, at login: "[1]<Shell: Who>", its text, the date -
                     local M_ = C.MOTD;                               --  the game prints it outside the linkshell's own mode: it went only to All)
                     local ls_ = raw_line:match('^%[([12])%]%s*<[^>]*:[^>]*>');
+                    motd_ = false;
                     if ls_ then
+                        motd_ = true;
                         C.MOTD = { mode = (ls_ == '1') and 6 or 213, n = 4, t = os.clock() };
                         mode = C.MOTD.mode;
                     elseif M_ and M_.n > 0 and os.clock() - M_.t < 3 and not TAB_OF[mode] and not is_combat(mode) then
                         mode = M_.mode;
+                        motd_ = true;
                         M_.n = M_.n - 1;
                         if raw_line:match('%(%d%d%d%d, %a+%.? %d+ %d+:%d+:%d+%)') then M_.n = 0; end   -- (its date: the message ends there)
                     end
                 end
                 local cat_ = cat_of(mode);                            -- (an addon's own message - "[Name] ..." on a channel nobody talks on: Addons)
                 if cat_ ~= 'combat' and raw_line:match('^%[[%a][%w%s%._:%-]*%]') then cat_ = raw_line:match('^%[PartyFinder%]') and 'finder' or 'addon'; end   -- (the server's Party Finder: its own colour - the addons' blue was the party's)   -- (any channel: players' lines never start so - a linkshell's is "[1]<Name>")
-                CHATLOG.add(log_, { text = line, raw = raw_line, cat = cat_, t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode, tslen = #pre, ctype = ctype });
+                CHATLOG.add(log_, { text = line, raw = raw_line, cat = cat_, t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode, tslen = #pre, ctype = ctype, motd = motd_ or nil });
                 if YUI_JP_CFE and is_combat(mode) then pcall(YUI_JP_CFE, log_[#log_]); end   -- [JP]
                 if n_ == 1 then chat_seen_new(mode); end
                 if n_ == 1 and cfg.chat3 and C.c3_has(log_[#log_]) then   -- (a line for the third chat: its ground darkens a moment;
@@ -12897,6 +12901,7 @@ local function draw_chat(n)
         while i >= 1 and ly > y - lh do
             local e = log[i];
             if tab ~= 1 and TAB_OF[e.mode or 0] ~= tab then i = i - 1; goto next_line; end
+            if tab == 1 and e.motd then i = i - 1; goto next_line; end   -- (a linkshell's message of the day: in its own tab, not All)
             if tab == 1 and e.mode == C.ROE_MODE and not cfg.chat_roe_all then i = i - 1; goto next_line; end   -- (RoE: only in its own tab - unless CHAT > Records of Eminence in All)
             if only and ((only == 'combat') ~= is_combat(e.mode or 0)) then i = i - 1; goto next_line; end
             if n == 3 then                                           -- (CHAT > Third chat: only the channels picked for it...)
