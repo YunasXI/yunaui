@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.30';
+addon.version = '1.1.31';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -11486,6 +11486,18 @@ local function chat_add(mode, raw)
                 if not is_combat(mode) then pcall(C.chat_pop, mode, raw_line); end   -- (CHAT > Speech bubbles)
                 local pre = cfg.chat_time and C.ts_text(os.time()) or '';
                 line = pre .. line;
+                do                                                   -- (a linkshell's message of the day, at login: "[1]<Shell: Who>", its text, the date -
+                    local M_ = C.MOTD;                               --  the game prints it outside the linkshell's own mode: it went only to All)
+                    local ls_ = raw_line:match('^%[([12])%]%s*<[^>]*:[^>]*>');
+                    if ls_ then
+                        C.MOTD = { mode = (ls_ == '1') and 6 or 213, n = 4, t = os.clock() };
+                        mode = C.MOTD.mode;
+                    elseif M_ and M_.n > 0 and os.clock() - M_.t < 3 and not TAB_OF[mode] and not is_combat(mode) then
+                        mode = M_.mode;
+                        M_.n = M_.n - 1;
+                        if raw_line:match('%(%d%d%d%d, %a+%.? %d+ %d+:%d+:%d+%)') then M_.n = 0; end   -- (its date: the message ends there)
+                    end
+                end
                 local cat_ = cat_of(mode);                            -- (an addon's own message - "[Name] ..." on a channel nobody talks on: Addons)
                 if cat_ ~= 'combat' and raw_line:match('^%[[%a][%w%s%._:%-]*%]') then cat_ = raw_line:match('^%[PartyFinder%]') and 'finder' or 'addon'; end   -- (the server's Party Finder: its own colour - the addons' blue was the party's)   -- (any channel: players' lines never start so - a linkshell's is "[1]<Name>")
                 CHATLOG.add(log_, { text = line, raw = raw_line, cat = cat_, t = os.clock(), t0 = os.clock(), ts = os.time(), mode = mode, tslen = #pre, ctype = ctype });
@@ -14710,7 +14722,7 @@ end
 function TIMERS.colour(kind)
     if kind == 'sp' then return (type(cfg.timers_csp) == 'table') and cfg.timers_csp or { 1.00, 0.45, 0.75 }; end
     if kind == 'ma' then return (type(cfg.timers_cma) == 'table') and cfg.timers_cma or { 0.55, 0.80, 1.00 }; end
-    if kind == 'mob' then return { 1.00, 0.45, 0.45 }; end           -- (a debuff on your target: red)
+    if kind == 'mob' then return (type(cfg.timers_cmob) == 'table') and cfg.timers_cmob or { 1.00, 0.45, 0.45 }; end   -- (a debuff on your target: red, or yours)
     return (type(cfg.timers_cja) == 'table') and cfg.timers_cja or { 1.00, 0.85, 0.45 };
 end
 function TIMERS.drawmob() return TIMERS.draw(true); end
@@ -14768,15 +14780,22 @@ function TIMERS.draw(mobwin)
     local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.timers_scale) or 1);
     local w = (tonumber(cfg.timers_w) or 260) * sc;
     local bh = math.max(2, math.floor((tonumber(cfg.timers_h) or 4) * sc));
+    local tk_ = math.max(0.6, math.min(2.0, tonumber(cfg.timers_text) or 1));   -- (the words' size)
+    if mobwin then                                                   -- (the debuff window: its own size, length, thickness and text)
+        sc = (tonumber(cfg.scale) or 1) * math.max(0.6, math.min(2.0, tonumber(cfg.timers_mob_scale) or tonumber(cfg.timers_scale) or 1));
+        w = (tonumber(cfg.timers_mob_w) or ((tonumber(cfg.timers_w) or 260) * 1.35)) * sc;
+        bh = math.max(2, math.floor((tonumber(cfg.timers_mob_h) or tonumber(cfg.timers_h) or 4) * sc));
+        tk_ = math.max(0.6, math.min(2.0, tonumber(cfg.timers_mob_text) or tonumber(cfg.timers_text) or 1));
+    end
     local kx_, ky_ = mobwin and 'mobt_x' or 'timer_x', mobwin and 'mobt_y' or 'timer_y';
-    if mobwin then w = w * 1.35 * math.max(1, math.min(2.0, tonumber(cfg.timers_text) or 1)); end   -- (the debuff window wider: a spell, an arrow and a monster's name - and wider with bigger text)
+    if mobwin and not cfg.timers_mob_w then w = w * math.max(1, tk_); end   -- (wider with bigger text, unless you set its length)
     if mobwin then first_place(kx_, ky_, -w / 2 - 420 + w + 30, -420);
     else first_place('timer_x', 'timer_y', -w / 2 - 420, -420); end
     if plain_window(mobwin and 'YunaUI Debuff timers##yui_mobt' or 'YunaUI Timers##yui_timers', kx_, ky_) then
         local dl = imgui.GetWindowDrawList();
         local x, y = imgui.GetCursorScreenPos();
         x, y = x + 8, y + 6;
-        local pushed = sized('chat', 15 * sc * math.max(0.6, math.min(2.0, tonumber(cfg.timers_text) or 1)));   -- (TIMERS > Text size: the words alone)
+        local pushed = sized('chat', 15 * sc * tk_);                -- (TIMERS > Text size: the words alone)
         local lh = imgui.GetTextLineHeight();
         local rowh = lh + 3 * sc + bh + 6 * sc;
         local n = math.min(#list, maxn);
@@ -14810,7 +14829,8 @@ function TIMERS.draw(mobwin)
                     local tw_, th_ = 5 * sc, 3.5 * sc;                    -- (a small white triangle, a light black edge - no shaft)
                     local P1, P2, P3 = { ax_ + tw_, ay_ }, { ax_, ay_ - th_ }, { ax_, ay_ + th_ };
                     DL.TF(dl, P1[1] + 1, P1[2], P2[1] - 0.7, P2[2] - 1, P3[1] - 0.7, P3[2] + 1, U4(0, 0, 0, 0.7));
-                    DL.TF(dl, P1[1], P1[2], P2[1], P2[2], P3[1], P3[2], U4(1, 1, 1, 0.95));
+                    local ac_ = (type(cfg.timers_carrow) == 'table') and cfg.timers_carrow or { 1, 1, 1 };
+                    DL.TF(dl, P1[1], P1[2], P2[1], P2[2], P3[1], P3[2], U4(ac_[1], ac_[2], ac_[3], 0.95));
                     local mx0_ = ax_ + tw_ + 6 * sc;
                     local room_ = (x + w - imgui.CalcTextSize(TIMERS.clock(e[2])) - 8 * sc) - mx0_;
                     local mn_ = e[6];
@@ -14818,7 +14838,8 @@ function TIMERS.draw(mobwin)
                         while #mn_ > 2 and imgui.CalcTextSize(mn_ .. '.') > room_ do mn_ = mn_:sub(1, -2); end
                         mn_ = mn_ .. '.';
                     end
-                    outlined(dl, mx0_, ry, mn_, { 0.92, 0.88, 0.96, 1 });
+                    local mc_ = (type(cfg.timers_cmn) == 'table') and cfg.timers_cmn or { 0.92, 0.88, 0.96 };
+                    outlined(dl, mx0_, ry, mn_, { mc_[1], mc_[2], mc_[3], 1 });
                 end
                 local ts = TIMERS.clock(e[2]);
                 local soon = e[2] < 600 and (0.75 + 0.25 * math.sin(now * 8)) or 1;   -- the last 10 s blink softly
@@ -16520,7 +16541,7 @@ end
 -- What MY LAYOUTS keep besides the places: every size, length and thickness (the look, colours and on / off stay as they are)
 LAYOUT.SIZES = { 'scale', 'target_scale', 'target_name_scale', 'target_w', 'target_bar_h', 'fan_scale', 'mb_scale', 'mbar_scale', 'ecast_scale',
     'ecast_font', 'target_buff_scale', 'sub_scale', 'sub_w', 'enemy_scale', 'enemy_w', 'party_scale', 'icon_scale', 'ally1_scale',
-    'ally1_icon', 'ally2_scale', 'ally2_icon', 'buff_scale', 'party_buff_scale', 'party_timer_scale', 'party_bar_h', 'party_vgap', 'ally_gap', 'card_h', 'card_w', 'party_tp_text', 'party_dist_text', 'party_dist_x', 'timers_text', 'exp_scale', 'exp_w', 'cast_scale',
+    'ally1_icon', 'ally2_scale', 'ally2_icon', 'buff_scale', 'party_buff_scale', 'party_timer_scale', 'party_bar_h', 'party_vgap', 'ally_gap', 'card_h', 'card_w', 'party_tp_text', 'party_dist_text', 'party_dist_x', 'timers_text', 'timers_mob_scale', 'timers_mob_text', 'timers_mob_w', 'timers_mob_h', 'exp_scale', 'exp_w', 'cast_scale',
     'cast_w', 'cast_h', 'pet_scale', 'pet_w', 'gb_scale', 'gil_scale', 'exp_text', 'chat_size', 'chat_gap', 'timers_scale', 'timers_w', 'timers_h', 'strip_icon' };
 LAYOUT.EQ_SIZES = { 'sb_scale', 'sb_thick', 'sb_hp_size', 'sb_hp_len', 'sb_mp_thick', 'sb_mp_size', 'sb_mp_len', 'sb_tp_size', 'sb_tp_len' };
 function LAYOUT.use(name) LAYOUT.apply(LAYOUT.build(name)); LAYOUT.msg = 'Layout: ' .. name; end
@@ -18352,6 +18373,28 @@ local function draw_window()
                 save();
             end
             hint('Drag the list to move it.');
+            if cfg.timers_mob == true then                           -- (the debuffs on your target: their own colours - and sizes in their own window)
+                section('DEBUFFS ON YOUR TARGET');
+                if cfg.timers_mob_sep == true then
+                    if cfg.timers_mob_scale == nil then cfg.timers_mob_scale = tonumber(cfg.timers_scale) or 1; end
+                    if cfg.timers_mob_text == nil then cfg.timers_mob_text = tonumber(cfg.timers_text) or 1; end
+                    if cfg.timers_mob_w == nil then cfg.timers_mob_w = math.floor((tonumber(cfg.timers_w) or 260) * 1.35); end
+                    if cfg.timers_mob_h == nil then cfg.timers_mob_h = tonumber(cfg.timers_h) or 4; end
+                    row_slider('##yui_tmbsc', 'Size', 'timers_mob_scale', 0.6, 2.0, 0.05, '%.2fx');
+                    row_slider('##yui_tmbtx', 'Text size', 'timers_mob_text', 0.6, 2.0, 0.05, '%.2fx');
+                    row_slider('##yui_tmbw', 'Length', 'timers_mob_w', 160, 700, 10, '%d px');
+                    row_slider('##yui_tmbh', 'Thickness', 'timers_mob_h', 2, 12, 1, '%d px');
+                else
+                    hint('Their sizes are the Timers list\'s. Turn on Debuffs in their own window for sizes of their own.');
+                end
+                colour_row('timers_cmob', 'Debuffs', { 1.00, 0.45, 0.45 }, true);
+                colour_row('timers_cmn', 'Monster name', { 0.92, 0.88, 0.96 });
+                colour_row('timers_carrow', 'Arrow', { 1, 1, 1 });
+                if accent_button('RESTORE DEBUFF COLOURS##yui_tmbcr', { ROW_W, 0 }) then
+                    cfg.timers_cmob, cfg.timers_cmn, cfg.timers_carrow = nil, nil, nil;
+                    save();
+                end
+            end
         elseif tab == 9 then
             ------------------------------------------------------------------ MINIMAP
             section('MINIMAP');
