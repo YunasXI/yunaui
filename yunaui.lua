@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.34';
+addon.version = '1.1.35';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -18494,6 +18494,7 @@ local function draw_window()
                 row_slider('##yui_mbsc', 'Size', 'mbar_scale', 0.5, 2.0, 0.05, '%.2fx');
                 row_switch('##yui_mbtt', 'Buttons touching', 'mb_tight', 'On: the buttons sit right next to each other, no gap between them.');
                 row_switch('##yui_mbin', 'Instant (no animation)', 'mb_instant', 'On: the bar is there at once - no buttons popping in, no bounce, flash or rings when you use a macro.');
+                row_switch('##yui_mbarw', 'Ctrl / Alt + arrows pick a macro', 'mb_arrows', "On: with Ctrl or Alt held, Left / Right move the bar's highlight and Enter runs it. Off: they are the game's - Ctrl + Left / Right pages through your inventory. Ctrl / Alt + 1 to 0 always work.");
                 hint('Keyboard: hold Ctrl or Alt and press 1 to 0, as in the game. Controller: hold ' .. (C.mb_l1() and 'L1 or R1' or 'L2 or R2') .. ', pick with the D-pad left / right, Cross (A) runs it. Move the bar in Edit Mode. Right-click a button to edit that macro.');
             end
         elseif tab == 10 then
@@ -19291,7 +19292,7 @@ function C.macrobar()
     M.ktog = 0;                                                      -- (the keyboard is always hold to show, as the game: a Ctrl / Alt tap never keeps it open - Press to show is the controller's only)
     M.kbk = M.kbk or {};                                             -- (Ctrl / Alt held: the arrows move the pick, Enter runs it - read as the digits are)
     for vk, w in pairs(C.MB_VK or {}) do
-        local down = held ~= 0 and C.mb_key(vk);
+        local down = held ~= 0 and cfg.mb_arrows == true and C.mb_key(vk);   -- (ACTION BARS > Ctrl / Alt + arrows: off - not the bar's)
         if down and not M.kbk[vk] then
             if M.dbg then msg(string.format('[mb] key %02X held=%d mine=%s ok=%s hid=%s sel=%s', vk, held, tostring(C.mb_mine()), tostring(M.ok), tostring(M.hid), tostring(M.sel))); end
             if C.mb_mine() and not C.mb_free() then local okk, er = pcall(C.mb_kbact, w, held); if not okk and M.dbg then msg('[mb] error: ' .. tostring(er)); end end
@@ -23103,6 +23104,7 @@ ashita.events.register('key', 'yui_mb_key', function(e)
     if wp >= 0x30 and wp <= 0x39 then                                -- (the digit YunaUI ran a macro with: not the game's as a window message either)
         for _, vk in pairs(C.MB.kdig or {}) do if vk == wp then e.blocked = true; return; end end
     end
+    if cfg.mb_arrows ~= true then return; end                       -- (ACTION BARS > Ctrl / Alt + arrows: off - the arrows and Enter are the game's: Ctrl + Left / Right pages the inventory)
     local w = C.MB_VK[wp];
     if w == nil and (wp == 0x26 or wp == 0x28) and C.mb_kbtog() then w = (wp == 0x26) and -1 or 1; end   -- (open by a tap: up / down move the pick)
     if w == nil then return; end
@@ -23146,7 +23148,7 @@ ashita.events.register('key_data', 'yui_kb', function(e)
         end
     end
     if (k == 0x1C or k == 0x9C) and C.MB.kbok then e.blocked = true; return; end   -- (the Enter that ran a macro: never the game's)
-    if k == 0x1C or k == 0x9C then                                   -- (Ctrl / Alt + Enter: the picked macro runs)
+    if (k == 0x1C or k == 0x9C) and cfg.mb_arrows == true then       -- (Ctrl / Alt + Enter: the picked macro runs - ACTION BARS > Ctrl / Alt + arrows on)
         local row = C.mb_kbrow();
         if row ~= 0 then
             local M = C.MB;
@@ -23157,8 +23159,8 @@ ashita.events.register('key_data', 'yui_kb', function(e)
             return;
         end
     end
-    local dir = C.MB_ARROWS[k];
-    if dir == nil and (k == 0xC8 or k == 0xD0) and C.mb_kbtog() then dir = (k == 0xC8) and -1 or 1; end   -- (open by a tap: up / down move the pick)
+    local dir = (cfg.mb_arrows == true) and C.MB_ARROWS[k] or nil;   -- (off: Ctrl + Left / Right the game's - its inventory pages)
+    if dir == nil and cfg.mb_arrows == true and (k == 0xC8 or k == 0xD0) and C.mb_kbtog() then dir = (k == 0xC8) and -1 or 1; end   -- (open by a tap: up / down move the pick)
     if dir then
         local row = C.mb_kbrow();
         if row ~= 0 then
@@ -23186,9 +23188,9 @@ ashita.events.register('key_state', 'yui_kb_state', function(e)    -- (the game 
     for dk, vk in pairs(C.MB.kdig or {}) do                          -- (a digit that ran a macro: the game never sees it, down to its release)
         if C.mb_key(vk) then keys[dk] = 0; else C.MB.kdig[dk] = nil; end
     end
-    if C.mb_kbrow() ~= 0 then for k in pairs(C.MB_ARROWS) do keys[k] = 0; end keys[0x1C] = 0; keys[0x9C] = 0; end   -- (Ctrl / Alt + arrows / Enter: the bar's)
+    if cfg.mb_arrows == true and C.mb_kbrow() ~= 0 then for k in pairs(C.MB_ARROWS) do keys[k] = 0; end keys[0x1C] = 0; keys[0x9C] = 0; end   -- (Ctrl / Alt + arrows / Enter: the bar's)
     if C.mb_kbrow() ~= 0 then for dk in pairs(C.MB_DIK) do keys[dk] = 0; end end   -- (and the digits, every read: the game read the state before the key's event came - Ctrl + 7 ran its macro too)
-    if C.mb_kbtog() then keys[0xC8] = 0; keys[0xD0] = 0; end         -- (open by a tap: up / down too)
+    if cfg.mb_arrows == true and C.mb_kbtog() then keys[0xC8] = 0; keys[0xD0] = 0; end         -- (open by a tap: up / down too)
     if C.MB.kbok then                                                -- (the Enter that ran a macro: hidden from the game down to its release)
         if keys[0x1C] == 0 and keys[0x9C] == 0 and not C.mb_key(0x0D) then C.MB.kbok = false; else keys[0x1C] = 0; keys[0x9C] = 0; end
     end
