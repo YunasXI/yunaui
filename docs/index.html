@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>document.documentElement.classList.add("js")</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>YunaUI — a modern HUD for CatsEyeXI</title>
@@ -152,9 +153,70 @@ html[lang=ja] .tabs button,html[lang=ja] nav ul{letter-spacing:.04em}
 .kofi svg{width:22px;height:22px}
 .support .note{font-size:13px;color:var(--muted);margin-top:12px}
 @media(max-width:820px){.support{grid-template-columns:1fr;padding:28px 22px;gap:22px}}
+
+/* ===== motion & glass ===== */
+/* animated aurora behind everything */
+.aurora{position:fixed;inset:-20%;z-index:-2;pointer-events:none;filter:blur(80px);opacity:.55}
+.aurora i{position:absolute;border-radius:50%;mix-blend-mode:screen}
+.aurora i:nth-child(1){width:46vw;height:46vw;left:8%;top:2%;background:radial-gradient(circle,rgba(224,64,154,.55),transparent 65%);animation:drift1 26s ease-in-out infinite}
+.aurora i:nth-child(2){width:40vw;height:40vw;right:4%;top:18%;background:radial-gradient(circle,rgba(163,92,255,.5),transparent 65%);animation:drift2 32s ease-in-out infinite}
+.aurora i:nth-child(3){width:36vw;height:36vw;left:30%;bottom:-6%;background:radial-gradient(circle,rgba(216,32,58,.35),transparent 65%);animation:drift3 38s ease-in-out infinite}
+@keyframes drift1{50%{transform:translate(12vw,10vh) scale(1.15)}}
+@keyframes drift2{50%{transform:translate(-14vw,14vh) scale(.9)}}
+@keyframes drift3{50%{transform:translate(8vw,-12vh) scale(1.2)}}
+/* fine grain so the glass reads as glass */
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* scroll progress line */
+.progress{position:fixed;left:0;top:0;height:2px;width:100%;z-index:20;transform-origin:0 50%;transform:scaleX(0);
+  background:linear-gradient(90deg,var(--red),var(--mag),var(--vio));box-shadow:0 0 12px var(--mag)}
+
+/* glass surfaces */
+nav{background:rgba(13,12,18,.45);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);transition:background .3s,border-color .3s}
+nav.scrolled{background:rgba(13,12,18,.7);border-bottom-color:rgba(224,64,154,.25)}
+.panel,.play,.support,.card,.stats,.feat,.modes,.tabs button{
+  background-color:rgba(20,17,28,.42)!important;backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);
+  border-color:rgba(255,255,255,.08)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 20px 60px rgba(0,0,0,.35)}
+.feat{background:rgba(255,255,255,.06)!important}
+.feat div,.stats div{background:rgba(13,12,18,.55)!important}
+.panel figure{background:rgba(10,9,14,.6)}
+.tabs button[aria-selected=true]{background-color:rgba(224,64,154,.18)!important;border-color:var(--mag)!important}
+
+/* light that follows the mouse on glass cards */
+.glow{position:relative;isolation:isolate}
+.glow::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;opacity:0;transition:opacity .3s;
+  background:radial-gradient(380px circle at var(--mx,50%) var(--my,50%),rgba(224,64,154,.16),transparent 60%)}
+.glow:hover::before{opacity:1}
+.glow::after{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;z-index:2;opacity:0;transition:opacity .3s;padding:1px;
+  background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%),rgba(255,140,210,.75),transparent 60%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.glow:hover::after{opacity:1}
+
+/* title shimmer */
+h1 span{background-size:200% 100%;animation:shine 7s ease-in-out infinite}
+@keyframes shine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+h1 span{background-image:linear-gradient(90deg,#fff,#f2b7da 30%,var(--vio) 50%,#f2b7da 70%,#fff)}
+
+/* video tilts gently into place */
+.frame{transition:transform .9s cubic-bezier(.2,.7,.2,1),box-shadow .6s}
+.js #video .frame{transform:perspective(1400px) rotateX(10deg) scale(.94)}
+.js #video .frame.in{transform:none}
+
+/* reveal on scroll */
+.js .reveal{opacity:0;transform:translateY(34px);filter:blur(6px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1),filter .9s;transition-delay:var(--d,0s)}
+.js .reveal.in{opacity:1;transform:none;filter:none}
+.panel:not([hidden]){animation:panelIn .5s cubic-bezier(.2,.7,.2,1)}
+@keyframes panelIn{from{opacity:0;transform:translateY(12px)}}
+.btn,.kofi,.tabs button{transition:transform .2s,box-shadow .2s,border-color .2s,background .2s}
+.btn:hover,.tabs button:hover{transform:translateY(-2px)}
+
+@media(prefers-reduced-motion:reduce){.aurora i,h1 span{animation:none}.js .reveal{opacity:1;transform:none;filter:none;transition:none}.js #video .frame{transform:none}.panel:not([hidden]){animation:none}}
 </style>
 </head>
 <body>
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="progress" id="progress" aria-hidden="true"></div>
 
 <nav><div class="wrap">
   <a class="brand" href="#">Yuna<b>UI</b></a>
@@ -314,6 +376,26 @@ function setLang(l){LANG=l;document.documentElement.lang=l;
 document.querySelectorAll(".lang button").forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
 let saved=null;try{saved=localStorage.getItem("yui-lang")}catch(e){}
 setLang(saved||((navigator.language||"").toLowerCase().startsWith("ja")?"ja":"en"));
+</script>
+<script>
+(()=>{
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // what appears on scroll
+  const groups=["header.hero > *","#video .modes","#video .modecap","section h2","section .sub","section .kicker",".tabs",".panel",".feat > div",".about .bio p",".stats div",".play",".psteps li",".support",".contact .card"];
+  const els=[];groups.forEach(sel=>document.querySelectorAll(sel).forEach((el,i)=>{if(!el.classList.contains("reveal")){el.classList.add("reveal");el.style.setProperty("--d",(Math.min(i,8)*0.07)+"s");els.push(el)}}));
+  const frame=document.querySelector("#video .frame");
+  if(reduce||!("IntersectionObserver" in window)){els.forEach(e=>e.classList.add("in"));frame&&frame.classList.add("in")}
+  else{const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.12,rootMargin:"0px 0px -6% 0px"});
+    els.forEach(e=>io.observe(e));frame&&io.observe(frame)}
+  // mouse light on glass
+  document.querySelectorAll(".panel,.play,.support,.card,.stats div,.feat div,.panel figure").forEach(el=>{el.classList.add("glow");
+    el.addEventListener("pointermove",ev=>{const r=el.getBoundingClientRect();el.style.setProperty("--mx",(ev.clientX-r.left)+"px");el.style.setProperty("--my",(ev.clientY-r.top)+"px")})});
+  // progress bar + nav glass
+  const bar=document.getElementById("progress"),nav=document.querySelector("nav");let t=0;
+  function onScroll(){if(t)return;t=requestAnimationFrame(()=>{t=0;const h=document.documentElement;const p=h.scrollTop/(h.scrollHeight-h.clientHeight||1);
+    bar.style.transform="scaleX("+p+")";nav.classList.toggle("scrolled",h.scrollTop>20)})}
+  addEventListener("scroll",onScroll,{passive:true});onScroll();
+})();
 </script>
 </body>
 </html>
