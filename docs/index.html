@@ -37,7 +37,7 @@ nav ul a:hover{color:var(--paper)}
 @media(max-width:720px){nav ul li:not(:last-child){display:none}}
 
 /* hero */
-.hero{padding:80px 24px 40px;text-align:center}.hero .lead{margin:0 auto}.hero .cta{justify-content:center}
+.hero{padding:110px 24px 100px;text-align:center}.hero .lead{margin:0 auto}.hero .cta{justify-content:center}
 @media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:40px}}
 .kicker{font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:var(--mag)}
 h1{font-weight:400;font-size:clamp(48px,8vw,92px);line-height:1;letter-spacing:.02em;margin:14px 0 18px}
@@ -56,7 +56,7 @@ h1 span{background:linear-gradient(90deg,#fff,#f2b7da 55%,var(--vio));-webkit-ba
 
 
 /* showcase */
-.show{padding:10px 0 90px}
+.show{padding:0 24px}
 .modes{display:flex;justify-content:center;gap:0;margin:0 auto 22px;width:max-content;border:1px solid var(--line);border-radius:999px;padding:4px;background:#110f17}
 .modes button{font:inherit;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:none;border:0;padding:10px 24px;border-radius:999px;cursor:pointer;transition:.2s}
 .modes button[aria-pressed=true]{color:#fff;background:linear-gradient(90deg,var(--red),var(--mag));box-shadow:0 0 22px rgba(224,64,154,.4)}
@@ -71,6 +71,16 @@ h1 span{background:linear-gradient(90deg,#fff,#f2b7da 55%,var(--vio));-webkit-ba
 .modecap{text-align:center;color:var(--muted);font-size:15px;max-width:62ch;margin:18px auto 0}
 .modecap b{font-weight:400;color:var(--paper)}
 @media(max-width:600px){.thumbs button{width:44%}.modes button{padding:9px 16px}}
+
+
+/* party frames */
+.pf{display:grid;grid-template-columns:1fr;gap:20px;max-width:900px}
+@media(max-width:820px){.pf{grid-template-columns:1fr}}
+.pf figure{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#0a090e}
+.pf .pic{padding:28px 22px;background:radial-gradient(120% 140% at 70% 0%,rgba(163,92,255,.14),transparent 60%),#100e16;display:flex;justify-content:center}
+.pf img{display:block;width:auto;max-width:100%;height:auto;image-rendering:auto}
+.pf figcaption{padding:16px 22px;border-top:1px solid var(--line);font-size:14px;color:#bdb6c8}
+.pf figcaption b{font-weight:400;color:var(--paper);font-size:16px;display:block;margin-bottom:2px}
 
 /* sections */
 section{padding:70px 0;border-top:1px solid var(--line)}
@@ -109,8 +119,10 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
 <nav><div class="wrap">
   <a class="brand" href="#">Yuna<b>UI</b></a>
   <ul>
-    <li><a href="#showcase">Screenshots</a></li>
-    <li><a href="#features">Features</a></li>
+    <li><a href="#party">Party</a></li>
+    <li><a href="#skillchain">Skillchains</a></li>
+    <li><a href="#target">Target</a></li>
+    <li><a href="#showcase">Full view</a></li>
     <li><a href="https://github.com/YunasXI/yunaui">GitHub</a></li>
   </ul>
 </div></nav>
@@ -121,14 +133,53 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
     <h1><span>YunaUI</span></h1>
     <p class="lead">One modern interface for Final Fantasy XI: thin glowing bars, one clean font everywhere, and every piece placed exactly where you like.</p>
     <div class="cta">
-      <a class="btn primary" href="#showcase">See it in game</a>
+      <a class="btn primary" href="#party">See it in game</a>
       <a class="btn" href="https://github.com/YunasXI/yunaui">GitHub</a>
     </div>
     <p class="meta">Made for CatsEyeXI · built for VanaCore, the CatsEyeXI client</p>
   </div>
 </header>
 
-<div class="wrap show" id="showcase">
+
+
+<section id="party"><div class="wrap">
+  <h2>Party frames</h2>
+  <p class="sub">Job tag in its role colour, HP, MP and TP at a glance, with each member's buffs and their time left beside them. A member under 30% HP trembles and beats red.</p>
+  <div class="pf">
+    <figure><div class="pic"><img src="shots/party-hex.webp" width="648" height="140" alt="YunaUI party frames in Hex Link mode" loading="lazy"></div>
+      <figcaption><b>Hex Link</b>Angular plates with the HP number set into the bar, MP underneath and TP on the side.</figcaption></figure>
+    <figure><div class="pic"><img src="shots/party-vex.webp" width="529" height="125" alt="YunaUI party frames in Vex mode" loading="lazy"></div>
+      <figcaption><b>Vex</b>Slim bars with the job tag on the right and TP above each name.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="skillchain"><div class="wrap">
+  <h2>Skillchain fan</h2>
+  <p class="sub">When your party opens a chain, YunaUI shows the weapon skills that close it and the skillchain each one makes, best on top.</p>
+  <div class="pf">
+    <figure><div class="pic"><img src="shots/sc-hex.webp" width="755" height="95" alt="YunaUI skillchain fan in Hex Link mode" loading="lazy"></div>
+      <figcaption><b>Hex Link</b>A banner across the top of the screen with the chain count and every closer in one line.</figcaption></figure>
+    <figure><div class="pic"><img src="shots/sc-vex.webp" width="490" height="145" alt="YunaUI skillchain fan in Vex mode" loading="lazy"></div>
+      <figcaption><b>Vex</b>A fan of cards linked to the target bar, one per weapon skill.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="target"><div class="wrap">
+  <h2>Target bar</h2>
+  <p class="sub">The target's name, distance, level range and HP, with what it's casting or readying right underneath.</p>
+  <div class="pf">
+    <figure><div class="pic"><img src="shots/tgt-hex.webp" width="475" height="50" alt="YunaUI target bar in Hex Link mode" loading="lazy"></div>
+      <figcaption><b>Hex Link</b>A compact red bar with the target of target beside it.</figcaption></figure>
+    <figure><div class="pic"><img src="shots/tgt-vex.webp" width="750" height="60" alt="YunaUI target bar in Vex mode" loading="lazy"></div>
+      <figcaption><b>Vex</b>One long glowing line across the top of the screen.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="showcase"><div class="wrap">
+  <h2>The full picture</h2>
+  <p class="sub">Switch between the two styles and see everything together, in a real fight.</p>
+</div>
+<div class="wrap show">
   <div class="modes" role="group" aria-label="Interface style">
     <button data-mode="hex" aria-pressed="true">Hex Link</button>
     <button data-mode="vex" aria-pressed="false">Vex</button>
@@ -137,7 +188,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
   <div class="thumbs" id="thumbs"></div>
   <p class="modecap" id="modecap"></p>
 </div>
-
+</section>
 
 <section id="features"><div class="wrap">
   <h2>Everything on one screen</h2>
