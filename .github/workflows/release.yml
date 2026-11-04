@@ -39,7 +39,7 @@ jobs:
         run: |
           mkdir -p dist/yunaui
           git archive HEAD | tar -x -C dist/yunaui
-          rm -rf dist/yunaui/.github dist/yunaui/.gitignore
+          rm -rf dist/yunaui/.github dist/yunaui/.gitignore dist/yunaui/docs
           sed -i "s/^addon.version *= *'[^']*';/addon.version = '${{ steps.version.outputs.version }}';/" dist/yunaui/yunaui.lua
           (cd dist && zip -qr "yunaui-${{ steps.version.outputs.version }}.zip" yunaui)
 

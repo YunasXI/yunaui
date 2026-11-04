@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YunaUI — a modern HUD for CatsEyeXI</title>
+<meta name="description" content="YunaUI is a complete, clean HUD for CatsEyeXI (VanaCore): target bar, skillchains, party and alliances, chat, damage meter and an Edit Mode to place everything.">
+<meta property="og:title" content="YunaUI — a modern HUD for CatsEyeXI">
+<meta property="og:description" content="Thin glowing bars, one font everywhere, every piece where you want it. Free and open source.">
+<meta property="og:image" content="assets/logo.png">
+<link rel="icon" href="assets/favicon.png">
+<style>
+@font-face{font-family:"Adventor";src:url("assets/texgyreadventor-regular.otf") format("opentype");font-display:swap}
+:root{
+  --ink:#0d0c12;--ink2:#15131c;--line:#2a2633;--paper:#ece7df;--muted:#9a93a6;
+  --mag:#e0409a;--vio:#a35cff;--red:#d8203a;--hp:#e8ecef;--mp:#6fb6ff;--tp:#f3c74a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--paper);font:16px/1.6 "Adventor","Century Gothic","Avenir Next",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+  background:radial-gradient(900px 500px at 85% -10%,rgba(163,92,255,.16),transparent 60%),
+             radial-gradient(700px 500px at -10% 30%,rgba(216,32,58,.12),transparent 60%)}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+
+/* nav */
+nav{position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);background:rgba(13,12,18,.72);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:24px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-size:20px;letter-spacing:.04em}
+.brand img{width:34px;height:34px}
+.brand b{font-weight:400;color:var(--mag)}
+nav ul{display:flex;gap:22px;list-style:none;margin-left:auto;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+nav ul a{text-decoration:none;color:var(--muted)}
+nav ul a:hover{color:var(--paper)}
+@media(max-width:720px){nav ul li:not(:last-child){display:none}}
+
+/* hero */
+.hero{padding:72px 24px 40px;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+@media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:40px}.art img{width:70%}}
+.kicker{font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:var(--mag)}
+h1{font-weight:400;font-size:clamp(48px,8vw,92px);line-height:1;letter-spacing:.02em;margin:14px 0 18px}
+h1 span{background:linear-gradient(90deg,#fff,#f2b7da 55%,var(--vio));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:19px;color:#cfc8d8;max-width:34ch}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border-radius:4px;text-decoration:none;
+  letter-spacing:.08em;text-transform:uppercase;font-size:14px;border:1px solid var(--line);transition:.2s}
+.btn.primary{background:linear-gradient(90deg,var(--red),var(--mag));border-color:transparent;box-shadow:0 0 28px rgba(224,64,154,.35)}
+.btn.primary:hover{box-shadow:0 0 40px rgba(224,64,154,.6)}
+.btn:not(.primary):hover{border-color:var(--mag)}
+.btn small{opacity:.8;text-transform:none;letter-spacing:0}
+.meta{margin-top:16px;font-size:13px;color:var(--muted)}
+.art{position:relative;display:flex;justify-content:center}
+.art img{width:min(420px,90%);filter:drop-shadow(0 0 40px rgba(216,32,58,.25));animation:float 7s ease-in-out infinite}
+.art::after{content:"";position:absolute;inset:15% 10%;border-radius:50%;background:radial-gradient(rgba(224,64,154,.18),transparent 65%);z-index:-1}
+@keyframes float{50%{transform:translateY(-10px)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+
+/* HUD mock */
+.hud{margin:30px 0 80px;border:1px solid var(--line);border-radius:10px;padding:34px;position:relative;overflow:hidden;
+  background:linear-gradient(160deg,#1a1622,#0f0e14 60%),#111}
+.hud::before{content:"";position:absolute;inset:0;background:url("assets/logo.png") right -60px bottom -80px/360px no-repeat;opacity:.06}
+.hud-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:34px;position:relative}
+@media(max-width:820px){.hud-grid{grid-template-columns:1fr}}
+.cap{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.target .name{display:flex;justify-content:space-between;font-size:18px;letter-spacing:.04em}
+.target .name em{font-style:normal;color:var(--muted);font-size:14px}
+.band{margin:8px 0 10px;height:14px;border-radius:2px;background:linear-gradient(90deg,rgba(224,64,154,.5),rgba(163,92,255,.25));
+  position:relative;box-shadow:0 0 18px rgba(224,64,154,.35)}
+.band i{position:absolute;left:0;top:50%;height:2px;width:64%;transform:translateY(-50%);background:#fff;
+  box-shadow:0 0 8px #fff,0 0 16px var(--mag);animation:hp 6s ease-in-out infinite}
+@keyframes hp{0%,100%{width:64%}50%{width:41%}}
+.casting{font-size:14px;color:#f2b7da}
+.debuffs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.debuffs span{font-size:12px;padding:3px 8px;border:1px solid var(--line);border-radius:3px;color:#cfc8d8}
+.debuffs span b{font-weight:400;color:var(--muted);margin-left:6px}
+.sc{margin-top:24px;border-left:2px solid var(--vio);padding:10px 14px;background:rgba(163,92,255,.08)}
+.sc strong{font-weight:400;font-size:17px;letter-spacing:.06em}
+.sc p{font-size:13px;color:var(--muted)}
+.party{display:flex;flex-direction:column;gap:10px}
+.mem{display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:center}
+.mem img{width:40px;height:40px}
+.mem .top{display:flex;justify-content:space-between;font-size:14px}
+.mem .top em{font-style:normal;font-size:11px;letter-spacing:.12em;padding:0 6px;border-radius:2px}
+.bars{display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-top:4px}
+.bar{height:3px;background:#2a2633;position:relative;border-radius:2px}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:2px}
+.bar.h i{background:var(--hp);box-shadow:0 0 6px rgba(255,255,255,.6)}
+.bar.m i{background:var(--mp)}.bar.t i{background:var(--tp)}
+.mem.low .bar.h i{background:var(--red);box-shadow:0 0 8px var(--red);animation:beat 1s infinite}
+.mem.low{animation:shake .35s infinite}
+@keyframes beat{50%{opacity:.4}}
+@keyframes shake{25%{transform:translateX(-1px)}75%{transform:translateX(1px)}}
+.tank{background:rgba(111,182,255,.18);color:#9fcbff}.heal{background:rgba(120,230,150,.16);color:#9fe8b2}
+.dd{background:rgba(216,32,58,.2);color:#ff98a6}.sup{background:rgba(243,199,74,.16);color:#f6d77f}
+.note{font-size:12px;color:var(--muted);margin-top:18px;position:relative}
+
+/* sections */
+section{padding:70px 0;border-top:1px solid var(--line)}
+h2{font-weight:400;font-size:clamp(30px,4vw,44px);letter-spacing:.02em;margin-bottom:10px}
+.sub{color:var(--muted);max-width:60ch;margin-bottom:40px}
+.feat{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.feat div{background:var(--ink);padding:24px}
+.feat h3{font-weight:400;font-size:18px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.feat h3::before{content:"";width:14px;height:2px;background:var(--mag);box-shadow:0 0 8px var(--mag)}
+.feat p{font-size:14px;color:#bdb6c8}
+
+.steps{counter-reset:s;display:grid;gap:18px;max-width:760px}
+.steps li{list-style:none;counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:14px}
+.steps li::before{content:counter(s);font-size:28px;color:var(--mag);line-height:1.1}
+code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;background:#1d1a25;border:1px solid var(--line);padding:1px 6px;border-radius:3px;color:#f2d4e6;word-break:break-word}
+.callout{margin-top:28px;max-width:760px;padding:16px 20px;border:1px solid var(--line);border-left:2px solid var(--red);font-size:14px;color:#cfc8d8}
+
+table{width:100%;max-width:760px;border-collapse:collapse}
+td{padding:12px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{width:200px}
+
+.jobs{display:flex;flex-wrap:wrap;gap:6px;margin-top:30px}
+.jobs img{width:48px;height:48px;opacity:.85;transition:.2s}
+.jobs img:hover{opacity:1;transform:translateY(-3px);filter:drop-shadow(0 0 8px var(--mag))}
+
+.credits{columns:2 320px;column-gap:40px;font-size:14px;color:#bdb6c8}
+.credits p{break-inside:avoid;margin-bottom:12px}
+.credits b{font-weight:400;color:var(--paper)}
+
+footer{border-top:1px solid var(--line);padding:36px 0 50px;font-size:13px;color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a class="brand" href="#"><img src="assets/logo.png" alt="">Yuna<b>UI</b></a>
+  <ul>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#install">Install</a></li>
+    <li><a href="#commands">Commands</a></li>
+    <li><a href="#credits">Credits</a></li>
+    <li><a href="https://github.com/YunasXI/yunaui">GitHub</a></li>
+  </ul>
+</div></nav>
+
+<header class="wrap hero">
+  <div>
+    <div class="kicker">A HUD for CatsEyeXI</div>
+    <h1><span>YunaUI</span></h1>
+    <p class="lead">One modern interface for Final Fantasy XI: thin glowing bars, one clean font everywhere, and every piece placed exactly where you like.</p>
+    <div class="cta">
+      <a class="btn primary" id="dl" href="https://github.com/YunasXI/yunaui/releases/latest">Download <small id="ver">latest</small></a>
+      <a class="btn" href="https://github.com/YunasXI/yunaui">View on GitHub</a>
+    </div>
+    <p class="meta">Free &amp; open source (GPL-3.0) · Runs on VanaCore, the client the CatsEyeXI launcher starts</p>
+  </div>
+  <div class="art"><img src="assets/logo.png" alt="YunaUI emblem: a samurai with a red-bladed katana"></div>
+</header>
+
+<div class="wrap">
+  <div class="hud" aria-label="Illustration of YunaUI's target bar and party list">
+    <div class="hud-grid">
+      <div class="target">
+        <div class="cap">Target</div>
+        <div class="name">Glavoid <em>12.4'</em></div>
+        <div class="band"><i></i></div>
+        <div class="casting">Readying · Gravity Wheel</div>
+        <div class="debuffs"><span>Dia II<b>1:42</b></span><span>Slow<b>2:10</b></span><span>Paralyze<b>0:48</b></span><span>Elegy<b>2:55</b></span></div>
+        <div class="sc">
+          <div class="cap" style="margin:0 0 4px">Magic Burst</div>
+          <strong>Light · Fire / Wind / Thunder</strong>
+          <p>Burst window open — 6s left</p>
+        </div>
+      </div>
+      <div>
+        <div class="cap">Party</div>
+        <div class="party">
+          <div class="mem"><img src="assets/jobs/pld.png" alt=""><div><div class="top">Unus <em class="tank">PLD</em></div><div class="bars"><div class="bar h"><i style="width:88%"></i></div><div class="bar m"><i style="width:60%"></i></div><div class="bar t"><i style="width:35%"></i></div></div></div></div>
+          <div class="mem"><img src="assets/jobs/whm.png" alt=""><div><div class="top">Yunas <em class="heal">WHM</em></div><div class="bars"><div class="bar h"><i style="width:100%"></i></div><div class="bar m"><i style="width:72%"></i></div><div class="bar t"><i style="width:8%"></i></div></div></div></div>
+          <div class="mem low"><img src="assets/jobs/sam.png" alt=""><div><div class="top">Kiryu <em class="dd">SAM</em></div><div class="bars"><div class="bar h"><i style="width:24%"></i></div><div class="bar m"><i style="width:0"></i></div><div class="bar t"><i style="width:92%"></i></div></div></div></div>
+          <div class="mem"><img src="assets/jobs/cor.png" alt=""><div><div class="top">Slayern <em class="sup">COR</em></div><div class="bars"><div class="bar h"><i style="width:76%"></i></div><div class="bar m"><i style="width:40%"></i></div><div class="bar t"><i style="width:55%"></i></div></div></div></div>
+        </div>
+      </div>
+    </div>
+    <p class="note">An illustration of the style — the real thing runs in game.</p>
+  </div>
+</div>
+
+<section id="features"><div class="wrap">
+  <h2>Everything on one screen</h2>
+  <p class="sub">YunaUI replaces the game's target window, party and alliance lists and chat log with pieces that share one look — and puts the game's own back the moment you turn a piece off.</p>
+  <div class="feat">
+    <div><h3>Target bar</h3><p>A glowing white line in a magenta band with the target's distance, what it's casting or readying, and its buffs and debuffs with time left.</p></div>
+    <div><h3>Skillchains</h3><p>When your party opens a chain, a fan shows your weapon skills that close it, best on top.</p></div>
+    <div><h3>Magic Burst card</h3><p>When a skillchain lands: the chain, the elements to burst with, and the time left.</p></div>
+    <div><h3>Party &amp; alliances</h3><p>Job tag in its role colour, HP, MP and TP. Members under 30% HP tremble and beat red. Click a job tag to fold their buffs.</p></div>
+    <div><h3>Target of target &amp; enemy list</h3><p>See who it's hitting, and click any monster in the list to target it.</p></div>
+    <div><h3>Your bars</h3><p>HP / MP / TP bars you can anchor together, plus a cast bar, EXP, gil and bag.</p></div>
+    <div><h3>Pet bar</h3><p>Your pet's HP / MP / TP, its ability timers and what it's fighting.</p></div>
+    <div><h3>Timers</h3><p>Recast timers for your abilities and spells.</p></div>
+    <div><h3>Gear strip</h3><p>Your 16 equipped items in HD, lighting up whenever you swap gear.</p></div>
+    <div><h3>Damage Meter</h3><p>The meter formerly known as YunaDPS, with an enmity view.</p></div>
+    <div><h3>Chat</h3><p>Channel tabs, an optional combat log anchored beside it, timestamps and saved logs.</p></div>
+    <div><h3>Edit Mode</h3><p>Every piece on a grid: drag and it snaps into line. Ready-made layouts plus five of your own. Stays on screen at any resolution.</p></div>
+  </div>
+  <div class="jobs" aria-label="Job hats redrawn for YunaUI">
+    <img src="assets/jobs/war.png" alt="WAR"><img src="assets/jobs/mnk.png" alt="MNK"><img src="assets/jobs/whm.png" alt="WHM"><img src="assets/jobs/blm.png" alt="BLM"><img src="assets/jobs/rdm.png" alt="RDM"><img src="assets/jobs/thf.png" alt="THF"><img src="assets/jobs/pld.png" alt="PLD"><img src="assets/jobs/drk.png" alt="DRK"><img src="assets/jobs/bst.png" alt="BST"><img src="assets/jobs/brd.png" alt="BRD"><img src="assets/jobs/rng.png" alt="RNG"><img src="assets/jobs/sam.png" alt="SAM"><img src="assets/jobs/nin.png" alt="NIN"><img src="assets/jobs/drg.png" alt="DRG"><img src="assets/jobs/smn.png" alt="SMN"><img src="assets/jobs/blu.png" alt="BLU"><img src="assets/jobs/cor.png" alt="COR"><img src="assets/jobs/pup.png" alt="PUP"><img src="assets/jobs/dnc.png" alt="DNC"><img src="assets/jobs/sch.png" alt="SCH"><img src="assets/jobs/geo.png" alt="GEO"><img src="assets/jobs/run.png" alt="RUN">
+  </div>
+</div></section>
+
+<section id="install"><div class="wrap">
+  <h2>Install</h2>
+  <p class="sub">YunaUI is a VanaCore addon — VanaCore is the client the CatsEyeXI launcher starts. It does not run on plain Ashita.</p>
+  <ol class="steps">
+    <li><div><a href="https://github.com/YunasXI/yunaui/releases/latest">Download the latest release zip</a> and unzip it into <code>VanaCore\addons\vanacore\</code>, so you end up with <code>VanaCore\addons\vanacore\yunaui\yunaui.lua</code>.</div></li>
+    <li><div>In game, type <code>/addon load yunaui vanacore</code>. Add that line to your startup script to load it every time.</div></li>
+    <li><div>The first time, a short guide shows what every piece does, then Edit Mode opens. Place everything, then press <b>DONE</b>.</div></li>
+  </ol>
+  <div class="callout"><b>Updating from 1.0.24 or older?</b> Those lived in <code>VanaCore\addons\ashita\yunaui</code>. Delete that folder (your settings are kept), unzip the new one as above, and change your startup line to <code>/addon load yunaui vanacore</code>. The old <code>yunalink</code> helper isn't needed anymore.</div>
+  <div class="callout" style="border-left-color:var(--vio)"><b>Sharper icons (optional):</b> install <a href="https://github.com/YunasXI/yunaui-icons">YunaUI Icons</a> — extract its zip into <code>VanaCore\addons\vanacore\</code>, next to the <code>yunaui</code> folder.</div>
+</div></section>
+
+<section id="commands"><div class="wrap">
+  <h2>Commands</h2>
+  <p class="sub">Everything else lives in the settings window.</p>
+  <table>
+    <tr><td><code>/yui</code></td><td>Open or close the settings</td></tr>
+    <tr><td><code>/yui edit</code></td><td>Edit Mode: move every piece</td></tr>
+    <tr><td><code>/yui guide</code></td><td>Show the first-time guide again</td></tr>
+    <tr><td><code>/yui lock</code> · <code>/yui unlock</code></td><td>Stop or allow dragging</td></tr>
+    <tr><td><code>/yui reset</code></td><td>Back to the default settings</td></tr>
+    <tr><td><code>/yui lang auto|ja|en</code></td><td>Interface language (Japanese by Tsukasa)</td></tr>
+    <tr><td><code>/dps</code></td><td>The Damage Meter's own commands</td></tr>
+  </table>
+</div></section>
+
+<section id="credits"><div class="wrap">
+  <h2>Credits</h2>
+  <p class="sub">YunaUI is made by <b>Yunas</b>, with help and permission from these people and projects.</p>
+  <div class="credits">
+    <p><b>Japanese localization</b> — Tsukasa (<a href="https://github.com/Tsukasa-17/yunaui-jp">yunaui-jp</a>).</p>
+    <p><b>Monster info</b> — read from the mobdb addon's zone files (by Thorny, data from LandSandBoat) when mobdb is installed.</p>
+    <p><b>Enmity values</b> from LandSandBoat. Cooldown reading follows the Timers addon. Includes GPL-3.0 code from XIUI.</p>
+    <p><b>Font</b> — TeX Gyre Adventor (GUST Font License). <b>Animated effects</b> — FootageCrate.</p>
+    <p><b>Minimap</b> — 2D maps restyled from remapster HD maps (spalose), the ffxi-maps pack and Vana'diel Atlas / ffxi-atlas.com, used with permission; 3D zone shapes from LandSandBoat's xiNavmeshOBJs; map table and floor reading after boussole by loonsies. FINAL FANTASY XI map art © SQUARE ENIX.</p>
+    <p><b>Voice</b> — the Amy voice for Piper (rhasspy/piper-voices). <b>Sounds</b> — Pixabay creators Yodguard, juniorsoundays, Sdanezis, SoundShelfStudio and Universfield; all others made for YunaUI.</p>
+    <p><b>Job hats and buff icons</b> redrawn for YunaUI.</p>
+    <p><b>Building on YunaUI?</b> Keep the NOTICE file and credit it in your README: <code>Based on YunaUI by Yunas - https://github.com/YunasXI/yunaui</code></p>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <span>© 2026 Yunas · GPL-3.0 with an attribution term</span>
+  <span>Fan-made addon for CatsEyeXI. FINAL FANTASY XI is a trademark of Square Enix; not affiliated.</span>
+</div></footer>
+
+<script>
+fetch("https://api.github.com/repos/YunasXI/yunaui/releases/latest")
+  .then(r => r.ok ? r.json() : null)
+  .then(d => {
+    if (!d) return;
+    document.getElementById("ver").textContent = d.tag_name.replace(/^v?/, "v");
+    const zip = (d.assets || []).find(a => a.name.endsWith(".zip"));
+    if (zip) document.getElementById("dl").href = zip.browser_download_url;
+  }).catch(() => {});
+</script>
+</body>
+</html>
