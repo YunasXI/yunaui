@@ -434,7 +434,7 @@ M.JA = {
     -- Hints
     ['One click moves every piece of the UI for your screen size. Move anything afterwards as you like.'] = 'ワンクリックで画面サイズに合わせて全UIを配置します。後から自由に移動できます。',
     ['Makes every piece bigger or smaller at once - after a new monitor or resolution, one click. Each piece\'s own Size still works on top of it.'] = '全要素を一括で拡大/縮小します。解像度変更後に便利です。個別サイズ設定も引き続き有効です。',
-    ['Give it a name, SAVE keeps where everything is now and every size (sizes, lengths, thickness, the chat and the Damage Meter too), LOAD puts it all back. Colours, looks and on / off are not changed.'] = '名前を付けて「保存」すると現在の位置とサイズを記録します。「読込」で復元します。色や表示のオン/オフは変更されません。',
+    ['Give it a name, SAVE keeps your whole UI as it is now: where everything is, every size, look, colour and on / off (the chat and the Damage Meter too). LOAD puts it all back exactly as saved. (A layout saved before 1.1.33 keeps only places and sizes: SAVE it again.)'] = '名前を付けて「保存」すると、位置・サイズ・見た目・色・オン/オフなどUI全体を今のまま記録します（チャットとダメージメーターも）。「読込」で保存した通りに戻します。（1.1.33より前に保存したレイアウトは位置とサイズのみ：もう一度保存してください）',
     ['Drag anything to move it; each piece is free.'] = 'ドラッグで移動できます。各要素は自由に配置できます。',
 
     -- Damage Meter

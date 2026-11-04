@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.32';
+addon.version = '1.1.33';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -2177,13 +2177,15 @@ local function draw_buffs(dl, x, y, list, size, perrow, rows, dir, timers, fold,
             if BUFFS.ovl then                                        -- (your buffs running out: orange in the last minute, red in the last 20 s)
                 if secs <= 20 then tc_ = { 1.00, 0.36, 0.36, 1 }; elseif secs <= 60 then tc_ = { 1.00, 0.68, 0.24, 1 }; end
             end
-            if BUFFS.ovl then                                        -- (a party card's: a small rounded black plate behind it - readable on any ground)
+            if BUFFS.ovl and C.HALO then                             -- (a party card's: a soft dark haze behind it, its size following the text's - readable on any ground, no plate)
                 local _, th2_ = imgui.CalcTextSize(str); th2_ = tonumber(th2_) or 10;
-                local px_ = math.max(2, th2_ * 0.25);
-                local x0_, x1_ = ix + (size - tw) / 2 - px_, ix + (size + tw) / 2 + px_;
-                local y0_, y1_ = ty_ + th2_ * 0.12, ty_ + th2_ * 0.92;
-                if x1_ - x0_ < (y1_ - y0_) then local c_ = (x0_ + x1_) / 2; x0_, x1_ = c_ - (y1_ - y0_) / 2, c_ + (y1_ - y0_) / 2; end   -- (one digit: a round dot, not a sliver)
-                DL.RF(dl, x0_, y0_, x1_, y1_, U4(0, 0, 0, 0.88), (y1_ - y0_) / 2);
+                local r1_, r2_ = math.max(1.5, th2_ * 0.20), math.max(1, th2_ * 0.11);
+                local c1_, c2_ = U4(0, 0, 0, 0.18), U4(0, 0, 0, 0.30);
+                local hx_ = ix + (size - tw) / 2;
+                for _, o in ipairs(C.HALO) do
+                    DL.T(dl, hx_ + o[1] * r1_, ty_ + o[2] * r1_ * 0.85, c1_, str);
+                    DL.T(dl, hx_ + o[1] * r2_, ty_ + o[2] * r2_ * 0.85, c2_, str);
+                end
             end
             text(dl, ix + (size - tw) / 2, ty_, str, tc_);
             if fit_ then imgui.SetWindowFontScale(BUFFS.ofs); end
@@ -13229,6 +13231,17 @@ local function outlined(dl, tx, ty, s, col)
     DL.T(dl, tx, ty, u32(col), s);
 end
 C.outlined = outlined;                                               -- (for the monster info tag, above)
+C.HALO = {};                                                         -- (a soft dark haze round words with no plate: readable on bright sky and snow)
+for k = 0, 11 do local a = k * math.pi / 6; C.HALO[#C.HALO + 1] = { math.cos(a), math.sin(a) }; end
+function C.halo(dl, tx, ty, s, col)
+    local al = col[4] or 1;
+    local c1, c2 = U4(0, 0, 0, 0.16 * al), U4(0, 0, 0, 0.26 * al);
+    for _, o in ipairs(C.HALO) do
+        DL.T(dl, tx + o[1] * 4, ty + o[2] * 3.5, c1, s);
+        DL.T(dl, tx + o[1] * 2.5, ty + o[2] * 2.2, c2, s);
+    end
+    outlined(dl, tx, ty, s, col);
+end
 -- the first time, each one is placed near the bottom middle of the screen (then they go wherever you drag them)
 local function first_place(kx, ky, dx, dy)
     if (tonumber(cfg[kx]) or -1) >= 0 then return; end
@@ -16543,7 +16556,7 @@ function LAYOUT.apply(o, eq, dps)
     end
     if dps and YUI_DPS and YUI_DPS.place then pcall(YUI_DPS.place, dps[1], dps[2]); end
 end
--- What MY LAYOUTS keep besides the places: every size, length and thickness (the look, colours and on / off stay as they are)
+-- What MY LAYOUTS keep besides the places: every size, length and thickness (and, since 1.1.33, every other setting too - see save_mine)
 LAYOUT.SIZES = { 'scale', 'target_scale', 'target_name_scale', 'target_w', 'target_bar_h', 'fan_scale', 'mb_scale', 'mbar_scale', 'ecast_scale',
     'ecast_font', 'target_buff_scale', 'sub_scale', 'sub_w', 'enemy_scale', 'enemy_w', 'party_scale', 'icon_scale', 'ally1_scale',
     'ally1_icon', 'ally2_scale', 'ally2_icon', 'buff_scale', 'party_buff_scale', 'party_timer_scale', 'party_bar_h', 'party_vgap', 'ally_gap', 'card_h', 'card_w', 'party_tp_text', 'party_dist_text', 'party_dist_x', 'timers_text', 'timers_mob_scale', 'timers_mob_text', 'timers_mob_w', 'timers_mob_h', 'exp_scale', 'exp_w', 'cast_scale',
@@ -16601,6 +16614,11 @@ end
 function LAYOUT.save_mine(n)
     local t = LAYOUT.capture();
     t.link = cfg.target_fx == 'link';                                -- (the mode it was saved in: loading it goes back to that mode)
+    local all = {};                                                  -- (and every other setting as it is now: looks, colours, on / off - loading it brings back exactly this)
+    for k, v in pairs(cfg) do
+        if type(k) == 'string' and not LAYOUT.SKIP[k] and not LAYOUT.NOKEEP[k] then all[k] = LAYOUT.plain(v); end
+    end
+    t.all = all;
     local all = {};
     if type(cfg.layouts) == 'table' then for k, v in pairs(cfg.layouts) do all[k] = v; end end
     all['mine' .. n] = t;
@@ -16616,6 +16634,11 @@ function LAYOUT.load_mine(n)
     local eq = {};
     for k, v in pairs(t.eq or {}) do eq[k] = v; end
     if t.link ~= nil and (t.link == true) ~= (cfg.target_fx == 'link') then pcall(C.setmode, t.link == true); end   -- (its own mode first: Normal or Hex link)
+    if type(t.all) == 'table' then                                   -- (every setting as it was saved: looks, colours, on / off - a layout saved before this keeps only places and sizes)
+        for k, v in pairs(t.all) do
+            if type(k) == 'string' and not LAYOUT.SKIP[k] and not LAYOUT.NOKEEP[k] then cfg[k] = LAYOUT.plain(v); end
+        end
+    end
     LAYOUT.apply(o, eq, (type(t.dps) == 'table' and t.dps[1]) and t.dps or nil);
     LAYOUT.msg = 'Loaded: ' .. (LAYOUT.name(n) or ('Layout ' .. n)) .. '.';
 end
@@ -16625,6 +16648,8 @@ end
 -- screen everything lands in the same spot. Importing keeps what you had first (UNDO puts it back).
 LAYOUT.SKIP = { cm_v1 = true, setup_done = true, welcomed = true, mode_v1 = true, mode_v2 = true, mode_v3 = true, md_backup = true, g_backup = true, g_dps0 = true, layouts = true,
     layout_names = true, share_backup = true, locked = true };
+LAYOUT.NOKEEP = { undo = true, undo_stack = true, ms_norm = true, ms_hex = true, ms_soul = true, ws_prev = true };                  -- (MY LAYOUTS: not kept in a layout)
+C.LAYOUT = LAYOUT;                                                   -- (for testing from the console)
 function LAYOUT.plain(v, d)                                          -- (a copy with only numbers, strings, booleans and tables of them)
     d = d or 0;
     local tv = type(v);
@@ -17982,7 +18007,7 @@ local function draw_window()
             hint('Makes every piece bigger or smaller at once - after a new monitor or resolution, one click. Each piece\'s own Size still works on top of it.');
             section('MY LAYOUTS');                                   -- five of your own, each with a name
             pcall(LAYOUT.mine_rows);
-            hint('Give it a name, SAVE keeps where everything is now and every size (sizes, lengths, thickness, the chat and the Damage Meter too), LOAD puts it all back. Colours, looks and on / off are not changed.');
+            hint('Give it a name, SAVE keeps your whole UI as it is now: where everything is, every size, look, colour and on / off (the chat and the Damage Meter too). LOAD puts it all back exactly as saved. (A layout saved before 1.1.33 keeps only places and sizes: SAVE it again.)');
             section('SHARE MY UI');                                  -- your whole UI as a code, for someone else (or theirs for you)
             local oksh, shh = pcall(LAYOUT.share_rows);
             hint(oksh and shh or 'Share my UI: something went wrong.');
@@ -20608,6 +20633,7 @@ function YMAP.gridpos()                                              -- your pla
     return out;
 end
 function YMAP.title_edge(dl, mid, cyl, sc, low)                     -- (low: on the bottom edge, under the frame)                          -- (MINIMAP > Zone name look > On the frame: the name centred on the frame's
+    local outlined = YUI_HEX and C.halo or outlined;               -- (Hex link: the name has no plate - a soft haze behind it)
     local name = (YMAP.name and YMAP.name ~= '') and YMAP.name or '?';   --  top edge, which breaks round it - YMAP.tgap)
     local now = os.clock();
     if YMAP.tname ~= name then YMAP.tname, YMAP.tt = name, now; end
@@ -20752,6 +20778,7 @@ function YMAP.chip(dl, x0, y0, x1, y1, edge, ea, s, kc, flip)        -- (a slant
     for i = 1, 4 do dl:AddLine(p[i], p[i % 4 + 1], U4(edge[1], edge[2], edge[3], ea), 1); end
 end
 function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: the map at the top of the screen - its jobs and gil go over it)
+    local outlined = C.halo;                                         -- (the words have no plates: a soft haze behind them)
     local H = C.HD;
     local now = os.clock();
     local s = math.max(0.55, M / 220);
@@ -20763,7 +20790,7 @@ function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: th
     -- the frame: a wide box with cut corners round the map
     local pad = 4 * s;
     local lft, top, rgt, bot = cx - MW / 2 - pad, cy - MH / 2 - pad, cx + MW / 2 + pad, cy + MH / 2 + pad;
-    local cut = 0.12 * MH;
+    local cut = 7 * s;                                               -- (small cut corners: a plain box, not a badge)
     local P = { { lft + cut, top }, { rgt - cut, top }, { rgt, top + cut }, { rgt, bot - cut }, { rgt - cut, bot }, { lft + cut, bot }, { lft, bot - cut }, { lft, top + cut } };
     local function frame(pp, f, c_, th, bars)                        -- (a closed shape's outline from its first corner, f of the way; bars: the
         local n = #pp;                                               --  top and bottom edges left out - the EXP and bag bars are drawn there)
@@ -20795,8 +20822,8 @@ function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: th
     local za = now - (YMAP.tt or 0);
     local zf = math.min(1, za / 0.9); zf = 1 - (1 - zf) ^ 3;
     local info = YMAP.dock_on();                                     -- (EXP, gil and bag on the map: off - the frame whole, nothing in it but the day)
-    frame(P, 1, col({ 0, 0, 0 }, 0.55), 4 * s, info);                -- (the first Visor - MINIMAP > Frame > Original)
-    frame(P, zf, col(GO, 0.75), 1.4 * s, info);
+    frame(P, 1, col({ 0, 0, 0 }, 0.30), 2.4 * s, info);              -- (one thin gold line - a faint dark edge under it, readable on snow)
+    frame(P, zf, col(GO, 0.80), 1.1 * s, info);
     if za > 0.6 and za < 1.6 then
         local q = (za - 0.6) / 1.0;
         local sy = top + q * (bot - top);
@@ -20822,7 +20849,7 @@ function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: th
         local inner = 11 * s + tw0 + (wn and (10 * s + 11 * s + ww0) or 0);
         local y0c = top + 3 * s;
         local x0c = lft + cut - (y0c + chh - top) + 3 * s;          -- (its slanted left end on the cut, a hair inside)
-        YMAP.chip(dl, x0c, y0c, x0c + kc + 4 * s + inner + 6 * s + kc * 0.5, y0c + chh, GO, 0.55 * zf, s, kc);
+        -- (no plate: the words alone, outlined - clean)
         local tx, ty = x0c + kc + 4 * s, y0c + (chh - th_) / 2;
         C.hexdot(dl, tx + 4 * s, y0c + chh / 2, 3.5 * s, col(dc, 0.95 * zf));
         outlined(dl, tx + 11 * s, ty, ts, { 0.92, 0.90, 0.85, 0.95 * zf });
@@ -20904,7 +20931,7 @@ function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: th
         local y0c = top + 3 * s;
         local x1c = rgt - cut + (y0c + chh - top) - 3 * s;
         local x0c = x1c - (kc * 0.5 + 6 * s + pw + 5 * s + sw2 + 4 * s + kc);
-        YMAP.chip(dl, x0c, y0c, x1c, y0c + chh, GO, 0.55, s, kc, true);
+        -- (no plate: the words alone)
         local tyc = y0c + (chh - ph) / 2;
         local tx0 = x0c + kc * 0.5 + 6 * s;
         label(pctS, 14 * s, tx0, tyc, { 1, 1, 1, 1 });                -- (the number white)
@@ -20921,8 +20948,7 @@ function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: th
         local y1c = bot - 3 * s;
         local y0c = y1c - chh;
         local pts_ = { { x0c + kc, y0c }, { x1c, y0c }, { x1c - kc, y1c }, { x0c, y1c } };
-        pcall(function() dl:AddConvexPolyFilled(pts_, col({ 0.03, 0.035, 0.055 }, 0.88)); end);
-        for i = 1, 4 do dl:AddLine(pts_[i], pts_[i % 4 + 1], col(fc, 0.55 + 0.3 * beat), 1); end
+        -- (no plate: the count alone, outlined)
         local tyc = y0c + (chh - bh) / 2;
         local base = tyc + bh * 0.80;                                -- (the big number's baseline: the small one sits on it)
         local uw = label(tostring(used), 15 * s, x0c + kc + 6 * s, tyc, near and { 1, 0.7, 0.72, 1 } or { 0.88, 0.95, 1, 1 });
@@ -20954,10 +20980,7 @@ function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: th
     local function edgeL(yy) return low and (lft + cut + (top - yy)) or (lft + cut + (yy - bot)); end   -- (the cut corners' lines, carried on)
     local function edgeR(yy) return low and (rgt - cut - (top - yy)) or (rgt - cut - (yy - bot)); end
     local near_, far_ = low and py1 or py0, low and py0 or py1;     -- (the side by the frame, the side away from it)
-    local function tag4(p)
-        pcall(function() dl:AddConvexPolyFilled(p, col({ 0.03, 0.035, 0.055 }, 0.85)); end);
-        for i = 1, 4 do dl:AddLine(p[i], p[i % 4 + 1], col(GO, 0.55), 1); end
-    end
+    local function tag4(p) end                                       -- (no plates under the jobs and gil: the words alone, outlined - clean)
     local mL, mR = cx - 4 * s, cx + 4 * s;
     local isl = phh * 0.5;                                           -- (the inner ends: a gentler slant, more room for the words)
     tag4({ { edgeL(near_), near_ }, { mL, near_ }, { mL - isl, far_ }, { edgeL(far_), far_ } });
@@ -21891,7 +21914,7 @@ EDIT.G.STEPS = {
         { { 'mode_icon', 'GENERAL (Mode switch icon)' } } },
     { "Settings", nil, {
         "Type /yui to open the settings: every piece has its own size, look and on / off switch.",
-        "In GENERAL > MY LAYOUTS you can keep five layouts of your own, with their places and sizes." } },
+        "In GENERAL > MY LAYOUTS you can keep five layouts of your own - your whole UI, exactly as you saved it." } },
     { "Make it yours", nil, {
         "Now place everything where you like: drag any piece, it snaps to the grid and lines up with the others. Press DONE when you are happy.",
         "Later: /yui edit to move things again, /yui guide to see this guide again." } },
