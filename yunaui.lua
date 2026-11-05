@@ -22682,7 +22682,11 @@ ashita.events.register('d3d_present', 'yui_present', function()
             if YMAP.bygame then piece(YMAP.draw); end
             return;
         end
-        if evt_ then piece(draw_chat, 1); piece(draw_chat, 3); return; end   -- (an NPC's menu or a cutscene: only the chat, to read what it says and what you got)
+        if evt_ then                                                 -- (the chats as you set them: the combat log and the gear card joined in the row too)
+            piece(draw_chat, 1); piece(draw_chat, 2); piece(draw_chat, 3);
+            if C.sanc_on and C.sanc_on() then YUI_EQ_HIDE = true; piece(draw_strip); end
+            return;
+        end   -- (an NPC's menu or a cutscene: only the chat, to read what it says and what you got)
         -- settings copied in from another character? take them now
         if os.clock() >= WATCH.at then                               -- (settings copied in from another character: looked for every 2 s, as the copy
             WATCH.at = os.clock() + 2;                               --  promises - two small files read from disk, off the every-frame path)
