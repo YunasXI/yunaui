@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.37';
+addon.version = '1.1.38';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -16174,6 +16174,27 @@ function C.inv_packet(e)                                             -- (0x0DC: 
     if cfg.invite_snd ~= false then pcall(C.snd_play, 'invite', 'invite_vol'); end   -- (SOUND ALERTS > Party invite)
     pcall(C.inv_flash);
 end
+function C.trade_packet(e)                                           -- (0x021: someone wants to trade with you - their id, then their index)
+    local idx = struct.unpack('H', e.data, 0x08 + 1);
+    C.TRD = { idx = idx, t = os.clock() };
+    if cfg.trade_alert == false then return; end
+    local name = '';
+    pcall(function() name = AshitaCore:GetMemoryManager():GetEntity():GetName(idx) or ''; end);
+    if name == '' then name = 'Someone'; end
+    local G = C.GOT;
+    for i = #G.list, 1, -1 do if G.list[i].trade then table.remove(G.list, i); end end   -- (a new request replaces an old one)
+    table.insert(G.list, 1, { trade = true, label = 'TRADE', text = name .. '   wants to trade with you', t0 = os.clock(), life = 60 });
+    pcall(C.inv_flash);
+end
+function C.trade_answer(yes)                                         -- (the trade card's Accept / Decline: the game's own accept / cancel of a request)
+    pcall(function() AshitaCore:GetPacketManager():AddOutgoingPacket(0x33, { 0x33, 0x06, 0x00, 0x00, yes and 0x00 or 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }); end);
+    pcall(C.trade_close);
+end
+function C.trade_close()                                             -- (0x022: the trade opened, ended or was cancelled - its card goes)
+    C.TRD = nil;
+    local G = C.GOT;
+    for _, it in ipairs(G.list) do if it.trade and os.clock() - it.t0 < (it.life or 60) then it.life = os.clock() - it.t0; end end
+end
 function C.inv_close()                                               -- (you joined, or the invite's gone: its card goes)
     local G = C.GOT;
     for _, it in ipairs(G.list) do if it.inv and os.clock() - it.t0 < (it.life or 12) then it.life = os.clock() - it.t0; end end
@@ -16270,7 +16291,8 @@ function C.got_win()                                                 -- (the loo
             local wx_ = d1 + dv;
             local d2 = wx_ + ww_ + dv;
             local nx = d2 + dv;
-            local bw = (nx + nw + pad) - x0;
+            local btw_ = math.floor(84 * sc);                        -- (the trade card: ACCEPT and DECLINE after the name)
+            local bw = (nx + nw + pad) - x0 + (it.trade and (2 * btw_ + 22 * sc) or 0);
             maxw = math.max(maxw, bw);
             local fl = it.fake and 0 or math.max(0, 1 - age / 0.8);  -- (just in: a little brighter)
             C.band(dl, x0, ry, x0 + bw, ry + rh, (0.55 + 0.15 * fl) * al, 0.55 * al);   -- the band: soft all round, a slim dark outline
@@ -16301,6 +16323,25 @@ function C.got_win()                                                 -- (the loo
                 DL.T(dl, math.floor(nx), math.floor(cy - lh / 2), U4(1, 1, 1, al), nm);
                 DL.T(dl, math.floor(nx) + 1, math.floor(cy - lh / 2), U4(1, 1, 1, 0.35 * al), nm);   -- (a touch heavier, as the picture's)
                 unsized(pn);
+            end
+            if it.trade and not it.fake and al > 0.3 then               -- (Accept / Decline: pills - white for yes)
+                local bh_ = math.floor(rh * 0.56);
+                local bx_ = math.floor(nx + nw + 18 * sc);
+                local by_ = math.floor(cy - bh_ / 2);
+                for k_, b_ in ipairs({ { 'ACCEPT', true }, { 'DECLINE', false } }) do
+                    local px_ = bx_ + (k_ - 1) * (btw_ + 8 * sc);
+                    imgui.SetCursorScreenPos({ px_, by_ });
+                    local hit_ = imgui.InvisibleButton('##yui_trd' .. k_, { btw_, bh_ });
+                    local ov_ = imgui.IsItemHovered();
+                    if b_[2] then DL.RF(dl, px_, by_, px_ + btw_, by_ + bh_, U4(0.93, 0.93, 0.96, (ov_ and 1 or 0.88) * al), bh_ / 2);
+                    else DL.RF(dl, px_, by_, px_ + btw_, by_ + bh_, U4(1, 1, 1, (ov_ and 0.16 or 0.08) * al), bh_ / 2); DL.R(dl, px_, by_, px_ + btw_, by_ + bh_, U4(1, 1, 1, 0.25 * al), bh_ / 2, C.rall or 15, 1); end
+                    local pw2 = sized('chat', 13 * sc);
+                    local tw2 = tonumber((imgui.CalcTextSize(b_[1]))) or 0;
+                    local th2 = imgui.GetTextLineHeight();
+                    DL.T(dl, px_ + (btw_ - tw2) / 2, by_ + (bh_ - th2) / 2, b_[2] and U4(0.08, 0.08, 0.10, al) or U4(1, 1, 1, al), b_[1]);
+                    unsized(pw2);
+                    if hit_ then C.trade_answer(b_[2]); end
+                end
             end
         end
         ry = ry + rh + gap;
@@ -18184,6 +18225,8 @@ local function draw_window()
                 or 'Turn the cards over (the card icon by PARTY) for their own settings: length, height, TP and distance text.');
             row_switch('##yui_pzone', 'Zone of members elsewhere', 'party_zone', 'On: a member in another zone shows where they are, under their name (party and alliance).');
             if cfg.party_invite == nil then cfg.party_invite = true; end
+            if cfg.trade_alert == nil then cfg.trade_alert = true; end
+            row_switch('##yui_ptrd', 'Trade request alert', 'trade_alert', 'On: when someone wants to trade with you, a card shows who, with ACCEPT and DECLINE, until the trade opens or is cancelled; if you are in another window, the game flashes in the taskbar. It sits with the item popup.');
             row_switch('##yui_pinv', 'Party invite alert', 'party_invite', 'On: when someone invites you to a party or alliance, a card shows who (with /join to accept); if you are in another window, the game flashes in the taskbar. Move the card in Edit Mode (it sits with the item popup). Its sound: SOUND ALERTS.');
             section('ALLIANCE');
             row_switch('##yui_a', 'Show', 'alliance');
@@ -22810,6 +22853,8 @@ ashita.events.register('packet_in', 'yui_packet', function(e)
     elseif e.id == 0x0D3 then pcall(C.loot_packet, e);
     elseif e.id == 0x0DC then pcall(C.inv_packet, e);                -- (PARTY > Party invite alert)
     elseif e.id == 0x0C8 then pcall(C.inv_close);                    -- (the party formed: the invite's card goes)
+    elseif e.id == 0x021 then pcall(C.trade_packet, e);              -- (PARTY > Trade request alert)
+    elseif e.id == 0x022 then pcall(C.trade_close);                  -- (the trade went on: its card goes)
     elseif e.id == 0x0D2 then pcall(C.loot_drop, e);               -- (an item fell in the pool: it flies in from the monster)              -- (a lot or a pass on a treasure pool item)
     elseif e.id == 0x00E then pcall(read_claim, e);
     elseif e.id == 0x057 then pcall(C.weather_packet, e);
