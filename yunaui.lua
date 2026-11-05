@@ -22648,7 +22648,13 @@ ashita.events.register('d3d_present', 'yui_present', function()
     local dt = math.min(0.1, now - last);
     last = now;
     local ok, err = pcall(function()
-        if not AshitaCore:GetFontManager():GetVisible() then return; end
+        local evt_ = false;                                          -- (talking to an NPC, a cutscene: the game's interface is hidden, but
+        if not AshitaCore:GetFontManager():GetVisible() then         --  its log stays - so YunaUI's chat stays too, alone; F11 hides it all)
+            local okh, f11 = pcall(function() return vana.ui.interface_hidden(); end);
+            if (okh and f11) or not cfg.chat then return; end
+            evt_ = true;
+            pcall(function() if not vana.ashita.gui_visible() then vana.ashita.gui_visible(true); end end);   -- (VanaCore hides every ImGui window then: shown again, for the chat)
+        end
         local p = AshitaCore:GetMemoryManager():GetParty();
         if p == nil or p:GetMemberIsActive(0) == 0 then return; end   -- not logged in / zoning
         if YUI_OUT() then return; end
@@ -22676,6 +22682,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
             if YMAP.bygame then piece(YMAP.draw); end
             return;
         end
+        if evt_ then piece(draw_chat, 1); piece(draw_chat, 3); return; end   -- (an NPC's menu or a cutscene: only the chat, to read what it says and what you got)
         -- settings copied in from another character? take them now
         if os.clock() >= WATCH.at then                               -- (settings copied in from another character: looked for every 2 s, as the copy
             WATCH.at = os.clock() + 2;                               --  promises - two small files read from disk, off the every-frame path)
