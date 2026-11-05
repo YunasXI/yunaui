@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.38';
+addon.version = '1.1.39';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -260,6 +260,70 @@ function C.screen()                                                  -- (the big
     return math.max(w, S.w), math.max(h, S.h);
 end
 function YUI_GS() return math.max(0.5, math.min(4, tonumber(cfg.scale) or 1)); end   -- GENERAL > Size of everything (equip.lua's bars too)
+-- GENERAL > SIZE > Follow the resolution: VanaCore's interface size (vana.ui.screen) watched; when it changes - the
+-- resolution changed in VanaCore - every piece is resized by the same amount (Size of everything) and moved to the same
+-- place in proportion (right edge stays at the right edge), so the UI looks the same at 1080p, 1440p or 4K. The first
+-- time it only notes the size: a look already set stays exactly as it is. Your own sizes stay yours, on top.
+C.RES = { PX = { chat = true, chat2 = true, chat3 = true } };
+function C.res_now()
+    local w, h = 0, 0;
+    pcall(function() local a, b = vana.ui.screen(); w, h = tonumber(a) or 0, tonumber(b) or 0; end);
+    return math.floor(w), math.floor(h);
+end
+function C.res_apply(ow, oh, nw, nh)                                -- (from one interface size to another: sizes by the height, places in proportion)
+    local k = nh / oh;
+    local kx, ky = nw / ow, nh / oh;
+    cfg.scale = math.max(0.5, math.min(4, (tonumber(cfg.scale) or 1) * k));
+    for key, v in pairs(cfg) do
+        if type(key) == 'string' and type(v) == 'number' then
+            local base = key:match('^(.+)_x$');
+            if base and type(cfg[base .. '_y']) == 'number' and v >= 0 and cfg[base .. '_y'] >= 0 then
+                cfg[key] = math.floor(v * kx + 0.5);
+                cfg[base .. '_y'] = math.floor(cfg[base .. '_y'] * ky + 0.5);
+            end
+            local wb = key:match('^(.+)_w$');                        -- (a window's own width and height in pixels: the chats' - by the same amount)
+            if wb and C.RES.PX[wb] and type(cfg[wb .. '_h']) == 'number' and v > 0 and cfg[wb .. '_h'] > 0 then   -- (only the chats: their sizes are pixels - the cast bar's is times Size already)
+                cfg[key] = math.floor(v * k + 0.5);
+                cfg[wb .. '_h'] = math.floor(cfg[wb .. '_h'] * k + 0.5);
+            end
+        end
+    end
+    pcall(function()                                                 -- (the HP / MP / TP bars - equip.lua: their places; their size is Size of everything's)
+        local E = YUI_EQ_GET and YUI_EQ_GET();
+        if type(E) ~= 'table' then return; end
+        local t = {};
+        for _, b_ in ipairs({ 'hpbar', 'mpbar', 'tpbar' }) do
+            local x_, y_ = tonumber(E[b_ .. '_x']), tonumber(E[b_ .. '_y']);
+            if x_ and y_ and x_ >= 0 and y_ >= 0 then t[b_ .. '_x'], t[b_ .. '_y'] = math.floor(x_ * kx + 0.5), math.floor(y_ * ky + 0.5); end
+        end
+        if next(t) and YUI_EQ_APPLY then YUI_EQ_APPLY(t); end
+    end);
+    pcall(function()                                                 -- (the Damage Meter - dps.lua: its own size and place)
+        local D = YUI_DPS and YUI_DPS.get and YUI_DPS.get();
+        if type(D) ~= 'table' then return; end
+        D.size = math.floor(math.max(50, math.min(250, (tonumber(D.size) or 100) * k)) + 0.5);
+        if tonumber(D.x) and tonumber(D.y) then YUI_DPS.place(D.x * kx, D.y * ky); else YUI_DPS.save(); end
+    end);
+    WATCH.move = 3;
+end
+function C.res_tick()
+    if cfg.res_follow == false then return; end
+    local R, now = C.RES, os.clock();
+    if now - (R.t or -9) < 0.5 then return; end
+    R.t = now;
+    local w, h = C.res_now();
+    if w < 320 or h < 240 then return; end
+    local ow, oh = tonumber(cfg.res_w) or 0, tonumber(cfg.res_h) or 0;
+    if ow < 320 or oh < 240 then cfg.res_w, cfg.res_h = w, h; pcall(save); return; end   -- (the first time: noted, nothing changes)
+    if math.abs(w - ow) <= 2 and math.abs(h - oh) <= 2 then R.seen = nil; return; end
+    if not R.seen or R.seen[1] ~= w or R.seen[2] ~= h then R.seen = { w, h, now }; return; end   -- (a new size: once it holds for a second - not mid-drag of the window)
+    if now - R.seen[3] < 1.0 then return; end
+    R.seen = nil;
+    C.res_apply(ow, oh, w, h);
+    cfg.res_w, cfg.res_h = w, h;
+    pcall(save);
+    msg(('Resolution %dx%d: the UI resized to match (Size of everything %.2fx). GENERAL > SIZE > Follow the resolution turns this off.'):format(w, h, tonumber(cfg.scale) or 1));
+end
 function C.cliprect(a, b)
     local w, h = C.screen();
     local x1 = math.floor(math.max(0, math.min(w - 1, a[1])));
@@ -18046,7 +18110,9 @@ local function draw_window()
                 end
                 if imgui.IsItemHovered() then YUI_TIP('Fit my screen: the size for your resolution\n(1080p 1x, 1440p 1.35x, 4K 2x)'); end
             end
-            hint('Makes every piece bigger or smaller at once - after a new monitor or resolution, one click. Each piece\'s own Size still works on top of it.');
+            if cfg.res_follow == nil then cfg.res_follow = true; end
+            row_switch('##yui_resf', 'Follow the resolution', 'res_follow', 'On: when you change the resolution (in VanaCore or the game), every piece resizes by the same amount and keeps its place on the screen, so the UI looks the same at 1080p, 1440p or 4K. Your own sizes stay yours. Off: nothing changes by itself.');
+            hint('Makes every piece bigger or smaller at once. With Follow the resolution on it changes by itself when your resolution does. Each piece\'s own Size still works on top of it.');
             section('MY LAYOUTS');                                   -- five of your own, each with a name
             pcall(LAYOUT.mine_rows);
             hint('Give it a name, SAVE keeps your whole UI as it is now: where everything is, every size, look, colour and on / off (the chat and the Damage Meter too). LOAD puts it all back exactly as saved. (A layout saved before 1.1.33 keeps only places and sizes: SAVE it again.)');
@@ -22701,6 +22767,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         local p = AshitaCore:GetMemoryManager():GetParty();
         if p == nil or p:GetMemberIsActive(0) == 0 then return; end   -- not logged in / zoning
         if YUI_OUT() then return; end
+        pcall(C.res_tick);                                           -- (GENERAL > SIZE > Follow the resolution)
         -- each piece on its own: a problem in one (shown once in chat) never stops the others, the logo or the window
         if C.PROF then C.PROF_N = (C.PROF_N or 0) + 1; end           -- (/yui prof: frames counted)
         local function piece(fn, ...)
