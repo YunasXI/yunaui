@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.40';
+addon.version = '1.1.41';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -6091,7 +6091,18 @@ function ALLY.tag(dl, m, i, x, ny, ch, sc, v, live, mir, cap)       -- (mir: x i
         if ta > 0.01 then text(dl, jx, y0 + (th - jh) / 2 + (ALLY.tagdy or 0), job, { 1, 1, 1, v * dim * ta }); end
     else
         ALLY.poly(dl, pts, U4(f[1], f[2], f[3], v * dim));      -- (one flat colour: no sheen, no outline)
-        if ALLY.tagol then for q = 1, #pts do dl:AddLine(pts[q], pts[q % #pts + 1], U4(0, 0, 0, 0.95 * v), 1.6); end end   -- (ALLY.tagol: a black outline round it)
+        if ALLY.tagol then                                            -- (ALLY.tagol: a black outline round it - one closed line, so its sharp corners join, no notch)
+            local olc_ = U4(0, 0, 0, 0.95 * v);
+            for q = 1, #pts do                                       -- (each side a touch longer at both ends: the sides overlap at the corners)
+                local a_, b_ = pts[q], pts[q % #pts + 1];
+                local dx_, dy_ = b_[1] - a_[1], b_[2] - a_[2];
+                local ln_ = math.sqrt(dx_ * dx_ + dy_ * dy_);
+                if ln_ > 0.01 then
+                    local ex_, ey_ = dx_ / ln_ * 0.9, dy_ / ln_ * 0.9;
+                    DL.L(dl, a_[1] - ex_, a_[2] - ey_, b_[1] + ex_, b_[2] + ey_, olc_, 1.6);
+                end
+            end
+        end
         if ta > 0.01 then DL.T(dl, jx, y0 + (th - jh) / 2 + (ALLY.tagdy or 0), U4(ink[1], ink[2], ink[3], v * ta), job); end
     end
     imgui.SetWindowFontScale(fs0);
