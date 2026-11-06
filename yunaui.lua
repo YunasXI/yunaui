@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.39';
+addon.version = '1.1.40';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -19424,6 +19424,7 @@ function C.macrobar()
     local picking = false;                                           -- (the game's arrow is up - <st>, <stal>, <stnpc>: the bar steps aside, the pad all the game's)
     picking = C.mb_picking();
     if picking then M.tog = 0; padrow = 0; if held == raw then held = 0; end end
+    if raw ~= 0 and C.mb_inmenu() then M.tog = 0; padrow = 0; if held == raw then held = 0; end end   -- (a game menu open: the triggers are the menu's - the bar doesn't open)
     if padrow ~= M.padrow then                                       -- (a row just opened: the highlight where you left it)
         M.padrow = padrow;
         if padrow ~= 0 then M.sel = M.lastsel[padrow] or 0; end
@@ -23011,7 +23012,23 @@ ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStati
     end
 end);
 function C.mb_mine()                                                -- (YunaUI's bar is up in place of the game's: the triggers are its)
-    return cfg.macrobar ~= false and C.MB.ok == true and C.MB.hid == true and not YUI_MAPCOVER;
+    return cfg.macrobar ~= false and C.MB.ok == true and C.MB.hid == true and not YUI_MAPCOVER and not C.mb_inmenu();
+end
+C.MB_MENU = { t = -9, v = false };
+C.MB_HUD = { helpwind = true, titlewin = true, partywin = true, netstat = true, buff = true, logwindo = true, casttime = true, targetwi = true, inline = true, mapframe = true, gaugewin = true, playermo = true };   -- (playermo: the game's field mode - the cursor's home while you just play or fight)
+function C.mb_inmenu()                                               -- (a game menu has the cursor - bags, a trade, a shop...: the triggers are the game's, as
+    local M = C.MB_MENU;                                             --  always - R2 held in a two-list menu keeps you on one list, left / right turn its pages)
+    if os.clock() - M.t < 0.1 then return M.v; end                   -- (looked at ten times a second)
+    M.t = os.clock(); M.v = false;
+    pcall(function()
+        for _, n in ipairs(vana.gameui.windows() or {}) do
+            if not C.MB_HUD[n] and not n:find('^mcr') and not n:find('macro') then   -- (the game's own macro palette - hidden, YunaUI's bar in its place - isn't a menu)
+                local w = vana.gameui.window(n);
+                if w and w.focused and not w.closing then M.v = true; return; end
+            end
+        end
+    end);
+    return M.v;
 end
 C.MB_XBITS = { { 0, 0x0001 }, { 1, 0x0002 }, { 2, 0x0004 }, { 3, 0x0008 }, { 12, 0x1000 } };   -- (D-pad up, down, left, right; confirm - A unless the game says otherwise)
 -- The game's own confirm / cancel buttons (vana.gamepad.bindings): a PlayStation-style pad set up with Circle to confirm
