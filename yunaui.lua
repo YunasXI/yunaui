@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.44';
+addon.version = '1.1.45';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -234,6 +234,15 @@ function YUI_TINTW(f, ...)                                           -- (f drawn
     local ok, e = pcall(f, ...);
     YUI_TINT_W = o;
     return ok, e;
+end
+function YUI_NOTINT(f)                                              -- (f always drawn in its own colours - the chat's words: never the theme's)
+    return function(...)
+        local o = YUI_TINT_ON; YUI_TINT_ON = false;
+        local r = { pcall(f, ...) };
+        YUI_TINT_ON = o;
+        if not r[1] then error(r[2], 0); end
+        return unpack(r, 2, table.maxn(r));
+    end
 end
 function YUI_U4K(r, g, b, a)                                         -- (a colour kept as it is - the gil coin stays gold)
     local o = YUI_TINT_ON; YUI_TINT_ON = false;
@@ -12681,6 +12690,8 @@ function C.chat_copy(e, itip)                                        -- (CHAT: a
         DL.T(fg, P.mx + 17, P.my - 20, U4(1, 1, 1, a), JP.t('Copied'));   -- [JP]
     end
 end
+chat_line = YUI_NOTINT(chat_line);                                  -- (the chat's words and feeds: their channels' own colours, whatever the theme)
+C.feed_draw = YUI_NOTINT(C.feed_draw);
 local function draw_chat(n)
     if n == 1 then
         local sig = tostring(cfg.chat_time) .. tostring(cfg.chat_time_sec) .. tostring(cfg.chat_time_12) .. tostring(cfg.chat_time_case);
@@ -13079,7 +13090,7 @@ local function draw_chat(n)
                                 local li_ = C.ls_info((e.cat == 'ls') and 1 or 2);
                                 if li_ and li_.col then bc = li_.col; end
                             end
-                            DL.RF(dl, px, ly - ((k < #lines) and 0 or 0), px + 3, ly + ((k < #lines) and lh or th0), U4(bc[1], bc[2], bc[3], 0.95 * a), 1.5);
+                            DL.RF(dl, px, ly - ((k < #lines) and 0 or 0), px + 3, ly + ((k < #lines) and lh or th0), YUI_U4K(bc[1], bc[2], bc[3], 0.95 * a), 1.5);
                             if k == 1 and bts then
                                 local fs = FS;
                                 imgui.SetWindowFontScale(fs * CL.tsk);
@@ -13095,11 +13106,11 @@ local function draw_chat(n)
                             if a > 0.3 and mx_ >= x and mx_ <= x + w and my_ >= ly - 1 and my_ < ly + lh - 1 then hov_e = e; end
                         end
                         if glow > 0.01 then                          -- (new, or a feed line that just grew: a soft glow in its colour)
-                            DL.RF(dl, px - 5, ly - 2, px + tw_ + 5, ly + th + 1, U4(c[1], c[2], c[3], 0.22 * glow * glow * a), 4);
+                            DL.RF(dl, px - 5, ly - 2, px + tw_ + 5, ly + th + 1, YUI_U4K(c[1], c[2], c[3], 0.22 * glow * glow * a), 4);
                         end
                         local fresh = (cfg.chat_anim ~= false) and math.max(0, math.min(1, 1 - ((now - (e.flash or e.t0 or -99)) - 1.5) / 1.5)) or 0;
                         if fresh > 0.01 and not cl_ then             -- (the clear look has its bar all the time)                         -- (new, or a feed line that just grew: a short bar in its colour on the
-                            DL.RF(dl, px - 10, ly, px - 7, ly + th - 1, U4(c[1], c[2], c[3], 0.9 * fresh * a), 1.5);   --  left, for a moment)
+                            DL.RF(dl, px - 10, ly, px - 7, ly + th - 1, YUI_U4K(c[1], c[2], c[3], 0.9 * fresh * a), 1.5);   --  left, for a moment)
                         end
                         local ts = (not cl_ and not e.feed and k == 1 and (e.tslen or 0) > 0 and #txt > e.tslen) and txt:sub(1, e.tslen) or nil;
                         if e.feed then
