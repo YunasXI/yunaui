@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.42';
+addon.version = '1.1.43';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -5970,13 +5970,23 @@ function C.hpwarn(m, hp)
 end
 -- Hex link: the HP bar itself as a heat scale (the frames are gold - a yellow edge was lost on them): pale gold above 75%,
 -- orange under it, deep red-orange under 50%, red beating under 25% (the card's low HP). { light end, dark end } or nil
+function C.LOWC(k)                                                   -- (the low-HP warning's colour: red; with Void red HP bars a near-white rose, so it
+    if (cfg.hex_hp_color or 'gold') == 'red' then                    --  still stands out on the dark red bar. k = 1: its lighter shade)
+        return (k == 1) and { 1, 0.97, 0.97 } or { 1, 0.86, 0.88 };
+    end
+    return (k == 1) and { 1, 0.55, 0.56 } or { 1, 0.30, 0.34 };
+end
 function C.hpheat(m, hp)
     local w = C.hpwarn(m, hp);
     if w == nil then                                                 -- (75% and over: a pale, light gold - so the steps after it stand out)
+        if (cfg.hex_hp_color or 'gold') ~= 'gold' then return nil; end   -- (HP bar colour picked: full HP in that colour, not the pale gold)
         if cfg.card_low ~= false and m and m.inzone and (hp or 0) >= 0.75 and not C.jobcol(m) then return { 1.0, 0.86, 0.50 }, { 0.94, 0.68, 0.26 }; end
         return nil;
     end
-    if hp < 0.50 then return { 1.0, 0.34, 0.16 }, { 0.80, 0.12, 0.05 }; end   -- (under 50%: deep red-orange)
+    if hp < 0.50 then
+        if (cfg.hex_hp_color or 'gold') == 'red' then return { 1.0, 0.92, 0.92 }, { 0.96, 0.70, 0.74 }; end   -- (Void red: under 50% a pale rose-white, not lost in the red)
+        return { 1.0, 0.34, 0.16 }, { 0.80, 0.12, 0.05 };              -- (under 50%: deep red-orange)
+    end
     return { 1.0, 0.62, 0.16 }, { 0.95, 0.40, 0.04 };                -- (under 75%: strong orange)
 end
 -- PARTY > Buffs per row: more buffs than that wrap onto a second (or third) row beside the card, the icons made
@@ -6243,7 +6253,7 @@ function ALLY.slim(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     if not YUI_HEX then local a_, b_ = C.hpheatN(m, hp); if a_ then c1, c2 = a_, b_; end end   -- (Normal: silver, yellow, orange, red as HP drops)
     if cfg.card_low ~= false and hp < 0.25 then                      -- low HP: the line beats red
         local q = 0.5 + 0.5 * math.sin(os.clock() * 6 + i);
-        local function red(c) return { c[1] + (1.0 - c[1]) * q, c[2] + (0.30 - c[2]) * q, c[3] + (0.34 - c[3]) * q }; end
+        local function red(c) return { c[1] + (1.0 - c[1]) * q, c[2] + (C.LOWC()[2] - c[2]) * q, c[3] + (C.LOWC()[3] - c[3]) * q }; end
         c1, c2 = red(c1), red(c2);
     end
     local hy = top + lh + 1 * sc;
@@ -6349,7 +6359,7 @@ function ALLY.plate(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     if C.jobcol(m) then c1, c2 = C.jhp(m, 1), C.jhp(m, 2); end       -- (BARS > HP colour by job)
     if cfg.card_low ~= false and hp < 0.25 then
         local q = 0.5 + 0.5 * math.sin(os.clock() * 6 + i);
-        local function red(c) return { c[1] + (1.0 - c[1]) * q, c[2] + (0.30 - c[2]) * q, c[3] + (0.34 - c[3]) * q }; end
+        local function red(c) return { c[1] + (1.0 - c[1]) * q, c[2] + (C.LOWC()[2] - c[2]) * q, c[3] + (C.LOWC()[3] - c[3]) * q }; end
         c1, c2 = red(c1), red(c2);
     end
     local dt = imgui.GetIO().DeltaTime or 0.016;
@@ -7232,7 +7242,7 @@ function ALLY.hexrow(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
                 if C.jobcol(m) then hc1, hc2 = C.jhp(m, 1), C.jhp(m, 2); end   -- (BARS > HP colour by job)
                 do local h1_, h2_ = C.hpheat(m, hp); if h1_ then hc1, hc2 = h1_, h2_; end end   -- (under 75%: orange, under 50%: red-orange)
                 if low then
-                    local function red(c) return { c[1] + (1.0 - c[1]) * (0.7 + 0.3 * beat), c[2] + (0.30 - c[2]) * (0.7 + 0.3 * beat), c[3] + (0.34 - c[3]) * (0.7 + 0.3 * beat) }; end
+                    local function red(c) return { c[1] + (1.0 - c[1]) * (0.7 + 0.3 * beat), c[2] + (C.LOWC()[2] - c[2]) * (0.7 + 0.3 * beat), c[3] + (C.LOWC()[3] - c[3]) * (0.7 + 0.3 * beat) }; end
                     hc1, hc2 = red(hc1), red(hc2);
                 end
                 C.hexbar(dl, bx, hy - 1, bw, 2, hp, lagged('hx' .. i, hp, dt), i, { c1 = hc1, c2 = hc2, band = hb, al = v * ta });
@@ -7255,7 +7265,7 @@ function ALLY.hexrow(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
             local hc1, hc2 = C.HEXHP[1], C.HEXHP[2];                   -- (the same colours as the plate's front bar)
             if C.jobcol(m) then hc1, hc2 = C.jhp(m, 1), C.jhp(m, 2); end
             do local h1_, h2_ = C.hpheat(m, m.hpp); if h1_ then hc1, hc2 = h1_, h2_; end end   -- (the same heat as the front)
-            if low then hc1, hc2 = { 1, 0.55, 0.56 }, { 1, 0.30, 0.34 }; end
+            if low then hc1, hc2 = C.LOWC(1), C.LOWC(); end
             local yb_ = y2 - 3 * sc;                                 -- (under the name, as the front's: HP the whole width, MP under it - the
             local gap_ = 2 * sc;                                     --  front's shapes, taller, their numbers inside; HP the taller)
             local hh_ = (yb_ - ry - gap_) * 0.56;                    -- (HP its usual size - no MP (a MNK, a WAR): the same size, in the middle; MP thin, resting on its foot -
@@ -7550,7 +7560,7 @@ function ALLY.hexrow1(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
                 if C.jobcol(m) then hc1, hc2 = C.jhp(m, 1), C.jhp(m, 2); end   -- (BARS > HP colour by job)
                 do local h1_, h2_ = C.hpheat(m, hp); if h1_ then hc1, hc2 = h1_, h2_; end end   -- (under 75%: orange, under 50%: red-orange)
                 if low then
-                    local function red(c) return { c[1] + (1.0 - c[1]) * (0.7 + 0.3 * beat), c[2] + (0.30 - c[2]) * (0.7 + 0.3 * beat), c[3] + (0.34 - c[3]) * (0.7 + 0.3 * beat) }; end
+                    local function red(c) return { c[1] + (1.0 - c[1]) * (0.7 + 0.3 * beat), c[2] + (C.LOWC()[2] - c[2]) * (0.7 + 0.3 * beat), c[3] + (C.LOWC()[3] - c[3]) * (0.7 + 0.3 * beat) }; end
                     hc1, hc2 = red(hc1), red(hc2);
                 end
                 C.hexbar(dl, bx, hy - 1, bw, 2, hp, lagged('hx' .. i, hp, dt), i, { c1 = hc1, c2 = hc2, band = hb, al = v * ta });
@@ -7573,7 +7583,7 @@ function ALLY.hexrow1(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
             local hc1, hc2 = C.HEXHP[1], C.HEXHP[2];                   -- (the same colours as the plate's front bar)
             if C.jobcol(m) then hc1, hc2 = C.jhp(m, 1), C.jhp(m, 2); end
             do local h1_, h2_ = C.hpheat(m, m.hpp); if h1_ then hc1, hc2 = h1_, h2_; end end   -- (the same heat as the front)
-            if low then hc1, hc2 = { 1, 0.55, 0.56 }, { 1, 0.30, 0.34 }; end
+            if low then hc1, hc2 = C.LOWC(1), C.LOWC(); end
             local yb_ = y2 - 3 * sc;                                 -- (under the name, as the front's: HP the whole width, MP under it - the
             local gap_ = 2 * sc;                                     --  front's shapes, taller, their numbers inside; HP the taller)
             local hh_ = hasmp and (yb_ - ry - gap_) * 0.56 or (yb_ - ry);   -- (HP its usual size; MP thin, resting on its foot - as the target's bars -
@@ -7734,7 +7744,7 @@ function ALLY.hexrow2(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
     local hc1, hc2 = C.HEXHP[1], C.HEXHP[2];
     if C.jobcol(m) then hc1, hc2 = C.jhp(m, 1), C.jhp(m, 2); end
     do local h1_, h2_ = C.hpheat(m, m.hpp); if h1_ then hc1, hc2 = h1_, h2_; end end
-    if low then hc1, hc2 = { 1, 0.55, 0.56 }, { 1, 0.30, 0.34 }; end
+    if low then hc1, hc2 = C.LOWC(1), C.LOWC(); end
     local AZ = C.HEXMP[1];
     local hb = bh * 0.78;                                            -- (HP a little thinner, the MP resting on its foot's end)
     local hcy = by0 + hb / 2;
@@ -15385,7 +15395,10 @@ function C.loot_have_rare(id)                                         -- (a Rare
 end
 function C.loot_ok(slot, lot)                                         -- (may this lot / pass go to the server? else a short note, once per item)
     local L = C.LOOT;
-    local it = L.pool and L.pool[slot];
+    pcall(C.loot_read);                                              -- (the pool read again this moment: an item that came and went at once - a fast
+    local it = L.pool and L.pool[slot];                              --  cleave - is never lotted after it left)
+    if not it then return false; end
+    if it.mine ~= nil then return false; end                         -- (already lotted or passed: never twice)
     local key = (it and it.key or tostring(slot)) .. (lot and ':l' or ':p');
     local function note(s) if L.warned[key] == nil then L.warned[key] = true; msg(s); end end
     if C.loot_dead() then note("You can't lot or pass while you're knocked out."); return false; end
@@ -18379,6 +18392,8 @@ local function draw_window()
                 if cfg.tp_fx == nil then cfg.tp_fx = true; end
                 row_switch('##yui_tpfx', 'TP bar effect', 'tp_fx', 'On: from 1000 TP your TP bar crackles like the target bar, in gold - stronger at 2000, strongest at 3000. Off: a plain TP bar.');
                 row_pick('##yui_myhpc', 'HP bar colour', 'my_hp_color', { { 'pink', 'Pink' }, { 'white', 'White' } }, nil, function() pcall(C.apply_hp); save(); end);
+            else                                                     -- (the gold mode: its HP bars gold, or Void red)
+                row_pick('##yui_hexhpc', 'HP bar colour', 'hex_hp_color', { { 'gold', 'Gold' }, { 'red', 'Void red' } }, nil, function() pcall(C.apply_hp); save(); end);
             end
             if C.head_bars_on() then
                 hint('Over your head: thin HP and MP bars, the TP as three dots (gold when full: a weapon skill is ready) and the numbers beside them.');
@@ -19549,6 +19564,8 @@ C.HPCOL = { pink  = { { 1.00, 0.36, 0.62 }, { 0.86, 0.24, 0.86 }, { 1.00, 0.42, 
             red   = { { 1.00, 0.32, 0.30 }, { 0.80, 0.10, 0.20 }, { 1.00, 0.45, 0.42 } },
             white = { { 1.00, 1.00, 1.00 }, { 0.80, 0.80, 0.86 }, { 1.00, 1.00, 1.00 } } };
 C.HEXHP = { { 1.00, 0.84, 0.42 }, { 0.95, 0.56, 0.16 }, { 1.00, 0.88, 0.55 } };
+C.HEXHPS = { gold = { { 1.00, 0.84, 0.42 }, { 0.95, 0.56, 0.16 }, { 1.00, 0.88, 0.55 } },   -- (BARS > HP bar colour in the gold mode: Gold, or Shadow red -
+             red  = { { 0.88, 0.16, 0.18 }, { 0.36, 0.03, 0.07 }, { 1.00, 0.52, 0.50 } } };   --  deep red fading to near black; its number a lighter red)
 -- HP bar colour by job (BARS > HP colour by job): each job its own (light end, dark end), for your bars and your party's
 C.JOBHP = {
     [1] = { { 1.00, 0.50, 0.28 }, { 0.78, 0.18, 0.10 } }, [2] = { { 0.96, 0.86, 0.62 }, { 0.72, 0.58, 0.32 } },     -- WAR fire, MNK sand
@@ -19692,6 +19709,10 @@ function C.apply_hp()
     if YUI_HEX and cfg.head_bars ~= 'head' then cfg.head_bars = 'head'; end   -- (Hex link: your bars always over your head - no other place)
     YUI_MP_COL = C.MPCOL;
     C.mpb1, C.mpb2 = C.mp, C.mp2;
+    do                                                               -- (the gold mode's HP colour, as picked: copied into C.HEXHP's own tables, so every
+        local src_ = C.HEXHPS[cfg.hex_hp_color or 'gold'] or C.HEXHPS.gold;   --  bar that holds them changes at once)
+        for i_ = 1, 3 do for k_ = 1, 3 do C.HEXHP[i_][k_] = src_[i_][k_]; end end
+    end
     if YUI_HEX then                                                  -- Hex link mode: gold HP everywhere, azure MP
         C.hpb1, C.hpb2 = C.HEXHP[1], C.HEXHP[2];
         YUI_HP_COL = C.HEXHP;
