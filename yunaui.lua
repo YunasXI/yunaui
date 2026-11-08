@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.43';
+addon.version = '1.1.44';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -223,14 +223,49 @@ local C = {
     mp       = { 0.40, 0.55, 1.00 },             -- the MP bars: blue to violet
     mp2      = { 0.62, 0.40, 1.00 },
 };
-local function u32(c) return imgui.GetColorU32(c); end
+-- The gold look's accent, as picked (BARS > HP bar colour): Gold, or Void red - then every gold YunaUI draws (frames, titles,
+-- lines, the minimap, the chat's edge, the meter, the pool...) turns red, and its palest golds and creams white: red and
+-- white. Oranges and reds stay (HP warnings), and other colours too. YUI_TINT_ON is set by C.apply_hp.
+YUI_TINT_ON = false;
+YUI_TINT_W = false;
+function YUI_AZ() return YUI_TINT_ON and { 0.96, 0.97, 1.0 } or C.HEXMP[1]; end   -- (the gold look's second accent: azure; Void red: white)                                                  -- (set round what turns white, not red: the minimap's exits)
+function YUI_TINTW(f, ...)                                           -- (f drawn with gold turned white)
+    local o = YUI_TINT_W; YUI_TINT_W = true;
+    local ok, e = pcall(f, ...);
+    YUI_TINT_W = o;
+    return ok, e;
+end
+function YUI_U4K(r, g, b, a)                                         -- (a colour kept as it is - the gil coin stays gold)
+    local o = YUI_TINT_ON; YUI_TINT_ON = false;
+    local c = imgui.GetColorU32({ r, g, b, a });
+    YUI_TINT_ON = o;
+    return c;
+end
+function YUI_TINT(r, g, b)
+    local mx = math.max(r, g, b);
+    if mx <= 0.05 or r < g or g < b then return r, g, b; end         -- (gold: red the most, then green, then blue)
+    local mn = b;
+    local s = (mx - mn) / mx;
+    if s < 0.22 then return r, g, b; end                             -- (near grey: kept)
+    local h = 60 * (g - b) / (mx - mn);                              -- (its hue, 0 red .. 60 yellow)
+    if h < 36 or h > 62 then return r, g, b; end                     -- (oranges and reds kept - the HP warnings)
+    if h > 48 and s > 0.6 then return r, g, b; end                   -- (a strong yellow kept too: the HP warning's outline under 75%, as in Gold)
+    if YUI_TINT_W or mn / mx > 0.55 then local w = mx * 0.98; return w, w, w * 1.0; end   -- (a pale gold / cream - or anything in a white place: white)
+    local s2 = math.min(1, s * 1.10);                                -- (a gold: red - bright, not dark)
+    return mx, mx * (1 - s2), mx * (1 - s2) * 1.08;
+end
+local U32S_ = { 0, 0, 0, 1 };
+local function u32(c)                                              -- (with Void red picked: its gold turned red / white, as U4)
+    if YUI_TINT_ON and c[1] then U32S_[1], U32S_[2], U32S_[3] = YUI_TINT(c[1], c[2], c[3]); U32S_[4] = c[4] or 1; return imgui.GetColorU32(U32S_); end
+    return imgui.GetColorU32(c);
+end
 -- Frame cost (VanaCore's findings): no Lua table made per draw call. U4(r, g, b, a) is u32({ r, g, b, a }) through one
 -- scratch table; DL.L(dl, x, y, x2, y2, ...) is dl:AddLine({ x, y }, { x2, y2 }, ...) through scratch points (the binding
 -- reads them during the call and keeps nothing). The arguments are all worked out before a call fills its scratch.
 local U4, DL;
 do
     local c4, P1, P2, P3, P4 = { 0, 0, 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 };
-    U4 = function(r, g, b, a) c4[1], c4[2], c4[3], c4[4] = r, g, b, a; return imgui.GetColorU32(c4); end
+    U4 = function(r, g, b, a) if YUI_TINT_ON then r, g, b = YUI_TINT(r, g, b); end c4[1], c4[2], c4[3], c4[4] = r, g, b, a; return imgui.GetColorU32(c4); end
     DL = {};
     function DL.L(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddLine(P1, P2, ...); end
     function DL.R(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRect(P1, P2, ...); end
@@ -388,10 +423,10 @@ function YUI_TIP(t)
             if type(ww) == 'table' then ww = ww.x or ww[1]; end
             local p1, p2 = imgui.GetColorU32({ 1.0, 0.36, 0.62, 0.9 }), imgui.GetColorU32({ 0.62, 0.40, 1.0, 0.9 });
             if hx then
-                p1, p2 = imgui.GetColorU32({ C.GOLDH[1], C.GOLDH[2], C.GOLDH[3], 0.95 }), imgui.GetColorU32({ C.HEXMP[1][1], C.HEXMP[1][2], C.HEXMP[1][3], 0.95 });
+                p1, p2 = u32({ C.GOLDH[1], C.GOLDH[2], C.GOLDH[3], 0.95 }), u32({ YUI_AZ()[1], YUI_AZ()[2], YUI_AZ()[3], 0.95 });
                 DL.RFM(dl, wx + 1, wy + 1, wx + ww - 1, wy + 2, p1, p2, p2, p1);
-                local gc = imgui.GetColorU32({ C.GOLDH2[1], C.GOLDH2[2], C.GOLDH2[3], 1 });
-                if C.hexdot then C.hexdot(dl, wx, wy, 3, gc); C.hexdot(dl, wx + ww, wy, 2.4, imgui.GetColorU32({ C.HEXMP[1][1], C.HEXMP[1][2], C.HEXMP[1][3], 1 })); end
+                local gc = u32({ C.GOLDH2[1], C.GOLDH2[2], C.GOLDH2[3], 1 });
+                if C.hexdot then C.hexdot(dl, wx, wy, 3, gc); C.hexdot(dl, wx + ww, wy, 2.4, u32({ YUI_AZ()[1], YUI_AZ()[2], YUI_AZ()[3], 1 })); end
             else
                 DL.RFM(dl, wx + 6, wy + 1, wx + ww - 6, wy + 2, p1, p2, p2, p1);
             end
@@ -1491,7 +1526,7 @@ function LEAD_MARK(dl, cx, cy, r, alliance, a, style)
         local rr = r * 0.46;
         local step = rr * 2.1;
         local x0 = cx - (n - 1) * step / 2;
-        local g1, g2 = C.GOLDH, C.HEXMP[1];
+        local g1, g2 = C.GOLDH, (YUI_TINT_ON and { 0.96, 0.97, 1.0 } or C.HEXMP[1]);   -- (Void red: red and white)
         for k = 1, n do
             local u = (k - 1) / math.max(1, n - 1);
             local px = x0 + (k - 1) * step;
@@ -3952,11 +3987,11 @@ end
 -- 87% down each frame). tx, ty: where its point goes; Z: the frame's size; side: laid down, pointing right
 function C.prism(dl, tx, ty, Z, side, a)
     local jc = C.myjobcol and C.myjobcol();
-    local t = tex('prism_gold.png');                                 -- (the gold prism: Hex link's)
+    local t = tex(YUI_TINT_ON and 'prism_white.png' or 'prism_gold.png');   -- (the gold prism: Hex link's; Void red: the white one, in red)
     if t == nil then return; end
     local f = math.floor(os.clock() * 12) % 16;
     local u0, u1 = f / 16, (f + 1) / 16;
-    local col = u32({ 1, 1, 1, a or 1 });                            -- (white, tinted nothing)
+    local col = YUI_TINT_ON and U4(1, 0.32, 0.36, a or 1) or u32({ 1, 1, 1, a or 1 });   -- (white, tinted nothing; Void red: red)
     if not side then
         local x0, y0 = tx - Z / 2, ty - Z * 0.87;
         pcall(function() DL.I(dl, t.ptr, x0, y0, x0 + Z, y0 + Z, u0, 0, u1, 1, col); end);
@@ -5970,10 +6005,7 @@ function C.hpwarn(m, hp)
 end
 -- Hex link: the HP bar itself as a heat scale (the frames are gold - a yellow edge was lost on them): pale gold above 75%,
 -- orange under it, deep red-orange under 50%, red beating under 25% (the card's low HP). { light end, dark end } or nil
-function C.LOWC(k)                                                   -- (the low-HP warning's colour: red; with Void red HP bars a near-white rose, so it
-    if (cfg.hex_hp_color or 'gold') == 'red' then                    --  still stands out on the dark red bar. k = 1: its lighter shade)
-        return (k == 1) and { 1, 0.97, 0.97 } or { 1, 0.86, 0.88 };
-    end
+function C.LOWC(k)                                                   -- (the low-HP warning's colour: red - the same with Void red, as Gold's)
     return (k == 1) and { 1, 0.55, 0.56 } or { 1, 0.30, 0.34 };
 end
 function C.hpheat(m, hp)
@@ -5984,7 +6016,6 @@ function C.hpheat(m, hp)
         return nil;
     end
     if hp < 0.50 then
-        if (cfg.hex_hp_color or 'gold') == 'red' then return { 1.0, 0.92, 0.92 }, { 0.96, 0.70, 0.74 }; end   -- (Void red: under 50% a pale rose-white, not lost in the red)
         return { 1.0, 0.34, 0.16 }, { 0.80, 0.12, 0.05 };              -- (under 50%: deep red-orange)
     end
     return { 1.0, 0.62, 0.16 }, { 0.95, 0.40, 0.04 };                -- (under 75%: strong orange)
@@ -6100,7 +6131,7 @@ function ALLY.tag(dl, m, i, x, ny, ch, sc, v, live, mir, cap)       -- (mir: x i
         ALLY.poly(dl, pts, U4(0.035, 0.03, 0.045, 0.92 * v * dim));
         if ta > 0.01 then text(dl, jx, y0 + (th - jh) / 2 + (ALLY.tagdy or 0), job, { 1, 1, 1, v * dim * ta }); end
     else
-        ALLY.poly(dl, pts, U4(f[1], f[2], f[3], v * dim));      -- (one flat colour: no sheen, no outline)
+        do local t_ = YUI_TINT_ON; YUI_TINT_ON = false; ALLY.poly(dl, pts, U4(f[1], f[2], f[3], v * dim)); YUI_TINT_ON = t_; end   -- (one flat colour; a job's own, never tinted)
         if ALLY.tagol then                                            -- (ALLY.tagol: a black outline round it - one closed line, so its sharp corners join, no notch)
             local olc_ = U4(0, 0, 0, 0.95 * v);
             for q = 1, #pts do                                       -- (each side a touch longer at both ends: the sides overlap at the corners)
@@ -7083,7 +7114,7 @@ function ALLY.hexrow(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
                 local step = rr * 2.1;
                 local top_ = jy_ + jh_ + 1 * sc;
                 local my0 = top_ + ((y2 - 2 * sc) - top_ - (n_ - 1) * step) / 2;
-                local g1, g2 = C.GOLDH, C.HEXMP[1];
+                local g1, g2 = C.GOLDH, (YUI_TINT_ON and { 0.96, 0.97, 1.0 } or C.HEXMP[1]);   -- (Void red: red and white)
                 for q = 1, n_ do
                     local u = (q - 1) / math.max(1, n_ - 1);
                     local py = my0 + (q - 1) * step;
@@ -7160,7 +7191,7 @@ function ALLY.hexrow(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
             local rr = 4.5 * sc * 0.46 * 1.12;
             local step = rr * 2.15;
             local mx_, my_ = tip + rr + 3 * sc, ny;
-            local g1, g2 = C.GOLDH, C.HEXMP[1];
+            local g1, g2 = C.GOLDH, (YUI_TINT_ON and { 0.96, 0.97, 1.0 } or C.HEXMP[1]);   -- (Void red: red and white)
             C.fullclip(dl);                                          -- (outside the plate: never cut by the list's window)
             for q = 1, n_ do
                 local u = (q - 1) / math.max(1, n_ - 1);
@@ -7484,7 +7515,7 @@ function ALLY.hexrow1(dl, m, i, x1, tip, ny, ch, lh, sc, v, party, live)
             local rr = 4.5 * sc * 0.46 * 1.12;
             local step = rr * 2.15;
             local mx_, my_ = tip + rr + 3 * sc, ny;
-            local g1, g2 = C.GOLDH, C.HEXMP[1];
+            local g1, g2 = C.GOLDH, (YUI_TINT_ON and { 0.96, 0.97, 1.0 } or C.HEXMP[1]);   -- (Void red: red and white)
             C.fullclip(dl);                                          -- (outside the plate: never cut by the list's window)
             for q = 1, n_ do
                 local u = (q - 1) / math.max(1, n_ - 1);
@@ -8056,7 +8087,7 @@ function ALLY.head_icons(dl, x, cy, sc, pos)                         -- the arro
     local cxa = ax + bs / 2;
     if YUI_HEX then                                                  -- (Hex link mode: a gold and an azure hexagon, a fine gold line when anchored)
         local dx = 4.2 * sc;
-        local c1_, c2_ = on and C.GOLDH or { 0.62, 0.60, 0.70 }, on and C.HEXMP[1] or { 0.62, 0.60, 0.70 };
+        local c1_, c2_ = on and C.GOLDH or { 0.62, 0.60, 0.70 }, on and (YUI_TINT_ON and { 0.96, 0.97, 1.0 } or C.HEXMP[1]) or { 0.62, 0.60, 0.70 };   -- (Void red: red and white)
         if on then DL.L(dl, cxa - dx, cy, cxa + dx, cy, U4(C.GOLDH2[1], C.GOLDH2[2], C.GOLDH2[3], 0.55 * c[4]), 1); end
         for _, q in ipairs({ { -1, c1_ }, { 1, c2_ } }) do
             C.hexdot(dl, cxa + q[1] * dx, cy, 3.3 * sc, U4(0.05, 0.045, 0.07, 0.85 * c[4]));
@@ -9275,7 +9306,11 @@ function C.bigarrow()
     local hex = cfg.target_fx == 'link';
     local w, h = (hex and 23 or 21) * u, (hex and 22 or 14) * u;
     local fg = imgui.GetForegroundDrawList();
+    if hex and YUI_TINT_ON then                                      -- (Void red: the white arrow, in red - the gold prism is a picture, it can't be turned)
+        image(fg, tex('tarrow_vexw.png'), sx - w / 2, sy - h, sx + w / 2, sy, { 1, 0.32, 0.36, 1 });
+    else
     image(fg, tex(hex and 'tarrow_prism2.png' or 'tarrow_vexw.png'), sx - w / 2, sy - h, sx + w / 2, sy, { 1, 1, 1, 1 });
+    end
 end
 function C.tarrow_sync()
     if C.TAR_redo and C.TAR_redo[1] and os.clock() >= C.TAR_redo[1] then table.remove(C.TAR_redo, 1); C.TAR_last = nil; end
@@ -9683,7 +9718,7 @@ function C.mb_pillbar(row, sel, now, op, cds, nm, sc)
         return pts;
     end
     local VIO = hex and GOLD or { 0.62, 0.40, 1.00 };                -- (the gradient's foot: gold in Hex link, violet in Normal mode)
-    local DOT = (cfg.target_fx ~= 'link') and { 0.55, 0.82, 1.00 } or GOLD;   -- (the ready dot: gold in Hex link, Vex mode's lucent blue as its edges)
+    local DOT = (cfg.target_fx ~= 'link') and { 0.55, 0.82, 1.00 } or (YUI_TINT_ON and { 0.96, 0.97, 1.0 } or GOLD);   -- (the ready dot: gold in Hex link - Void red: white - Vex mode's lucent blue as its edges)
     local function mix(c1, c2, u) return { c1[1] + (c2[1] - c1[1]) * u, c1[2] + (c2[2] - c1[2]) * u, c1[3] + (c2[3] - c1[3]) * u }; end
     local WH, DIM = { 1, 1, 1 }, { 0.70, 0.70, 0.74 };
     local function cl01(u) return math.max(0, math.min(1, u)); end
@@ -9730,7 +9765,7 @@ function C.mb_pillbar(row, sel, now, op, cds, nm, sc)
         FIGHT.unfont(k);
     end
     if M.book then                                                   -- (the book and page, over the lines)
-        txt(string.format('BOOK %d  .  PAGE %d', M.book, M.page), 11.5 * s_, x0 + 5 * STEP, top + 10 * s_ - (1 - e) * 6 * s_, hex and GOLD or { 0.92, 0.91, 0.97 }, e, 2 * s_);   -- (Normal mode: a light near-white - readable)
+        txt(string.format('BOOK %d  .  PAGE %d', M.book, M.page), 11.5 * s_, x0 + 5 * STEP, top + 10 * s_ - (1 - e) * 6 * s_, (hex and not YUI_TINT_ON) and GOLD or { 0.92, 0.91, 0.97 }, e, 2 * s_);   -- (Normal mode: a light near-white - readable)
     end
     M.pb, M.pr, M.pgeo = M.pb or {}, M.pr or {}, M.pgeo or {};
     local FS_ = nil;                                                 -- (the skillchain / Magic Burst on your target, for the macros that answer it)
@@ -13225,7 +13260,7 @@ local function draw_chat(n)
             if YUI_HEX then                                          -- (Hex link mode: two small hexagons, gold and azure, a dark rim each,
                 local a_ = c[4];                                     --  apart - a fine gold line joins them when anchored)
                 local hx_, hy_ = vx * 1.15, vy * 1.15;
-                local c1_, c2_ = on and C.GOLDH or { 0.62, 0.60, 0.70 }, on and C.HEXMP[1] or { 0.62, 0.60, 0.70 };
+                local c1_, c2_ = on and C.GOLDH or { 0.62, 0.60, 0.70 }, on and (YUI_TINT_ON and { 0.96, 0.97, 1.0 } or C.HEXMP[1]) or { 0.62, 0.60, 0.70 };   -- (Void red: red and white)
                 if on then DL.L(dl, cx - hx_, cy - hy_, cx + hx_, cy + hy_, U4(C.GOLDH2[1], C.GOLDH2[2], C.GOLDH2[3], 0.55 * a_), 1); end
                 for _, q in ipairs({ { -1, c1_ }, { 1, c2_ } }) do
                     local px_, py_ = cx + q[1] * hx_, cy + q[1] * hy_;
@@ -13574,9 +13609,9 @@ local function draw_gil()
         local lh = imgui.GetTextLineHeight();
         local cr = 7 * sc;
         local ccx, ccy = x + cr, y + lh / 2;
-        DL.CF(dl, ccx, ccy, cr + 2, U4(0.95, 0.76, 0.34, 0.18), 20);
-        DL.CF(dl, ccx, ccy, cr, U4(0.86, 0.66, 0.24, 1), 20);
-        DL.CF(dl, ccx, ccy, cr * 0.68, U4(1, 0.88, 0.50, 1), 20);
+        DL.CF(dl, ccx, ccy, cr + 2, YUI_U4K(0.95, 0.76, 0.34, 0.18), 20);
+        DL.CF(dl, ccx, ccy, cr, YUI_U4K(0.86, 0.66, 0.24, 1), 20);
+        DL.CF(dl, ccx, ccy, cr * 0.68, YUI_U4K(1, 0.88, 0.50, 1), 20);
         DL.C(dl, ccx, ccy, cr, U4(0, 0, 0, 0.7), 20, 1);
         local gs = commas(gil);
         outlined(dl, x + cr * 2 + 6 * sc, y, gs, { GOLD[1], GOLD[2], GOLD[3], 1 });
@@ -14357,7 +14392,7 @@ local function draw_strip()
             local cxa, cya = ax_ + bs_ / 2, ay_ + bs_ / 2;
             if YUI_HEX then                                          -- (Hex link: a gold and an azure hexagon, a fine gold line when anchored - as the party's)
                 local dx = 4.2 * ak;
-                local c1_, c2_ = on_ and C.GOLDH or { 0.62, 0.60, 0.70 }, on_ and C.HEXMP[1] or { 0.62, 0.60, 0.70 };
+                local c1_, c2_ = on_ and C.GOLDH or { 0.62, 0.60, 0.70 }, on_ and YUI_AZ() or { 0.62, 0.60, 0.70 };   -- (Void red: red and white)
                 if on_ then DL.L(dl, cxa - dx, cya, cxa + dx, cya, U4(C.GOLDH2[1], C.GOLDH2[2], C.GOLDH2[3], 0.55 * c_[4]), 1.2); end
                 for _, q in ipairs({ { -1, c1_ }, { 1, c2_ } }) do
                     C.hexdot(dl, cxa + q[1] * dx, cya, 3.3 * ak, U4(0.05, 0.045, 0.07, 0.85 * c_[4]));
@@ -14443,7 +14478,7 @@ local function draw_strip()
                     local o_ = math.max(1, math.floor(1.5 * sc + 0.5));
                     local x0_, y0_, x1_, y1_ = math.floor(sx) - o_, math.floor(sy) - o_, math.floor(sx + S) + o_, math.floor(sy + S) + o_;
                     local lit_, mid_, dk_ = U4(1.00, 0.95, 0.72, 0.95 * ga), U4(0.92, 0.72, 0.30, 0.95 * ga), U4(0.55, 0.38, 0.10, 0.95 * ga);
-                    if cfg.target_fx ~= 'link' then                  -- (Vex: softer - a fine rounded white line with a faint glow, no bevel)
+                    if cfg.target_fx ~= 'link' or YUI_TINT_ON then   -- (Vex - and Void red: softer, a fine rounded white line with a faint glow, no bevel)
                         local rr_ = math.max(3, 5 * sc);
                         for g = 3, 1, -1 do DL.R(dl, sx - g, sy - g, sx + S + g, sy + S + g, U4(1, 1, 1, 0.12 * ga), rr_ + g, allc, 2); end
                         DL.R(dl, sx, sy, sx + S, sy + S, U4(1, 1, 1, 1.0 * ga), rr_, allc, math.max(1.5, 1.6 * sc));
@@ -15818,8 +15853,9 @@ function C.loot_btn(dl, id, x, y, w, h, label, kind, on, lit)
     local s = h * 0.30;
     local up = hov and 1.5 * C.ps or 0;
     local f = pink and (YUI_HEX and { 0.97, 0.76, 0.30 } or { 0.90, 0.89, 0.93 }) or { 0.40, 0.38, 0.54 };   -- (LOT: gold in Hex link - Normal mode: white)
+    if pink and YUI_TINT_ON then f = { 0.93, 0.93, 0.96 }; end       -- (Void red: LOT white, as Normal mode's)
     if hov then f = { math.min(1, f[1] + 0.06), math.min(1, f[2] + 0.10), math.min(1, f[3] + 0.08) }; end
-    local ink = pink and (YUI_HEX and { 0.28, 0.16, 0.02 } or { 0.08, 0.06, 0.10 }) or { 0.96, 0.95, 1.0 };   -- (Normal mode's white LOT: black letters)
+    local ink = pink and ((YUI_HEX and not YUI_TINT_ON) and { 0.28, 0.16, 0.02 } or { 0.08, 0.06, 0.10 }) or { 0.96, 0.95, 1.0 };   -- (Normal mode's white LOT: black letters)
     local a = on and 1 or 0.45;
     if YUI_HEX then
         local pts = { { x + s, y - up }, { x + w, y - up }, { x + w - s, y + h - up }, { x, y + h - up } };
@@ -15891,7 +15927,7 @@ function C.chest_draw(n, fake)                                       -- (the che
     end
     local h2 = sz * k / 2;
     local x1, y1 = cx - h2 + jx, cy - h2 + jy;
-    local tx_ = C.tex_at(hx and 'panel/chest_hex.png' or 'panel/chest_vex.png', math.floor(sz * 1.3));   -- (one picture: open, it glows brighter)
+    local tx_ = C.tex_at(hx and (YUI_TINT_ON and 'panel/chest_void.png' or 'panel/chest_hex.png') or 'panel/chest_vex.png', math.floor(sz * 1.3));   -- (Void red: the red one)   -- (one picture: open, it glows brighter)
     local function pic(al)                                           -- (the picture, turned round its foot by rot)
         if not tx_ then return; end
         local qx, qy = x1 + h2, y1 + h2 * 2;
@@ -16442,7 +16478,8 @@ function C.got_win()                                                 -- (the loo
                 for i = 1, #lab do
                     local ch = lab:sub(i, i);
                     DL.T(dl, px, math.floor(cy - wlh / 2) + 1, U4(0, 0, 0, 0.7 * al), ch);
-                    DL.T(dl, px, math.floor(cy - wlh / 2), U4(AC[1], AC[2], AC[3], al), ch);
+                    if YUI_TINT_ON then DL.T(dl, px, math.floor(cy - wlh / 2), U4(0.96, 0.97, 1.0, al), ch);   -- (Void red: WON white)
+                    else DL.T(dl, px, math.floor(cy - wlh / 2), U4(AC[1], AC[2], AC[3], al), ch); end
                     px = px + (tonumber((imgui.CalcTextSize(ch))) or 0) + 2 * sc;
                 end
                 unsized(pw);
@@ -19565,7 +19602,7 @@ C.HPCOL = { pink  = { { 1.00, 0.36, 0.62 }, { 0.86, 0.24, 0.86 }, { 1.00, 0.42, 
             white = { { 1.00, 1.00, 1.00 }, { 0.80, 0.80, 0.86 }, { 1.00, 1.00, 1.00 } } };
 C.HEXHP = { { 1.00, 0.84, 0.42 }, { 0.95, 0.56, 0.16 }, { 1.00, 0.88, 0.55 } };
 C.HEXHPS = { gold = { { 1.00, 0.84, 0.42 }, { 0.95, 0.56, 0.16 }, { 1.00, 0.88, 0.55 } },   -- (BARS > HP bar colour in the gold mode: Gold, or Shadow red -
-             red  = { { 0.88, 0.16, 0.18 }, { 0.36, 0.03, 0.07 }, { 1.00, 0.52, 0.50 } } };   --  deep red fading to near black; its number a lighter red)
+             red  = { { 1.00, 0.27, 0.27 }, { 0.58, 0.07, 0.10 }, { 1.00, 0.58, 0.56 } } };   -- (a touch brighter: it was too dark)   --  deep red fading to near black; its number a lighter red)
 -- HP bar colour by job (BARS > HP colour by job): each job its own (light end, dark end), for your bars and your party's
 C.JOBHP = {
     [1] = { { 1.00, 0.50, 0.28 }, { 0.78, 0.18, 0.10 } }, [2] = { { 0.96, 0.86, 0.62 }, { 0.72, 0.58, 0.32 } },     -- WAR fire, MNK sand
@@ -19713,6 +19750,7 @@ function C.apply_hp()
         local src_ = C.HEXHPS[cfg.hex_hp_color or 'gold'] or C.HEXHPS.gold;   --  bar that holds them changes at once)
         for i_ = 1, 3 do for k_ = 1, 3 do C.HEXHP[i_][k_] = src_[i_][k_]; end end
     end
+    YUI_TINT_ON = (cfg.target_fx == 'link') and (cfg.hex_hp_color == 'red');   -- (Void red: the gold look's accents red and white)
     if YUI_HEX then                                                  -- Hex link mode: gold HP everywhere, azure MP
         C.hpb1, C.hpb2 = C.HEXHP[1], C.HEXHP[2];
         YUI_HP_COL = C.HEXHP;
@@ -19721,6 +19759,11 @@ function C.apply_hp()
         C.tgt1, C.tgt2 = C.HEXHP[3], C.HEXHP[2];
     end
     YUI_HEXCOL = { gold = PANEL.GOLD, gold2 = PANEL.GOLD2, azure = C.HEXMP[1], azure2 = C.HEXMP[3] };
+    if YUI_TINT_ON then                                              -- (Void red: the meter's and the bars' 'gold' handed over red / white)
+        local function t_(c) local r_, g_, b_ = YUI_TINT(c[1], c[2], c[3]); return { r_, g_, b_, c[4] }; end
+        YUI_HEXCOL.gold, YUI_HEXCOL.gold2 = t_(PANEL.GOLD), t_(PANEL.GOLD2);
+        YUI_HEXCOL.azure, YUI_HEXCOL.azure2 = { 0.96, 0.97, 1.0 }, { 1, 1, 1 };   -- (its azure white: red and white)
+    end
     YUI_HP_OUTLINE = cfg.hp_outline ~= false;                        -- (equip.lua: the thin black edge on your HP bar)
 end
 -- A thin black edge round a bar (the whole track), so it always shows on any ground
@@ -19751,7 +19794,7 @@ YMAP.ACOLS = { white = { 1, 1, 1 }, pink = { 1.00, 0.55, 0.78 }, violet = { 0.70
 function YMAP.linecol()                                              -- the map's lines: Hex link mode's azure (its MP bar), else your HP bar's colour
     local jc = C.myjobcol and C.myjobcol();
     if jc then return { 1, 1, 1 }; end                               -- (BARS > HP colour by job: white lines in the red frame)
-    if YUI_HEX then return C.HEXMP[1]; end
+    if YUI_HEX then return YUI_AZ(); end                             -- (Void red: white lines)
     if cfg.map_lines == 'white' then return YMAP.COLS.white; end     -- (MINIMAP > Lines: White)
     local h = (type(YUI_HP_COL) == 'table' and type(YUI_HP_COL[1]) == 'table') and YUI_HP_COL[1] or YMAP.COLS.pink;
     return h;
@@ -20295,7 +20338,7 @@ function YMAP.marks(dl, ent, party, zid, me, tomap, sc, inside, tilted)
         end
     end
     local px, py = tomap(ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0);
-    pcall(YMAP.exits_draw, dl, zid, function(wx, wy) return tomap(wx, wy); end, sc, inside, ent:GetLocalPositionZ(me));   -- (MINIMAP > Zone exits)
+    YUI_TINTW(YMAP.exits_draw, dl, zid, function(wx, wy) return tomap(wx, wy); end, sc, inside, ent:GetLocalPositionZ(me));   -- (MINIMAP > Zone exits)
     pcall(YMAP.hpsg_draw, dl, zid, function(wx, wy) return tomap(wx, wy); end, sc, inside, ent:GetLocalPositionZ(me));    -- (MINIMAP > Home Points / Survival Guides)
     pcall(YMAP.track_draw, dl, ent, tomap, sc, inside, px, py);     -- (Widescan > Track: the monster you track)
     local yaw = 0;
@@ -20668,7 +20711,7 @@ function YMAP.d3render(dl, m, ent, party, zid, me, sc, vx, vy, W, H, yaw, pitch,
             local ex, ey = (sx_ - cxs) / (W / 2), (sy_ - cys) / (H / 2);
             return ex * ex + ey * ey <= 0.80;
         end
-        pcall(YMAP.exits_draw, dl, zid, function(wx, wy, wz) local a_, b_ = proj(wx, wz * hs, wy); return a_, b_; end, sc, inside, Z);   -- (MINIMAP > Zone exits)
+        YUI_TINTW(YMAP.exits_draw, dl, zid, function(wx, wy, wz) local a_, b_ = proj(wx, wz * hs, wy); return a_, b_; end, sc, inside, Z);   -- (MINIMAP > Zone exits)
         pcall(YMAP.hpsg_draw, dl, zid, function(wx, wy, wz) local a_, b_ = proj(wx, wz * hs, wy); return a_, b_; end, sc, inside, Z);    -- (MINIMAP > Home Points / Survival Guides)
         local px_, py_ = proj(X, th, Y);
         if px_ then pcall(YMAP.track_draw, dl, ent, tomap, sc, inside, px_, py_); end
@@ -21082,7 +21125,7 @@ function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: th
     local ox = (sh < 0.5) and math.sin(sh * 60) * 3 * s * (1 - sh / 0.5) or 0;
     local near = bmax > 0 and used >= bmax - 5;
     local beat = near and (0.5 + 0.5 * math.sin(now * 6)) or 0;
-    local fc = near and { 1.0, 0.36, 0.40 } or AZ;
+    local fc = near and { 1.0, 0.36, 0.40 } or (YUI_TINT_ON and { 0.96, 0.97, 1.0 } or AZ);   -- (Void red: the bag's line white)
     local f = bmax > 0 and used / bmax or 0;
     -- the level-up burst: the frame's shape opening out of the map in light
     if bu < 1.6 then
@@ -21213,8 +21256,7 @@ function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: th
         local ds = (diff ~= 0) and ((diff > 0 and '+' or '') .. commas(diff)) or nil;
         local dw = ds and ((tonumber((imgui.CalcTextSize(ds))) or 0) * 0.85 + 8 * s) or 0;
         local gx = edgeR(midy) - 8 * s - gw;                       -- (the amount always inside its block; what changed shows just outside it)
-        C.hexdot(dl, gx - 9 * s, tyy + th / 2, 5 * s, col(C.GOLDH or { 1, 0.76, 0.34 }, 1));   -- (the coin always gold)
-        C.hexdot(dl, gx - 9 * s, tyy + th / 2, 2.5 * s, col(C.GOLDH2 or { 1, 0.9, 0.62 }, 1));
+        do local o_ = YUI_TINT_ON; YUI_TINT_ON = false; C.hexdot(dl, gx - 9 * s, tyy + th / 2, 5 * s, col(C.GOLDH or { 1, 0.76, 0.34 }, 1)); YUI_TINT_ON = o_; end   -- (the coin always gold, one solid hexagon - its pale centre read as white)
         outlined(dl, gx, tyy, gs, { 1, 1, 1, 1 });                   -- (the amount white)
         if ds then
             local fs = FS;
@@ -21448,8 +21490,8 @@ function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
         local ds = (diff ~= 0) and ((diff > 0 and '+' or '') .. commas(diff)) or nil;
         local dw = ds and ((tonumber((imgui.CalcTextSize(ds))) or 0) * 0.85 + 8 * s) or 0;
         gx = rgt - 4 * s - phh / 2 - 6 * s - gw - dw;
-        DL.CF(dl, gx - 9 * s, tyy + th / 2, 5 * s, U4(0.86, 0.66, 0.24, 1), 14);
-        DL.CF(dl, gx - 9 * s, tyy + th / 2, 3 * s, U4(1, 0.88, 0.50, 1), 12);
+        DL.CF(dl, gx - 9 * s, tyy + th / 2, 5 * s, YUI_U4K(0.86, 0.66, 0.24, 1), 14);
+        DL.CF(dl, gx - 9 * s, tyy + th / 2, 3 * s, YUI_U4K(1, 0.88, 0.50, 1), 12);
         outlined(dl, gx, tyy, gs, { 1, 1, 1, 1 });                   -- (the amount white)
         if ds then
             local fs = FS;
@@ -21525,8 +21567,8 @@ function YMAP.hub(dl, cx, cy, M)                                     -- the jobs
         chip(x0, gw);
         local cr = 5 * s;
         local ccx, ccy = x0 + pad + cr, y + ch / 2;
-        DL.CF(dl, ccx, ccy, cr, U4(0.86, 0.66, 0.24, 1), 16);
-        DL.CF(dl, ccx, ccy, cr * 0.66, U4(1, 0.88, 0.50, 1), 16);
+        DL.CF(dl, ccx, ccy, cr, YUI_U4K(0.86, 0.66, 0.24, 1), 16);
+        DL.CF(dl, ccx, ccy, cr * 0.66, YUI_U4K(1, 0.88, 0.50, 1), 16);
         outlined(dl, x0 + pad + 14 * s, math.floor(y + (ch - lh) / 2), gs, { GOLD[1], GOLD[2], GOLD[3], 1 });
         local diff, ga = C.gil_diff(gil);
         if diff ~= 0 then
@@ -21667,7 +21709,7 @@ function YMAP.glassdock(dl, ix, iy, f)
         local ox = (sh < 0.5) and math.sin(sh * 60) * 3 * f * 3 * (1 - sh / 0.5) or 0;
         local near = bmax > 0 and used >= bmax - 5;
         local beat = near and (0.5 + 0.5 * math.sin(now * 6)) or 0;
-        local fc = near and { 1.0, 0.36, 0.40 } or AZ;
+        local fc = near and { 1.0, 0.36, 0.40 } or (YUI_TINT_ON and { 0.96, 0.97, 1.0 } or AZ);   -- (Void red: the bag's line white)
         local uw = say(tostring(used), 46 * f, X(108) + ox, Y(650), near and { 1, 0.7, 0.72 } or WH);
         say('/' .. tostring(bmax), 34 * f, X(108) + ox + uw + 4 * f, Y(654), { 0.52, 0.66, 0.80 });
         local fr = bmax > 0 and used / bmax or 0;
@@ -22182,7 +22224,7 @@ function EDIT.G.splash()
             DL.RFM(fg, 0, cy, W, cy + bh, c1, c1, c0, c0);
         end);
         local shx = YUI_HEX;                                         -- (Hex link: gold to azure instead of pink to violet)
-        local s1, s2 = shx and C.GOLDH or C.hp, shx and C.HEXMP[1] or C.mp2;
+        local s1, s2 = shx and C.GOLDH or C.hp, shx and YUI_AZ() or C.mp2;
         local f1 = sized('chat', 64 * k);                            -- the big line: letters spreading, pink to violet, a glow behind
         local sp = (4 + 10 * e) * k;
         local tw = spaced_w(G.TITLE, sp);
@@ -22411,7 +22453,7 @@ function EDIT.G.draw()
     local W, H = C.screen();
     local k = math.max(0.8, math.min(1.8, H / 1080));
     local hx = YUI_HEX;
-    local edge, edge2 = hx and C.GOLDH or NEON2, hx and C.HEXMP[1] or C.mp2;
+    local edge, edge2 = hx and C.GOLDH or NEON2, hx and YUI_AZ() or C.mp2;
     G.i = math.max(1, math.min(#G.STEPS, G.i));
     local st = G.STEPS[G.i];
     local key = G.i .. (hx and 'h' or 'n');

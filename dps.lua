@@ -120,14 +120,18 @@ local function push_theme()
     return #cols, #vars;
 end
 
-local function u32(c) return imgui.GetColorU32(c); end
+local U32S_ = { 0, 0, 0, 1 };
+local function u32(c)                                              -- (with Void red picked: its gold turned red / white, as U4)
+    if YUI_TINT_ON and c[1] then U32S_[1], U32S_[2], U32S_[3] = YUI_TINT(c[1], c[2], c[3]); U32S_[4] = c[4] or 1; return imgui.GetColorU32(U32S_); end
+    return imgui.GetColorU32(c);
+end
 -- Frame cost (VanaCore's findings): no Lua table made per draw call. U4(r, g, b, a) is u32({ r, g, b, a }) through one
 -- scratch table; DL.L(dl, x, y, x2, y2, ...) is dl:AddLine({ x, y }, { x2, y2 }, ...) through scratch points (the binding
 -- reads them during the call and keeps nothing). The arguments are all worked out before a call fills its scratch.
 local U4, DL;
 do
     local c4, P1, P2, P3, P4 = { 0, 0, 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 };
-    U4 = function(r, g, b, a) c4[1], c4[2], c4[3], c4[4] = r, g, b, a; return imgui.GetColorU32(c4); end
+    U4 = function(r, g, b, a) if YUI_TINT_ON then r, g, b = YUI_TINT(r, g, b); end c4[1], c4[2], c4[3], c4[4] = r, g, b, a; return imgui.GetColorU32(c4); end
     DL = {};
     function DL.L(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddLine(P1, P2, ...); end
     function DL.R(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRect(P1, P2, ...); end
@@ -1318,14 +1322,18 @@ function fx.thin_bar(dl, x, y, w, frac, bright, c1, c2)
     local h = math.max(2, math.floor(Z(3)));
     local fw = math.max(h, w * math.max(0, math.min(1, frac or 0)));
     DL.RF(dl, x, y, x + w, y + h, U4(0.05, 0.04, 0.07, 0.70), h / 2);
+    if (frac or 0) <= 0.001 then return; end                         -- (nothing yet: just its dark track - no stub, no dot)
     DL.RF(dl, x, y - 2, x + fw, y + h + 2, U4(c2[1], c2[2], c2[3], 0.18), h);
     local a = bright and 1 or 0.85;
     local ok = pcall(function()
         DL.RFM(dl, x, y, x + fw, y + h, U4(c1[1], c1[2], c1[3], a), U4(c2[1], c2[2], c2[3], a), U4(c2[1], c2[2], c2[3], a), U4(c1[1], c1[2], c1[3], a));
     end);
     if not ok then DL.RF(dl, x, y, x + fw, y + h, U4(c2[1], c2[2], c2[3], a), h / 2); end
-    DL.CF(dl, x + fw, y + h / 2, Z(4.5), U4(1, 0.85, 1, 0.22), 12);
-    DL.CF(dl, x + fw, y + h / 2, Z(2.2), U4(1, 1, 1, 1), 10);
+    if (frac or 0) > 0.001 then                                      -- (its bright head: none at 0 - it sat on the bar's start, its glow cut off
+        local hx = math.max(x + fw, x + Z(4.5));                     --  by the window's edge; never closer to the start than its glow)
+        DL.CF(dl, hx, y + h / 2, Z(4.5), U4(1, 0.85, 1, 0.22), 12);
+        DL.CF(dl, hx, y + h / 2, Z(2.2), U4(1, 1, 1, 1), 10);
+    end
 end
 
 -- Enmity view: the monster's name, then one line per player by estimated enmity (CE + VE). Whoever it's attacking

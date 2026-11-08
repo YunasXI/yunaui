@@ -96,14 +96,18 @@ local C = {
     aug      = { 0.720, 0.560, 1.000, 1.00 },
     red      = { 1.000, 0.450, 0.450, 1.00 },
 };
-local function u32(c) return imgui.GetColorU32(c); end
+local U32S_ = { 0, 0, 0, 1 };
+local function u32(c)                                              -- (with Void red picked: its gold turned red / white, as U4)
+    if YUI_TINT_ON and c[1] then U32S_[1], U32S_[2], U32S_[3] = YUI_TINT(c[1], c[2], c[3]); U32S_[4] = c[4] or 1; return imgui.GetColorU32(U32S_); end
+    return imgui.GetColorU32(c);
+end
 -- Frame cost (VanaCore's findings): no Lua table made per draw call. U4(r, g, b, a) is u32({ r, g, b, a }) through one
 -- scratch table; DL.L(dl, x, y, x2, y2, ...) is dl:AddLine({ x, y }, { x2, y2 }, ...) through scratch points (the binding
 -- reads them during the call and keeps nothing). The arguments are all worked out before a call fills its scratch.
 local U4, DL;
 do
     local c4, P1, P2, P3, P4 = { 0, 0, 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 };
-    U4 = function(r, g, b, a) c4[1], c4[2], c4[3], c4[4] = r, g, b, a; return imgui.GetColorU32(c4); end
+    U4 = function(r, g, b, a) if YUI_TINT_ON then r, g, b = YUI_TINT(r, g, b); end c4[1], c4[2], c4[3], c4[4] = r, g, b, a; return imgui.GetColorU32(c4); end
     DL = {};
     function DL.L(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddLine(P1, P2, ...); end
     function DL.R(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRect(P1, P2, ...); end
@@ -2789,6 +2793,7 @@ function JOBS.sb_anchor_icon(dl, ix, iy, h)
     local cx, cy, r = ix + w / 2, iy + h / 2, h * 0.27;
     local a = hov and 1 or ((mode > 0) and 0.95 or 0.40);
     local pk, vi = JOBS.SB.hp[2], JOBS.SB.mp[3];                    -- pink and violet, as the bars
+    if YUI_TINT_ON then vi = { 0.96, 0.97, 1.0 }; end                              -- (Void red: red and white)
     local pts = (mode == 1) and { { cx, cy - r * 0.92, pk }, { cx, cy + r * 0.92, vi } }   -- stacked: one over the other
         or { { cx - r * 0.92, cy, pk }, { cx + r * 0.92, cy, vi } };                      -- side by side
     if mode == 1 then r = r * 0.85; end
