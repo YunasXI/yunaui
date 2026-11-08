@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.41';
+addon.version = '1.1.42';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -8637,7 +8637,7 @@ local COMBAT_A = { [162] = true, [163] = true, [164] = true, [165] = true, [166]
     [171] = true, [174] = true, [175] = true, [177] = true, [181] = true, [182] = true, [183] = true, [185] = true, [186] = true,    --  parties of the
     [187] = true, [188] = true, [191] = true };                                                                                       --  alliance's battle lines)
 local function is_combat(m) return (m >= 20 and m <= 120) or m == 122 or m == 129 or m == 131 or COMBAT_A[m] == true; end
-local SJIS = { ['\129\168'] = '>', ['\129\169'] = '<', ['\129\170'] = '^', ['\129\171'] = 'v', ['\129\64'] = ' ',
+local SJIS = { ['\129\168'] = '>', ['\129\169'] = '<', ['\129\170'] = '+', ['\129\171'] = '-', ['\129\64'] = ' ',   -- (the game's up / down arrows: + / - - "Damage Taken-", "Attack+" - never a letter v)
                ['\129\154'] = '*', ['\129\153'] = '-', ['\129\69'] = '-', ['\129\124'] = '-', ['\129\117'] = '"', ['\129\118'] = '"' };
 function C.mob_name(s)                                               -- (a name without the marker symbol it may start with)
     if type(s) ~= 'string' then return s; end
@@ -15349,7 +15349,50 @@ function C.loot_name(id)
 end
 JP.loot(C);   -- [JP]
 -- Your Lot / Pass, to the game
-function C.loot_act(slot, lot) C.loot_send(lot and 0x41 or 0x42, slot); end
+-- Before a lot / pass reaches the server (the GMs asked, 2026-11-08: log spam): never while you're dead, and never a lot
+-- on a Rare item you already have (in any bag, wardrobe or Mog House storage) - the server would refuse it anyway.
+C.LOOT.warned = {};
+function C.loot_dead()
+    local dead = false;
+    pcall(function()
+        local mm = AshitaCore:GetMemoryManager();
+        if (mm:GetParty():GetMemberHP(0) or 1) == 0 then dead = true; end
+        local me = mm:GetParty():GetMemberTargetIndex(0) or 0;
+        if me ~= 0 then local st = mm:GetEntity():GetStatus(me) or 0; if st == 2 or st == 3 then dead = true; end end
+    end);
+    return dead;
+end
+function C.loot_have_rare(id)                                         -- (a Rare item, and one already yours: true)
+    local rare = false;
+    pcall(function()
+        local r = AshitaCore:GetResourceManager():GetItemById(id);
+        rare = r ~= nil and bit.band(tonumber(r.Flags) or 0, 0x8000) ~= 0;
+    end);
+    if not rare then return false; end
+    local have = false;
+    pcall(function()
+        local inv = AshitaCore:GetMemoryManager():GetInventory();
+        for c = 0, 16 do
+            local max = 80;
+            pcall(function() max = inv:GetContainerCountMax(c) or 80; end);
+            for i = 0, max do
+                local it = inv:GetContainerItem(c, i);
+                if it and tonumber(it.Id) == id then have = true; return; end
+            end
+        end
+    end);
+    return have;
+end
+function C.loot_ok(slot, lot)                                         -- (may this lot / pass go to the server? else a short note, once per item)
+    local L = C.LOOT;
+    local it = L.pool and L.pool[slot];
+    local key = (it and it.key or tostring(slot)) .. (lot and ':l' or ':p');
+    local function note(s) if L.warned[key] == nil then L.warned[key] = true; msg(s); end end
+    if C.loot_dead() then note("You can't lot or pass while you're knocked out."); return false; end
+    if lot and it and C.loot_have_rare(it.id) then note("Not lotted: " .. C.loot_name(it.id) .. " is Rare and you already have one."); return false; end
+    return true;
+end
+function C.loot_act(slot, lot) if C.loot_ok(slot, lot) then C.loot_send(lot and 0x41 or 0x42, slot); end end
 -- TREASURE POOL: your alts' LOT ALL / PASS ALL on your main's pool - the other games on this PC (vana.clients) whose
 -- character is in your party or alliance; a click tells that game's YunaUI (vana.ipc), which lots / passes its own pool
 C.ALTS = { at = -9, list = {} };
