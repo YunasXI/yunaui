@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.45';
+addon.version = '1.1.46';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1790,7 +1790,7 @@ local function buff_icon(id, px)
         local info = AshitaCore:GetResourceManager():GetStatusIconByIndex(id);
         if info == nil or info.Bitmap == nil or (info.ImageSize or 0) <= 0 then return; end
         local ptr = ffi.new('IDirect3DTexture8*[1]');
-        if ffi.C.D3DXCreateTextureFromFileInMemoryEx(d3d.get_device(), info.Bitmap, info.ImageSize, 0xFFFFFFFF, 0xFFFFFFFF, 1, 0,
+        if ffi.C.D3DXCreateTextureFromFileInMemoryEx(d3d.get_device(), info.Bitmap, math.max(info.ImageSize, (type(info.Bitmap) == 'string') and #info.Bitmap or 0), 0xFFFFFFFF, 0xFFFFFFFF, 1, 0,
                 ffi.C.D3DFMT_A8R8G8B8, ffi.C.D3DPOOL_MANAGED, ffi.C.D3DX_DEFAULT, ffi.C.D3DX_DEFAULT, 0xFF000000, nil, nil, ptr) == ffi.C.S_OK then
             local t = d3d.gc_safe_release(ffi.cast('IDirect3DTexture8*', ptr[0]));
             pcall(function()                                         -- (the game's original icons: most sit on a black square, a few like Blind don't - the
@@ -4301,6 +4301,7 @@ local function draw_target(dt)
         local me_ = 0;                                               --  gold prism over your head says it)
         pcall(function() me_ = AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0) or 0; end);
         if idx == me_ then FIGHT.fx.idx = nil; return; end
+        if C.overhead_idx and C.overhead_idx(idx) then FIGHT.fx.idx = nil; return; end   -- (their bars already over their head: no target bar for them)
     end
     if idx == nil or idx == 0 then
         if not (EDIT.on or FIGHT.show) then FIGHT.fx.idx = nil; return; end   -- (no target: the next one gets its entrance)
@@ -9188,6 +9189,7 @@ function C.head_bars_show()                                          -- (on, and
     if not C.head_bars_on() then return false; end
     local when = cfg.head_when or (cfg.head_fight == true and 'engaged') or 'always';
     if when == 'always' then return true; end
+    if when == 'never' then return false; end                         -- (BARS > Show > Never: no HP / MP / TP over your head)
     local st = 0;
     pcall(function()
         local mm = AshitaCore:GetMemoryManager();
@@ -10647,6 +10649,9 @@ function C.hideown_sync()
         if on then
             if cfg.hideown_prev == nil then cfg.hideown_prev = tostring(vc.get('graphics', 'nameplates.hideown') or '0'); end
             vc.set('graphics', 'nameplates.hideown', '1');
+        elseif cfg.head_when == 'never' and C.head_bars_on() then       -- (BARS > Show > Never: no bars over your head - VanaCore's own name there, always on)
+            vc.set('graphics', 'nameplates.hideown', nil);
+            cfg.hideown_prev = nil;
         elseif cfg.hideown_prev ~= nil then
             vc.set('graphics', 'nameplates.hideown', (cfg.hideown_prev ~= '0' and cfg.hideown_prev ~= '') and cfg.hideown_prev or nil);
             cfg.hideown_prev = nil;
@@ -11167,6 +11172,139 @@ function C.head_bars_()                                             -- (the bars
         if hmir then C.hexring(dl, dx, dy, d * (1.6 + (1 - fl) * 3), U4(1, 0.92, 0.65, 0.8 * fl), 1.5);   -- (Hex link: a hexagon of light opening)
         else DL.C(dl, dx, dy, d * (1.4 + (1 - fl) * 3), U4(1, 0.92, 0.65, 0.8 * fl), 24, 1.5); end
     end
+end
+-- BARS > Party bars over heads (the gold mode): everyone in your party and alliance - trusts too - gets an HP bar and a
+-- thin MP bar just under the name the game writes over their head, as your own bars: the same look and colours (Gold or
+-- Void red, the HP warnings as the party list's). Only members you can see, within 30 yalms: a big alliance never crowds
+-- the screen. The bars ease to their values, as yours.
+C.MB2 = {};
+C.MB_RACE = { [3] = 0.15, [7] = -0.15, [8] = 0.18 };                                        -- (per race: the name's height against C.HB_RACE - Mithra's name sits lower)
+function C.member_bars_on() return cfg.member_bars == true and cfg.target_fx == 'link'; end
+function C.member_bars()
+    if not C.member_bars_on() or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
+    local ds = imgui.GetIO().DisplaySize;
+    imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
+    imgui.SetNextWindowSize({ ds.x, ds.y }, ImGuiCond_Always);
+    local fl = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoMove, ImGuiWindowFlags_NoInputs,
+        ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing,
+        ImGuiWindowFlags_NoBringToFrontOnFocus, ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoScrollbar);
+    if imgui.Begin('##yui_memberbars', { true }, fl) then
+        local ok, err = pcall(C.member_bars_);
+        if not ok and YUI_ERRLOG then YUI_ERRLOG('memberbars', err); end
+    end
+    imgui.End();
+end
+function C.overhead_idx(idx)                                         -- (does this one have YunaUI's bars over their head? then no target bar for them and
+    if not C.member_bars_on() or not idx or idx == 0 then return false; end   --  their name stays when targeted)
+    local yes = false;
+    pcall(function()
+        local mm = AshitaCore:GetMemoryManager();
+        local party, ent = mm:GetParty(), mm:GetEntity();
+        if idx == (party:GetMemberTargetIndex(0) or 0) then return; end
+        for i = 1, 17 do
+            if (party:GetMemberIsActive(i) or 0) ~= 0 and (party:GetMemberTargetIndex(i) or 0) == idx then yes = true; return; end
+        end
+        if cfg.member_bars_all == true and idx >= 0x400 and idx < 0x700 and bit.band(ent:GetSpawnFlags(idx) or 0, 0x1) ~= 0 then yes = true; end   -- (another player)
+    end);
+    return yes;
+end
+function C.member_bars_()
+    local mm = AshitaCore:GetMemoryManager();
+    local party, ent = mm:GetParty(), mm:GetEntity();
+    local me = party:GetMemberTargetIndex(0) or 0;
+    if me == 0 or ent:GetRawEntity(me) == nil then return; end
+    local okst, st_ = pcall(function() return ent:GetStatus(me); end);
+    if okst and st_ == 4 then return; end                             -- (in a cutscene)
+    local myzone = party:GetMemberZone(0) or 0;
+    local myx, myy = ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0;
+    local SW, SH = C.screen();
+    local base = 0.85 * math.max(0.6, SH / 1080) * math.max(0.5, math.min(2.5, tonumber(cfg.member_bars_scale) or 1));
+    local dl = imgui.GetBackgroundDrawList();
+    local dt = imgui.GetIO().DeltaTime or 0.016;
+    local now = os.clock();
+    local seen = {};
+    local list, inp = {}, {};
+    for i = 1, 17 do                                                  -- (your party and alliance, trusts too: HP and MP)
+        if (party:GetMemberIsActive(i) or 0) ~= 0 and (party:GetMemberZone(i) or 0) == myzone then
+            local idx = party:GetMemberTargetIndex(i) or 0;
+            if idx > 0 and idx ~= me then
+                inp[idx] = true;
+                list[#list + 1] = { idx = idx, key = party:GetMemberName(i) or tostring(idx), hpp = (party:GetMemberHPPercent(i) or 0) / 100, mpp = (party:GetMemberMPPercent(i) or 0) / 100 };
+            end
+        end
+    end
+    if cfg.member_bars_all == true then                               -- (BARS > Party bars: everyone - every other player too: HP only, the game sends no MP)
+        for idx = 0x400, 0x6FF do
+            if idx ~= me and not inp[idx] and ent:GetRawEntity(idx) ~= nil and bit.band(ent:GetSpawnFlags(idx) or 0, 0x1) ~= 0 then
+                local nm = ent:GetName(idx);
+                if nm and nm ~= '' then list[#list + 1] = { idx = idx, key = 'p' .. nm, hpp = (ent:GetHPPercent(idx) or 0) / 100 }; end
+            end
+        end
+    end
+    for _, it in ipairs(list) do
+        local idx = it.idx;
+        if ent:GetRawEntity(idx) ~= nil then
+            local rf = ent:GetRenderFlags0(idx) or 0;
+            local vis = bit.band(rf, 0x200) == 0x200 and bit.band(rf, 0x4000) == 0;
+            local ex, ey = ent:GetLocalPositionX(idx) or 0, ent:GetLocalPositionY(idx) or 0;
+            local dist = math.sqrt((ex - myx) ^ 2 + (ey - myy) ^ 2);
+            local ap = ent:GetActorPointer(idx);
+            if vis and dist <= 30 and ap ~= nil and ap ~= 0 then
+                local px, py, pz = ashita.memory.read_float(ap + 0x678), ashita.memory.read_float(ap + 0x680), ashita.memory.read_float(ap + 0x67C);
+                local race = 0;
+                pcall(function() race = ent:GetRace(idx) or 0; end);
+                local tall = (C.HB_RACE[race] or 2.45) + (C.MB_RACE[race] or 0);   -- (where the game puts that race's name: a Mithra's lower than the head bars' height)
+                local mst = 0;
+                pcall(function() mst = ent:GetStatus(idx) or 0; end);
+                if mst == 5 or mst == 85 then tall = tall + 1.05; end   -- (on a chocobo or a mount)
+                local drop = tonumber(YUI_MB_DROP) or 0.45;           -- (yalms under the name's height: between the name and the head)
+                local sx, sy = C.w2s(px, pz - (tall - drop), py);     -- (in the world, a little under the game's name - over the head at any camera angle)
+                if sx then
+                    local _, sy1 = C.w2s(px, pz - (tall - drop) - 1, py);    -- (how big a yalm is on the screen there: the camera far, or them far -
+                    local ppy = sy1 and (sy - sy1) or 70;            --  the bars as small as the game's name gets, never far under it)
+                    local sc = base * math.max(0.3, math.min(1.2, ppy / 70));
+                    sy = sy + (tonumber(cfg.member_bars_y) or 0) * sc;   -- (the bars' foot at that point)
+                    local key = it.key;
+                    seen[key] = true;
+                    local S = C.MB2[key] or {};
+                    C.MB2[key] = S;
+                    local hpp, mpp = it.hpp, it.mpp;
+                    local e, eu = math.min(1, dt * 8), math.min(1, dt * 2.5);
+                    S.hp = S.hp and (S.hp + (hpp - S.hp) * ((hpp > S.hp) and eu or e)) or hpp;
+                    if mpp then S.mp = S.mp and (S.mp + (mpp - S.mp) * ((mpp > S.mp) and eu or e)) or mpp; end
+                    if S.hl == nil or hpp >= S.hl then S.hl, S.ht = hpp, now; elseif now - (S.ht or 0) > 0.5 then S.hl = math.max(hpp, S.hl - dt * 0.35); end
+                    local W = math.floor(80 * sc * math.max(0.4, math.min(3, tonumber(cfg.member_bars_w) or 1)));   -- (BARS > Party bars width)
+                    local th_ = math.max(0.4, math.min(3, tonumber(cfg.member_bars_th) or 1));   -- (BARS > Party bars thickness)
+                    local hh, mh, g = math.max(2, math.floor(5 * sc * th_ + 0.5)), math.max(2, math.floor(3.5 * sc * th_ + 0.5)), math.max(2, math.floor(3 * sc + 0.5));
+                    local wmp = cfg.member_bars_mp ~= false and mpp ~= nil;   -- (BARS > Party bars: MP - off, or a player outside your party: the HP bar alone)
+                    if not wmp then mh, g = 0, 0; end
+                    local x0, y0 = math.floor(sx - W / 2), math.floor(sy - (hh + g + mh));
+                    local _, nby = C.w2s(px, pz - (tall - 0.26), py);   -- (the foot of the game's name there: the bars never above it - any size,
+                    if nby then y0 = math.floor(nby + (tonumber(cfg.member_bars_y) or 0) * sc); end   --  any height: hung right under the name - a tall hat's covered less)
+                    if nby and y0 < nby then y0 = math.floor(nby); end
+                    local _, hty = C.w2s(px, pz - (tall - 0.50), py);   -- (the top of the head: the bars never on it - too little room, a
+                    if hty and y0 + hh + g + mh > hty then               --  Tarutaru's: the bars thinner to fit between the name and the head)
+                        local room = math.max(5, hty - y0);
+                        local k_ = room / (hh + g + mh);
+                        hh, g, mh = math.max(2, math.floor(hh * k_)), math.max(wmp and 1 or 0, math.floor(g * k_)), math.max(wmp and 2 or 0, math.floor(mh * k_));
+                    end
+                    local h1, h2 = C.HEXHP[1], C.HEXHP[2];
+                    local a_, b_ = C.hpheat({ inzone = true }, hpp);
+                    if hpp < 0.25 and hpp > 0 then a_, b_ = { 1.0, 0.40, 0.42 }, { 0.86, 0.12, 0.18 }; end
+                    if a_ then h1, h2 = a_, b_; end
+                    if hpp < 0.5 and hpp > 0 then                -- (low HP: it breathes, as yours)
+                        local bb = 0.5 + 0.5 * math.sin(now * (4 + (0.5 - hpp) * 10));
+                        h1 = { h1[1] + (1 - h1[1]) * bb * 0.5, h1[2] + (1 - h1[2]) * bb * 0.5, h1[3] + (1 - h1[3]) * bb * 0.5 };
+                    end
+                    local al = (hpp <= 0) and 0.55 or 1;         -- (knocked out: faded)
+                    C.hexbar(dl, x0, y0, W, hh, S.hp, S.hl, 0, { c1 = h2, c2 = h1, band = hh + 1, al = al, live = true, lead = hpp });
+                    local mc = (type(YUI_MP_COL) == 'table') and YUI_MP_COL or C.MPCOL;
+                    if wmp then C.hexbar(dl, x0, y0 + hh + g, W, mh, S.mp, nil, 0, { c1 = mc[2], c2 = mc[1], band = mh + 1, al = al, live = true, lead = mpp }); end
+                end
+            end
+        end
+    end
+    for k in pairs(C.MB2) do if not seen[k] then C.MB2[k] = nil; end end
 end
 -- Say and party lines: a bubble over the head of whoever said it, nearby, for a few seconds
 function C.bubble_draw()
@@ -11925,15 +12063,20 @@ local legacy = { draw = nil, tries = 0 };
 -- Experimental (CHAT > Hide the game's typing bar), step 1: only READS. While you type, the game's input menu
 -- ("menu    inline") is the focused one; two snapshots of its memory go to inline_dump.txt so its screen position can
 -- be found. Nothing in the game is changed.
+function C.readable(a, n)                                             -- (can n bytes at a be read? checked before every read of a game pointer, so a
+    if type(a) ~= 'number' or a < 0x10000 or a > 0xFFFFFFFF then return false; end   --  stale one never crashes the game - the GMs, 2026-11-09)
+    local ok, b = pcall(vana.memory.read_bytes, a, n or 4);
+    return ok and b ~= nil;
+end
 function legacy.menu_ptrs()
     legacy.pmenu = legacy.pmenu or ashita.memory.find('FFXiMain.dll', 0, '8B480C85C974??8B510885D274??3B05', 16, 0);
-    if legacy.pmenu == nil or legacy.pmenu == 0 then return nil; end
+    if legacy.pmenu == nil or legacy.pmenu == 0 or not C.readable(legacy.pmenu) then return nil; end
     local sub = ashita.memory.read_uint32(legacy.pmenu);
-    if sub == nil or sub == 0 then return nil; end
+    if sub == nil or sub == 0 or not C.readable(sub) then return nil; end
     local obj = ashita.memory.read_uint32(sub);
-    if obj == nil or obj == 0 then return nil; end
+    if obj == nil or obj == 0 or not C.readable(obj + 4) then return nil; end
     local head = ashita.memory.read_uint32(obj + 4);
-    if head == nil or head == 0 then return nil; end
+    if head == nil or head == 0 or not C.readable(head + 0x46, 16) then return nil; end
     return obj, head, (ashita.memory.read_string(head + 0x46, 16) or ''):gsub('%z', '');
 end
 -- Hiding the game's own windows the way UIBegone does (DragoHorse, after atom0s's hideparty, GPL): each native window
@@ -13750,7 +13893,7 @@ local function item_icon(id)
         local it = AshitaCore:GetResourceManager():GetItemById(id);
         if it == nil or it.Bitmap == nil or (it.ImageSize or 0) <= 0 then return; end
         local ptr = ffi.new('IDirect3DTexture8*[1]');
-        if ffi.C.D3DXCreateTextureFromFileInMemoryEx(d3d.get_device(), it.Bitmap, it.ImageSize, 0xFFFFFFFF, 0xFFFFFFFF, 1, 0,
+        if ffi.C.D3DXCreateTextureFromFileInMemoryEx(d3d.get_device(), it.Bitmap, math.max(it.ImageSize, (type(it.Bitmap) == 'string') and #it.Bitmap or 0), 0xFFFFFFFF, 0xFFFFFFFF, 1, 0,
                 ffi.C.D3DFMT_A8R8G8B8, ffi.C.D3DPOOL_MANAGED, ffi.C.D3DX_DEFAULT, ffi.C.D3DX_DEFAULT, 0xFF000000, nil, nil, ptr) == ffi.C.S_OK then
             local t = d3d.gc_safe_release(ffi.cast('IDirect3DTexture8*', ptr[0]));
             item_icons[id] = { tex = t, ptr = tonumber(ffi.cast('uint32_t', t)) };
@@ -15439,15 +15582,38 @@ function C.loot_have_rare(id)                                         -- (a Rare
     end);
     return have;
 end
+function C.loot_bag_full()                                           -- (no room left in your inventory: the server would refuse the lot)
+    local full = false;
+    pcall(function()
+        local inv = AshitaCore:GetMemoryManager():GetInventory();
+        local used, max = inv:GetContainerCount(0) or 0, inv:GetContainerCountMax(0) or 0;
+        full = max > 0 and used >= max;
+    end);
+    return full;
+end
+C.LOOT.out = {};                                                     -- (per slot: a lot / pass packet that went out, from anywhere: { key, t })
+function C.loot_out(e)                                               -- (packet_out 0x041 / 0x042: a lot or a pass leaving this game - YunaUI's, the game
+    if e.blocked then return; end                                    --  menu's or another addon's (Lootwhore): never a second one - the GMs, 2026-11-09)
+    local slot = struct.unpack('B', e.data, 0x04 + 1);
+    if slot == nil or slot > 9 then return; end
+    local L = C.LOOT;
+    pcall(C.loot_read);
+    local p = L.pool and L.pool[slot];
+    L.out = L.out or {};
+    L.out[slot] = { key = p and p.key or nil, t = os.clock() };
+end
 function C.loot_ok(slot, lot)                                         -- (may this lot / pass go to the server? else a short note, once per item)
     local L = C.LOOT;
     pcall(C.loot_read);                                              -- (the pool read again this moment: an item that came and went at once - a fast
     local it = L.pool and L.pool[slot];                              --  cleave - is never lotted after it left)
     if not it then return false; end
     if it.mine ~= nil then return false; end                         -- (already lotted or passed: never twice)
+    local o = L.out and L.out[slot];                                 -- (a lot / pass already left the game for this item, from anywhere: not again)
+    if o and (o.key == it.key or (o.key == nil and os.clock() - o.t < 5)) then return false; end
     local key = (it and it.key or tostring(slot)) .. (lot and ':l' or ':p');
     local function note(s) if L.warned[key] == nil then L.warned[key] = true; msg(s); end end
     if C.loot_dead() then note("You can't lot or pass while you're knocked out."); return false; end
+    if lot and C.loot_bag_full() then note("Not lotted: " .. C.loot_name(it.id) .. " - your inventory is full."); return false; end
     if lot and it and C.loot_have_rare(it.id) then note("Not lotted: " .. C.loot_name(it.id) .. " is Rare and you already have one."); return false; end
     return true;
 end
@@ -15512,7 +15678,7 @@ function C.loot_read()
         local p = pool[slot];
         if p and t.key == nil then t.key = p.key; elseif p and t.key ~= p.key then L.lots[slot] = nil; end
     end
-    if n == 0 then L.lots = {}; L.first = {}; end
+    if n == 0 then L.lots = {}; L.first = {}; L.out = {}; end
     L.pool, L.n = pool, n;
     local ord = {};                                                  -- (the items in the game's own order: by slot, as its pool menu lists them)
     for slot = 0, 9 do if pool[slot] then ord[#ord + 1] = slot; end end
@@ -15532,10 +15698,11 @@ function C.loot_menu()
     local slot = nil;
     if L.mcur and low:find('loot', 1, true) then slot = L.mcur - 1;  -- (VanaCore's menu events: the row the cursor is on, from 1 = slot 0)
     else
+        if not C.readable(obj + 0x0C, 0x41) then return nil; end   -- (the menu's memory checked first: never a read of a pointer that's gone)
         local idx = (ashita.memory.read_uint8(obj + 0x4C) or 1) - 1; -- (its cursor: the row, from 1)
         pcall(function()                                             -- (a list: its own count from the top, from 0)
             local lp = ashita.memory.read_uint32(obj + 0x0C);
-            if lp and lp ~= 0 then idx = ashita.memory.read_uint16(lp + 0x30) or idx; end
+            if lp and lp ~= 0 and C.readable(lp + 0x30, 2) then idx = ashita.memory.read_uint16(lp + 0x30) or idx; end
         end);
         slot = idx;                                                  -- (its rows are the slots: an empty slot is an empty row)
     end
@@ -18442,6 +18609,8 @@ local function draw_window()
                 row_pick('##yui_myhpc', 'HP bar colour', 'my_hp_color', { { 'pink', 'Pink' }, { 'white', 'White' } }, nil, function() pcall(C.apply_hp); save(); end);
             else                                                     -- (the gold mode: its HP bars gold, or Void red)
                 row_pick('##yui_hexhpc', 'HP bar colour', 'hex_hp_color', { { 'gold', 'Gold' }, { 'red', 'Void red' } }, nil, function() pcall(C.apply_hp); save(); end);
+                row_switch('##yui_mbars', 'Party bars over heads', 'member_bars', 'On: everyone in your party and alliance (trusts too) gets an HP and an MP bar just under the name over their head, as yours. Only the ones you can see, within 30 yalms.');
+                if cfg.member_bars == true then row_slider('##yui_mbs', 'Party bars size', 'member_bars_scale', 0.5, 2.0, 0.05, '%.2fx'); row_slider('##yui_mbw', 'Party bars width', 'member_bars_w', 0.4, 3.0, 0.05, '%.2fx'); row_slider('##yui_mbt', 'Party bars thickness', 'member_bars_th', 0.4, 3.0, 0.05, '%.2fx'); if cfg.member_bars_mp == nil then cfg.member_bars_mp = true; end row_switch('##yui_mbmp', 'Party bars: MP', 'member_bars_mp', 'On: an MP bar under each HP bar. Off: the HP bar alone.'); row_switch('##yui_mball', 'Also on other players', 'member_bars_all', 'On: every other player near you gets an HP bar over their head too (HP only: the game never sends their MP). Off: only your party and alliance.'); row_slider('##yui_mby', 'Party bars height', 'member_bars_y', -60, 60, 1, '%d'); end
             end
             if C.head_bars_on() then
                 hint('Over your head: thin HP and MP bars, the TP as three dots (gold when full: a weapon skill is ready) and the numbers beside them.');
@@ -18449,7 +18618,7 @@ local function draw_window()
                 row_slider('##yui_hby', 'Head bars height', 'head_bars_y', -80, 80, 1, '%d');
                 row_pick('##yui_hbn', 'Head bars numbers', 'head_nums', { { 'always', 'Always' }, { 'change', 'When they change' }, { 'off', 'Off' } });
                 if cfg.head_when == nil then cfg.head_when = (cfg.head_fight == true) and 'engaged' or 'always'; end   -- (the old Only in a fight switch)
-                row_pick('##yui_hbw', 'Show', 'head_when', { { 'always', 'Always' }, { 'engaged', 'When you engage' }, { 'aggro', 'With aggro (you or your party)' } });
+                row_pick('##yui_hbw', 'Show', 'head_when', { { 'always', 'Always' }, { 'engaged', 'When you engage' }, { 'aggro', 'With aggro (you or your party)' }, { 'never', 'Never' } });   -- (Never: no bars over your head - your name there instead)
                 hint('Out of a fight your name and stars show over your head as usual; when the bars come they take their place. With aggro: as soon as a monster is on you or anyone in your party - before you engage, as when you can\'t mount.');
                 if C.vana_cfg() then hint('Your own name and stars over your head are hidden while these bars are on (VanaCore\'s Hide own nameplate), and come back with Fixed.');
                 else hint('Tip: hide your own name and stars over your head in /vana > Options > Nameplates > Hide own nameplate.'); end
@@ -18933,7 +19102,8 @@ function C.hide_tname()
     pcall(function() idx = AshitaCore:GetMemoryManager():GetTarget():GetTargetIndex(0) or 0; end);
     local me = 0;
     pcall(function() me = AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0) or 0; end);
-    local want = cfg.target_fx == 'link' and cfg.hl_hidename ~= false and idx ~= 0 and idx ~= me and cfg.target ~= false;
+    local want = cfg.target_fx == 'link' and cfg.hl_hidename ~= false and idx ~= 0 and idx ~= me and cfg.target ~= false
+        and not (C.overhead_idx and C.overhead_idx(idx));               -- (bars over their head: their name stays when you target them)
     local H = C.HN;
     if not want or idx ~= H.idx then C.hn_off(); end
     if not want then return; end
@@ -23020,6 +23190,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         if not YUI_PUBLIC then pcall(C.jav_tick); end               -- (ACTION BARS > Voice: a job ability ready again - not in the public version: no ACTION BARS tab to turn it off)
         piece(C.macrobar);                                           -- (BARS > MACRO BAR)
         piece(C.head_bars);                                          -- (BARS > YOUR BARS > Where: over your head)
+        piece(C.member_bars);                                        -- (BARS > Party bars over heads)
         YUI_EQ_HIDE = true;                                          -- (the old gear wheel never shows)
         YUI_LOCKED = cfg.locked and true or false;                 -- the HP / MP / TP bars (equip.lua) follow this lock
         DOLL.preview = (ui.open and ui.tab == 6) or (EDIT.G.on and EDIT.G.STEPS[EDIT.G.i][1] == 'Gear');                     -- the EQUIP tab shows the strip at full brightness
@@ -23040,6 +23211,7 @@ end);
 
 ashita.events.register('packet_out', 'yui_packet_out', function(e)   -- (what you just did: names your gear swaps)
     if e.id == 0x01A then pcall(DOLL.on_out, e); end
+    if e.id == 0x041 or e.id == 0x042 then pcall(C.loot_out, e); end   -- (TREASURE POOL: a lot / pass from anywhere - YunaUI never sends a second one)
 end);
 ashita.events.register('packet_in', 'yui_packet', function(e)
     if e.id == 0x076 then pcall(read_party_buffs, e);
