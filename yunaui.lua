@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.46';
+addon.version = '1.1.47';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -11279,11 +11279,32 @@ function C.member_bars_()
                     local wmp = cfg.member_bars_mp ~= false and mpp ~= nil;   -- (BARS > Party bars: MP - off, or a player outside your party: the HP bar alone)
                     if not wmp then mh, g = 0, 0; end
                     local x0, y0 = math.floor(sx - W / 2), math.floor(sy - (hh + g + mh));
-                    local _, nby = C.w2s(px, pz - (tall - 0.26), py);   -- (the foot of the game's name there: the bars never above it - any size,
-                    if nby then y0 = math.floor(nby + (tonumber(cfg.member_bars_y) or 0) * sc); end   --  any height: hung right under the name - a tall hat's covered less)
-                    if nby and y0 < nby then y0 = math.floor(nby); end
+                    local nx_, ntop_, nbot_ = nil, nil, nil;           -- (where the game really drew the name - VanaCore 0.8.224+: follows hats, hoods, mounts;
+                    pcall(function()                                   --  nil while the name isn't drawn: then the race-based guess below)
+                        local en = vana.game.entity(idx);
+                        if en and en.name_bottom then nx_, ntop_, nbot_ = en.name_x, en.name_top, en.name_bottom;
+                        elseif vana.world.name_at then nx_, ntop_, nbot_ = vana.world.name_at(idx); end
+                    end);
+                    local _, nby = C.w2s(px, pz - (tall - 0.26), py);   -- (the foot of the game's name by the race guess - placed in the world every frame,
+                    if nbot_ and nby and ppy > 4 and S.lsx and math.abs(sx - S.lsx) < 1.5 and math.abs(nby - (S.lsy or nby)) < 1.5 then
+                        local dz = (nby - nbot_) / ppy;                  --  so it never trails the camera; the game's real name (drawn a moment ago) only
+                        S.dz = S.dz and (S.dz + (dz - S.dz) * 0.25) or dz;   --  measures, while the camera is still, how much higher that name sits -
+                        S.nh = (nbot_ - (ntop_ or nbot_)) / ppy;         --  a hat, a hood, a mount - in yalms: kept, and added to the height)
+                    end
+                    S.lsx, S.lsy = sx, nby;
+                    if S.dz and nby then
+                        local _, ny2 = C.w2s(px, pz - (tall - 0.26 + S.dz), py);
+                        if ny2 then
+                            nby = ny2;
+                            y0 = math.floor(nby + math.max(2, (S.nh or 0.3) * ppy * 0.12) + (tonumber(cfg.member_bars_y) or 0) * sc);
+                            if y0 < nby then y0 = math.floor(nby); end
+                        end
+                    elseif nby then
+                        y0 = math.floor(nby + (tonumber(cfg.member_bars_y) or 0) * sc);
+                        if y0 < nby then y0 = math.floor(nby); end
+                    end
                     local _, hty = C.w2s(px, pz - (tall - 0.50), py);   -- (the top of the head: the bars never on it - too little room, a
-                    if hty and y0 + hh + g + mh > hty then               --  Tarutaru's: the bars thinner to fit between the name and the head)
+                    if not S.dz and hty and y0 + hh + g + mh > hty then   --  Tarutaru's: the bars thinner to fit between the name and the head - the guess only)
                         local room = math.max(5, hty - y0);
                         local k_ = room / (hh + g + mh);
                         hh, g, mh = math.max(2, math.floor(hh * k_)), math.max(wmp and 1 or 0, math.floor(g * k_)), math.max(wmp and 2 or 0, math.floor(mh * k_));
