@@ -11621,7 +11621,7 @@ function C.mob_plates_()
     local seen = {};
     local tpl_ = tidx > 0 and (tidx < 0x400 or tidx >= 0x700) and mob_(tidx);   -- (a monster targeted: every other plate faded right down - in a big pull your target stands out)
     for _, idx in ipairs(want) do
-        YUI_ADIM = (tpl_ and idx ~= tidx) and 0.28 or nil;
+        YUI_ADIM = (tpl_ and idx ~= tidx) and 0.50 or nil;
         local ok_ = pcall(function()
             if ent:GetRawEntity(idx) == nil or is_party_id(ent:GetServerId(idx)) then return; end
             local hpp = (ent:GetHPPercent(idx) or 0) / 100;
