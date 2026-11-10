@@ -4394,6 +4394,9 @@ local function draw_target(dt)
         FIGHT.anc.mb = { x, y - nh * 0.85 - 6 * sc, math.min(w, 420 * sc), nh * 0.85 };
         local link = cfg.target_fx == 'link';                         -- (Hex link: one fixed layout - Magic Burst left of the icon, the fan
         if cfg.fight_info ~= false and not link and not (C.GST and C.GST.nobn) then pcall(FIGHT.draw, dl, fsid, x + mdx, y + mdy, w, sc); end   --  right of the bar, the cast under it, 80% of the bar's size)
+        local rdl_ = dl;                                             -- (BARS > Enemy plates: a monster with its plate - the name, HP and debuffs are on
+        local pl_ = (not link) and (not fake) and tk == 'mob' and C.plated and C.plated(idx);   --  the plate: drawn into nothing here; its casts, Magic Burst and fan stay)
+        if pl_ then dl = C.NODL; end
         local nh0 = nh;                                              -- TARGET > Target name size: the name (and its distance) in its own size
         local nk = math.max(0.5, math.min(2.5, tonumber(cfg.target_name_scale) or 1));
         if nk ~= 1 then
@@ -4508,7 +4511,7 @@ local function draw_target(dt)
                     C.dd2bar(dl, bx, by, bw, h, hpp * hk, lg * hk, 0.5);
                 else
                     glow_bar(dl, bx, by, bw, h, hpp * hk, lg * hk, C.tgt1 or { 1, 0.78, 0.96 }, C.tgt2 or C.hp2, 0.5);   -- (BARS > Target bar)
-                    bar_overlay(bx, by, bw * hpp * hk, h, bar_fx_for('target'), 0.5, C.fxtint(cfg.target_hp_color or 'pink'));   -- (in the bar's colour)
+                    if not pl_ then bar_overlay(bx, by, bw * hpp * hk, h, bar_fx_for('target'), 0.5, C.fxtint(cfg.target_hp_color or 'pink')); end   -- (in the bar's colour)
                     pcall(C.outline, dl, bx, by, bw, h);             -- (a thin black edge: BARS > Black edge)
                 end
             end
@@ -4531,7 +4534,7 @@ local function draw_target(dt)
                 FIGHT.mir = true;
             end
             FIGHT.anc.fo = { hx - fw + 14 * fsc, hy - 16 * fsc, fw, fh };   -- (both layouts open down and left: the box starts just over the hub, so it can sit at the screen's top)
-            pcall(FIGHT.draw_fan, dl, fsid, hx + fdx, hy + fdy, fsc);
+            pcall(FIGHT.draw_fan, rdl_, fsid, hx + fdx, hy + fdy, fsc);
             FIGHT.mir = nil;
         end
         local ch = 0;                                                -- what it's casting: under the bar, at its right end
@@ -4551,7 +4554,7 @@ local function draw_target(dt)
                 end
             end
             if link then ok, used = pcall(FIGHT.draw_cast_under, dl, fsid, x + w + (FIGHT.pctw or 0) + cdx, (FIGHT.pcty or (by + h)) + cdy, csc, cmin_);   -- (Hex link: under the bar's right end, ending with the HP %)
-            else ok, used = pcall(FIGHT.draw_cast, dl, fsid, x + cdx, by + h + 5 * sc + cdy, w, csc, cth, true, sc * 0.75); end   -- (under the bar's middle; the text has its own size)
+            else ok, used = pcall(FIGHT.draw_cast, rdl_, fsid, x + cdx, by + h + 5 * sc + cdy, w, csc, cth, true, sc * 0.75); end   -- (under the bar's middle; the text has its own size)
             ch = (ok and tonumber(used)) or 0;
             if link then FIGHT.castb, ch = (FIGHT.pcty or (by + h)) + ((cdx == 0 and cdy == 0) and ch or 0), 0; end   -- (Hex link: the cast sits by the HP %; the debuffs keep their row)
             FIGHT.anc.co = link and { x + w + (FIGHT.pctw or 0) - 200 * csc, FIGHT.pcty or (by + h), 200 * csc, 22 * csc } or { x, by + h + 5 * sc, w, math.max(ch, 18 * csc) };
@@ -4566,13 +4569,14 @@ local function draw_target(dt)
         if not link then FIGHT.ndemo = { x, by + h + 10 * sc + ch, w, os.clock() }; end   -- (Normal mode: the target of target hangs under it)
         if link then FIGHT.drawn.tb = { x - 34 * sc, top_ - 2, w + (FIGHT.pctw or 0) + 40 * sc, (by + h) - top_ + 8 * sc, os.clock() }; end   -- (for the guide's box)   -- (the chooser's Normal demo: the target of target goes under it)   -- (Hex link: the target of target under the bar's right end, out to the HP %'s end, below the cast)
         local bh2 = 0;
-        if cfg.buffs then                                            -- its buffs / debuffs, under the bar
+        if cfg.buffs and not pl_ then                                -- its buffs / debuffs, under the bar (a plated monster: under its plate)
             local blist, bleft = target_buffs(idx);                  -- a monster's debuffs come with their time left
             local tbs = tonumber(cfg.target_buff_scale) or tonumber(cfg.buff_scale) or 1;   -- (TARGET > Buffs / debuffs size: its own, not the party's)
             local _, used = draw_buffs(dl, x, by + h + 8 * sc + ch, blist, math.floor(22 * sc * tbs), 16, 2, 1, bleft, nil, cfg.target_buff_tips ~= false);
             bh2 = used > 0 and (used + 6 * sc) or 0;
         end
         if not link and FIGHT.ndemo then FIGHT.ndemo[2] = FIGHT.ndemo[2] + bh2; end   -- (under its debuffs too)
+        dl = rdl_;
         imgui.Dummy({ w + 12, nh + h + 18 + bh2 + ch });
         if fullclip then pcall(function() dl:PopClipRect(); end); end
         if fa_ < 1 then imgui.PopStyleVar(1); end
@@ -4616,6 +4620,7 @@ local function draw_subtarget(dt)
     end
     if (idx == nil or idx == 0) and not preview then return; end
     if cfg.target_fx == 'link' and tag ~= 'SUB' and idx == main and not preview then return; end   -- (Hex link: yourself again under yourself - no)
+    if tag ~= 'SUB' and not preview and main and C.plated and C.plated(main) then return; end   -- (BARS > Enemy plates: beside the monster's plate instead)
     local name, hpp = 'Yunas', 0.7;
     if idx and idx ~= 0 then
         local ent = AshitaCore:GetMemoryManager():GetEntity();
@@ -11354,6 +11359,8 @@ end
 C.MP3 = {};                                                          -- (per monster: its plate's state)
 C.MNH = {};                                                          -- (per model: how high the game draws its name, in yalms - measured once)
 function C.mob_plates_on() return cfg.mob_plates == true and cfg.target_fx ~= 'link'; end
+function C.plated(idx) return C.mob_plates_on() and idx ~= nil and C.MP3[idx] ~= nil and C.MP3[idx].drawn ~= nil and os.clock() - C.MP3[idx].drawn < 0.3; end   -- (a plate over it now)
+C.NODL = setmetatable({}, { __index = function() return function() end; end });   -- (a draw list that draws nothing)
 function C.plate_h(idx, ent)                                         -- (where its plate sits, in yalms over its feet: where the game puts its name, else
     local hz = C.model_h(idx, ent);                                  --  from its real size - the hitbox VanaCore reports, never the target bar's
     if hz then return hz; end                                        --  2-yalm least: a Mandragora is 0.8 yalms, its plate right over it)
@@ -11402,11 +11409,12 @@ function C.mob_plates_()
     local tidx = 0;
     pcall(function() tidx = mm:GetTarget():GetTargetIndex(0) or 0; end);
     local want = {};
-    for idx = 1, 0x3FF do                                             -- (every monster near you: always, targeted or not)
-        if ent:GetRawEntity(idx) ~= nil and bit.band(ent:GetSpawnFlags(idx) or 0, 0x10) ~= 0 then want[idx] = true; end
+    for idx = 1, 0x3FF do                                             -- (every monster near you: always, targeted or not - your target last, on top)
+        if idx ~= tidx and ent:GetRawEntity(idx) ~= nil and bit.band(ent:GetSpawnFlags(idx) or 0, 0x10) ~= 0 then want[#want + 1] = idx; end
     end
+    if tidx > 0 and tidx < 0x400 and ent:GetRawEntity(tidx) ~= nil and bit.band(ent:GetSpawnFlags(tidx) or 0, 0x10) ~= 0 then want[#want + 1] = tidx; end
     local seen = {};
-    for idx in pairs(want) do
+    for _, idx in ipairs(want) do
         local ok_ = pcall(function()
             if ent:GetRawEntity(idx) == nil or is_party_id(ent:GetServerId(idx)) then return; end
             local hpp = (ent:GetHPPercent(idx) or 0) / 100;
@@ -11491,6 +11499,43 @@ function C.mob_plates_()
             if hpp < 0.25 then c1, c2 = { 1.0, 0.55, 0.50 }, { 0.92, 0.22, 0.28 }; end   -- (low: red)
             glow_bar(dl, x0, bY, W, bh, S.hp, lagged('mp3' .. idx, hpp, dt), c1, c2, (idx % 97) * 0.41);
             text(dl, x0 + W + 8 * sc, math.floor(bY + bh / 2 - lh / 2), pct, (hpp < 0.25) and { 1, 0.55, 0.55, 1 } or { 1, 0.86, 0.94, 1 });
+            S.drawn = os.clock();
+            if on and cfg.subtarget then                              -- (your target's target: a smaller plate of the same glass right of it, at its foot)
+                pcall(function()
+                    local ti = tot_index(idx);
+                    if not ti or ti == 0 or ent:GetRawEntity(ti) == nil then return; end
+                    local tn = C.mob_name(ent:GetName(ti) or '') or '';
+                    if tn == '' then return; end
+                    local thp = (ent:GetHPPercent(ti) or 0) / 100;
+                    local k = 0.72;
+                    local fs0 = FS or 1;
+                    imgui.SetWindowFontScale(fs0 * k);
+                    local tlh = imgui.GetTextLineHeight();
+                    local tpct = string.format('%d%%', math.floor(thp * 100 + 0.5));
+                    local tpw = imgui.CalcTextSize(tpct);
+                    local TW = math.floor(W * 0.62);
+                    local tn0 = tn;
+                    while #tn > 3 and imgui.CalcTextSize(tn) > TW do tn = tn:sub(1, #tn - 1); end
+                    if tn ~= tn0 then tn = tn:sub(1, #tn - 1) .. '..'; end
+                    local tpad = math.floor(pad * k);
+                    local tbh = math.max(2, math.floor(bh * 0.8));
+                    local tH = tpad + tlh + 2 * sc + tbh + tpad * 0.8;
+                    local qx1, qy2 = x2 + 6 * sc, y2;
+                    local qx2, qy1 = qx1 + tpad * 2 + TW + tpw + 6 * sc, y2 - tH;
+                    local qr = rr * 0.8;
+                    DL.RF(dl, qx1, qy1, qx2, qy2, U4(0.045, 0.040, 0.065, 0.66), qr);
+                    DL.RFM(dl, qx1 + 1, qy1 + 1, qx2 - 1, qy1 + (qy2 - qy1) * 0.45, U4(1, 1, 1, 0.05), U4(1, 1, 1, 0.05), U4(1, 1, 1, 0), U4(1, 1, 1, 0));
+                    local cc1, cc2 = { 0.80, 0.96, 1.00 }, { 0.35, 0.65, 1.00 };   -- (cool blue, as the target of target always was)
+                    DL.R(dl, qx1, qy1, qx2, qy2, U4(cc2[1], cc2[2], cc2[3], 0.55), qr, C.rall, 1.0);
+                    DL.RFM(dl, qx1 + qr, qy1, qx2 - qr, qy1 + math.max(1, math.floor(1.2 * sc)), U4(cc1[1], cc1[2], cc1[3], 0.9), U4(cc2[1], cc2[2], cc2[3], 0.9), U4(cc2[1], cc2[2], cc2[3], 0.9), U4(cc1[1], cc1[2], cc1[3], 0.9));
+                    local tx0, tty = qx1 + tpad, qy1 + tpad * 0.7;
+                    text(dl, tx0, tty, tn, { 1, 1, 1, 1 });
+                    local tbY = math.floor(tty + tlh + 2 * sc);
+                    glow_bar(dl, tx0, tbY, TW, tbh, thp, lagged('mp3t' .. ti, thp, dt), cc1, cc2, 4.4);
+                    text(dl, tx0 + TW + 6 * sc, math.floor(tbY + tbh / 2 - tlh / 2), tpct, { 0.86, 0.94, 1, 1 });
+                    imgui.SetWindowFontScale(fs0);
+                end);
+            end
             unsized(pushed);
             -- the debuffs under it, each with its time left
             if drows > 0 then draw_buffs(dl, x1 + 2 * sc, y2 + 4 * sc, ids, isz, per, 2, 1, left); end   -- (under the plate, outside it)
