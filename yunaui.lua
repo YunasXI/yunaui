@@ -11186,7 +11186,7 @@ C.MB_RACE = { [3] = 0.15, [7] = -0.15, [8] = 0.18 };                            
 function C.member_bars_on() return cfg.member_bars == true; end   -- (both modes: Hex link gold, Vex its own round glowing bars)
 function C.member_bars()
     local mbo, mpo = C.member_bars_on(), C.mob_plates_on and C.mob_plates_on();
-    if not mpo or YUI_MAPCOVER or (YMAP and YMAP.big) then pcall(C.mpn_all_off); end   -- (no plates drawn: the monsters' own names back)
+    pcall(C.mp_names, mpo and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (plates drawn: the monsters' own names off - VanaCore's setting; else back)
     if not (mbo or mpo) or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
     local ds = imgui.GetIO().DisplaySize;
     imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
@@ -11352,8 +11352,7 @@ end
 -- Vex mode: a plate over each monster you and your party fight (and your target): dark glass with a pink-violet contour,
 -- its name, its HP bar with the percent, and the debuffs seen landing on it under that (BARS > Enemy plates over heads)
 C.MP3 = {};                                                          -- (per monster: its plate's state)
-C.MNH = {};                                                          -- (per server id: how high the game draws its name, in yalms - measured once)
-C.MPN = {};                                                          -- (per monster: the record whose name flag we set - the game's name hidden under its plate)
+C.MNH = {};                                                          -- (per model: how high the game draws its name, in yalms - measured once)
 function C.mob_plates_on() return cfg.mob_plates == true and cfg.target_fx ~= 'link'; end
 function C.plate_h(idx, ent)                                         -- (where its plate sits, in yalms over its feet: where the game puts its name, else
     local hz = C.model_h(idx, ent);                                  --  from its real size - the hitbox VanaCore reports, never the target bar's
@@ -11363,45 +11362,31 @@ function C.plate_h(idx, ent)                                         -- (where i
         pcall(function() local e = vana.game.entity(idx); hb = e and tonumber(e.hitbox_size); end);
     end
     if not (hb and hb > 0.05 and hb < 40) then return C.tall(idx, ent); end
-    local h = math.max(0.6, 1.5 * hb);
-    if C.flat(idx, ent) then h = math.min(h, math.max(0.8, hb * 1.1)); end   -- (wide but low: a crab's hitbox is wide, not tall)
+    local h = math.max(0.6, 1.3 * hb);                               -- (a Goblin's name: 1.29 x its hitbox; a Mandragora's 1.02 - flat)
+    if C.flat(idx, ent) then h = math.min(h, math.max(0.6, hb * 1.03)); end   -- (wide but low: a crab's hitbox is wide, not tall)
     return h;
 end
-function C.mpn_ep(idx)                                               -- (the monster's name record, checked against VanaCore's copy - as C.hide_tname)
-    local ap = AshitaCore:GetMemoryManager():GetEntity():GetActorPointer(idx);
-    if not ap or ap == 0 or not C.readable(ap + 0x70, 4) then return nil; end
-    local ep = ashita.memory.read_uint32(ap + 0x70);
-    if not ep or ep == 0 or not C.readable(ep + 0x120, 12) then return nil; end
-    return ep;
-end
-function C.mpn_hide(idx)                                             -- (the game's own name over it off: the plate shows it)
-    local ep = C.mpn_ep(idx);
-    if not ep then return; end
-    if C.MPN[idx] ~= ep then
-        local e = vana and vana.game and vana.game.entity and vana.game.entity(idx);
-        if type(e) ~= 'table' or tonumber(e.name_flags) ~= ashita.memory.read_uint32(ep + 0x124)
-            or tonumber(e.render_flags) ~= ashita.memory.read_uint32(ep + 0x120) then return; end
-        C.MPN[idx] = ep;
+function C.mp_names(on)                                              -- (the monsters' own names off while the plates show them: VanaCore's
+    if C.MPI == nil then C.MPI = (cfg.mob_plates_ini == true); end   --  [graphics] nameplates.hidemonsters - the game never puts them back, so no
+    if on and not C.MPI then                                         --  flash; set only if the player hadn't already, and put back as it was)
+        local cur = tostring(vana.config.get('graphics', 'nameplates.hidemonsters', '0') or '0');
+        if cur == '1' or cur == 'true' then C.MPI = false; C.MPI_own = true; return; end   -- (their own setting: left alone)
+        if C.MPI_own then return; end
+        vana.config.set('graphics', 'nameplates.hidemonsters', '1'); vana.config.reload();
+        C.MPI = true; cfg.mob_plates_ini = true; save();
+    elseif not on and C.MPI then
+        vana.config.set('graphics', 'nameplates.hidemonsters', '0'); vana.config.reload();
+        C.MPI = false; cfg.mob_plates_ini = nil; save();
     end
-    local f = ashita.memory.read_uint32(ep + 0x128);
-    if f and bit.band(f, 8) == 0 then ashita.memory.write_uint32(ep + 0x128, bit.bor(f, 8)); end   -- (the server can rewrite it: put back each frame)
+    if not on then C.MPI_own = nil; end
 end
-function C.mpn_show(idx)                                             -- (its name back - only on the same record we changed)
-    local ep0 = C.MPN[idx];
-    C.MPN[idx] = nil;
-    if not ep0 then return; end
-    pcall(function()
-        if C.mpn_ep(idx) ~= ep0 then return; end                     -- (gone, or another monster in that slot now: nothing to undo)
-        local f = ashita.memory.read_uint32(ep0 + 0x128);
-        if f and bit.band(f, 8) ~= 0 then ashita.memory.write_uint32(ep0 + 0x128, bit.band(f, bit.bnot(8))); end
-    end);
+function C.mnh_keep(k, h)                                            -- (a family's name height, kept for next time: its plate right where its name was)
+    if type(cfg.mob_nh) ~= 'table' then cfg.mob_nh = {}; end
+    if tonumber(cfg.mob_nh[k]) then return; end
+    cfg.mob_nh[k] = math.floor(h * 100 + 0.5) / 100;
+    save();
 end
-function C.mpn_all_off()                                             -- (plates off, the mode changed, or YunaUI unloading: every name back)
-    if next(C.MPN) == nil then return; end
-    local ks = {};
-    for k in pairs(C.MPN) do ks[#ks + 1] = k; end
-    for _, k in ipairs(ks) do C.mpn_show(k); end
-end
+function C.mpn_all_off() pcall(C.mp_names, false); end               -- (YunaUI unloading: the monsters' names back)
 function C.mob_plates_()
     local mm = AshitaCore:GetMemoryManager();
     local party, ent = mm:GetParty(), mm:GetEntity();
@@ -11436,8 +11421,8 @@ function C.mob_plates_()
             C.MP3[idx] = S;
             seen[idx] = true;
             S.t0 = S.t0 or os.clock();
-            local sid_ = ent:GetServerId(idx) or 0;
-            local nh_ = C.MNH[sid_];                                  -- (how high the game drew its name, in yalms: measured from VanaCore's
+            local sid_ = 'm' .. tostring(ent:GetLookHair(idx) or 0);   -- (its model: every monster of a family the same height)
+            local nh_ = C.MNH[sid_] or (type(cfg.mob_nh) == 'table' and tonumber(cfg.mob_nh[sid_])) or nil;                                  -- (how high the game drew its name, in yalms: measured from VanaCore's
             if nh_ == nil then                                        --  name_bottom before the name is hidden - the plate goes right there)
                 pcall(function()
                     local e = vana.game.entity(idx);
@@ -11447,7 +11432,7 @@ function C.mob_plates_()
                     local _, fy1 = C.w2s(px, pz - 1, py);
                     if fy and fy1 and fy - fy1 > 4 then
                         local h = (fy - nb) / (fy - fy1);
-                        if h > 0.2 and h < 15 then nh_ = h; C.MNH[sid_] = h; end
+                        if h > 0.2 and h < 15 then nh_ = h; C.MNH[sid_] = h; C.mnh_keep(sid_, h); end
                     end
                 end);
             end
@@ -11458,7 +11443,6 @@ function C.mob_plates_()
             local _, hy1 = C.w2s(px, pz - th_ - 1, py);
             local ppy = hy1 and (hy - hy1) or 70;                     -- (a yalm on the screen there)
             local sc = base * math.max(0.45, math.min(1.2, ppy / 70));
-            if nh_ or os.clock() - S.t0 > 1.0 then pcall(C.mpn_hide, idx); end   -- (the game's own name hidden once measured - or after a second: too far to be drawn)
             local by = hy - ((idx == tidx) and 20 or 0) * sc + (tonumber(cfg.mob_plates_y) or 0) * sc;   -- (the plate's foot where the name's foot was - your target's over the game's arrow)
             S.hp = S.hp and (S.hp + (hpp - S.hp) * math.min(1, dt * 8)) or hpp;
             -- what goes in it
@@ -11514,9 +11498,6 @@ function C.mob_plates_()
         if not ok_ then C.MP3[idx] = nil; end
     end
     for k in pairs(C.MP3) do if not seen[k] then C.MP3[k] = nil; end end
-    local gone = {};                                                  -- (no plate now - too far, out of sight, defeated: its name back)
-    for k in pairs(C.MPN) do if not seen[k] then gone[#gone + 1] = k; end end
-    for _, k in ipairs(gone) do C.mpn_show(k); end
 end
 -- Say and party lines: a bubble over the head of whoever said it, nearby, for a few seconds
 function C.bubble_draw()
