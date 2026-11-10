@@ -11223,6 +11223,7 @@ function C.member_bars()
         ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing,
         ImGuiWindowFlags_NoBringToFrontOnFocus, ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoScrollbar);
     if imgui.Begin('##yui_memberbars', { true }, fl) then
+        C.MBR = {};                                                   -- (this frame's plates: the friends' step aside from the enemies' and each other's)
         if mpo then                                                   -- (the enemies' plates first: the party's bars over them)
             local ok2, err2 = pcall(C.mob_plates_);
             if not ok2 and YUI_ERRLOG then YUI_ERRLOG('mobplates', err2); end
@@ -11264,7 +11265,6 @@ function C.mb_place(x1, y1, x2, y2)                                  -- (a frien
     return dy;
 end
 function C.member_bars_()
-    C.MBR = {};
     local mm = AshitaCore:GetMemoryManager();
     local party, ent = mm:GetParty(), mm:GetEntity();
     local me = party:GetMemberTargetIndex(0) or 0;
@@ -11406,7 +11406,15 @@ function C.member_bars_()
                         local acc = (it.grp == 'party') and { 0.50, 0.88, 0.75 } or ((it.grp == 'ally') and { 0.50, 0.72, 1.00 }) or nil;
                         local px_, py_ = math.floor(6 * sc), math.floor(4 * sc);
                         local pushed, lh, nh_ = false, 0, 0;
-                        if inner then pushed = sized('chat', 13 * sc); lh = imgui.GetTextLineHeight(); nh_ = lh + 2 * sc; end
+                        if inner then
+                            pushed = sized('chat', 13 * sc); lh = imgui.GetTextLineHeight(); nh_ = lh + 2 * sc;
+                            local fs9_ = FS or 1;                      -- (never narrower than a short name and its HP %: they never run into each other)
+                            imgui.SetWindowFontScale(fs9_ * 0.85);
+                            local pw9_ = tonumber((imgui.CalcTextSize('100%'))) or 30;
+                            imgui.SetWindowFontScale(fs9_);
+                            local mw9_ = math.floor(pw9_ + (tonumber((imgui.CalcTextSize('Wwwwww'))) or 60) + 8 * sc);
+                            if W < mw9_ then x0 = math.floor(x0 - (mw9_ - W) / 2); W = mw9_; end
+                        end
                         if inner then y0 = math.floor(y0 - (hv + (wmp and (g + mv) or 0) + py_)); end   -- (its name inside: the whole plate over where the name stood, its foot
                         local bx1, bx2 = x0 - px_, x0 + W + px_;                                         --  at the name's foot - never down on the head)
                         local by1 = y0 - py_ - nh_;
@@ -11468,7 +11476,15 @@ function C.member_bars_()
                         if inner then y0 = math.floor(y0 - (hv + (wmp and (g + mv) or 0) + 4 * sc)); end
                         local px_, py_ = math.floor(7 * sc), math.floor(4 * sc);
                         local pushed, lh, nh_ = false, 0, 0;
-                        if inner then pushed = sized('chat', 13 * sc); lh = imgui.GetTextLineHeight(); nh_ = lh + 2 * sc; end
+                        if inner then
+                            pushed = sized('chat', 13 * sc); lh = imgui.GetTextLineHeight(); nh_ = lh + 2 * sc;
+                            local fs9_ = FS or 1;                      -- (never narrower than a short name and its HP %: they never run into each other)
+                            imgui.SetWindowFontScale(fs9_ * 0.85);
+                            local pw9_ = tonumber((imgui.CalcTextSize('100%'))) or 30;
+                            imgui.SetWindowFontScale(fs9_);
+                            local mw9_ = math.floor(pw9_ + (tonumber((imgui.CalcTextSize('Wwwwww'))) or 60) + 8 * sc);
+                            if W < mw9_ then x0 = math.floor(x0 - (mw9_ - W) / 2); W = mw9_; end
+                        end
                         local bx1, bx2 = x0 - px_, x0 + W + px_;
                         local by1, by2 = y0 - py_ - nh_, y0 + hv + (wmp and (g + mv) or 0) + py_;
                         local dy_ = C.mb_place(bx1, by1, bx2, by2);
@@ -11648,9 +11664,12 @@ function C.mob_plates_()
                 table.sort(ids);
             end
             local isz = math.floor(18 * sc * math.max(0.6, math.min(2.5, tonumber(cfg.target_buff_scale) or tonumber(cfg.buff_scale) or 1)));   -- (TARGET > Buffs / debuffs size)
-            local per = math.max(1, math.floor((W + 2) / (isz + 2)));
-            local drows = (#ids > 0) and math.ceil(math.min(#ids, per * 2) / per) or 0;
-            local dh = drows * (isz + 2 + math.floor(isz * 0.62));
+            local span_ = W + 8 * sc + pad * 2;                      -- (the row as wide as the plate; up to three rows - more debuffs than fit: smaller icons, never dropped)
+            local per = math.max(1, math.floor((span_ + 2) / (isz + 2)));
+            if #ids > per * 3 then per = math.ceil(#ids / 3); isz = math.max(8, math.floor((span_ + 2) / per) - 2); end
+            local drows = (#ids > 0) and math.ceil(#ids / per) or 0;
+            local tk_ = math.max(0.5, math.min(1.6, tonumber(cfg.buff_timer_scale) or 1));   -- (TARGET > Debuff timer size - kept under its icon's width, so the times never run together)
+            local dh = drows * (isz + 2 + math.floor(isz * 0.55 * tk_));
             local pushed = sized('chat', 15 * sc);
             local lh = imgui.GetTextLineHeight();
             local nm = C.mob_name(ent:GetName(idx) or '') or '';
@@ -11728,11 +11747,12 @@ function C.mob_plates_()
                 if cfg.target_lock ~= false and C.locked_on and C.locked_on() then
                     local isz_ = math.floor(lh * 0.80);
                     local A2 = HXp and (C.GOLDH2 or { 1.0, 0.90, 0.62 }) or (NEON2 or { 1.0, 0.42, 0.72 });
-                    local iy2_ = iy_ + (lh - isz_) / 2;
+                    local iy2_ = iy_ + (lh - isz_) / 2 + lh * 0.08;   -- (level with the info's icons)
                     pcall(function() image(dl, C.tex_at('panel/lock.png', isz_), ix_, iy2_, ix_ + isz_, iy2_ + isz_, { A2[1], A2[2], A2[3], 1 }); end);
                     ix_ = ix_ + isz_ + math.floor(5 * sc);
                 end
                 if infw_ > 0 then pcall(C.mob_info, dl, ix_, iy_, lh, idx, ent:GetName(idx), 1, sc); end
+                local iend_ = ix_ + (infw_ or 0);                     -- (where the info ends: the distance never runs into it)
                 pcall(function()
                     local d2 = ent:GetDistance(idx);
                     if type(d2) ~= 'number' or d2 < 0 then return; end
@@ -11742,7 +11762,7 @@ function C.mob_plates_()
                     local ds = string.format('%.1f', d);
                     local dw, dh = imgui.CalcTextSize(ds);
                     dw, dh = tonumber(dw) or 20, tonumber(dh) or lh;
-                    text(dl, x2 - dw, iy_ + (lh - dh) * 0.6, ds, (d > 20.8) and { 1, 0.66, 0.80, 1 } or { 0.96, 0.95, 1, 1 });   -- (beyond spell range: a soft pink)
+                    text(dl, math.max(x2 - dw, iend_ + 6 * sc), iy_ + (lh - dh) * 0.6, ds, (d > 20.8) and { 1, 0.66, 0.80, 1 } or { 0.96, 0.95, 1, 1 });   -- (beyond spell range: a soft pink)
                     imgui.SetWindowFontScale(fs0);
                 end);
             end
@@ -11760,6 +11780,8 @@ function C.mob_plates_()
             text(dl, x0 + W + 8 * sc, math.floor(bY + bh / 2 - lh / 2), pct, (hpp < 0.25) and { 1, 0.55, 0.55, 1 } or { 1, 0.86, 0.94, 1 });
             end
             S.drawn = os.clock();
+            S.rect = { x1, y1 - lh, x2, y2 + csh_ + ((drows > 0) and (dh + 6 * sc) or 0) };   -- (where it is on screen, all of it)
+            if C.MBR then C.MBR[#C.MBR + 1] = { S.rect[1], S.rect[2], S.rect[3], S.rect[4] }; end
             if tot_ then                                              -- (the target of target: a small blue arrow and its name, right-aligned)
                 local fs0 = FS or 1;
                 imgui.SetWindowFontScale(fs0 * 0.72);
@@ -11832,7 +11854,7 @@ function C.mob_plates_()
             end
             unsized(pushed);
             -- the debuffs under it, each with its time left
-            if drows > 0 then draw_buffs(dl, x1 + 2 * sc, y2 + csh_ + 4 * sc, ids, isz, per, 2, 1, left, nil, cfg.target_buff_tips ~= false); end   -- (TARGET > Debuff details on hover; Debuff timer size)   -- (under the plate (and its cast), outside it)
+            if drows > 0 then BUFFS.tk = tk_; draw_buffs(dl, x1 + 2 * sc, y2 + csh_ + 4 * sc, ids, isz, per, 3, 1, left, nil, cfg.target_buff_tips ~= false); BUFFS.tk = nil; end   -- (TARGET > Debuff details on hover; Debuff timer size)   -- (under the plate (and its cast), outside it)
             if on and cfg.tarrow ~= false then                        -- (your target: YunaUI's arrow right under its plate - the game's is hidden, it sat far over a big one)
                 local aw_, ah_ = math.floor(18 * sc), math.floor(12 * sc);
                 local at_ = by + 4 * sc;
