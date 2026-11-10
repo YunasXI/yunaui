@@ -11378,7 +11378,11 @@ function C.member_bars_()
                             unsized(pushed);
                         end
                         glow_bar(dl, x0, y0, W, hv, S.hp, S.hl, c1, c2, (idx % 97) * 0.37, 'flow');
-                        if wmp then glow_bar(dl, x0, y0 + hv + g, W, mv, S.mp, nil, C.mpb1 or C.mp, C.mpb2 or C.mp2, (idx % 97) * 0.37 + 30, 'flow'); end
+                        DL.R(dl, x0 - 1.5, y0 - 1.5, x0 + W + 1.5, y0 + hv + 1.5, U4(0, 0, 0, 0.90 * al), hv / 2 + 1.5, C.rall, 1.4);   -- (a black edge: readable on any ground)
+                        if wmp then
+                            glow_bar(dl, x0, y0 + hv + g, W, mv, S.mp, nil, C.mpb1 or C.mp, C.mpb2 or C.mp2, (idx % 97) * 0.37 + 30, 'flow');
+                            DL.R(dl, x0 - 1.5, y0 + hv + g - 1.5, x0 + W + 1.5, y0 + hv + g + mv + 1.5, U4(0, 0, 0, 0.90 * al), mv / 2 + 1.5, C.rall, 1.4);
+                        end
                     else
                     local h1, h2 = C.HEXHP[1], C.HEXHP[2];
                     local a_, b_ = C.hpheat({ inzone = true }, hpp);
