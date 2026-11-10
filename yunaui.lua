@@ -22897,7 +22897,8 @@ EDIT.G.STEPS = {
         if C.head_bars_on() then return { "Your own bars, over your head: HP, MP, and your TP as a slim bar under them - it turns gold when a weapon skill is ready.",
             "Listen: a sound plays as your TP reaches 1000, 2000 and 3000, each one stronger, so you know without looking.",
             "Their size and height, and the TP sound (on / off, volume), are in BARS > YOUR BARS." }; end
-        return { "Your own bars. Anchor them together or place each one apart. Their size, length and thickness are in BARS." }; end },
+        return { "Your own bars. Anchor them together or place each one apart. Their size, length and thickness are in BARS.",
+            "Listen: a soft chime plays as your TP reaches 1000, 2000 and 3000, a step higher each time (SOUND ALERTS > Your TP)." }; end },
     { "Cast bar, EXP, gil and bag", function(G) return { G.win('cast_x'), G.win('exp_x'), G.win('gil_x'), G.win('bag_x') }; end, function(G)
         if YMAP.dock_on and YMAP.dock_on() then return { "The minimap: the map around you - you, your party and monsters - with the zone, your spot on its grid (as <pos> gives it) and Vana'diel's day, time and weather. The mouse wheel over it zooms.",
             YUI_HEX and "Your EXP (merits at level 75), gil and bag are built into it: EXP along its top edge, the bag along its bottom, your jobs and gil in the tags under it. Over it all, your casting time." or
@@ -23273,7 +23274,10 @@ function EDIT.G.draw()
         local tpv = math.min(3000, math.floor(e / 6 * 3000));
         YUI_FAKE_TP = tpv;
         local tier = math.floor(tpv / 1000);
-        if tier > (G.slide.tier or 0) and cfg.tp_sound ~= false and YUI_HEX then pcall(C.snd_play, 'tp' .. tier); end   -- (the sound: Hex link mode only)
+        if tier > (G.slide.tier or 0) then                           -- (the sound, as in play: Hex link's Surge, Vex mode's soft chime)
+            if YUI_HEX then if cfg.tp_sound ~= false then pcall(C.snd_play, 'tp' .. tier); end
+            elseif cfg.tp_vex_snd ~= false then pcall(C.snd_play, 'tp_vex' .. tier, 'tp_vex_vol'); end
+        end
         G.slide.tier = tier;
     end
     local pad = math.floor(22 * k);
