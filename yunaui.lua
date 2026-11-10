@@ -4393,9 +4393,9 @@ local function draw_target(dt)
         local mdx, mdy = FIGHT.off('mb');                            -- the Magic Burst line: its own place (over the bar's start), movable in Edit Mode
         FIGHT.anc.mb = { x, y - nh * 0.85 - 6 * sc, math.min(w, 420 * sc), nh * 0.85 };
         local link = cfg.target_fx == 'link';                         -- (Hex link: one fixed layout - Magic Burst left of the icon, the fan
-        if cfg.fight_info ~= false and not link and not (C.GST and C.GST.nobn) then pcall(FIGHT.draw, dl, fsid, x + mdx, y + mdy, w, sc); end   --  right of the bar, the cast under it, 80% of the bar's size)
-        local rdl_ = dl;                                             -- (BARS > Enemy plates: a monster with its plate - the name, HP and debuffs are on
-        local pl_ = (not link) and (not fake) and tk == 'mob' and C.plated and C.plated(idx);   --  the plate: drawn into nothing here; its casts, Magic Burst and fan stay)
+        local rdl_ = dl;                                             -- (BARS > Enemy plates: a monster with its plate - the name, HP, debuffs and cast are
+        local pl_ = (not link) and (not fake) and tk == 'mob' and C.plated and C.plated(idx);   --  on the plate: drawn into nothing here; the skillchain and Magic
+        if cfg.fight_info ~= false and not link and not pl_ and not (C.GST and C.GST.nobn) then pcall(FIGHT.draw, dl, fsid, x + mdx, y + mdy, w, sc); end   --  Burst as Hex link's Banner at the top)
         if pl_ then dl = C.NODL; end
         local nh0 = nh;                                              -- TARGET > Target name size: the name (and its distance) in its own size
         local nk = math.max(0.5, math.min(2.5, tonumber(cfg.target_name_scale) or 1));
@@ -4519,7 +4519,7 @@ local function draw_target(dt)
         end
         if fxs and not pl_ then pcall(FIGHT.fxdraw, fxs, x, top_, by, w, h, sc); end   -- (a plated monster: no entrance up there - it draws on its own layer)
         if link then pcall(FIGHT.linkdraw, fake and 0 or idx, ent, x, by + h / 2, sc, tk); end   -- (TARGET > Entrance: Hex link)
-        local ps = link;                                              -- (Hex link: the skillchain and Magic Burst as the honeycomb at the top)
+        local ps = link or pl_;                                       -- (Hex link, or a plated monster: the skillchain and Magic Burst as the Banner at the top)
         if ps and cfg.fight_info ~= false and not (C.GST and C.GST.nobn) then pcall(FIGHT.ps_draw, fsid, sc); end
         if link and not ps and cfg.fight_info ~= false then           -- (Magic Burst, left of the icon, level with the bar)
             pcall(FIGHT.draw, dl, fsid, FIGHT.LBX or (x - FIGHT.LR(sc) * 3.25 - 14 * sc), by + h / 2, w, sc, 'left');   -- (its right edge on the line's bend)
@@ -13911,7 +13911,7 @@ function FIGHT.win()
     local sc = (tonumber(cfg.scale) or 1) * (tonumber(cfg.target_scale) or 1);
     local tw = (tonumber(cfg.target_w) or 520) * sc;
     local th = math.max(1, math.floor((tonumber(cfg.target_bar_h) or 4) * sc + 0.5));
-    if (cfg.fan_place or 'bar') == 'free' and cfg.target_fx ~= 'link' and FIGHT.sc[sid] and not FIGHT.sc[sid].closed then
+    if (cfg.fan_place or 'bar') == 'free' and cfg.target_fx ~= 'link' and FIGHT.sc[sid] and not FIGHT.sc[sid].closed and not (C.plated_sid and C.plated_sid(sid)) then   -- (a plated monster: Hex link's Banner instead)
         first_place('fan_x', 'fan_y', -700, -640);
         if plain_window('YunaUI Skillchain##yui_fan', 'fan_x', 'fan_y') then
             local dl = imgui.GetWindowDrawList();
