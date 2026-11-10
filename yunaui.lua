@@ -380,6 +380,7 @@ end
 function C.clip(dl, a, b, inter) local p1, p2 = C.cliprect(a, b); dl:PushClipRect(p1, p2, inter); end
 function C.iclip(a, b, inter) local p1, p2 = C.cliprect(a, b); imgui.PushClipRect(p1, p2, inter); end
 function C.fullclip(dl)                                              -- (drawing outside a window's own box: the whole screen)
+    if C.FCLIP then dl:PushClipRect({ C.FCLIP[1], C.FCLIP[2] }, { C.FCLIP[3], C.FCLIP[4] }, false); return; end   -- (a preview in the panel: never past the panel's own box)
     local w, h = C.screen();
     dl:PushClipRect({ 0, 0 }, { w, h }, false);
 end
@@ -8015,6 +8016,13 @@ end
 function ALLY.preview()
     local ps = C.ps or 1;
     local dl = imgui.GetWindowDrawList();
+    pcall(function()                                                 -- (the cards may open the clip to the whole screen: here only to the panel's scrolled box)
+        local wx, wy = imgui.GetWindowPos();
+        local ww, wh = imgui.GetWindowSize();
+        if type(wx) == 'table' then wx, wy = wx.x or wx[1], wx.y or wx[2]; end
+        if type(ww) == 'table' then ww, wh = ww.x or ww[1], ww.y or ww[2]; end
+        C.FCLIP = { wx, wy, wx + ww, wy + wh };
+    end);
     local x, y = imgui.GetCursorScreenPos();
     local pushed = sized('chat', 17 * ps);
     imgui.SetWindowFontScale(FS * 0.80);
@@ -8037,6 +8045,7 @@ function ALLY.preview()
         ALLY.card(dl, m, 900 + k, tip - cw, tip, ny, ch, lh, sc, 1, true, false);
         if cfg.spine_line ~= false and (cfg.card_style or 'clean') ~= 'clean' then DL.L(dl, tip, ny, lx, ny, U4(1, 1, 1, 0.40), 1); end
     end
+    C.FCLIP = nil;
     if pushed then imgui.PopFont(); end
     FS = 1;
     imgui.SetWindowFontScale(C.wfs or 1);
@@ -19186,7 +19195,7 @@ local function draw_window()
                 end);
             end
             imgui.Spacing();
-            pcall(ALLY.preview);
+            pcall(ALLY.preview); C.FCLIP = nil;
             section('BUFFS');
             row_switch('##yui_b', 'Show', 'buffs', 'Buff and debuff icons next to each party member, under the target bar and in the enemy list (hover one for its name).');
 
