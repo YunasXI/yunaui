@@ -11281,6 +11281,13 @@ function C.member_bars_()
                 local race = 0;
                 pcall(function() race = ent:GetRace(idx) or 0; end);
                 local tall = (C.HB_RACE[race] or 2.45) + (C.MB_RACE[race] or 0);   -- (where the game puts that race's name: a Mithra's lower than the head bars' height)
+                if not C.HB_RACE[race] then                           -- (a trust with a monster's model - Abenzio: its own height, as an enemy plate's
+                    local okh_, ph_ = pcall(C.plate_h, idx, ent);     --  - the game's name height for that model, else its hitbox)
+                    if okh_ and tonumber(ph_) then tall = ph_ + 0.26; end
+                    local ve_ = nil; pcall(function() ve_ = vana.game.entity(idx); end);
+                    local hb_ = ve_ and tonumber(ve_.hitbox_size) or nil;
+                    if hb_ and hb_ > 1.0 and hb_ <= 2.0 then tall = math.max(tall, hb_ * ((hb_ > 1.4) and 1.62 or 1.48) + 0.26); end   -- (a person-sized trust - ArkE, Prishe: a touch taller than its hitbox says)
+                end
                 local mst = 0;
                 pcall(function() mst = ent:GetStatus(idx) or 0; end);
                 if mst == 5 or mst == 85 then tall = tall + 1.05; end   -- (on a chocobo or a mount)
@@ -11352,7 +11359,8 @@ function C.member_bars_()
                         local px_, py_ = math.floor(6 * sc), math.floor(4 * sc);
                         local pushed, lh, nh_ = false, 0, 0;
                         if inner then pushed = sized('chat', 13 * sc); lh = imgui.GetTextLineHeight(); nh_ = lh + 2 * sc; end
-                        local bx1, bx2 = x0 - px_, x0 + W + px_;
+                        if inner then y0 = math.floor(y0 - (hv + (wmp and (g + mv) or 0) + py_)); end   -- (its name inside: the whole plate over where the name stood, its foot
+                        local bx1, bx2 = x0 - px_, x0 + W + px_;                                         --  at the name's foot - never down on the head)
                         local by1 = y0 - py_ - nh_;
                         local by2 = y0 + hv + (wmp and (g + mv) or 0) + py_;
                         local oth = it.grp == 'other';
