@@ -18992,6 +18992,7 @@ local function draw_window()
                     if cfg.mob_plates_debuffs == nil then cfg.mob_plates_debuffs = true; end
                     row_switch('##yui_mpld', 'Enemy plates: debuffs', 'mob_plates_debuffs', 'On: the debuffs seen landing on it under its HP bar, each with the time it has left.');
                     row_slider('##yui_mply', 'Enemy plates height', 'mob_plates_y', -60, 60, 1, '%d');
+                    row_slider('##yui_mplbn', 'Skillchain banner size', 'hl_fan', 0.3, 2.0, 0.05, '%.2fx');   -- (a plated target's skillchain: Hex link's Banner - the same setting)
                 end
             end
             if C.head_bars_on() then
