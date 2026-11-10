@@ -11647,7 +11647,7 @@ function C.mob_plates_()
                 if d then for st, exp in pairs(d) do if exp > now then ids[#ids + 1] = st; left[st] = exp - now; end end end
                 table.sort(ids);
             end
-            local isz = math.floor(18 * sc);
+            local isz = math.floor(18 * sc * math.max(0.6, math.min(2.5, tonumber(cfg.target_buff_scale) or tonumber(cfg.buff_scale) or 1)));   -- (TARGET > Buffs / debuffs size)
             local per = math.max(1, math.floor((W + 2) / (isz + 2)));
             local drows = (#ids > 0) and math.ceil(math.min(#ids, per * 2) / per) or 0;
             local dh = drows * (isz + 2 + math.floor(isz * 0.62));
@@ -11722,8 +11722,29 @@ function C.mob_plates_()
             DL.RFM(dl, x1 + rr, y1, x2 - rr, y1 + math.max(1, math.floor(1.5 * sc)), U4(ca[1], ca[2], ca[3], 0.95), U4(cb[1], cb[2], cb[3], 0.95), U4(cb[1], cb[2], cb[3], 0.95), U4(ca[1], ca[2], ca[3], 0.95));   -- (the line along its top)
             end
             -- its name, then the HP bar with the percent at its end
-            if infw_ > 0 then                                         -- (its level and aggro on the top edge: the plate's glass behind it, the edge running into it)
-                pcall(C.mob_info, dl, x0, math.floor(y1 - lh * 0.92), lh, idx, ent:GetName(idx), 1, sc);   -- (just the text, standing on the plate's top edge - no background)
+            if on then                                                -- (your target, on the plate's top edge: the lock-on padlock, its level and aggro; its
+                local iy_ = math.floor(y1 - lh * 0.92);               --  distance at the right end, past the edge)
+                local ix_ = x0;
+                if cfg.target_lock ~= false and C.locked_on and C.locked_on() then
+                    local isz_ = math.floor(lh * 0.80);
+                    local A2 = HXp and (C.GOLDH2 or { 1.0, 0.90, 0.62 }) or (NEON2 or { 1.0, 0.42, 0.72 });
+                    local iy2_ = iy_ + (lh - isz_) / 2;
+                    pcall(function() image(dl, C.tex_at('panel/lock.png', isz_), ix_, iy2_, ix_ + isz_, iy2_ + isz_, { A2[1], A2[2], A2[3], 1 }); end);
+                    ix_ = ix_ + isz_ + math.floor(5 * sc);
+                end
+                if infw_ > 0 then pcall(C.mob_info, dl, ix_, iy_, lh, idx, ent:GetName(idx), 1, sc); end
+                pcall(function()
+                    local d2 = ent:GetDistance(idx);
+                    if type(d2) ~= 'number' or d2 < 0 then return; end
+                    local d = math.sqrt(d2);
+                    local fs0 = FS or 1;
+                    imgui.SetWindowFontScale(fs0 * 0.80);
+                    local ds = string.format('%.1f', d);
+                    local dw, dh = imgui.CalcTextSize(ds);
+                    dw, dh = tonumber(dw) or 20, tonumber(dh) or lh;
+                    text(dl, x2 - dw, iy_ + (lh - dh) * 0.6, ds, (d > 20.8) and { 1, 0.66, 0.80, 1 } or { 0.96, 0.95, 1, 1 });   -- (beyond spell range: a soft pink)
+                    imgui.SetWindowFontScale(fs0);
+                end);
             end
             local ty = y0 + pad * 0.7;
             text(dl, x0, ty, nm, { 1, 1, 1, 1 });
@@ -11811,7 +11832,7 @@ function C.mob_plates_()
             end
             unsized(pushed);
             -- the debuffs under it, each with its time left
-            if drows > 0 then draw_buffs(dl, x1 + 2 * sc, y2 + csh_ + 4 * sc, ids, isz, per, 2, 1, left); end   -- (under the plate (and its cast), outside it)
+            if drows > 0 then draw_buffs(dl, x1 + 2 * sc, y2 + csh_ + 4 * sc, ids, isz, per, 2, 1, left, nil, cfg.target_buff_tips ~= false); end   -- (TARGET > Debuff details on hover; Debuff timer size)   -- (under the plate (and its cast), outside it)
             if on and cfg.tarrow ~= false then                        -- (your target: YunaUI's arrow right under its plate - the game's is hidden, it sat far over a big one)
                 local aw_, ah_ = math.floor(18 * sc), math.floor(12 * sc);
                 local at_ = by + 4 * sc;
