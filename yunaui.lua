@@ -4305,7 +4305,16 @@ local function draw_target(dt)
         if C.plated and C.plated(idx) then                            -- (BARS > Enemy plates: its plate has it all - only the skillchain Banner at the top)
             FIGHT.fx.idx = nil;
             if cfg.fight_info ~= false and not (C.GST and C.GST.nobn) then
-                pcall(function() FIGHT.ps_draw(AshitaCore:GetMemoryManager():GetEntity():GetServerId(idx), 1); end);
+                local ds_ = imgui.GetIO().DisplaySize;                 -- (in a window of its own - drawn outside one, ImGui opens its "Debug" window)
+                imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
+                imgui.SetNextWindowSize({ ds_.x, ds_.y }, ImGuiCond_Always);
+                local fl_ = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoMove, ImGuiWindowFlags_NoInputs,
+                    ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing,
+                    ImGuiWindowFlags_NoBringToFrontOnFocus, ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoScrollbar);
+                if imgui.Begin('##yui_platebanner', { true }, fl_) then
+                    pcall(function() FIGHT.ps_draw(AshitaCore:GetMemoryManager():GetEntity():GetServerId(idx), 1); end);
+                end
+                imgui.End();
             end
             return;
         end
