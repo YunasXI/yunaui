@@ -11183,9 +11183,10 @@ end
 -- the screen. The bars ease to their values, as yours.
 C.MB2 = {};
 C.MB_RACE = { [3] = 0.15, [7] = -0.15, [8] = 0.18 };                                        -- (per race: the name's height against C.HB_RACE - Mithra's name sits lower)
-function C.member_bars_on() return cfg.member_bars == true and cfg.target_fx == 'link'; end
+function C.member_bars_on() return cfg.member_bars == true; end   -- (both modes: Hex link gold, Vex its own round glowing bars)
 function C.member_bars()
-    if not C.member_bars_on() or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
+    local mbo, mpo = C.member_bars_on(), C.mob_plates_on and C.mob_plates_on();
+    if not (mbo or mpo) or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
     local ds = imgui.GetIO().DisplaySize;
     imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
     imgui.SetNextWindowSize({ ds.x, ds.y }, ImGuiCond_Always);
@@ -11193,8 +11194,14 @@ function C.member_bars()
         ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing,
         ImGuiWindowFlags_NoBringToFrontOnFocus, ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoScrollbar);
     if imgui.Begin('##yui_memberbars', { true }, fl) then
-        local ok, err = pcall(C.member_bars_);
-        if not ok and YUI_ERRLOG then YUI_ERRLOG('memberbars', err); end
+        if mpo then                                                   -- (the enemies' plates first: the party's bars over them)
+            local ok2, err2 = pcall(C.mob_plates_);
+            if not ok2 and YUI_ERRLOG then YUI_ERRLOG('mobplates', err2); end
+        end
+        if mbo then
+            local ok, err = pcall(C.member_bars_);
+            if not ok and YUI_ERRLOG then YUI_ERRLOG('memberbars', err); end
+        end
     end
     imgui.End();
 end
@@ -11313,6 +11320,15 @@ function C.member_bars_()
                         local k_ = room / (hh + g + mh);
                         hh, g, mh = math.max(2, math.floor(hh * k_)), math.max(wmp and 1 or 0, math.floor(g * k_)), math.max(wmp and 2 or 0, math.floor(mh * k_));
                     end
+                    if cfg.target_fx ~= 'link' then                  -- (Vex mode: its own bars - round, a soft glow, the colours flowing, as the party cards)
+                        local al = (hpp <= 0) and 0.55 or 1;
+                        local c1, c2 = C.hp or NEON2, C.hp2 or NEON;
+                        if hpp < 0.25 and hpp > 0 then c1, c2 = { 1.0, 0.45, 0.45 }, { 0.92, 0.18, 0.24 }; end   -- (low: red, as the cards)
+                        if al < 1 then c1, c2 = { c1[1] * al, c1[2] * al, c1[3] * al }, { c2[1] * al, c2[2] * al, c2[3] * al }; end   -- (knocked out: dimmed)
+                        local hv = math.max(3, hh);
+                        glow_bar(dl, x0, y0, W, hv, S.hp, S.hl, c1, c2, (idx % 97) * 0.37, 'flow');
+                        if wmp then glow_bar(dl, x0, y0 + hv + g + 1, W, math.max(2, mh), S.mp, nil, C.mpb1 or C.mp, C.mpb2 or C.mp2, (idx % 97) * 0.37 + 30, 'flow'); end
+                    else
                     local h1, h2 = C.HEXHP[1], C.HEXHP[2];
                     local a_, b_ = C.hpheat({ inzone = true }, hpp);
                     if hpp < 0.25 and hpp > 0 then a_, b_ = { 1.0, 0.40, 0.42 }, { 0.86, 0.12, 0.18 }; end
@@ -11325,11 +11341,122 @@ function C.member_bars_()
                     C.hexbar(dl, x0, y0, W, hh, S.hp, S.hl, 0, { c1 = h2, c2 = h1, band = hh + 1, al = al, live = true, lead = hpp });
                     local mc = (type(YUI_MP_COL) == 'table') and YUI_MP_COL or C.MPCOL;
                     if wmp then C.hexbar(dl, x0, y0 + hh + g, W, mh, S.mp, nil, 0, { c1 = mc[2], c2 = mc[1], band = mh + 1, al = al, live = true, lead = mpp }); end
+                    end                                              -- (Hex link's gold bars)
                 end
             end
         end
     end
     for k in pairs(C.MB2) do if not seen[k] then C.MB2[k] = nil; end end
+end
+-- Vex mode: a plate over each monster you and your party fight (and your target): dark glass with a pink-violet contour,
+-- its name, its HP bar with the percent, and the debuffs seen landing on it under that (BARS > Enemy plates over heads)
+C.MP3 = {};                                                          -- (per monster: how far over its head the game's name sits)
+function C.mob_plates_on() return cfg.mob_plates == true and cfg.target_fx ~= 'link'; end
+function C.mob_plates_()
+    local mm = AshitaCore:GetMemoryManager();
+    local party, ent = mm:GetParty(), mm:GetEntity();
+    local me = party:GetMemberTargetIndex(0) or 0;
+    if me == 0 or ent:GetRawEntity(me) == nil then return; end
+    local okst, st_ = pcall(function() return ent:GetStatus(me); end);
+    if okst and st_ == 4 then return; end                             -- (in a cutscene)
+    local myx, myy = ent:GetLocalPositionX(me) or 0, ent:GetLocalPositionY(me) or 0;
+    local SW, SH = C.screen();
+    local base = 0.85 * math.max(0.6, SH / 1080) * math.max(0.5, math.min(2.5, tonumber(cfg.mob_plates_scale) or 1));
+    local dl = imgui.GetBackgroundDrawList();
+    local dt = imgui.GetIO().DeltaTime or 0.016;
+    local tidx = 0;
+    pcall(function() tidx = mm:GetTarget():GetTargetIndex(0) or 0; end);
+    local want = {};
+    for idx in pairs(ENGAGED) do want[idx] = true; end
+    if tidx > 0 and tidx < 0x400 and bit.band(ent:GetSpawnFlags(tidx) or 0, 0x10) ~= 0 then want[tidx] = true; end   -- (your target, a monster)
+    local seen = {};
+    for idx in pairs(want) do
+        local ok_ = pcall(function()
+            if ent:GetRawEntity(idx) == nil or is_party_id(ent:GetServerId(idx)) then return; end
+            local hpp = (ent:GetHPPercent(idx) or 0) / 100;
+            if hpp <= 0 then return; end
+            local rf = ent:GetRenderFlags0(idx) or 0;
+            if not (bit.band(rf, 0x200) == 0x200 and bit.band(rf, 0x4000) == 0) then return; end
+            local ex, ey = ent:GetLocalPositionX(idx) or 0, ent:GetLocalPositionY(idx) or 0;
+            if math.sqrt((ex - myx) ^ 2 + (ey - myy) ^ 2) > 30 then return; end
+            local px, py, pz, obj = C.tpos(idx, ent);
+            if px == nil then return; end
+            local th_ = obj and 0.8 or C.tall(idx, ent);
+            if th_ > 4.5 then th_ = 4.5 + (th_ - 4.5) * 0.35; end     -- (a huge monster: the plate by its body, not far over its head)
+            local hx, hy = C.w2s(px, pz - th_, py);                   -- (the top of its head, placed in the world every frame)
+            if not hx then return; end
+            local _, hy1 = C.w2s(px, pz - th_ - 1, py);
+            local ppy = hy1 and (hy - hy1) or 70;                     -- (a yalm on the screen there)
+            local sc = base * math.max(0.45, math.min(1.2, ppy / 70));
+            local S = C.MP3[idx] or {};
+            C.MP3[idx] = S;
+            seen[idx] = true;
+            local ntop_ = nil;                                        -- (the game's own name over it, drawn a moment ago: the plate goes over it)
+            pcall(function()
+                local en = vana.game.entity(idx);
+                if en and en.name_top then ntop_ = en.name_top; elseif vana.world.name_at then local _, t_ = vana.world.name_at(idx); ntop_ = t_; end
+            end);
+            if ntop_ and ppy > 4 and S.lx and math.abs(hx - S.lx) < 1.5 and math.abs(hy - S.ly) < 1.5 then
+                local dz = math.max(0, (hy - ntop_) / ppy);           -- (measured only while the camera is still: in yalms, kept)
+                S.dz = S.dz and (S.dz + (dz - S.dz) * 0.25) or dz;
+            end
+            S.lx, S.ly = hx, hy;
+            local by = hy;                                            -- (the plate's foot)
+            if S.dz then local _, y2 = C.w2s(px, pz - th_ - S.dz, py); if y2 then by = y2; end end
+            by = by - ((idx == tidx) and 16 or 4) * sc + (tonumber(cfg.mob_plates_y) or 0) * sc;   -- (your target: over the game's arrow too)
+            S.hp = S.hp and (S.hp + (hpp - S.hp) * math.min(1, dt * 8)) or hpp;
+            -- what goes in it
+            local W = math.floor(120 * sc * math.max(0.5, math.min(3, tonumber(cfg.mob_plates_w) or 1)));
+            local bh = math.max(3, math.floor(4 * sc + 0.5));
+            local pad = math.floor(7 * sc);
+            local ids, left = {}, {};
+            if cfg.mob_plates_debuffs ~= false then
+                local d, now = enemies[ent:GetServerId(idx)], os.clock();
+                if d then for st, exp in pairs(d) do if exp > now then ids[#ids + 1] = st; left[st] = exp - now; end end end
+                table.sort(ids);
+            end
+            local isz = math.floor(18 * sc);
+            local per = math.max(1, math.floor((W + 2) / (isz + 2)));
+            local drows = (#ids > 0) and math.ceil(math.min(#ids, per * 2) / per) or 0;
+            local dh = drows * (isz + 2 + math.floor(isz * 0.62));
+            local pushed = sized('chat', 15 * sc);
+            local lh = imgui.GetTextLineHeight();
+            local nm = C.mob_name(ent:GetName(idx) or '') or '';
+            local pct = string.format('%d%%', math.floor(hpp * 100 + 0.5));
+            local pw = imgui.CalcTextSize(pct);
+            local nm0 = nm;
+            while #nm > 3 and imgui.CalcTextSize(nm) > W do nm = nm:sub(1, #nm - 1); end
+            if nm ~= nm0 then nm = nm:sub(1, #nm - 1) .. '..'; end
+            local H = pad + lh + 3 * sc + bh + pad * 0.8 + ((drows > 0) and (dh + 2 * sc) or 0);
+            local x0 = math.floor(hx - (W + pw + 8 * sc) / 2);
+            local y0 = math.floor(by - H);
+            local x1, y1 = x0 - pad, y0;
+            local x2, y2 = x0 + W + pw + 8 * sc + pad, by;
+            local on = idx == tidx;
+            local rr = 6 * sc;
+            -- the plate: dark glass, its contour pink to violet (your target's brighter, a white edge inside)
+            for k = 1, 3 do DL.RF(dl, x1 - k, y1 - k + 1, x2 + k, y2 + k + 1, U4(0, 0, 0, 0.10 - k * 0.025), rr + k); end   -- (a soft shadow)
+            DL.RF(dl, x1, y1, x2, y2, U4(0.045, 0.040, 0.065, on and 0.80 or 0.66), rr);
+            DL.RFM(dl, x1 + 1, y1 + 1, x2 - 1, y1 + (y2 - y1) * 0.45, U4(1, 1, 1, 0.05), U4(1, 1, 1, 0.05), U4(1, 1, 1, 0), U4(1, 1, 1, 0));   -- (the glass's light at its top)
+            local ca, cb = NEON2 or { 1.0, 0.42, 0.72 }, NEON or { 0.86, 0.24, 0.86 };
+            DL.R(dl, x1, y1, x2, y2, U4(ca[1], ca[2], ca[3], on and 0.95 or 0.55), rr, C.rall, on and 1.6 or 1.1);
+            if on then DL.R(dl, x1 + 2, y1 + 2, x2 - 2, y2 - 2, U4(1, 1, 1, 0.22), rr - 2, C.rall, 1); end
+            DL.RFM(dl, x1 + rr, y1, x2 - rr, y1 + math.max(1, math.floor(1.5 * sc)), U4(ca[1], ca[2], ca[3], 0.95), U4(cb[1], cb[2], cb[3], 0.95), U4(cb[1], cb[2], cb[3], 0.95), U4(ca[1], ca[2], ca[3], 0.95));   -- (the line along its top)
+            -- its name, then the HP bar with the percent at its end
+            local ty = y0 + pad * 0.7;
+            text(dl, x0, ty, nm, { 1, 1, 1, 1 });
+            local bY = math.floor(ty + lh + 3 * sc);
+            local c1, c2 = C.tgt1 or { 1, 0.78, 0.96 }, C.tgt2 or C.hp2 or ca;
+            if hpp < 0.25 then c1, c2 = { 1.0, 0.55, 0.50 }, { 0.92, 0.22, 0.28 }; end   -- (low: red)
+            glow_bar(dl, x0, bY, W, bh, S.hp, lagged('mp3' .. idx, hpp, dt), c1, c2, (idx % 97) * 0.41);
+            text(dl, x0 + W + 8 * sc, math.floor(bY + bh / 2 - lh / 2), pct, (hpp < 0.25) and { 1, 0.55, 0.55, 1 } or { 1, 0.86, 0.94, 1 });
+            unsized(pushed);
+            -- the debuffs under it, each with its time left
+            if drows > 0 then draw_buffs(dl, x0, bY + bh + pad * 0.8 + 2 * sc, ids, isz, per, 2, 1, left); end
+        end);
+        if not ok_ then C.MP3[idx] = nil; end
+    end
+    for k in pairs(C.MP3) do if not seen[k] then C.MP3[k] = nil; end end
 end
 -- Say and party lines: a bubble over the head of whoever said it, nearby, for a few seconds
 function C.bubble_draw()
@@ -18635,8 +18762,20 @@ local function draw_window()
                 row_pick('##yui_myhpc', 'HP bar colour', 'my_hp_color', { { 'pink', 'Pink' }, { 'white', 'White' } }, nil, function() pcall(C.apply_hp); save(); end);
             else                                                     -- (the gold mode: its HP bars gold, or Void red)
                 row_pick('##yui_hexhpc', 'HP bar colour', 'hex_hp_color', { { 'gold', 'Gold' }, { 'red', 'Void red' } }, nil, function() pcall(C.apply_hp); save(); end);
+            end
+            do                                                       -- (both modes: Vex mode's in its own look - round, glowing, your HP colours)
                 row_switch('##yui_mbars', 'Party bars over heads', 'member_bars', 'On: everyone in your party and alliance (trusts too) gets an HP and an MP bar just under the name over their head, as yours. Only the ones you can see, within 30 yalms.');
                 if cfg.member_bars == true then row_slider('##yui_mbs', 'Party bars size', 'member_bars_scale', 0.5, 2.0, 0.05, '%.2fx'); row_slider('##yui_mbw', 'Party bars width', 'member_bars_w', 0.4, 3.0, 0.05, '%.2fx'); row_slider('##yui_mbt', 'Party bars thickness', 'member_bars_th', 0.4, 3.0, 0.05, '%.2fx'); if cfg.member_bars_mp == nil then cfg.member_bars_mp = true; end row_switch('##yui_mbmp', 'Party bars: MP', 'member_bars_mp', 'On: an MP bar under each HP bar. Off: the HP bar alone.'); row_switch('##yui_mball', 'Also on other players', 'member_bars_all', 'On: every other player near you gets an HP bar over their head too (HP only: the game never sends their MP). Off: only your party and alliance.'); row_slider('##yui_mby', 'Party bars height', 'member_bars_y', -60, 60, 1, '%d'); end
+            end
+            if cfg.target_fx ~= 'link' then                          -- (Vex mode: a plate over each monster you fight)
+                row_switch('##yui_mplt', 'Enemy plates over heads', 'mob_plates', 'On: every monster you and your party fight, and your target, gets a plate over its head - its name, its HP bar with the percent, and its debuffs under it. Within 30 yalms.');
+                if cfg.mob_plates == true then
+                    row_slider('##yui_mpls', 'Enemy plates size', 'mob_plates_scale', 0.5, 2.0, 0.05, '%.2fx');
+                    row_slider('##yui_mplw', 'Enemy plates width', 'mob_plates_w', 0.5, 3.0, 0.05, '%.2fx');
+                    if cfg.mob_plates_debuffs == nil then cfg.mob_plates_debuffs = true; end
+                    row_switch('##yui_mpld', 'Enemy plates: debuffs', 'mob_plates_debuffs', 'On: the debuffs seen landing on it under its HP bar, each with the time it has left.');
+                    row_slider('##yui_mply', 'Enemy plates height', 'mob_plates_y', -60, 60, 1, '%d');
+                end
             end
             if C.head_bars_on() then
                 hint('Over your head: thin HP and MP bars, the TP as three dots (gold when full: a weapon skill is ready) and the numbers beside them.');
