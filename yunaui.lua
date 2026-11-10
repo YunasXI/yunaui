@@ -11678,11 +11678,11 @@ function C.mob_plates_()
             local nm0 = nm;
             while #nm > 3 and imgui.CalcTextSize(nm) > nroom_ do nm = nm:sub(1, #nm - 1); end
             if nm ~= nm0 then nm = nm:sub(1, #nm - 1) .. '..'; end
-            local inf_ = 0;                                           -- (your target: its Monster info as the plate's first row - all in one plate)
+            local infw_ = 0;                                          -- (your target: its Monster info sitting on the plate's top edge, a tab on the border)
             if idx == tidx then
-                pcall(function() if (tonumber(C.mob_info(dl, 0, 0, lh, idx, ent:GetName(idx), 1, sc, 'measure')) or 0) > 0 then inf_ = math.floor(lh * 1.05 + 3 * sc); end end);
+                pcall(function() infw_ = tonumber(C.mob_info(dl, 0, 0, lh, idx, ent:GetName(idx), 1, sc, 'measure')) or 0; end);
             end
-            local H = pad + inf_ + lh + 3 * sc + bh + pad * 0.8;
+            local H = pad + lh + 3 * sc + bh + pad * 0.8;
             local srv_ = ent:GetServerId(idx) or 0;                   -- (what it's casting or readying: a strip hung under the plate)
             S.sid = srv_;
             local cst_ = FIGHT.casts and FIGHT.casts[srv_] or nil;
@@ -11722,8 +11722,10 @@ function C.mob_plates_()
             DL.RFM(dl, x1 + rr, y1, x2 - rr, y1 + math.max(1, math.floor(1.5 * sc)), U4(ca[1], ca[2], ca[3], 0.95), U4(cb[1], cb[2], cb[3], 0.95), U4(cb[1], cb[2], cb[3], 0.95), U4(ca[1], ca[2], ca[3], 0.95));   -- (the line along its top)
             end
             -- its name, then the HP bar with the percent at its end
-            if inf_ > 0 then pcall(C.mob_info, dl, x0, y0 + pad * 0.6, lh, idx, ent:GetName(idx), 1, sc); end   -- (its level and aggro, the first row)
-            local ty = y0 + pad * 0.7 + inf_;
+            if infw_ > 0 then                                         -- (its level and aggro on the top edge: the plate's glass behind it, the edge running into it)
+                pcall(C.mob_info, dl, x0, math.floor(y1 - lh * 0.92), lh, idx, ent:GetName(idx), 1, sc);   -- (just the text, standing on the plate's top edge - no background)
+            end
+            local ty = y0 + pad * 0.7;
             text(dl, x0, ty, nm, { 1, 1, 1, 1 });
             local bY = math.floor(ty + lh + 3 * sc);
             local c1, c2 = C.tgt1 or { 1, 0.78, 0.96 }, C.tgt2 or C.hp2 or ca;
