@@ -11470,7 +11470,7 @@ end
 -- its name, its HP bar with the percent, and the debuffs seen landing on it under that (BARS > Enemy plates over heads)
 C.MP3 = {};                                                          -- (per monster: its plate's state)
 C.MNH = {};                                                          -- (per model: how high the game draws its name, in yalms - measured once)
-function C.mob_plates_on() return cfg.mob_plates == true; end      -- (both modes: Vex's round pink glass, Hex link's square gold)
+function C.mob_plates_on() return cfg.mob_plates == true and cfg.target_fx ~= 'link'; end   -- (Vex mode only: Hex link keeps its own target bar - the user's choice)
 function C.plated(idx) return C.mob_plates_on() and idx ~= nil and C.MP3[idx] ~= nil and C.MP3[idx].drawn ~= nil and os.clock() - C.MP3[idx].drawn < 0.3; end   -- (a plate over it now)
 function C.plated_sid(sid)                                           -- (a plate over the monster with this server id now)
     if not C.mob_plates_on() then return false; end
@@ -19079,7 +19079,7 @@ local function draw_window()
                 row_switch('##yui_mbars', 'Party bars over heads', 'member_bars', 'On: everyone in your party and alliance (trusts too) gets an HP and an MP bar just under the name over their head, as yours. Only the ones you can see, within 30 yalms.');
                 if cfg.member_bars == true then row_slider('##yui_mbs', 'Party bars size', 'member_bars_scale', 0.5, 2.0, 0.05, '%.2fx'); row_slider('##yui_mbw', 'Party bars width', 'member_bars_w', 0.4, 3.0, 0.05, '%.2fx'); row_slider('##yui_mbt', 'Party bars thickness', 'member_bars_th', 0.4, 3.0, 0.05, '%.2fx'); if cfg.member_bars_mp == nil then cfg.member_bars_mp = true; end row_pick('##yui_mbwho', 'Party bars for', 'member_bars_who', { { 'alliance', 'Party and alliance' }, { 'party', 'Party only' } }); row_switch('##yui_mbmp', 'Party bars: MP', 'member_bars_mp', 'On: an MP bar under each HP bar. Off: the HP bar alone.'); row_switch('##yui_mball', 'Also on other players', 'member_bars_all', 'On: every other player near you gets an HP bar over their head too (HP only: the game never sends their MP). Off: only your party and alliance.'); row_slider('##yui_mby', 'Party bars height', 'member_bars_y', -60, 60, 1, '%d'); end
             end
-            do                                                       -- (both modes: a plate over each monster near you - Vex's round glass, Hex link's square gold)
+            if cfg.target_fx ~= 'link' then                          -- (Vex mode: a plate over each monster near you - Hex link keeps its target bar)
                 row_switch('##yui_mplt', 'Enemy plates over heads', 'mob_plates', 'On: every monster near you (within 30 yalms) gets a plate over its head in place of its name - its name, its HP bar with the percent, and its debuffs under it.');
                 if cfg.mob_plates == true then
                     row_slider('##yui_mpls', 'Enemy plates size', 'mob_plates_scale', 0.5, 2.0, 0.05, '%.2fx');
