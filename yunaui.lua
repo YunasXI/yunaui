@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.47';
+addon.version = '1.1.48';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -8689,7 +8689,11 @@ local COMBAT_A = { [162] = true, [163] = true, [164] = true, [165] = true, [166]
     [187] = true, [188] = true, [191] = true };                                                                                       --  alliance's battle lines)
 local function is_combat(m) return (m >= 20 and m <= 120) or m == 122 or m == 129 or m == 131 or COMBAT_A[m] == true; end
 local SJIS = { ['\129\168'] = '>', ['\129\169'] = '<', ['\129\170'] = '+', ['\129\171'] = '-', ['\129\64'] = ' ',   -- (the game's up / down arrows: + / - - "Damage Taken-", "Attack+" - never a letter v)
-               ['\129\154'] = '*', ['\129\153'] = '-', ['\129\69'] = '-', ['\129\124'] = '-', ['\129\117'] = '"', ['\129\118'] = '"' };
+               ['\129\154'] = '*', ['\129\153'] = '-', ['\129\69'] = '-', ['\129\124'] = '-', ['\129\117'] = '"', ['\129\118'] = '"',
+               -- (the server's own marks - CatsEyeXI's !maat, !rubyweather...: done / not done - as letters the chat's fonts have)
+               ['\129\155'] = 'O', ['\129\156'] = 'O', ['\129\157'] = 'O', ['\129\126'] = 'X',   -- (circle, filled circle, double circle; cross)
+               ['\129\162'] = '^', ['\129\163'] = '^', ['\129\164'] = 'v', ['\129\165'] = 'v',   -- (triangles up / down)
+               ['\129\158'] = '<>', ['\129\159'] = '<>', ['\129\160'] = '[]', ['\129\161'] = '[]' };   -- (diamonds, squares)
 function C.mob_name(s)                                               -- (a name without the marker symbol it may start with)
     if type(s) ~= 'string' then return s; end
     local r = s:gsub('[\128-\255]', ''):gsub('^%?(%a)', '%1');      -- (only a "?" stuck to the front - "???" stays "???", never an empty name)
