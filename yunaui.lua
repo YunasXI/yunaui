@@ -11246,7 +11246,23 @@ function C.overhead_idx(idx)                                         -- (does th
     end);
     return yes;
 end
+function C.mb_place(x1, y1, x2, y2)                                  -- (a friend plate landing on one already drawn this frame: moved up over it - two
+    local R = C.MBR or {};                                           --  people in the same spot each keep a readable plate)
+    C.MBR = R;
+    local dy = 0;
+    for _ = 1, 4 do
+        local moved = false;
+        for _, r in ipairs(R) do
+            local ox = math.min(x2, r[3]) - math.max(x1, r[1]);
+            if ox > (x2 - x1) * 0.35 and y1 - dy < r[4] and y2 - dy > r[2] then dy = dy + (y2 - dy - r[2]) + 2; moved = true; end
+        end
+        if not moved then break; end
+    end
+    R[#R + 1] = { x1, y1 - dy, x2, y2 - dy };
+    return dy;
+end
 function C.member_bars_()
+    C.MBR = {};
     local mm = AshitaCore:GetMemoryManager();
     local party, ent = mm:GetParty(), mm:GetEntity();
     local me = party:GetMemberTargetIndex(0) or 0;
@@ -11380,6 +11396,8 @@ function C.member_bars_()
                         local bx1, bx2 = x0 - px_, x0 + W + px_;                                         --  at the name's foot - never down on the head)
                         local by1 = y0 - py_ - nh_;
                         local by2 = y0 + hv + (wmp and (g + mv) or 0) + py_;
+                        local dy_ = C.mb_place(bx1, by1, bx2, by2);
+                        if dy_ > 0 then y0 = y0 - dy_; by1, by2 = by1 - dy_, by2 - dy_; end
                         local oth = it.grp == 'other';
                         local rr_ = 6 * sc;
                         local ont_ = idx == tgi_;                      -- (your target: a bright white edge, a soft line inside, the glass stronger)
@@ -11437,17 +11455,16 @@ function C.member_bars_()
                         if inner then pushed = sized('chat', 13 * sc); lh = imgui.GetTextLineHeight(); nh_ = lh + 2 * sc; end
                         local bx1, bx2 = x0 - px_, x0 + W + px_;
                         local by1, by2 = y0 - py_ - nh_, y0 + hv + (wmp and (g + mv) or 0) + py_;
+                        local dy_ = C.mb_place(bx1, by1, bx2, by2);
+                        if dy_ > 0 then y0 = y0 - dy_; by1, by2 = by1 - dy_, by2 - dy_; end
                         local oth = it.grp == 'other';
                         local GH = C.GOLDH or { 1.0, 0.81, 0.43 };
-                        local ont_ = idx == tgi_;                      -- (your target: the gold edge, the gold-to-azure line and the hex dots, as an enemy's)
-                        DL.RF(dl, bx1, by1, bx2, by2, U4(0.030, 0.035, 0.055, (ont_ and 0.72 or (oth and 0.36 or 0.44)) * al));
+                        local ont_ = idx == tgi_;                      -- (no box - lines only, as Hex link's bars; your target: a gold frame, the gold-to-azure line, the hex dots)
                         if ont_ then
                             local az_ = YUI_AZ();
                             DL.R(dl, bx1, by1, bx2, by2, U4(GH[1], GH[2], GH[3], 0.95 * al), 0, 0, 1.6);
                             DL.RFM(dl, bx1 + 1, by1, bx2 - 1, by1 + math.max(1, math.floor(2 * sc)), U4(GH[1], GH[2], GH[3], al), U4(az_[1], az_[2], az_[3], al), U4(az_[1], az_[2], az_[3], al), U4(GH[1], GH[2], GH[3], al));
                             if C.hexdot then local g2 = C.GOLDH2 or { 1.0, 0.90, 0.62 }; C.hexdot(dl, bx1, by1, 3 * sc, U4(g2[1], g2[2], g2[3], al)); C.hexdot(dl, bx2, by1, 2.4 * sc, U4(az_[1], az_[2], az_[3], al)); end
-                        else
-                            DL.R(dl, bx1, by1, bx2, by2, U4(1, 1, 1, (oth and 0.16 or 0.22) * al), 0, 0, 1.0);
                         end
                         local st_ = (it.grp == 'party') and GH or ((it.grp == 'ally') and YUI_AZ()) or nil;
                         if st_ then DL.RF(dl, bx1, by1, bx1 + math.max(2, math.floor(3 * sc)), by2, U4(st_[1], st_[2], st_[3], 0.95 * al)); end
