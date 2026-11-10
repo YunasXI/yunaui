@@ -11698,7 +11698,7 @@ function C.mob_plates_()
             local ca, cb = NEON2 or { 1.0, 0.42, 0.72 }, NEON or { 0.86, 0.24, 0.86 };
             if HXp then ca, cb = C.GOLDH or { 1.0, 0.81, 0.43 }, YUI_AZ(); end
             if HXp then                                               -- (Hex link: no box - lines only, as its target bar: the name, the hex bar, a gold hex at its start)
-                if C.hexdot then local g2 = C.GOLDH2 or { 1.0, 0.90, 0.62 }; C.hexdot(dl, x0 - 6 * sc, math.floor(y0 + pad * 0.7 + lh + 3 * sc) + bh / 2, (on and 3.6 or 2.6) * sc, U4(g2[1], g2[2], g2[3], 0.95)); end   -- (your target: a bigger one)
+                if C.hexdot then local g2 = C.GOLDH2 or { 1.0, 0.90, 0.62 }; C.hexdot(dl, x0 - 6 * sc, math.floor(y0 + pad * 0.7 + lh + 3 * sc) + bh / 2, 2.6 * sc, U4(g2[1], g2[2], g2[3], 0.95)); end
                 if false then
                     DL.RFM(dl, x1 + 1, y1, x2 - 1, y1 + math.max(1, math.floor(2 * sc)), U4(ca[1], ca[2], ca[3], 1), U4(cb[1], cb[2], cb[3], 1), U4(cb[1], cb[2], cb[3], 1), U4(ca[1], ca[2], ca[3], 1));   -- (gold to azure along its top)
                     if C.hexdot then
@@ -11718,19 +11718,19 @@ function C.mob_plates_()
             end
             -- its name, then the HP bar with the percent at its end
             local ty = y0 + pad * 0.7;
-            local gn_ = C.GOLDH2 or { 1.0, 0.90, 0.62 };
-            text(dl, x0, ty, nm, (HXp and on) and { gn_[1], gn_[2], gn_[3], 1 } or { 1, 1, 1, 1 });   -- (Hex link, your target: its name in gold)
+            text(dl, x0, ty, nm, { 1, 1, 1, 1 });
+            if on then                                                -- (your target: its level and aggro - TARGET > Monster info - in a tag sitting on the plate)
+                pcall(function()
+                    local mw_ = tonumber(C.mob_info(dl, 0, 0, lh, idx, ent:GetName(idx), 1, sc, 'measure')) or 0;
+                    if mw_ > 0 then C.mob_info(dl, x1, y1 - lh - 4 * sc, lh, idx, ent:GetName(idx), 1, sc); end
+                end);
+            end
             local bY = math.floor(ty + lh + 3 * sc);
             local c1, c2 = C.tgt1 or { 1, 0.78, 0.96 }, C.tgt2 or C.hp2 or ca;
             if hpp < 0.25 then c1, c2 = { 1.0, 0.55, 0.50 }, { 0.92, 0.22, 0.28 }; end   -- (low: red)
             if HXp then                                               -- (Hex link: the claim's colour - orange free, red yours, purple someone else's)
                 local cc_ = (cfg.hl_claim ~= false) and C.claimcol(idx, false) or nil;
-                local bt_ = on and math.floor(bh * 1.5 + 1) or (bh + 1);  -- (your target: a thicker bar, a gold-to-azure line under it)
-                C.hexbar(dl, x0, bY, W, bt_, S.hp, lagged('mp3' .. idx, hpp, dt), 0.5, cc_ and { c1 = cc_[2], c2 = cc_[1] } or nil);
-                if on then
-                    local ly_ = bY + bt_ + math.floor(3 * sc);
-                    DL.RFM(dl, x0, ly_, x0 + W, ly_ + math.max(1, math.floor(1.5 * sc)), U4(ca[1], ca[2], ca[3], 0.95), U4(cb[1], cb[2], cb[3], 0.95), U4(cb[1], cb[2], cb[3], 0.95), U4(ca[1], ca[2], ca[3], 0.95));
-                end
+                C.hexbar(dl, x0, bY, W, bh + 1, S.hp, lagged('mp3' .. idx, hpp, dt), 0.5, cc_ and { c1 = cc_[2], c2 = cc_[1] } or nil);
                 text(dl, x0 + W + 8 * sc, math.floor(bY + bh / 2 - lh / 2), pct, { 1, 1, 1, 0.95 });
             else
             glow_bar(dl, x0, bY, W, bh, S.hp, lagged('mp3' .. idx, hpp, dt), c1, c2, (idx % 97) * 0.41);
