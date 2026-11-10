@@ -11193,7 +11193,8 @@ function C.member_bars_on() return cfg.member_bars == true; end   -- (both modes
 function C.member_bars()
     local mbo, mpo = C.member_bars_on(), C.mob_plates_on and C.mob_plates_on();
     pcall(C.mp_names, mpo and not YUI_MAPCOVER and not (YMAP and YMAP.big));
-    pcall(C.np_hide, 'hideplayers', mbo and cfg.member_bars_all == true and cfg.target_fx ~= 'link' and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (friend plates on every player: their names go inside)   -- (plates drawn: the monsters' own names off - VanaCore's setting; else back)
+    pcall(C.np_hide, 'hideplayers', mbo and cfg.member_bars_all == true and cfg.target_fx ~= 'link' and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (friend plates on every player: their names go inside)
+    pcall(C.np_hide, 'hidetrusts', mbo and cfg.target_fx ~= 'link' and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (trusts always have a plate: their names go inside too)   -- (plates drawn: the monsters' own names off - VanaCore's setting; else back)
     if not (mbo or mpo) or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
     local ds = imgui.GetIO().DisplaySize;
     imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
@@ -11343,7 +11344,8 @@ function C.member_bars_()
                         if al < 1 then c1, c2 = { c1[1] * al, c1[2] * al, c1[3] * al }, { c2[1] * al, c2[2] * al, c2[3] * al }; end   -- (knocked out: dimmed)
                         local hv = math.max(3, hh);
                         local mv = wmp and math.max(2, mh) or 0;
-                        local inner = it.pl and C.NPH.hideplayers and C.NPH.hideplayers.mine;   -- (its name hidden by us: drawn inside, with the HP %)
+                        local nk_ = it.pl and C.NPH.hideplayers or C.NPH.hidetrusts;   -- (its name hidden - by us, or the player's own setting: drawn inside, with the HP %)
+                        local inner = nk_ and (nk_.mine or nk_.own) and true or false;
                         local acc = (it.grp == 'party') and { 0.50, 0.88, 0.75 } or ((it.grp == 'ally') and { 0.50, 0.72, 1.00 }) or nil;
                         local px_, py_ = math.floor(6 * sc), math.floor(4 * sc);
                         local pushed, lh, nh_ = false, 0, 0;
@@ -11453,7 +11455,7 @@ function C.mnh_keep(k, h)                                            -- (a famil
     cfg.mob_nh[k] = math.floor(h * 100 + 0.5) / 100;
     save();
 end
-function C.mpn_all_off() pcall(C.np_hide, 'hidemonsters', false); pcall(C.np_hide, 'hideplayers', false); end               -- (YunaUI unloading: the monsters' names back)
+function C.mpn_all_off() pcall(C.np_hide, 'hidemonsters', false); pcall(C.np_hide, 'hideplayers', false); pcall(C.np_hide, 'hidetrusts', false); end               -- (YunaUI unloading: the monsters' names back)
 function C.mob_plates_()
     local mm = AshitaCore:GetMemoryManager();
     local party, ent = mm:GetParty(), mm:GetEntity();
