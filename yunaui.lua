@@ -11506,33 +11506,26 @@ function C.mob_plates_()
                     if not ti or ti == 0 or ent:GetRawEntity(ti) == nil then return; end
                     local tn = C.mob_name(ent:GetName(ti) or '') or '';
                     if tn == '' then return; end
-                    local thp = (ent:GetHPPercent(ti) or 0) / 100;
-                    local k = 0.72;
-                    local fs0 = FS or 1;
+                    local k = 0.70;                                   -- (just its name: a slim glass pill joined to the plate's right edge,
+                    local fs0 = FS or 1;                              --  a thin blue line and a small arrow leading into it)
                     imgui.SetWindowFontScale(fs0 * k);
                     local tlh = imgui.GetTextLineHeight();
-                    local tpct = string.format('%d%%', math.floor(thp * 100 + 0.5));
-                    local tpw = imgui.CalcTextSize(tpct);
-                    local TW = math.floor(W * 0.62);
+                    local TW = math.floor(W * 0.6);
                     local tn0 = tn;
                     while #tn > 3 and imgui.CalcTextSize(tn) > TW do tn = tn:sub(1, #tn - 1); end
                     if tn ~= tn0 then tn = tn:sub(1, #tn - 1) .. '..'; end
-                    local tpad = math.floor(pad * k);
-                    local tbh = math.max(2, math.floor(bh * 0.8));
-                    local tH = tpad + tlh + 2 * sc + tbh + tpad * 0.8;
-                    local qx1, qy2 = x2 + 6 * sc, y2;
-                    local qx2, qy1 = qx1 + tpad * 2 + TW + tpw + 6 * sc, y2 - tH;
-                    local qr = rr * 0.8;
-                    DL.RF(dl, qx1, qy1, qx2, qy2, U4(0.045, 0.040, 0.065, 0.66), qr);
-                    DL.RFM(dl, qx1 + 1, qy1 + 1, qx2 - 1, qy1 + (qy2 - qy1) * 0.45, U4(1, 1, 1, 0.05), U4(1, 1, 1, 0.05), U4(1, 1, 1, 0), U4(1, 1, 1, 0));
-                    local cc1, cc2 = { 0.80, 0.96, 1.00 }, { 0.35, 0.65, 1.00 };   -- (cool blue, as the target of target always was)
-                    DL.R(dl, qx1, qy1, qx2, qy2, U4(cc2[1], cc2[2], cc2[3], 0.55), qr, C.rall, 1.0);
-                    DL.RFM(dl, qx1 + qr, qy1, qx2 - qr, qy1 + math.max(1, math.floor(1.2 * sc)), U4(cc1[1], cc1[2], cc1[3], 0.9), U4(cc2[1], cc2[2], cc2[3], 0.9), U4(cc2[1], cc2[2], cc2[3], 0.9), U4(cc1[1], cc1[2], cc1[3], 0.9));
-                    local tx0, tty = qx1 + tpad, qy1 + tpad * 0.7;
-                    text(dl, tx0, tty, tn, { 1, 1, 1, 1 });
-                    local tbY = math.floor(tty + tlh + 2 * sc);
-                    glow_bar(dl, tx0, tbY, TW, tbh, thp, lagged('mp3t' .. ti, thp, dt), cc1, cc2, 4.4);
-                    text(dl, tx0 + TW + 6 * sc, math.floor(tbY + tbh / 2 - tlh / 2), tpct, { 0.86, 0.94, 1, 1 });
+                    local tw_ = imgui.CalcTextSize(tn);
+                    local ph = math.floor(tlh + 4 * sc);
+                    local aw = math.floor(ph * 0.34);                 -- (the arrow's room)
+                    local qx1 = x2 - 1;
+                    local qy1 = math.floor((y1 + y2) / 2 - ph / 2);
+                    local qx2, qy2 = qx1 + aw + 5 * sc + tw_ + 7 * sc, qy1 + ph;
+                    local cb = { 0.45, 0.72, 1.00 };
+                    DL.RF(dl, qx1, qy1, qx2, qy2, U4(0.045, 0.040, 0.065, 0.62), ph / 2, (ImDrawFlags_RoundCornersRight or ImDrawCornerFlags_Right or 10));
+                    DL.R(dl, qx1, qy1, qx2, qy2, U4(cb[1], cb[2], cb[3], 0.45), ph / 2, (ImDrawFlags_RoundCornersRight or ImDrawCornerFlags_Right or 10), 1.0);
+                    local ax, ay = qx1 + 4 * sc, qy1 + ph / 2;
+                    DL.TF(dl, ax, ay - aw * 0.55, ax, ay + aw * 0.55, ax + aw * 0.75, ay, U4(cb[1], cb[2], cb[3], 0.95));
+                    text(dl, ax + aw + 4 * sc, math.floor(ay - tlh / 2), tn, { 0.88, 0.95, 1, 1 });
                     imgui.SetWindowFontScale(fs0);
                 end);
             end
