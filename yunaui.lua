@@ -11678,7 +11678,11 @@ function C.mob_plates_()
             local nm0 = nm;
             while #nm > 3 and imgui.CalcTextSize(nm) > nroom_ do nm = nm:sub(1, #nm - 1); end
             if nm ~= nm0 then nm = nm:sub(1, #nm - 1) .. '..'; end
-            local H = pad + lh + 3 * sc + bh + pad * 0.8;
+            local inf_ = 0;                                           -- (your target: its Monster info as the plate's first row - all in one plate)
+            if idx == tidx then
+                pcall(function() if (tonumber(C.mob_info(dl, 0, 0, lh, idx, ent:GetName(idx), 1, sc, 'measure')) or 0) > 0 then inf_ = math.floor(lh * 1.05 + 3 * sc); end end);
+            end
+            local H = pad + inf_ + lh + 3 * sc + bh + pad * 0.8;
             local srv_ = ent:GetServerId(idx) or 0;                   -- (what it's casting or readying: a strip hung under the plate)
             S.sid = srv_;
             local cst_ = FIGHT.casts and FIGHT.casts[srv_] or nil;
@@ -11697,8 +11701,9 @@ function C.mob_plates_()
             local rr = HXp and 0 or 6 * sc;
             local ca, cb = NEON2 or { 1.0, 0.42, 0.72 }, NEON or { 0.86, 0.24, 0.86 };
             if HXp then ca, cb = C.GOLDH or { 1.0, 0.81, 0.43 }, YUI_AZ(); end
-            if HXp then                                               -- (Hex link: no box - lines only, as its target bar: the name, the hex bar, a gold hex at its start)
-                if C.hexdot then local g2 = C.GOLDH2 or { 1.0, 0.90, 0.62 }; C.hexdot(dl, x0 - 6 * sc, math.floor(y0 + pad * 0.7 + lh + 3 * sc) + bh / 2, 2.6 * sc, U4(g2[1], g2[2], g2[3], 0.95)); end
+            if HXp then                                               -- (Hex link: one plate - square dark glass, a thin gold contour, brighter round your target)
+                DL.RF(dl, x1, y1, x2, y2, U4(0.030, 0.035, 0.055, on and 0.74 or 0.60));
+                DL.R(dl, x1, y1, x2, y2, U4(ca[1], ca[2], ca[3], on and 0.80 or 0.35), 0, 0, 1.0);
                 if false then
                     DL.RFM(dl, x1 + 1, y1, x2 - 1, y1 + math.max(1, math.floor(2 * sc)), U4(ca[1], ca[2], ca[3], 1), U4(cb[1], cb[2], cb[3], 1), U4(cb[1], cb[2], cb[3], 1), U4(ca[1], ca[2], ca[3], 1));   -- (gold to azure along its top)
                     if C.hexdot then
@@ -11717,14 +11722,9 @@ function C.mob_plates_()
             DL.RFM(dl, x1 + rr, y1, x2 - rr, y1 + math.max(1, math.floor(1.5 * sc)), U4(ca[1], ca[2], ca[3], 0.95), U4(cb[1], cb[2], cb[3], 0.95), U4(cb[1], cb[2], cb[3], 0.95), U4(ca[1], ca[2], ca[3], 0.95));   -- (the line along its top)
             end
             -- its name, then the HP bar with the percent at its end
-            local ty = y0 + pad * 0.7;
+            if inf_ > 0 then pcall(C.mob_info, dl, x0, y0 + pad * 0.6, lh, idx, ent:GetName(idx), 1, sc); end   -- (its level and aggro, the first row)
+            local ty = y0 + pad * 0.7 + inf_;
             text(dl, x0, ty, nm, { 1, 1, 1, 1 });
-            if on then                                                -- (your target: its level and aggro - TARGET > Monster info - in a tag sitting on the plate)
-                pcall(function()
-                    local mw_ = tonumber(C.mob_info(dl, 0, 0, lh, idx, ent:GetName(idx), 1, sc, 'measure')) or 0;
-                    if mw_ > 0 then C.mob_info(dl, x1, y1 - lh - 4 * sc, lh, idx, ent:GetName(idx), 1, sc); end
-                end);
-            end
             local bY = math.floor(ty + lh + 3 * sc);
             local c1, c2 = C.tgt1 or { 1, 0.78, 0.96 }, C.tgt2 or C.hp2 or ca;
             if hpp < 0.25 then c1, c2 = { 1.0, 0.55, 0.50 }, { 0.92, 0.22, 0.28 }; end   -- (low: red)
