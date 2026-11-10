@@ -11382,8 +11382,14 @@ function C.member_bars_()
                         local by2 = y0 + hv + (wmp and (g + mv) or 0) + py_;
                         local oth = it.grp == 'other';
                         local rr_ = 6 * sc;
-                        DL.RF(dl, bx1, by1, bx2, by2, U4(0.045, 0.040, 0.065, (oth and 0.34 or 0.40) * al), rr_);
-                        DL.R(dl, bx1, by1, bx2, by2, U4(1, 1, 1, (oth and 0.18 or 0.24) * al), rr_, C.rall, 1.0);
+                        local ont_ = idx == tgi_;                      -- (your target: a bright white edge, a soft line inside, the glass stronger)
+                        DL.RF(dl, bx1, by1, bx2, by2, U4(0.045, 0.040, 0.065, (ont_ and 0.70 or (oth and 0.34 or 0.40)) * al), rr_);
+                        if ont_ then
+                            DL.R(dl, bx1 - 1, by1 - 1, bx2 + 1, by2 + 1, U4(1, 1, 1, 0.95 * al), rr_ + 1, C.rall, 1.8);
+                            DL.R(dl, bx1 + 2, by1 + 2, bx2 - 2, by2 - 2, U4(1, 1, 1, 0.25 * al), rr_ - 2, C.rall, 1.0);
+                        else
+                            DL.R(dl, bx1, by1, bx2, by2, U4(1, 1, 1, (oth and 0.18 or 0.24) * al), rr_, C.rall, 1.0);
+                        end
                         if acc then DL.RF(dl, bx1 + rr_, by1, bx2 - rr_, by1 + math.max(1, math.floor(1.5 * sc)), U4(acc[1], acc[2], acc[3], 0.95 * al)); end
                         if inner then
                             local pct_ = string.format('%d%%', math.floor(hpp * 100 + 0.5));
@@ -11432,9 +11438,17 @@ function C.member_bars_()
                         local bx1, bx2 = x0 - px_, x0 + W + px_;
                         local by1, by2 = y0 - py_ - nh_, y0 + hv + (wmp and (g + mv) or 0) + py_;
                         local oth = it.grp == 'other';
-                        DL.RF(dl, bx1, by1, bx2, by2, U4(0.030, 0.035, 0.055, (oth and 0.36 or 0.44) * al));
-                        DL.R(dl, bx1, by1, bx2, by2, U4(1, 1, 1, (oth and 0.16 or 0.22) * al), 0, 0, 1.0);
                         local GH = C.GOLDH or { 1.0, 0.81, 0.43 };
+                        local ont_ = idx == tgi_;                      -- (your target: the gold edge, the gold-to-azure line and the hex dots, as an enemy's)
+                        DL.RF(dl, bx1, by1, bx2, by2, U4(0.030, 0.035, 0.055, (ont_ and 0.72 or (oth and 0.36 or 0.44)) * al));
+                        if ont_ then
+                            local az_ = YUI_AZ();
+                            DL.R(dl, bx1, by1, bx2, by2, U4(GH[1], GH[2], GH[3], 0.95 * al), 0, 0, 1.6);
+                            DL.RFM(dl, bx1 + 1, by1, bx2 - 1, by1 + math.max(1, math.floor(2 * sc)), U4(GH[1], GH[2], GH[3], al), U4(az_[1], az_[2], az_[3], al), U4(az_[1], az_[2], az_[3], al), U4(GH[1], GH[2], GH[3], al));
+                            if C.hexdot then local g2 = C.GOLDH2 or { 1.0, 0.90, 0.62 }; C.hexdot(dl, bx1, by1, 3 * sc, U4(g2[1], g2[2], g2[3], al)); C.hexdot(dl, bx2, by1, 2.4 * sc, U4(az_[1], az_[2], az_[3], al)); end
+                        else
+                            DL.R(dl, bx1, by1, bx2, by2, U4(1, 1, 1, (oth and 0.16 or 0.22) * al), 0, 0, 1.0);
+                        end
                         local st_ = (it.grp == 'party') and GH or ((it.grp == 'ally') and YUI_AZ()) or nil;
                         if st_ then DL.RF(dl, bx1, by1, bx1 + math.max(2, math.floor(3 * sc)), by2, U4(st_[1], st_[2], st_[3], 0.95 * al)); end
                         if inner then
