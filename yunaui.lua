@@ -1308,7 +1308,7 @@ local BAR_FX = {
 };
 -- The effect takes the bar's colour (BARS > Your HP bar / Target bar): drawn from white copies of its frames (_w), tinted.
 -- White bars keep the effect's own colours.
-C.FXTINT = { pink = { 1.0, 0.52, 0.86 }, red = { 1.0, 0.46, 0.42 } };
+C.FXTINT = { pink = { 1.0, 0.52, 0.86 }, red = { 1.0, 0.46, 0.42 }, green = { 0.55, 1.0, 0.62 } };
 function C.fxtint(choice) return C.FXTINT[choice or 'pink']; end
 local function bar_fx_for(which)                                    -- which: 'target', 'party', 'alliance', 'equip', 'pet'
     local k = cfg['barfx_' .. which] or 'same';
@@ -6075,6 +6075,8 @@ function C.hpheatN(m, hp)
         if hp < 0.50 then return { 1.0, 0.64, 0.22 }, { 0.94, 0.40, 0.06 }; end
         if hp < 0.75 then return { 1.0, 0.93, 0.40 }, { 0.92, 0.74, 0.12 }; end
     end
+    if cfg.party_hp_col == 'green' then return { 0.62, 1.00, 0.66 }, { 0.16, 0.74, 0.40 }; end   -- (PARTY > HP bar colour)
+    if cfg.party_hp_col == 'red' then return { 1.00, 0.45, 0.42 }, { 0.80, 0.12, 0.20 }; end
     return { 1.0, 1.0, 1.0 }, { 0.88, 0.89, 0.93 };                 -- (white, the faintest cool shade at its far end)
 end
 function ALLY.tagcol(job)                                            -- { fill, ink } for a job's tag
@@ -11721,7 +11723,7 @@ function C.mob_plates_()
             local on = idx == tidx;
             local HXp = cfg.target_fx == 'link';                      -- (Hex link: square, a gold edge, the HP bar a hexagon in the claim's colour)
             local rr = HXp and 0 or 6 * sc;
-            local ca, cb = NEON2 or { 1.0, 0.42, 0.72 }, NEON or { 0.86, 0.24, 0.86 };
+            local ca, cb = { 1.0, 0.42, 0.72 }, { 0.86, 0.24, 0.86 };   -- (an enemy's: always pink to violet - never your HP colour, green is a friend's)
             if HXp then ca, cb = C.GOLDH or { 1.0, 0.81, 0.43 }, YUI_AZ(); end
             if HXp then                                               -- (Hex link: one plate - square dark glass, a thin gold contour, brighter round your target)
                 DL.RF(dl, x1, y1, x2, y2, U4(0.030, 0.035, 0.055, on and 0.74 or 0.60));
@@ -19155,6 +19157,7 @@ local function draw_window()
             hint('Click a member to target them. With Pretend members on, a click just marks one, to see how it looks.');
             section('CARDS');
             hint('Your party and the alliances: job tag, name, HP and MP for each member.');
+            if cfg.target_fx ~= 'link' then row_pick('##yui_phpc', 'HP bar colour', 'party_hp_col', { { 'white', 'White' }, { 'green', 'Green' }, { 'red', 'Red' } }); end   -- (Vex: the party cards' HP at full; the warning steps stay)
             row_switch('##yui_clow', 'Low HP warning', 'card_low', 'Under 75% HP a warning: Vex mode the edge of the card turns yellow, under 50% orange; Hex link the HP bar itself turns orange, then red-orange. Under 25% the card beats red.');
             if cfg.card_low ~= false then row_switch('##yui_cshk', 'Shake under 25% HP', 'card_shake', 'On: a member under 25% HP has their card shake, as well as beat red. Off: it stays still.'); end
             do
@@ -19175,7 +19178,7 @@ local function draw_window()
             if cfg.target_fx ~= 'link' then                          -- (Vex mode)
                 if cfg.tp_fx == nil then cfg.tp_fx = true; end
                 row_switch('##yui_tpfx', 'TP bar effect', 'tp_fx', 'On: from 1000 TP your TP bar crackles like the target bar, in gold - stronger at 2000, strongest at 3000. Off: a plain TP bar.');
-                row_pick('##yui_myhpc', 'HP bar colour', 'my_hp_color', { { 'pink', 'Pink' }, { 'white', 'White' } }, nil, function() pcall(C.apply_hp); save(); end);
+                row_pick('##yui_myhpc', 'HP bar colour', 'my_hp_color', { { 'pink', 'Pink' }, { 'white', 'White' }, { 'green', 'Green' }, { 'red', 'Red' } }, nil, function() pcall(C.apply_hp); save(); end);
             else                                                     -- (the gold mode: its HP bars gold, or Void red)
                 row_pick('##yui_hexhpc', 'HP bar colour', 'hex_hp_color', { { 'gold', 'Gold' }, { 'red', 'Void red' } }, nil, function() pcall(C.apply_hp); save(); end);
             end
@@ -20362,7 +20365,8 @@ local last = os.clock();
 -- BARS > HP bar colour: Pink (YunaUI) or Red, for your HP bar and the party / alliance lists
 C.HPCOL = { pink  = { { 1.00, 0.36, 0.62 }, { 0.86, 0.24, 0.86 }, { 1.00, 0.42, 0.72 } },
             red   = { { 1.00, 0.32, 0.30 }, { 0.80, 0.10, 0.20 }, { 1.00, 0.45, 0.42 } },
-            white = { { 1.00, 1.00, 1.00 }, { 0.80, 0.80, 0.86 }, { 1.00, 1.00, 1.00 } } };
+            white = { { 1.00, 1.00, 1.00 }, { 0.80, 0.80, 0.86 }, { 1.00, 1.00, 1.00 } },
+            green = { { 0.62, 1.00, 0.66 }, { 0.16, 0.74, 0.40 }, { 0.72, 1.00, 0.74 } } };   -- (BARS > HP bar colour: green)
 C.HEXHP = { { 1.00, 0.84, 0.42 }, { 0.95, 0.56, 0.16 }, { 1.00, 0.88, 0.55 } };
 C.HEXHPS = { gold = { { 1.00, 0.84, 0.42 }, { 0.95, 0.56, 0.16 }, { 1.00, 0.88, 0.55 } },   -- (BARS > HP bar colour in the gold mode: Gold, or Shadow red -
              red  = { { 1.00, 0.27, 0.27 }, { 0.58, 0.07, 0.10 }, { 1.00, 0.58, 0.56 } } };   -- (a touch brighter: it was too dark)   --  deep red fading to near black; its number a lighter red)
