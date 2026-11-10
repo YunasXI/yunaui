@@ -11186,6 +11186,7 @@ C.MB_RACE = { [3] = 0.15, [7] = -0.15, [8] = 0.18 };                            
 function C.member_bars_on() return cfg.member_bars == true; end   -- (both modes: Hex link gold, Vex its own round glowing bars)
 function C.member_bars()
     local mbo, mpo = C.member_bars_on(), C.mob_plates_on and C.mob_plates_on();
+    if not mpo or YUI_MAPCOVER or (YMAP and YMAP.big) then pcall(C.mpn_all_off); end   -- (no plates drawn: the monsters' own names back)
     if not (mbo or mpo) or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
     local ds = imgui.GetIO().DisplaySize;
     imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
@@ -11350,8 +11351,44 @@ function C.member_bars_()
 end
 -- Vex mode: a plate over each monster you and your party fight (and your target): dark glass with a pink-violet contour,
 -- its name, its HP bar with the percent, and the debuffs seen landing on it under that (BARS > Enemy plates over heads)
-C.MP3 = {};                                                          -- (per monster: how far over its head the game's name sits)
+C.MP3 = {};                                                          -- (per monster: its plate's state)
+C.MPN = {};                                                          -- (per monster: the record whose name flag we set - the game's name hidden under its plate)
 function C.mob_plates_on() return cfg.mob_plates == true and cfg.target_fx ~= 'link'; end
+function C.mpn_ep(idx)                                               -- (the monster's name record, checked against VanaCore's copy - as C.hide_tname)
+    local ap = AshitaCore:GetMemoryManager():GetEntity():GetActorPointer(idx);
+    if not ap or ap == 0 or not C.readable(ap + 0x70, 4) then return nil; end
+    local ep = ashita.memory.read_uint32(ap + 0x70);
+    if not ep or ep == 0 or not C.readable(ep + 0x120, 12) then return nil; end
+    return ep;
+end
+function C.mpn_hide(idx)                                             -- (the game's own name over it off: the plate shows it)
+    local ep = C.mpn_ep(idx);
+    if not ep then return; end
+    if C.MPN[idx] ~= ep then
+        local e = vana and vana.game and vana.game.entity and vana.game.entity(idx);
+        if type(e) ~= 'table' or tonumber(e.name_flags) ~= ashita.memory.read_uint32(ep + 0x124)
+            or tonumber(e.render_flags) ~= ashita.memory.read_uint32(ep + 0x120) then return; end
+        C.MPN[idx] = ep;
+    end
+    local f = ashita.memory.read_uint32(ep + 0x128);
+    if f and bit.band(f, 8) == 0 then ashita.memory.write_uint32(ep + 0x128, bit.bor(f, 8)); end   -- (the server can rewrite it: put back each frame)
+end
+function C.mpn_show(idx)                                             -- (its name back - only on the same record we changed)
+    local ep0 = C.MPN[idx];
+    C.MPN[idx] = nil;
+    if not ep0 then return; end
+    pcall(function()
+        if C.mpn_ep(idx) ~= ep0 then return; end                     -- (gone, or another monster in that slot now: nothing to undo)
+        local f = ashita.memory.read_uint32(ep0 + 0x128);
+        if f and bit.band(f, 8) ~= 0 then ashita.memory.write_uint32(ep0 + 0x128, bit.band(f, bit.bnot(8))); end
+    end);
+end
+function C.mpn_all_off()                                             -- (plates off, the mode changed, or YunaUI unloading: every name back)
+    if next(C.MPN) == nil then return; end
+    local ks = {};
+    for k in pairs(C.MPN) do ks[#ks + 1] = k; end
+    for _, k in ipairs(ks) do C.mpn_show(k); end
+end
 function C.mob_plates_()
     local mm = AshitaCore:GetMemoryManager();
     local party, ent = mm:GetParty(), mm:GetEntity();
@@ -11367,8 +11404,9 @@ function C.mob_plates_()
     local tidx = 0;
     pcall(function() tidx = mm:GetTarget():GetTargetIndex(0) or 0; end);
     local want = {};
-    for idx in pairs(ENGAGED) do want[idx] = true; end
-    if tidx > 0 and tidx < 0x400 and bit.band(ent:GetSpawnFlags(tidx) or 0, 0x10) ~= 0 then want[tidx] = true; end   -- (your target, a monster)
+    for idx = 1, 0x3FF do                                             -- (every monster near you: always, targeted or not)
+        if ent:GetRawEntity(idx) ~= nil and bit.band(ent:GetSpawnFlags(idx) or 0, 0x10) ~= 0 then want[idx] = true; end
+    end
     local seen = {};
     for idx in pairs(want) do
         local ok_ = pcall(function()
@@ -11391,19 +11429,8 @@ function C.mob_plates_()
             local S = C.MP3[idx] or {};
             C.MP3[idx] = S;
             seen[idx] = true;
-            local ntop_ = nil;                                        -- (the game's own name over it, drawn a moment ago: the plate goes over it)
-            pcall(function()
-                local en = vana.game.entity(idx);
-                if en and en.name_top then ntop_ = en.name_top; elseif vana.world.name_at then local _, t_ = vana.world.name_at(idx); ntop_ = t_; end
-            end);
-            if ntop_ and ppy > 4 and S.lx and math.abs(hx - S.lx) < 1.5 and math.abs(hy - S.ly) < 1.5 then
-                local dz = math.max(0, (hy - ntop_) / ppy);           -- (measured only while the camera is still: in yalms, kept)
-                S.dz = S.dz and (S.dz + (dz - S.dz) * 0.25) or dz;
-            end
-            S.lx, S.ly = hx, hy;
-            local by = hy;                                            -- (the plate's foot)
-            if S.dz then local _, y2 = C.w2s(px, pz - th_ - S.dz, py); if y2 then by = y2; end end
-            by = by - ((idx == tidx) and 16 or 4) * sc + (tonumber(cfg.mob_plates_y) or 0) * sc;   -- (your target: over the game's arrow too)
+            pcall(C.mpn_hide, idx);                                   -- (the game's own name over it hidden: the plate has it)
+            local by = hy - ((idx == tidx) and 22 or 8) * sc + (tonumber(cfg.mob_plates_y) or 0) * sc;   -- (the plate's foot, over its head - your target's over the game's arrow too)
             S.hp = S.hp and (S.hp + (hpp - S.hp) * math.min(1, dt * 8)) or hpp;
             -- what goes in it
             local W = math.floor(120 * sc * math.max(0.5, math.min(3, tonumber(cfg.mob_plates_w) or 1)));
@@ -11457,6 +11484,9 @@ function C.mob_plates_()
         if not ok_ then C.MP3[idx] = nil; end
     end
     for k in pairs(C.MP3) do if not seen[k] then C.MP3[k] = nil; end end
+    local gone = {};                                                  -- (no plate now - too far, out of sight, defeated: its name back)
+    for k in pairs(C.MPN) do if not seen[k] then gone[#gone + 1] = k; end end
+    for _, k in ipairs(gone) do C.mpn_show(k); end
 end
 -- Say and party lines: a bubble over the head of whoever said it, nearby, for a few seconds
 function C.bubble_draw()
@@ -18768,7 +18798,7 @@ local function draw_window()
                 if cfg.member_bars == true then row_slider('##yui_mbs', 'Party bars size', 'member_bars_scale', 0.5, 2.0, 0.05, '%.2fx'); row_slider('##yui_mbw', 'Party bars width', 'member_bars_w', 0.4, 3.0, 0.05, '%.2fx'); row_slider('##yui_mbt', 'Party bars thickness', 'member_bars_th', 0.4, 3.0, 0.05, '%.2fx'); if cfg.member_bars_mp == nil then cfg.member_bars_mp = true; end row_switch('##yui_mbmp', 'Party bars: MP', 'member_bars_mp', 'On: an MP bar under each HP bar. Off: the HP bar alone.'); row_switch('##yui_mball', 'Also on other players', 'member_bars_all', 'On: every other player near you gets an HP bar over their head too (HP only: the game never sends their MP). Off: only your party and alliance.'); row_slider('##yui_mby', 'Party bars height', 'member_bars_y', -60, 60, 1, '%d'); end
             end
             if cfg.target_fx ~= 'link' then                          -- (Vex mode: a plate over each monster you fight)
-                row_switch('##yui_mplt', 'Enemy plates over heads', 'mob_plates', 'On: every monster you and your party fight, and your target, gets a plate over its head - its name, its HP bar with the percent, and its debuffs under it. Within 30 yalms.');
+                row_switch('##yui_mplt', 'Enemy plates over heads', 'mob_plates', 'On: every monster near you (within 30 yalms) gets a plate over its head in place of its name - its name, its HP bar with the percent, and its debuffs under it.');
                 if cfg.mob_plates == true then
                     row_slider('##yui_mpls', 'Enemy plates size', 'mob_plates_scale', 0.5, 2.0, 0.05, '%.2fx');
                     row_slider('##yui_mplw', 'Enemy plates width', 'mob_plates_w', 0.5, 3.0, 0.05, '%.2fx');
@@ -19933,6 +19963,7 @@ end
 ashita.events.register('unload', 'yui_unload', function()
     pcall(function() local v = rawget(_G, 'vana'); if v and v.gameui then v.gameui.image('target_arrow'); end end);   -- (the game's arrow back - VanaCore does it too)
     pcall(C.hn_off);                                                 -- (the name over your target back)
+    pcall(C.mpn_all_off);                                            -- (and the monsters' names under the enemy plates)
     pcall(function() local v = rawget(_G, 'vana'); if C.MB.hid and v and v.gameui then v.gameui.show('macro_bar'); end end);   -- (the game's macro bar back)
     pcall(function() if CHATLOG.f then CHATLOG.f:close(); CHATLOG.f = nil; end end);   -- the chat log file
     pcall(C.snd_tidy, true);                                         -- the sound files (open, they couldn't be replaced by an update)
