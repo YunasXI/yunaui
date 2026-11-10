@@ -5115,10 +5115,12 @@ EDIT.NAMES = { target_x = 'Target', sub_x = 'Sub-target', enemy_x = 'Enemies', p
                pet_x = 'Pet', doll_x = 'Equipment', strip_x = 'Gear strip', logo_x = 'Logo', mini_x = 'Logo',
                fan_x = 'Skillchain fan', ecast_x = 'Enemy cast', tn_x = 'Target name', mb_x = 'Magic Burst', fo_x = 'Skillchain', co_x = 'Enemy cast',
                loot_x = 'Treasure pool', mi_x = 'Monster info' };
+EDIT.PLATEOFF = { mi_x = true, mb_x = true, fo_x = true, co_x = true, fan_x = true, ecast_x = true };
 EDIT.HEXOFF = { mi_x = true, tn_x = true, mb_x = true, fo_x = true, co_x = true, fan_x = true, ecast_x = true, sub_x = true };   -- (Hex link: these follow the
 function EDIT.listed(k)
     if k == 'mobt_x' and not (cfg.timers_mob == true and cfg.timers_mob_sep == true) then return false; end   -- (the Debuff timers window: only while it's on)
-    return EDIT.NAMES[k] and not (cfg.target_fx == 'link' and EDIT.HEXOFF[k]);
+    if C.mob_plates_on and C.mob_plates_on() and EDIT.PLATEOFF[k] then return false; end   -- (BARS > Enemy plates on: a monster's cast, info and debuffs are on its plate, the
+    return EDIT.NAMES[k] and not (cfg.target_fx == 'link' and EDIT.HEXOFF[k]);                --  skillchain the Banner at the top - nothing to place)
 end       --  target bar or the top - not placed)
 EDIT.SIZE = { target_x = { 'target_scale', 0.6, 2.0 }, sub_x = { 'sub_scale', 0.6, 2.0 }, enemy_x = { 'enemy_scale', 0.6, 2.0 },
               party_x = { 'party_scale', 0.6, 2.0 }, alliance_x = { 'ally1_scale', 0.6, 2.0 }, ally2_x = { 'ally2_scale', 0.6, 2.0 },
@@ -5232,7 +5234,7 @@ function EDIT.draw()
             end
         end
         local mb_ = C.MIBOX;                                         -- (Vex: the monster info - not moved, sized by its grip)
-        if mb_ and cfg.target_fx ~= 'link' and os.clock() - mb_[5] < 0.3 then
+        if mb_ and cfg.target_fx ~= 'link' and EDIT.listed('mi_x') and os.clock() - mb_[5] < 0.3 then   -- (Enemy plates: it's on the plate - no box)
             boxes.mi_x = { mb_[1] - 2, mb_[2] - 2, mb_[3] + 4, mb_[4] + 4 };
             order[#order + 1] = 'mi_x';
         end
