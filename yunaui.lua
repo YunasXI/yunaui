@@ -11352,8 +11352,21 @@ end
 -- Vex mode: a plate over each monster you and your party fight (and your target): dark glass with a pink-violet contour,
 -- its name, its HP bar with the percent, and the debuffs seen landing on it under that (BARS > Enemy plates over heads)
 C.MP3 = {};                                                          -- (per monster: its plate's state)
+C.MNH = {};                                                          -- (per server id: how high the game draws its name, in yalms - measured once)
 C.MPN = {};                                                          -- (per monster: the record whose name flag we set - the game's name hidden under its plate)
 function C.mob_plates_on() return cfg.mob_plates == true and cfg.target_fx ~= 'link'; end
+function C.plate_h(idx, ent)                                         -- (where its plate sits, in yalms over its feet: where the game puts its name, else
+    local hz = C.model_h(idx, ent);                                  --  from its real size - the hitbox VanaCore reports, never the target bar's
+    if hz then return hz; end                                        --  2-yalm least: a Mandragora is 0.8 yalms, its plate right over it)
+    local _, hb = C.msize(idx, ent);
+    if not (hb and hb > 0.05 and hb < 40) then
+        pcall(function() local e = vana.game.entity(idx); hb = e and tonumber(e.hitbox_size); end);
+    end
+    if not (hb and hb > 0.05 and hb < 40) then return C.tall(idx, ent); end
+    local h = math.max(0.6, 1.5 * hb);
+    if C.flat(idx, ent) then h = math.min(h, math.max(0.8, hb * 1.1)); end   -- (wide but low: a crab's hitbox is wide, not tall)
+    return h;
+end
 function C.mpn_ep(idx)                                               -- (the monster's name record, checked against VanaCore's copy - as C.hide_tname)
     local ap = AshitaCore:GetMemoryManager():GetEntity():GetActorPointer(idx);
     if not ap or ap == 0 or not C.readable(ap + 0x70, 4) then return nil; end
@@ -11419,18 +11432,34 @@ function C.mob_plates_()
             if math.sqrt((ex - myx) ^ 2 + (ey - myy) ^ 2) > 30 then return; end
             local px, py, pz, obj = C.tpos(idx, ent);
             if px == nil then return; end
-            local th_ = obj and 0.8 or C.tall(idx, ent);
+            local S = C.MP3[idx] or {};
+            C.MP3[idx] = S;
+            seen[idx] = true;
+            S.t0 = S.t0 or os.clock();
+            local sid_ = ent:GetServerId(idx) or 0;
+            local nh_ = C.MNH[sid_];                                  -- (how high the game drew its name, in yalms: measured from VanaCore's
+            if nh_ == nil then                                        --  name_bottom before the name is hidden - the plate goes right there)
+                pcall(function()
+                    local e = vana.game.entity(idx);
+                    local nb = e and tonumber(e.name_bottom);
+                    if not nb then return; end
+                    local _, fy = C.w2s(px, pz, py);
+                    local _, fy1 = C.w2s(px, pz - 1, py);
+                    if fy and fy1 and fy - fy1 > 4 then
+                        local h = (fy - nb) / (fy - fy1);
+                        if h > 0.2 and h < 15 then nh_ = h; C.MNH[sid_] = h; end
+                    end
+                end);
+            end
+            local th_ = nh_ or (obj and 0.8) or C.plate_h(idx, ent);
             if th_ > 4.5 then th_ = 4.5 + (th_ - 4.5) * 0.35; end     -- (a huge monster: the plate by its body, not far over its head)
-            local hx, hy = C.w2s(px, pz - th_, py);                   -- (the top of its head, placed in the world every frame)
+            local hx, hy = C.w2s(px, pz - th_, py);                   -- (where its name was, placed in the world every frame)
             if not hx then return; end
             local _, hy1 = C.w2s(px, pz - th_ - 1, py);
             local ppy = hy1 and (hy - hy1) or 70;                     -- (a yalm on the screen there)
             local sc = base * math.max(0.45, math.min(1.2, ppy / 70));
-            local S = C.MP3[idx] or {};
-            C.MP3[idx] = S;
-            seen[idx] = true;
-            pcall(C.mpn_hide, idx);                                   -- (the game's own name over it hidden: the plate has it)
-            local by = hy - ((idx == tidx) and 22 or 8) * sc + (tonumber(cfg.mob_plates_y) or 0) * sc;   -- (the plate's foot, over its head - your target's over the game's arrow too)
+            if nh_ or os.clock() - S.t0 > 1.0 then pcall(C.mpn_hide, idx); end   -- (the game's own name hidden once measured - or after a second: too far to be drawn)
+            local by = hy - ((idx == tidx) and 20 or 0) * sc + (tonumber(cfg.mob_plates_y) or 0) * sc;   -- (the plate's foot where the name's foot was - your target's over the game's arrow)
             S.hp = S.hp and (S.hp + (hpp - S.hp) * math.min(1, dt * 8)) or hpp;
             -- what goes in it
             local W = math.floor(120 * sc * math.max(0.5, math.min(3, tonumber(cfg.mob_plates_w) or 1)));
