@@ -11454,11 +11454,12 @@ function C.mob_plates_()
             local nm0 = nm;
             while #nm > 3 and imgui.CalcTextSize(nm) > W do nm = nm:sub(1, #nm - 1); end
             if nm ~= nm0 then nm = nm:sub(1, #nm - 1) .. '..'; end
-            local H = pad + lh + 3 * sc + bh + pad * 0.8 + ((drows > 0) and (dh + 2 * sc) or 0);
+            local H = pad + lh + 3 * sc + bh + pad * 0.8;
+            local pb = by - ((drows > 0) and (dh + 4 * sc) or 0);       -- (the plate's foot: the debuffs hang under it, outside)
             local x0 = math.floor(hx - (W + pw + 8 * sc) / 2);
-            local y0 = math.floor(by - H);
+            local y0 = math.floor(pb - H);
             local x1, y1 = x0 - pad, y0;
-            local x2, y2 = x0 + W + pw + 8 * sc + pad, by;
+            local x2, y2 = x0 + W + pw + 8 * sc + pad, math.floor(pb);
             local on = idx == tidx;
             local rr = 6 * sc;
             -- the plate: dark glass, its contour pink to violet (your target's brighter, a white edge inside)
@@ -11479,7 +11480,7 @@ function C.mob_plates_()
             text(dl, x0 + W + 8 * sc, math.floor(bY + bh / 2 - lh / 2), pct, (hpp < 0.25) and { 1, 0.55, 0.55, 1 } or { 1, 0.86, 0.94, 1 });
             unsized(pushed);
             -- the debuffs under it, each with its time left
-            if drows > 0 then draw_buffs(dl, x0, bY + bh + pad * 0.8 + 2 * sc, ids, isz, per, 2, 1, left); end
+            if drows > 0 then draw_buffs(dl, x1 + 2 * sc, y2 + 4 * sc, ids, isz, per, 2, 1, left); end   -- (under the plate, outside it)
         end);
         if not ok_ then C.MP3[idx] = nil; end
     end
