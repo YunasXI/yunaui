@@ -22858,15 +22858,25 @@ EDIT.G.STEPS = {
     { "Target bar", function(G) if G.hx() then return { G.anc('tb') }; end return { G.win('target_x'), G.anc('tn') }; end, function(G)
         if G.hx() then return { "The monster or player you target: the bar floats over its head and follows it, joined by a line to a diamond. Its name, how far it is (pink means too far for spells) and its HP percent at the end.",
             "With it: its buffs and debuffs, with the time left." }; end
-        return { "The monster or player you target: its name, how far it is (pink means too far for spells) and its HP.",
-            "With it: its buffs and debuffs, with the time left." }; end, { { 'target', 'TARGET' } } },
-    { "Skillchains and Magic Burst", function(G) if G.hx() then return { G.anc('bn') }; end return { G.anc('fo'), G.anc('mb') }; end, function(G)
-        if G.hx() then return { "When your party opens a skillchain, a banner comes in at the top of the screen: the chain, the time left as two lines either side of it, and your weapon skills that close it with their result and level - the best one in gold.",
+        local t_ = { "The monster or player you target: its name, how far it is (pink means too far for spells) and its HP.",
+            "With it: its buffs and debuffs, with the time left." };
+        if C.mob_plates_on and C.mob_plates_on() then t_[3] = "With Enemy plates on, a monster you target shows all of this on its own plate instead (see Enemy plates): this bar is then for the players and NPCs you target."; end
+        return t_; end, { { 'target', 'TARGET' } } },
+    { "Skillchains and Magic Burst", function(G) if G.hx() or (C.mob_plates_on and C.mob_plates_on()) then return { G.anc('bn') }; end return { G.anc('fo'), G.anc('mb') }; end, function(G)
+        if G.hx() or (C.mob_plates_on and C.mob_plates_on()) then return { "When your party opens a skillchain, a banner comes in at the top of the screen: the chain, the time left as two lines either side of it, and your weapon skills that close it with their result and level - the best one in gold.",
             "When the skillchain lands, Magic Burst shows under it with the elements to burst with." }; end
         return { "When your party opens a skillchain, a fan opens with your weapon skills that close it, the best one on top.",
             "When the skillchain lands, the Magic Burst card shows the chain, the elements to burst with and the time left." }; end, { { 'target', 'TARGET' }, { 'fight_info', 'TARGET (Casts and skillchains)' } } },
-    { "Enemy cast", function(G) return { G.anc('co') }; end, {
-        "The spell or move the monster is getting ready, with the time left: you know when to interrupt it or get out of the way." }, { { 'target', 'TARGET' }, { 'fight_info', 'TARGET (Casts and skillchains)' } } },
+    { "Enemy cast", function(G) return { G.anc('co') }; end, function(G)
+        if C.mob_plates_on and C.mob_plates_on() then return { "The spell or move a monster is getting ready hangs under its plate: its name, who it's aimed at and a bar filling up - you know when to interrupt it or get out of the way. Every monster's, not just your target's." }; end
+        return { "The spell or move the monster is getting ready, with the time left: you know when to interrupt it or get out of the way." }; end, { { 'target', 'TARGET' }, { 'fight_info', 'TARGET (Casts and skillchains)' } } },
+    { "Enemy plates", function(G) return { EDIT.G.item('plates').rect() }; end, function(G)
+        local t = { "With Enemy plates on (TARGET > ENEMY PLATES), every monster near you gets a plate over its head instead of its name: its name, HP bar and percent, what it is casting, and its debuffs with the time left.",
+            "Your target's plate also shows its level and aggro, the lock-on padlock and how far it is, and takes the place of the target bar. While you target one, the other plates fade right down: in a big pull you always see which one is yours." };
+        if G.hx() then t[3] = "In Hex link the plates are square, with a thin gold edge; the HP bar tells who claimed it - orange free, red yours, purple someone else's.";
+        else t[3] = "In Vex mode the plates are dark glass with a pink edge."; end
+        t[4] = "Size, width and height are in TARGET > ENEMY PLATES; the debuffs follow TARGET BAR > Buffs / debuffs size.";
+        return t; end, { { 'mob_plates', 'TARGET (Enemy plates)' } } },
     { "Target of target and enemies", function(G) return { G.hx() and G.anc('tot') or G.win('sub_x'), G.win('enemy_x') }; end, {
         "Who your target is looking at, and the monsters fighting you. Click a monster in the list to target it." }, { { 'subtarget', 'TARGET (Target of target)' }, { 'enemylist', 'TARGET (Enemy list)' } } },
     { "Party", function(G) return { G.win('party_x') }; end, {
@@ -22876,6 +22886,13 @@ EDIT.G.STEPS = {
         "The arrow next to the anchor icon, by PARTY, hides or shows the whole list." }, { { 'party', 'PARTY' } } },
     { "Alliance", function(G) return { G.win('alliance_x'), G.win('ally2_x') }; end, {
         "The other two parties of your alliance, smaller, so a full alliance doesn't fill your screen." }, { { 'alliance', 'PARTY (Alliance)' } } },
+    { "Bars over your party", function(G) return { EDIT.G.item('plates').rect() }; end, function(G)
+        local t = { "With Bars over heads on (PARTY > BARS OVER HEADS), your party and alliance - trusts too - get a plate over their head: their name, HP percent, and HP and MP bars. The one you target is outlined.",
+            "Their HP turns yellow under 75%, orange under 50% and red under 25%, as on the party cards." };
+        if G.hx() then t[3] = "In Hex link they are square glass with a stripe down the side: gold for your party, azure for your alliance. HP colour: Gold or Green.";
+        else t[3] = "In Vex mode they are light glass with a mint line for your party and blue for your alliance. HP colour: Green, Purple or White."; end
+        t[4] = "Show them for your party only, or your alliance too; size, width, thickness and height are in the same place.";
+        return t; end, { { 'member_bars', 'PARTY (Bars over heads)' } } },
     { "Your HP, MP and TP", function(G) if C.head_bars_on() then return { G.heads(), (cfg.head_bars == 'both') and G.eq() or nil }; end return { G.eq() }; end, function(G)
         if C.head_bars_on() then return { "Your own bars, over your head: HP, MP, and your TP as a slim bar under them - it turns gold when a weapon skill is ready.",
             "Listen: a sound plays as your TP reaches 1000, 2000 and 3000, each one stronger, so you know without looking.",
@@ -23053,7 +23070,7 @@ end
 function EDIT.G.show(title)
     local hx = cfg.target_fx == 'link';
     if title == 'Target bar' or title == 'Enemy cast' then return { 'tgt' }; end
-    if title == 'Skillchains and Magic Burst' then return hx and { 'bn' } or { 'tgt3' }; end
+    if title == 'Skillchains and Magic Burst' then return (hx or (C.mob_plates_on and C.mob_plates_on())) and { 'bn' } or { 'tgt3' }; end   -- (Enemy plates: the Banner too)
     if title == 'Target of target and enemies' then return { 'tgt2', 'enemy' }; end
     if title == 'Party' then return { 'party' }; end
     if title == 'Alliance' then return { 'ally1', 'ally2' }; end
@@ -23072,10 +23089,11 @@ end
 function EDIT.G.flags(title)                                         -- (what each slide leaves out)
     local hx = cfg.target_fx == 'link';
     if title == 'Target bar' or title == 'Target of target and enemies' then return { nocast = true, nobn = true }; end
-    if title == 'Skillchains and Magic Burst' then return hx and { bnself = true } or { nocast = true }; end
+    if title == 'Skillchains and Magic Burst' then return (hx or (C.mob_plates_on and C.mob_plates_on())) and { bnself = true } or { nocast = true }; end
     if title == 'Enemy cast' then return { nobn = true }; end
     if title == 'Party' then return { noally = true }; end
     if title == 'Alliance' then return { noparty = true }; end
+    if title == 'Enemy plates' or title == 'Bars over your party' then return { plates = true }; end   -- (the real plates over the heads, the card low out of their way)
     return {};
 end
 function EDIT.G.item(id)
@@ -23108,6 +23126,15 @@ function EDIT.G.item(id)
         it.gate = gate;
         it.rect = function() return union({ G.win('target_x'), sc3 and G.anc('fo') or nil, sc3 and G.anc('mb') or nil, tot and G.win('sub_x') or nil }); end;   -- (only what this slide shows)
         return it;
+    end
+    if id == 'plates' then                                           -- (the guide's Enemy plates / Bars over your party: the real plates over the heads - nothing to move)
+        return { gate = { 'plates' }, rect = function()             -- (where the plates are on screen this moment: lit, the slide's card kept off them)
+                local R = C.MBR or {};
+                if #R == 0 then return nil; end
+                local x1, y1, x2, y2 = 1e9, 1e9, -1e9, -1e9;
+                for _, q in ipairs(R) do x1, y1, x2, y2 = math.min(x1, q[1]), math.min(y1, q[2]), math.max(x2, q[3]), math.max(y2, q[4]); end
+                return { x1 - 6, y1 - 6, x2 - x1 + 12, y2 - y1 + 12 };
+            end, get = function() return 0, 0; end, set = function() end, fixed_x = true };
     end
     if id == 'bn' then
         return { gate = {}, rect = function() return G.anc('bn'); end,
@@ -23251,8 +23278,10 @@ function EDIT.G.draw()
     end
     local pad = math.floor(22 * k);
     local CW = math.floor(math.min(W - 40, math.max(600 * k, (G.pw or 0) + pad * 2)));
+    for _, id_ in ipairs(G.show(st[1]) or {}) do if id_ == 'bn' then CW = math.floor(math.min(W - 40, math.max(CW, 1040 * k))); end end   -- (the Banner: its weapon skills' line is wide - the card round all of it)
     local CH = G.h or math.floor(240 * k);
     local cx, cy = math.floor((W - CW) / 2), math.floor(math.max(16, (H - CH) / 2));
+    if C.GST and C.GST.plates then cy = math.floor(math.max(16, H - CH - 60 * k)); end   -- (the plates' slides: the card at the bottom, the plates in the world above it)
     local pw, ph, any = 0, 0, false;
     if #G.slide.items > 0 then
         local okp, a1, a2, a3 = pcall(G.stage, cx + pad + 12 * k, cy + pad + 14 * k, CW - pad * 2 - 24 * k, k);
@@ -23661,7 +23690,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         -- each piece on its own: a problem in one (shown once in chat) never stops the others, the logo or the window
         if C.PROF then C.PROF_N = (C.PROF_N or 0) + 1; end           -- (/yui prof: frames counted)
         local function piece(fn, ...)
-            if YUI_PRES and not YUI_PRES[(C.PF and C.PF[fn]) or '-'] then return; end   -- (the guide: only the slide's own pieces)
+            if YUI_PRES and not YUI_PRES[(C.PF and C.PF[fn]) or '-'] and not (C.GST and C.GST.plates and C.PF and C.PF[fn] == 'plates') then return; end   -- (the guide: only the slide's own pieces)
             local ma = C.MT.t0 and C.mt_alpha(C.PF and C.PF[fn]) or nil;   -- (a mode's entrance: it fades in as the wave reaches it)
             if ma then
                 if ma <= 0.01 then return; end
@@ -23728,7 +23757,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         C.PF = C.PF or { [draw_target] = 'tgt', [draw_subtarget] = 'sub', [draw_enemies] = 'enemy', [draw_chat] = 'chat',
             [draw_party] = 'party', [draw_exp] = 'exp', [draw_cast] = 'cast', [PET.draw] = 'pet', [TIMERS.draw] = 'timers', [TIMERS.drawmob] = 'timers',
             [C.head_bars] = 'heads', [draw_strip] = 'strip', [draw_gil] = 'gil', [draw_bag] = 'bag', [YMAP.draw] = 'map', [C.macrobar] = 'mbar', [C.loot_win] = 'loot', [C.got_win] = 'got', [C.modesw] = 'modesw',
-            [EDIT.G.dim] = 'all', [EDIT.G.draw] = 'all', [EDIT.G.splash] = 'all', [C.MD.draw] = 'all' };   -- (the guide: which slide shows what)
+            [C.member_bars] = 'plates', [EDIT.G.dim] = 'all', [EDIT.G.draw] = 'all', [EDIT.G.splash] = 'all', [C.MD.draw] = 'all' };   -- (the guide: which slide shows what)
         piece(EDIT.G.dim);                                           -- (the guide: the screen dimmed under the slide's pieces)
         piece(draw_target, dt);
         piece(C.bigarrow);                                           -- (a huge monster: its arrow lower)
