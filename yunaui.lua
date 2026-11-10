@@ -11409,10 +11409,15 @@ function C.mob_plates_()
     local tidx = 0;
     pcall(function() tidx = mm:GetTarget():GetTargetIndex(0) or 0; end);
     local want = {};
-    for idx = 1, 0x3FF do                                             -- (every monster near you: always, targeted or not - your target last, on top)
-        if idx ~= tidx and ent:GetRawEntity(idx) ~= nil and bit.band(ent:GetSpawnFlags(idx) or 0, 0x10) ~= 0 then want[#want + 1] = idx; end
+    local function mob_(i)                                            -- (a monster: the zone's own, or one spawned later - a Domain Invasion boss sits at
+        if ent:GetRawEntity(i) == nil then return false; end          --  0x700 and up; players 0x400-0x6FF never)
+        local f = ent:GetSpawnFlags(i) or 0;
+        return bit.band(f, 0x10) ~= 0 and bit.band(f, 0x01) == 0;
     end
-    if tidx > 0 and tidx < 0x400 and ent:GetRawEntity(tidx) ~= nil and bit.band(ent:GetSpawnFlags(tidx) or 0, 0x10) ~= 0 then want[#want + 1] = tidx; end
+    for idx = 1, 0x8FF do                                             -- (every monster near you: always, targeted or not - your target last, on top)
+        if (idx < 0x400 or idx >= 0x700) and idx ~= tidx and mob_(idx) then want[#want + 1] = idx; end
+    end
+    if tidx > 0 and (tidx < 0x400 or tidx >= 0x700) and mob_(tidx) then want[#want + 1] = tidx; end
     local seen = {};
     for _, idx in ipairs(want) do
         local ok_ = pcall(function()
