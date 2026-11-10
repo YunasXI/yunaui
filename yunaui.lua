@@ -11336,7 +11336,7 @@ function C.member_bars_()
                     end
                     if cfg.target_fx ~= 'link' then                  -- (Vex mode: a light glass plate - the enemy plates' family, quieter: more see-through,
                         local al = (hpp <= 0) and 0.55 or 1;          --  a thin white edge, a top line in the group's colour - mint party, blue alliance)
-                        local c1, c2 = C.hp or NEON2, C.hp2 or NEON;
+                        local c1, c2 = { 0.72, 1.00, 0.74 }, { 0.22, 0.80, 0.46 };   -- (a friend: green - pink is an enemy's)
                         if hpp < 0.75 and hpp > 0 then               -- (as the party cards: yellow under 75%, orange under 50%, red under 25%)
                             local wa_, wb_ = C.hpheatN({ inzone = true }, hpp);
                             if wa_ and cfg.card_low ~= false then c1, c2 = wa_, wb_; end
