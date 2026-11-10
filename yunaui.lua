@@ -4302,6 +4302,13 @@ local function draw_target(dt)
         pcall(function() me_ = AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0) or 0; end);
         if idx == me_ then FIGHT.fx.idx = nil; return; end
         if C.overhead_idx and C.overhead_idx(idx) then FIGHT.fx.idx = nil; return; end   -- (their bars already over their head: no target bar for them)
+        if C.plated and C.plated(idx) then                            -- (BARS > Enemy plates: its plate has it all - only the skillchain Banner at the top)
+            FIGHT.fx.idx = nil;
+            if cfg.fight_info ~= false and not (C.GST and C.GST.nobn) then
+                pcall(function() FIGHT.ps_draw(AshitaCore:GetMemoryManager():GetEntity():GetServerId(idx), 1); end);
+            end
+            return;
+        end
     end
     if idx == nil or idx == 0 then
         if not (EDIT.on or FIGHT.show) then FIGHT.fx.idx = nil; return; end   -- (no target: the next one gets its entrance)
@@ -11195,8 +11202,8 @@ function C.member_bars_on() return cfg.member_bars == true; end   -- (both modes
 function C.member_bars()
     local mbo, mpo = C.member_bars_on(), C.mob_plates_on and C.mob_plates_on();
     pcall(C.mp_names, mpo and not YUI_MAPCOVER and not (YMAP and YMAP.big));
-    pcall(C.np_hide, 'hideplayers', mbo and cfg.member_bars_all == true and cfg.target_fx ~= 'link' and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (friend plates on every player: their names go inside)
-    pcall(C.np_hide, 'hidetrusts', mbo and cfg.target_fx ~= 'link' and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (trusts always have a plate: their names go inside too)   -- (plates drawn: the monsters' own names off - VanaCore's setting; else back)
+    pcall(C.np_hide, 'hideplayers', mbo and cfg.member_bars_all == true and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (friend plates on every player: their names go inside)
+    pcall(C.np_hide, 'hidetrusts', mbo and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (trusts always have a plate: their names go inside too)   -- (plates drawn: the monsters' own names off - VanaCore's setting; else back)
     if not (mbo or mpo) or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
     local ds = imgui.GetIO().DisplaySize;
     imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
@@ -11404,9 +11411,45 @@ function C.member_bars_()
                         h1 = { h1[1] + (1 - h1[1]) * bb * 0.5, h1[2] + (1 - h1[2]) * bb * 0.5, h1[3] + (1 - h1[3]) * bb * 0.5 };
                     end
                     local al = (hpp <= 0) and 0.55 or 1;         -- (knocked out: faded)
+                    do                                                -- (Hex link's friend plate: square glass, a thin white edge, a stripe down its left -
+                        local nk_ = it.pl and C.NPH.hideplayers or C.NPH.hidetrusts;   --  gold party, azure alliance; its name inside when the game's is hidden)
+                        local inner = nk_ and (nk_.mine or nk_.own) and true or false;
+                        local hv, mv = math.max(3, hh), wmp and math.max(2, mh) or 0;
+                        hh, mh = hv, mv;
+                        if inner then y0 = math.floor(y0 - (hv + (wmp and (g + mv) or 0) + 4 * sc)); end
+                        local px_, py_ = math.floor(7 * sc), math.floor(4 * sc);
+                        local pushed, lh, nh_ = false, 0, 0;
+                        if inner then pushed = sized('chat', 13 * sc); lh = imgui.GetTextLineHeight(); nh_ = lh + 2 * sc; end
+                        local bx1, bx2 = x0 - px_, x0 + W + px_;
+                        local by1, by2 = y0 - py_ - nh_, y0 + hv + (wmp and (g + mv) or 0) + py_;
+                        local oth = it.grp == 'other';
+                        DL.RF(dl, bx1, by1, bx2, by2, U4(0.030, 0.035, 0.055, (oth and 0.36 or 0.44) * al));
+                        DL.R(dl, bx1, by1, bx2, by2, U4(1, 1, 1, (oth and 0.16 or 0.22) * al), 0, 0, 1.0);
+                        local GH = C.GOLDH or { 1.0, 0.81, 0.43 };
+                        local st_ = (it.grp == 'party') and GH or ((it.grp == 'ally') and YUI_AZ()) or nil;
+                        if st_ then DL.RF(dl, bx1, by1, bx1 + math.max(2, math.floor(3 * sc)), by2, U4(st_[1], st_[2], st_[3], 0.95 * al)); end
+                        if inner then
+                            local pct_ = string.format('%d%%', math.floor(hpp * 100 + 0.5));
+                            local fs0 = FS or 1;
+                            imgui.SetWindowFontScale(fs0 * 0.85);
+                            local pw_ = imgui.CalcTextSize(pct_);
+                            local plh_ = imgui.GetTextLineHeight();
+                            imgui.SetWindowFontScale(fs0);
+                            local nm_ = it.nm or '';
+                            local n0_ = nm_;
+                            while #nm_ > 3 and imgui.CalcTextSize(nm_) > W - pw_ - 6 * sc do nm_ = nm_:sub(1, #nm_ - 1); end
+                            if nm_ ~= n0_ then nm_ = nm_:sub(1, #nm_ - 1) .. '..'; end
+                            local ty_ = by1 + py_ * 0.7;
+                            text(dl, x0, ty_, nm_, oth and { 0.88, 0.88, 0.90, al } or { 1, 1, 1, al });
+                            imgui.SetWindowFontScale(fs0 * 0.85);
+                            text(dl, x0 + W - pw_, ty_ + (lh - plh_), pct_, { 1, 1, 1, 0.92 * al });
+                            imgui.SetWindowFontScale(fs0);
+                            unsized(pushed);
+                        end
+                    end
                     C.hexbar(dl, x0, y0, W, hh, S.hp, S.hl, 0, { c1 = h2, c2 = h1, band = hh + 1, al = al, live = true, lead = hpp });
                     local mc = (type(YUI_MP_COL) == 'table') and YUI_MP_COL or C.MPCOL;
-                    if wmp then C.hexbar(dl, x0, y0 + hh + g, W, mh, S.mp, nil, 0, { c1 = mc[2], c2 = mc[1], band = mh + 1, al = al, live = true, lead = mpp }); end
+                    if wmp then C.hexbar(dl, x0, y0 + hh + g, W * 0.8, mh, S.mp, nil, 0, { c1 = mc[2], c2 = mc[1], band = mh + 1, al = al, live = true, lead = mpp }); end
                     end                                              -- (Hex link's gold bars)
                 end
             end
@@ -11418,7 +11461,7 @@ end
 -- its name, its HP bar with the percent, and the debuffs seen landing on it under that (BARS > Enemy plates over heads)
 C.MP3 = {};                                                          -- (per monster: its plate's state)
 C.MNH = {};                                                          -- (per model: how high the game draws its name, in yalms - measured once)
-function C.mob_plates_on() return cfg.mob_plates == true and cfg.target_fx ~= 'link'; end
+function C.mob_plates_on() return cfg.mob_plates == true; end      -- (both modes: Vex's round pink glass, Hex link's square gold)
 function C.plated(idx) return C.mob_plates_on() and idx ~= nil and C.MP3[idx] ~= nil and C.MP3[idx].drawn ~= nil and os.clock() - C.MP3[idx].drawn < 0.3; end   -- (a plate over it now)
 function C.plated_sid(sid)                                           -- (a plate over the monster with this server id now)
     if not C.mob_plates_on() then return false; end
@@ -11591,28 +11634,49 @@ function C.mob_plates_()
             local x1, y1 = x0 - pad, y0;
             local x2, y2 = x0 + W + pw + 8 * sc + pad, math.floor(pb);
             local on = idx == tidx;
-            local rr = 6 * sc;
+            local HXp = cfg.target_fx == 'link';                      -- (Hex link: square, a gold edge, the HP bar a hexagon in the claim's colour)
+            local rr = HXp and 0 or 6 * sc;
+            local ca, cb = NEON2 or { 1.0, 0.42, 0.72 }, NEON or { 0.86, 0.24, 0.86 };
+            if HXp then ca, cb = C.GOLDH or { 1.0, 0.81, 0.43 }, YUI_AZ(); end
+            if HXp then
+                DL.RF(dl, x1, y1, x2, y2, U4(0.030, 0.035, 0.055, on and 0.84 or 0.68));
+                DL.R(dl, x1, y1, x2, y2, U4(ca[1], ca[2], ca[3], on and 0.95 or 0.45), 0, 0, on and 1.5 or 1.0);
+                if on then
+                    DL.RFM(dl, x1 + 1, y1, x2 - 1, y1 + math.max(1, math.floor(2 * sc)), U4(ca[1], ca[2], ca[3], 1), U4(cb[1], cb[2], cb[3], 1), U4(cb[1], cb[2], cb[3], 1), U4(ca[1], ca[2], ca[3], 1));   -- (gold to azure along its top)
+                    if C.hexdot then
+                        local g2 = C.GOLDH2 or { 1.0, 0.90, 0.62 };
+                        C.hexdot(dl, x1, y1, 3.2 * sc, U4(g2[1], g2[2], g2[3], 1));
+                        C.hexdot(dl, x2, y1, 2.6 * sc, U4(cb[1], cb[2], cb[3], 1));
+                    end
+                end
+            else
             -- the plate: dark glass, its contour pink to violet (your target's brighter, a white edge inside)
             for k = 1, 3 do DL.RF(dl, x1 - k, y1 - k + 1, x2 + k, y2 + k + 1, U4(0, 0, 0, 0.10 - k * 0.025), rr + k); end   -- (a soft shadow)
             DL.RF(dl, x1, y1, x2, y2, U4(0.045, 0.040, 0.065, on and 0.80 or 0.66), rr);
             DL.RFM(dl, x1 + 1, y1 + 1, x2 - 1, y1 + (y2 - y1) * 0.45, U4(1, 1, 1, 0.05), U4(1, 1, 1, 0.05), U4(1, 1, 1, 0), U4(1, 1, 1, 0));   -- (the glass's light at its top)
-            local ca, cb = NEON2 or { 1.0, 0.42, 0.72 }, NEON or { 0.86, 0.24, 0.86 };
             DL.R(dl, x1, y1, x2, y2, U4(ca[1], ca[2], ca[3], on and 0.95 or 0.55), rr, C.rall, on and 1.6 or 1.1);
             if on then DL.R(dl, x1 + 2, y1 + 2, x2 - 2, y2 - 2, U4(1, 1, 1, 0.22), rr - 2, C.rall, 1); end
             DL.RFM(dl, x1 + rr, y1, x2 - rr, y1 + math.max(1, math.floor(1.5 * sc)), U4(ca[1], ca[2], ca[3], 0.95), U4(cb[1], cb[2], cb[3], 0.95), U4(cb[1], cb[2], cb[3], 0.95), U4(ca[1], ca[2], ca[3], 0.95));   -- (the line along its top)
+            end
             -- its name, then the HP bar with the percent at its end
             local ty = y0 + pad * 0.7;
             text(dl, x0, ty, nm, { 1, 1, 1, 1 });
             local bY = math.floor(ty + lh + 3 * sc);
             local c1, c2 = C.tgt1 or { 1, 0.78, 0.96 }, C.tgt2 or C.hp2 or ca;
             if hpp < 0.25 then c1, c2 = { 1.0, 0.55, 0.50 }, { 0.92, 0.22, 0.28 }; end   -- (low: red)
+            if HXp then                                               -- (Hex link: the claim's colour - orange free, red yours, purple someone else's)
+                local cc_ = (cfg.hl_claim ~= false) and C.claimcol(idx, false) or nil;
+                C.hexbar(dl, x0, bY, W, bh + 1, S.hp, lagged('mp3' .. idx, hpp, dt), 0.5, cc_ and { c1 = cc_[2], c2 = cc_[1] } or nil);
+                text(dl, x0 + W + 8 * sc, math.floor(bY + bh / 2 - lh / 2), pct, { 1, 1, 1, 0.95 });
+            else
             glow_bar(dl, x0, bY, W, bh, S.hp, lagged('mp3' .. idx, hpp, dt), c1, c2, (idx % 97) * 0.41);
             text(dl, x0 + W + 8 * sc, math.floor(bY + bh / 2 - lh / 2), pct, (hpp < 0.25) and { 1, 0.55, 0.55, 1 } or { 1, 0.86, 0.94, 1 });
+            end
             S.drawn = os.clock();
             if tot_ then                                              -- (the target of target: a small blue arrow and its name, right-aligned)
                 local fs0 = FS or 1;
                 imgui.SetWindowFontScale(fs0 * 0.72);
-                local cbl = { 0.45, 0.72, 1.00 };
+                local cbl = HXp and YUI_AZ() or { 0.45, 0.72, 1.00 };
                 local tx_ = x2 - pad - totw_;
                 local cy_ = ty + lh / 2;
                 local aw = math.floor(toth_ * 0.32);
@@ -11629,10 +11693,16 @@ function C.mob_plates_()
                 local sx1, sx2 = x1 + rr, x2 - rr;
                 local sy1, sy2 = y2 - 1, y2 + csh_;
                 local bot = ImDrawFlags_RoundCornersBottom or ImDrawCornerFlags_Bot or 12;
-                DL.RF(dl, sx1, sy1, sx2, sy2, U4(0.045, 0.040, 0.065, 0.74 * fl_), rr * 0.8, bot);
+                if HXp then bot = 0; sx1, sx2 = x1 + 8 * sc, x2 - 8 * sc; end
+                DL.RF(dl, sx1, sy1, sx2, sy2, HXp and U4(0.030, 0.035, 0.055, 0.80 * fl_) or U4(0.045, 0.040, 0.065, 0.74 * fl_), rr * 0.8, bot);
                 local k1 = tp_ and { 1.0, 0.36, 0.62 } or { 0.62, 0.40, 1.0 };   -- (a TP move rose to orange, a spell violet - as the top cast bar)
                 local k2 = tp_ and { 1.0, 0.70, 0.40 } or { 0.85, 0.70, 1.0 };
-                DL.R(dl, sx1, sy1, sx2, sy2, U4(k1[1], k1[2], k1[3], 0.50 * fl_), rr * 0.8, bot, 1.0);
+                if HXp then                                           -- (Hex link: a TP move amber, a spell azure; the strip's edge gold)
+                    local az_ = YUI_AZ();
+                    k1 = tp_ and { 1.0, 0.62, 0.20 } or { az_[1] * 0.7, az_[2] * 0.7, az_[3] };
+                    k2 = tp_ and { 1.0, 0.88, 0.54 } or az_;
+                end
+                DL.R(dl, sx1, sy1, sx2, sy2, HXp and U4(ca[1], ca[2], ca[3], 0.45 * fl_) or U4(k1[1], k1[2], k1[3], 0.50 * fl_), rr * 0.8, bot, 1.0);
                 local fs0 = FS or 1;
                 imgui.SetWindowFontScale(fs0 * 0.72);
                 local clh = imgui.GetTextLineHeight();
@@ -11679,7 +11749,8 @@ function C.mob_plates_()
             if on and cfg.tarrow ~= false then                        -- (your target: YunaUI's arrow right under its plate - the game's is hidden, it sat far over a big one)
                 local aw_, ah_ = math.floor(18 * sc), math.floor(12 * sc);
                 local at_ = by + 4 * sc;
-                image(dl, tex('tarrow_vexw.png'), hx - aw_ / 2, at_, hx + aw_ / 2, at_ + ah_, { 1, 1, 1, 1 });
+                if HXp then aw_, ah_ = math.floor(19 * sc), math.floor(18 * sc); end   -- (Hex link: its gold prism)
+                image(dl, tex(HXp and 'tarrow_prism2.png' or 'tarrow_vexw.png'), hx - aw_ / 2, at_, hx + aw_ / 2, at_ + ah_, { 1, 1, 1, 1 });
             end
         end);
         if not ok_ then C.MP3[idx] = nil; end
@@ -18999,7 +19070,7 @@ local function draw_window()
                 row_switch('##yui_mbars', 'Party bars over heads', 'member_bars', 'On: everyone in your party and alliance (trusts too) gets an HP and an MP bar just under the name over their head, as yours. Only the ones you can see, within 30 yalms.');
                 if cfg.member_bars == true then row_slider('##yui_mbs', 'Party bars size', 'member_bars_scale', 0.5, 2.0, 0.05, '%.2fx'); row_slider('##yui_mbw', 'Party bars width', 'member_bars_w', 0.4, 3.0, 0.05, '%.2fx'); row_slider('##yui_mbt', 'Party bars thickness', 'member_bars_th', 0.4, 3.0, 0.05, '%.2fx'); if cfg.member_bars_mp == nil then cfg.member_bars_mp = true; end row_pick('##yui_mbwho', 'Party bars for', 'member_bars_who', { { 'alliance', 'Party and alliance' }, { 'party', 'Party only' } }); row_switch('##yui_mbmp', 'Party bars: MP', 'member_bars_mp', 'On: an MP bar under each HP bar. Off: the HP bar alone.'); row_switch('##yui_mball', 'Also on other players', 'member_bars_all', 'On: every other player near you gets an HP bar over their head too (HP only: the game never sends their MP). Off: only your party and alliance.'); row_slider('##yui_mby', 'Party bars height', 'member_bars_y', -60, 60, 1, '%d'); end
             end
-            if cfg.target_fx ~= 'link' then                          -- (Vex mode: a plate over each monster you fight)
+            do                                                       -- (both modes: a plate over each monster near you - Vex's round glass, Hex link's square gold)
                 row_switch('##yui_mplt', 'Enemy plates over heads', 'mob_plates', 'On: every monster near you (within 30 yalms) gets a plate over its head in place of its name - its name, its HP bar with the percent, and its debuffs under it.');
                 if cfg.mob_plates == true then
                     row_slider('##yui_mpls', 'Enemy plates size', 'mob_plates_scale', 0.5, 2.0, 0.05, '%.2fx');
