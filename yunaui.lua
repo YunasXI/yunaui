@@ -18103,8 +18103,8 @@ function PANEL.search(dl, x0, top, SW, bh)                           -- the Sear
     end
     return y;
 end
-PANEL.SUB = { 'Layout, size, your own layouts and this panel', 'The target bar, casts and skillchains, the enemy list',
-    'The party and alliance cards', 'Your HP, MP and TP bars', 'The chat windows, their tabs and colours', 'Your gear',
+PANEL.SUB = { 'Layout, size, your own layouts and this panel', 'Enemy plates, the target bar, casts and skillchains, the enemy list',
+    'The party and alliance cards, and the bars over their heads', 'Your HP, MP and TP bars, the cast bar, pet, EXP, gil and bag', 'The chat windows, their tabs and colours', 'Your gear',
     'Buff and recast timers', "Your party's damage", 'The map, its zoom and its marks', 'Loot as it drops', 'Sounds for what matters',
     'Your macros round your character', 'Buff icons, and the ones to hide', 'Keys and buttons: open this panel, use it with a controller' };
 function PANEL.tcase(n)                                              -- ('DAMAGE METER' -> 'Damage Meter')
@@ -19002,6 +19002,18 @@ local function draw_window()
         elseif tab == 2 then
             ------------------------------------------------------------------ TARGET
             local HX = cfg.target_fx == 'link';                      -- (Hex link mode: its own settings in place of the Normal ones)
+            section('ENEMY PLATES');                                 -- (ENEMY PLATES: a plate over each monster)
+            do                                                       -- (a bar over each monster near you - Hex link: your target keeps its own target bar)
+                row_switch('##yui_mplt', 'Show', 'mob_plates', 'On: every monster within 30 yalms (your target at any distance) gets a plate over its head in place of its name: name, HP bar and %, its cast and its debuffs under it. Your target adds its level, aggro, lock-on and distance on top, and its plate replaces the target bar; the other plates fade while you target one. Skillchains and Magic Burst show as a banner at the top.');
+                if cfg.mob_plates == true then
+                    row_slider('##yui_mpls', 'Size', 'mob_plates_scale', 0.5, 2.0, 0.05, '%.2fx');
+                    row_slider('##yui_mplw', 'Width', 'mob_plates_w', 0.5, 3.0, 0.05, '%.2fx');
+                    if cfg.mob_plates_debuffs == nil then cfg.mob_plates_debuffs = true; end
+                    row_switch('##yui_mpld', 'Debuffs under the plate', 'mob_plates_debuffs', 'On: the debuffs seen landing on it under its HP bar, each with the time it has left.');
+                    row_slider('##yui_mply', 'Height', 'mob_plates_y', -60, 60, 1, '%d');
+                end
+            end
+            hint('The debuffs use TARGET BAR > Buffs / debuffs size, Debuff timer size and Debuff details on hover.');
             section('TARGET BAR');
             row_switch('##yui_t', 'Show', 'target');
             row_slider('##yui_s_t', 'Size', 'target_scale', 0.6, 2.0, 0.05, '%.2fx');
@@ -19022,7 +19034,7 @@ local function draw_window()
             row_slider('##yui_tbw', 'Bar length', 'target_w', 160, 700, 10, '%d px');
             row_slider('##yui_tbs', 'Buffs / debuffs size', 'target_buff_scale', 0.6, 2.5, 0.05, '%.2fx');
             row_slider('##yui_tbts', 'Debuff timer size', 'buff_timer_scale', 0.6, 2.5, 0.05, '%.2fx');
-            row_switch('##yui_tbtip', 'Debuff details on hover', 'target_buff_tips', 'On: put the mouse over a buff or debuff under the target bar to see its name and the time it has left.');
+            row_switch('##yui_tbtip', 'Debuff details on hover', 'target_buff_tips', 'On: put the mouse over a buff or debuff under the target bar (or under an enemy plate) to see its name and the time it has left.');
             if cfg.target_buff_tips ~= false then row_slider('##yui_tbtps', 'Details size', 'buff_tip_scale', 0.8, 2.5, 0.05, '%.2fx'); end
             section('CASTS AND SKILLCHAINS');
             row_switch('##yui_tfi', 'Show', 'fight_info', HX and 'What the monster is casting or readying (under the bar), and the skillchain banner with Magic Burst at the top of the screen.'
@@ -19072,7 +19084,7 @@ local function draw_window()
             else
                 row_slider('##yui_s_sub', 'Size', 'sub_scale', 0.6, 2.0, 0.05, '%.2fx');
             end
-            row_slider('##yui_s_subw', 'Length', 'sub_w', 120, 800, 10, '%d px');
+            if not HX then row_slider('##yui_s_subw', 'Length', 'sub_w', 120, 800, 10, '%d px'); end   -- (Hex link: its length is fixed)
             section('ENEMY LIST');
             row_switch('##yui_el', 'Show', 'enemylist', 'Monsters fighting you and your party; click one to target it.');
             row_slider('##yui_s_en', 'Size', 'enemy_scale', 0.6, 2.0, 0.05, '%.2fx');
@@ -19080,7 +19092,7 @@ local function draw_window()
             row_slider('##yui_s_enm', 'Most shown', 'enemy_max', 1, 20, 1, '%d');
             row_slider('##yui_s_enbi', 'Debuff icon size', 'enemy_buff_scale', 0.6, 2.5, 0.05, '%.2fx');
             row_slider('##yui_s_enbt', 'Debuff text size', 'enemy_buff_text', 0.5, 2.5, 0.05, '%.2fx');
-            row_switch('##yui_enarr', 'Target marker', 'enemy_arrow', 'On: a small white arrow before the monster you target, besides its lit row. Off: just the lit row.');
+            row_switch('##yui_enarr', 'Arrow on your target', 'enemy_arrow', 'On: a small white arrow before the monster you target, besides its lit row. Off: just the lit row.');
             hint('Previews show while this tab is open.');
         elseif tab == 3 then
             ------------------------------------------------------------------ PARTY
@@ -19157,9 +19169,14 @@ local function draw_window()
             row_slider('##yui_s_a2', 'Alliance 2 size', 'ally2_scale', 0.6, 2.0, 0.05, '%.2fx');
             if not cfg.ally_anchor then hint('Each alliance party is its own window: drag it anywhere.'); end
             hint('Click a member to target them. With Pretend members on, a click just marks one, to see how it looks.');
+            section('BARS OVER HEADS');                              -- (BARS OVER HEADS: the plates over your party's heads)
+            do                                                       -- (both modes: Vex mode's in its own look - round, glowing, your HP colours)
+                row_switch('##yui_mbars', 'Show', 'member_bars', 'On: your party and alliance (trusts too) get a plate over their head where the game puts their name - name, HP %, HP and MP bars. Only the ones you can see, within 30 yalms. The one you target is outlined.');
+                if cfg.member_bars == true then row_slider('##yui_mbs', 'Size', 'member_bars_scale', 0.5, 2.0, 0.05, '%.2fx'); row_slider('##yui_mbw', 'Width', 'member_bars_w', 0.4, 3.0, 0.05, '%.2fx'); row_slider('##yui_mbt', 'Bar thickness', 'member_bars_th', 0.4, 3.0, 0.05, '%.2fx'); if cfg.member_bars_mp == nil then cfg.member_bars_mp = true; end if cfg.target_fx == 'link' then row_pick('##yui_mbhcx', 'HP colour', 'mb_hpcol_hex', { { 'gold', 'Gold' }, { 'green', 'Green' } }); else row_pick('##yui_mbhcv', 'HP colour', 'mb_hpcol_vex', { { 'green', 'Green' }, { 'purple', 'Purple' }, { 'white', 'White' } }); end row_pick('##yui_mbwho', 'Show them for', 'member_bars_who', { { 'alliance', 'Party and alliance' }, { 'party', 'Party only' } }); row_switch('##yui_mbmp', 'MP bar', 'member_bars_mp', 'On: an MP bar under each HP bar. Off: the HP bar alone.'); row_slider('##yui_mby', 'Height', 'member_bars_y', -60, 60, 1, '%d'); end
+            end
             section('CARDS');
             hint('Your party and the alliances: job tag, name, HP and MP for each member.');
-            if cfg.target_fx ~= 'link' then row_pick('##yui_phpc', 'HP bar colour', 'party_hp_col', { { 'white', 'White' }, { 'green', 'Green' }, { 'red', 'Red' } }); end   -- (Vex: the party cards' HP at full; the warning steps stay)
+            if cfg.target_fx ~= 'link' then row_pick('##yui_phpc', 'Card HP colour', 'party_hp_col', { { 'white', 'White' }, { 'green', 'Green' }, { 'red', 'Red' } }); end   -- (Vex: the party cards' HP at full; the warning steps stay)
             row_switch('##yui_clow', 'Low HP warning', 'card_low', 'Under 75% HP a warning: Vex mode the edge of the card turns yellow, under 50% orange; Hex link the HP bar itself turns orange, then red-orange. Under 25% the card beats red.');
             if cfg.card_low ~= false then row_switch('##yui_cshk', 'Shake under 25% HP', 'card_shake', 'On: a member under 25% HP has their card shake, as well as beat red. Off: it stays still.'); end
             do
@@ -19184,27 +19201,13 @@ local function draw_window()
             else                                                     -- (the gold mode: its HP bars gold, or Void red)
                 row_pick('##yui_hexhpc', 'HP bar colour', 'hex_hp_color', { { 'gold', 'Gold' }, { 'red', 'Void red' } }, nil, function() pcall(C.apply_hp); save(); end);
             end
-            do                                                       -- (both modes: Vex mode's in its own look - round, glowing, your HP colours)
-                row_switch('##yui_mbars', 'Party bars over heads', 'member_bars', 'On: everyone in your party and alliance (trusts too) gets an HP and an MP bar just under the name over their head, as yours. Only the ones you can see, within 30 yalms.');
-                if cfg.member_bars == true then row_slider('##yui_mbs', 'Party bars size', 'member_bars_scale', 0.5, 2.0, 0.05, '%.2fx'); row_slider('##yui_mbw', 'Party bars width', 'member_bars_w', 0.4, 3.0, 0.05, '%.2fx'); row_slider('##yui_mbt', 'Party bars thickness', 'member_bars_th', 0.4, 3.0, 0.05, '%.2fx'); if cfg.member_bars_mp == nil then cfg.member_bars_mp = true; end if cfg.target_fx == 'link' then row_pick('##yui_mbhcx', 'Party bars HP colour', 'mb_hpcol_hex', { { 'gold', 'Gold' }, { 'green', 'Green' } }); else row_pick('##yui_mbhcv', 'Party bars HP colour', 'mb_hpcol_vex', { { 'green', 'Green' }, { 'purple', 'Purple' }, { 'white', 'White' } }); end row_pick('##yui_mbwho', 'Party bars for', 'member_bars_who', { { 'alliance', 'Party and alliance' }, { 'party', 'Party only' } }); row_switch('##yui_mbmp', 'Party bars: MP', 'member_bars_mp', 'On: an MP bar under each HP bar. Off: the HP bar alone.'); row_slider('##yui_mby', 'Party bars height', 'member_bars_y', -60, 60, 1, '%d'); end
-            end
-            do                                                       -- (a bar over each monster near you - Hex link: your target keeps its own target bar)
-                row_switch('##yui_mplt', 'Enemy plates over heads', 'mob_plates', 'On: every monster near you (within 30 yalms) gets a plate over its head in place of its name - its name, its HP bar with the percent, and its debuffs under it.');
-                if cfg.mob_plates == true then
-                    row_slider('##yui_mpls', 'Enemy plates size', 'mob_plates_scale', 0.5, 2.0, 0.05, '%.2fx');
-                    row_slider('##yui_mplw', 'Enemy plates width', 'mob_plates_w', 0.5, 3.0, 0.05, '%.2fx');
-                    if cfg.mob_plates_debuffs == nil then cfg.mob_plates_debuffs = true; end
-                    row_switch('##yui_mpld', 'Enemy plates: debuffs', 'mob_plates_debuffs', 'On: the debuffs seen landing on it under its HP bar, each with the time it has left.');
-                    row_slider('##yui_mply', 'Enemy plates height', 'mob_plates_y', -60, 60, 1, '%d');
-                end
-            end
             if C.head_bars_on() then
                 hint('Over your head: thin HP and MP bars, the TP as three dots (gold when full: a weapon skill is ready) and the numbers beside them.');
                 row_slider('##yui_hbs', 'Head bars size', 'head_bars_scale', 0.5, 2.5, 0.05, '%.2fx');
                 row_slider('##yui_hby', 'Head bars height', 'head_bars_y', -80, 80, 1, '%d');
                 row_pick('##yui_hbn', 'Head bars numbers', 'head_nums', { { 'always', 'Always' }, { 'change', 'When they change' }, { 'off', 'Off' } });
                 if cfg.head_when == nil then cfg.head_when = (cfg.head_fight == true) and 'engaged' or 'always'; end   -- (the old Only in a fight switch)
-                row_pick('##yui_hbw', 'Show', 'head_when', { { 'always', 'Always' }, { 'engaged', 'When you engage' }, { 'aggro', 'With aggro (you or your party)' }, { 'never', 'Never' } });   -- (Never: no bars over your head - your name there instead)
+                row_pick('##yui_hbw', 'When to show', 'head_when', { { 'always', 'Always' }, { 'engaged', 'When you engage' }, { 'aggro', 'With aggro (you or your party)' }, { 'never', 'Never' } });   -- (Never: no bars over your head - your name there instead)
                 hint('Out of a fight your name and stars show over your head as usual; when the bars come they take their place. With aggro: as soon as a monster is on you or anyone in your party - before you engage, as when you can\'t mount.');
                 if C.vana_cfg() then hint('Your own name and stars over your head are hidden while these bars are on (VanaCore\'s Hide own nameplate), and come back with Fixed.');
                 else hint('Tip: hide your own name and stars over your head in /vana > Options > Nameplates > Hide own nameplate.'); end
@@ -19472,7 +19475,7 @@ local function draw_window()
                 row_switch('##yui_mbsw', 'Swap Ctrl / Alt (controller)', 'mb_padswap', 'On: the right button opens the Ctrl row and the left one the Alt row.');
                 row_switch('##yui_mbnum', 'Show numbers', 'mb_nums', 'Off: only the macro names on the bar, no 1 - 0 over them.');
                 row_pick('##yui_mbpd', C.mb_bn() .. ' (controller)', 'mb_pad', { { 'hold', 'Hold to show' }, { 'toggle', 'Press to show, press again to hide' } });   -- (Ctrl / Alt: always held, as the game)
-                row_slider('##yui_mbsc', 'Size', 'mbar_scale', 0.5, 2.0, 0.05, '%.2fx');
+                row_slider('##yui_mbarsc', 'Size', 'mbar_scale', 0.5, 2.0, 0.05, '%.2fx');
                 row_switch('##yui_mbtt', 'Buttons touching', 'mb_tight', 'On: the buttons sit right next to each other, no gap between them.');
                 row_switch('##yui_mbin', 'Instant (no animation)', 'mb_instant', 'On: the bar is there at once - no buttons popping in, no bounce, flash or rings when you use a macro.');
                 row_switch('##yui_mbarw', 'Ctrl / Alt + arrows pick a macro', 'mb_arrows', "On: with Ctrl or Alt held, Left / Right move the bar's highlight and Enter runs it. Off: they are the game's - Ctrl + Left / Right pages through your inventory. Ctrl / Alt + 1 to 0 always work.");
