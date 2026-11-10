@@ -11192,7 +11192,8 @@ C.MB_RACE = { [3] = 0.15, [7] = -0.15, [8] = 0.18 };                            
 function C.member_bars_on() return cfg.member_bars == true; end   -- (both modes: Hex link gold, Vex its own round glowing bars)
 function C.member_bars()
     local mbo, mpo = C.member_bars_on(), C.mob_plates_on and C.mob_plates_on();
-    pcall(C.mp_names, mpo and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (plates drawn: the monsters' own names off - VanaCore's setting; else back)
+    pcall(C.mp_names, mpo and not YUI_MAPCOVER and not (YMAP and YMAP.big));
+    pcall(C.np_hide, 'hideplayers', mbo and cfg.member_bars_all == true and cfg.target_fx ~= 'link' and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (friend plates on every player: their names go inside)   -- (plates drawn: the monsters' own names off - VanaCore's setting; else back)
     if not (mbo or mpo) or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
     local ds = imgui.GetIO().DisplaySize;
     imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
@@ -11247,7 +11248,8 @@ function C.member_bars_()
             local idx = party:GetMemberTargetIndex(i) or 0;
             if idx > 0 and idx ~= me then
                 inp[idx] = true;
-                list[#list + 1] = { idx = idx, key = party:GetMemberName(i) or tostring(idx), hpp = (party:GetMemberHPPercent(i) or 0) / 100, mpp = (party:GetMemberMPPercent(i) or 0) / 100 };
+                list[#list + 1] = { idx = idx, key = party:GetMemberName(i) or tostring(idx), hpp = (party:GetMemberHPPercent(i) or 0) / 100, mpp = (party:GetMemberMPPercent(i) or 0) / 100,
+                    grp = (i <= 5) and 'party' or 'ally', pl = bit.band(ent:GetSpawnFlags(idx) or 0, 0x01) ~= 0, nm = party:GetMemberName(i) };
             end
         end
     end
@@ -11255,7 +11257,7 @@ function C.member_bars_()
         for idx = 0x400, 0x6FF do
             if idx ~= me and not inp[idx] and ent:GetRawEntity(idx) ~= nil and bit.band(ent:GetSpawnFlags(idx) or 0, 0x1) ~= 0 then
                 local nm = ent:GetName(idx);
-                if nm and nm ~= '' then list[#list + 1] = { idx = idx, key = 'p' .. nm, hpp = (ent:GetHPPercent(idx) or 0) / 100 }; end
+                if nm and nm ~= '' then list[#list + 1] = { idx = idx, key = 'p' .. nm, hpp = (ent:GetHPPercent(idx) or 0) / 100, grp = 'other', pl = true, nm = nm }; end
             end
         end
     end
@@ -11327,14 +11329,47 @@ function C.member_bars_()
                         local k_ = room / (hh + g + mh);
                         hh, g, mh = math.max(2, math.floor(hh * k_)), math.max(wmp and 1 or 0, math.floor(g * k_)), math.max(wmp and 2 or 0, math.floor(mh * k_));
                     end
-                    if cfg.target_fx ~= 'link' then                  -- (Vex mode: its own bars - round, a soft glow, the colours flowing, as the party cards)
-                        local al = (hpp <= 0) and 0.55 or 1;
+                    if cfg.target_fx ~= 'link' then                  -- (Vex mode: a light glass plate - the enemy plates' family, quieter: more see-through,
+                        local al = (hpp <= 0) and 0.55 or 1;          --  a thin white edge, a top line in the group's colour - mint party, blue alliance)
                         local c1, c2 = C.hp or NEON2, C.hp2 or NEON;
                         if hpp < 0.25 and hpp > 0 then c1, c2 = { 1.0, 0.45, 0.45 }, { 0.92, 0.18, 0.24 }; end   -- (low: red, as the cards)
                         if al < 1 then c1, c2 = { c1[1] * al, c1[2] * al, c1[3] * al }, { c2[1] * al, c2[2] * al, c2[3] * al }; end   -- (knocked out: dimmed)
                         local hv = math.max(3, hh);
+                        local mv = wmp and math.max(2, mh) or 0;
+                        local inner = it.pl and C.NPH.hideplayers and C.NPH.hideplayers.mine;   -- (its name hidden by us: drawn inside, with the HP %)
+                        local acc = (it.grp == 'party') and { 0.50, 0.88, 0.75 } or ((it.grp == 'ally') and { 0.50, 0.72, 1.00 }) or nil;
+                        local px_, py_ = math.floor(6 * sc), math.floor(4 * sc);
+                        local pushed, lh, nh_ = false, 0, 0;
+                        if inner then pushed = sized('chat', 13 * sc); lh = imgui.GetTextLineHeight(); nh_ = lh + 2 * sc; end
+                        local bx1, bx2 = x0 - px_, x0 + W + px_;
+                        local by1 = y0 - py_ - nh_;
+                        local by2 = y0 + hv + (wmp and (g + mv) or 0) + py_;
+                        local oth = it.grp == 'other';
+                        local rr_ = 6 * sc;
+                        DL.RF(dl, bx1, by1, bx2, by2, U4(0.045, 0.040, 0.065, (oth and 0.34 or 0.40) * al), rr_);
+                        DL.R(dl, bx1, by1, bx2, by2, U4(1, 1, 1, (oth and 0.18 or 0.24) * al), rr_, C.rall, 1.0);
+                        if acc then DL.RF(dl, bx1 + rr_, by1, bx2 - rr_, by1 + math.max(1, math.floor(1.5 * sc)), U4(acc[1], acc[2], acc[3], 0.95 * al)); end
+                        if inner then
+                            local pct_ = string.format('%d%%', math.floor(hpp * 100 + 0.5));
+                            local fs0 = FS or 1;
+                            imgui.SetWindowFontScale(fs0 * 0.85);
+                            local pw_ = imgui.CalcTextSize(pct_);
+                            local plh_ = imgui.GetTextLineHeight();
+                            imgui.SetWindowFontScale(fs0);
+                            local nm_ = it.nm or '';
+                            local room_ = W - pw_ - 6 * sc;
+                            local n0_ = nm_;
+                            while #nm_ > 3 and imgui.CalcTextSize(nm_) > room_ do nm_ = nm_:sub(1, #nm_ - 1); end
+                            if nm_ ~= n0_ then nm_ = nm_:sub(1, #nm_ - 1) .. '..'; end
+                            local ty_ = by1 + py_ * 0.7;
+                            text(dl, x0, ty_, nm_, oth and { 0.88, 0.88, 0.90, al } or { 1, 1, 1, al });
+                            imgui.SetWindowFontScale(fs0 * 0.85);
+                            text(dl, x0 + W - pw_, ty_ + (lh - plh_), pct_, (hpp < 0.25 and hpp > 0) and { 1, 0.70, 0.70, al } or { 0.90, 0.89, 0.94, al });
+                            imgui.SetWindowFontScale(fs0);
+                            unsized(pushed);
+                        end
                         glow_bar(dl, x0, y0, W, hv, S.hp, S.hl, c1, c2, (idx % 97) * 0.37, 'flow');
-                        if wmp then glow_bar(dl, x0, y0 + hv + g + 1, W, math.max(2, mh), S.mp, nil, C.mpb1 or C.mp, C.mpb2 or C.mp2, (idx % 97) * 0.37 + 30, 'flow'); end
+                        if wmp then glow_bar(dl, x0, y0 + hv + g, W, mv, S.mp, nil, C.mpb1 or C.mp, C.mpb2 or C.mp2, (idx % 97) * 0.37 + 30, 'flow'); end
                     else
                     local h1, h2 = C.HEXHP[1], C.HEXHP[2];
                     local a_, b_ = C.hpheat({ inzone = true }, hpp);
@@ -11379,27 +11414,39 @@ function C.plate_h(idx, ent)                                         -- (where i
     if C.flat(idx, ent) then h = math.min(h, math.max(0.6, hb * 1.03)); end   -- (wide but low: a crab's hitbox is wide, not tall)
     return h;
 end
-function C.mp_names(on)                                              -- (the monsters' own names off while the plates show them: VanaCore's
-    if C.MPI == nil then C.MPI = (cfg.mob_plates_ini == true); end   --  [graphics] nameplates.hidemonsters - the game never puts them back, so no
-    if on and not C.MPI then                                         --  flash; set only if the player hadn't already, and put back as it was)
-        local cur = tostring(vana.config.get('graphics', 'nameplates.hidemonsters', '0') or '0');
-        if cur == '1' or cur == 'true' then C.MPI = false; C.MPI_own = true; return; end   -- (their own setting: left alone)
-        if C.MPI_own then return; end
-        vana.config.set('graphics', 'nameplates.hidemonsters', '1'); vana.config.reload();
-        C.MPI = true; cfg.mob_plates_ini = true; save();
-    elseif not on and C.MPI then
-        vana.config.set('graphics', 'nameplates.hidemonsters', '0'); vana.config.reload();
-        C.MPI = false; cfg.mob_plates_ini = nil; save();
+C.NPH = {};                                                          -- (VanaCore's [graphics] nameplates.hide* we turned on: put back as they were)
+function C.np_hide(key, on)                                          -- (key: 'hidemonsters' / 'hideplayers' - set only if the player hadn't already,
+    if cfg.mob_plates_ini == true then                               --  and only ours turned back off)
+        if type(cfg.np_mine) ~= 'table' then cfg.np_mine = {}; end
+        cfg.np_mine.hidemonsters = true; cfg.mob_plates_ini = nil;
     end
-    if not on then C.MPI_own = nil; end
+    local st = C.NPH[key];
+    if st == nil then st = { mine = type(cfg.np_mine) == 'table' and cfg.np_mine[key] == true }; C.NPH[key] = st; end
+    local ck = 'nameplates.' .. key;
+    if on and not st.mine then
+        if st.own then return; end
+        local cur = tostring(vana.config.get('graphics', ck, '0') or '0');
+        if cur == '1' or cur == 'true' then st.own = true; return; end   -- (their own setting: left alone)
+        vana.config.set('graphics', ck, '1'); vana.config.reload();
+        st.mine = true;
+        if type(cfg.np_mine) ~= 'table' then cfg.np_mine = {}; end
+        cfg.np_mine[key] = true; save();
+    elseif not on and st.mine then
+        vana.config.set('graphics', ck, '0'); vana.config.reload();
+        st.mine = false;
+        if type(cfg.np_mine) == 'table' then cfg.np_mine[key] = nil; end
+        save();
+    end
+    if not on then st.own = nil; end
 end
+function C.mp_names(on) C.np_hide('hidemonsters', on); end           -- (the monsters' own names off while the enemy plates show them)
 function C.mnh_keep(k, h)                                            -- (a family's name height, kept for next time: its plate right where its name was)
     if type(cfg.mob_nh) ~= 'table' then cfg.mob_nh = {}; end
     if tonumber(cfg.mob_nh[k]) then return; end
     cfg.mob_nh[k] = math.floor(h * 100 + 0.5) / 100;
     save();
 end
-function C.mpn_all_off() pcall(C.mp_names, false); end               -- (YunaUI unloading: the monsters' names back)
+function C.mpn_all_off() pcall(C.np_hide, 'hidemonsters', false); pcall(C.np_hide, 'hideplayers', false); end               -- (YunaUI unloading: the monsters' names back)
 function C.mob_plates_()
     local mm = AshitaCore:GetMemoryManager();
     local party, ent = mm:GetParty(), mm:GetEntity();
