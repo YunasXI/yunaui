@@ -11211,8 +11211,8 @@ function C.member_bars_on() return cfg.member_bars == true; end   -- (both modes
 function C.member_bars()
     local mbo, mpo = C.member_bars_on(), C.mob_plates_on and C.mob_plates_on();
     pcall(C.mp_names, mpo and not YUI_MAPCOVER and not (YMAP and YMAP.big));
-    pcall(C.np_hide, 'hideplayers', mbo and cfg.member_bars_all == true and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (friend plates on every player: their names go inside)
-    pcall(C.np_hide, 'hidetrusts', mbo and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (trusts always have a plate: their names go inside too)   -- (plates drawn: the monsters' own names off - VanaCore's setting; else back)
+    pcall(C.np_hide, 'hideplayers', mbo and cfg.member_bars_all == true and cfg.target_fx ~= 'link' and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (friend plates on every player: their names go inside)
+    pcall(C.np_hide, 'hidetrusts', mbo and cfg.target_fx ~= 'link' and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (trusts always have a plate: their names go inside too)   -- (plates drawn: the monsters' own names off - VanaCore's setting; else back)
     if not (mbo or mpo) or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
     local ds = imgui.GetIO().DisplaySize;
     imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
@@ -11444,7 +11444,7 @@ function C.member_bars_()
                         h1 = { h1[1] + (1 - h1[1]) * bb * 0.5, h1[2] + (1 - h1[2]) * bb * 0.5, h1[3] + (1 - h1[3]) * bb * 0.5 };
                     end
                     local al = (hpp <= 0) and 0.55 or 1;         -- (knocked out: faded)
-                    do                                                -- (Hex link's friend plate: square glass, a thin white edge, a stripe down its left -
+                    if false then                                     -- (Hex link's friend plate - the user went back to the plain bars; kept for later: square glass, a stripe down its left -
                         local nk_ = it.pl and C.NPH.hideplayers or C.NPH.hidetrusts;   --  gold party, azure alliance; its name inside when the game's is hidden)
                         local inner = nk_ and (nk_.mine or nk_.own) and true or false;
                         local hv, mv = math.max(3, hh), wmp and math.max(2, mh) or 0;
