@@ -4554,7 +4554,7 @@ local function draw_target(dt)
                 end
             end
             if link then ok, used = pcall(FIGHT.draw_cast_under, dl, fsid, x + w + (FIGHT.pctw or 0) + cdx, (FIGHT.pcty or (by + h)) + cdy, csc, cmin_);   -- (Hex link: under the bar's right end, ending with the HP %)
-            else ok, used = pcall(FIGHT.draw_cast, rdl_, fsid, x + cdx, by + h + 5 * sc + cdy, w, csc, cth, true, sc * 0.75); end   -- (under the bar's middle; the text has its own size)
+            else ok, used = pcall(FIGHT.draw_cast, pl_ and C.NODL or rdl_, fsid, x + cdx, by + h + 5 * sc + cdy, w, csc, cth, true, sc * 0.75); end   -- (under the bar's middle; the text has its own size)
             ch = (ok and tonumber(used)) or 0;
             if link then FIGHT.castb, ch = (FIGHT.pcty or (by + h)) + ((cdx == 0 and cdy == 0) and ch or 0), 0; end   -- (Hex link: the cast sits by the HP %; the debuffs keep their row)
             FIGHT.anc.co = link and { x + w + (FIGHT.pctw or 0) - 200 * csc, FIGHT.pcty or (by + h), 200 * csc, 22 * csc } or { x, by + h + 5 * sc, w, math.max(ch, 18 * csc) };
@@ -9311,6 +9311,7 @@ function C.bigarrow()
     if cfg.tarrow == false then return; end
     local tg = AshitaCore:GetMemoryManager():GetTarget();
     local idx = tg and tg:GetTargetIndex(0) or 0;
+    if idx ~= 0 and C.plated and C.plated(idx) then C.TBIG = 'plate'; return; end   -- (BARS > Enemy plates: the game's arrow hidden - YunaUI's sits right under the plate)
     if idx == 0 or idx >= 0x400 then return; end                      -- (players and their pets: the game's)
     local ent = AshitaCore:GetMemoryManager():GetEntity();
     local t = C.tall(idx, ent);
@@ -11360,6 +11361,11 @@ C.MP3 = {};                                                          -- (per mon
 C.MNH = {};                                                          -- (per model: how high the game draws its name, in yalms - measured once)
 function C.mob_plates_on() return cfg.mob_plates == true and cfg.target_fx ~= 'link'; end
 function C.plated(idx) return C.mob_plates_on() and idx ~= nil and C.MP3[idx] ~= nil and C.MP3[idx].drawn ~= nil and os.clock() - C.MP3[idx].drawn < 0.3; end   -- (a plate over it now)
+function C.plated_sid(sid)                                           -- (a plate over the monster with this server id now)
+    if not C.mob_plates_on() then return false; end
+    for _, S in pairs(C.MP3) do if S.sid == sid and S.drawn and os.clock() - S.drawn < 0.3 then return true; end end
+    return false;
+end
 C.NODL = setmetatable({}, { __index = function() return function() end; end });   -- (a draw list that draws nothing)
 function C.plate_h(idx, ent)                                         -- (where its plate sits, in yalms over its feet: where the game puts its name, else
     local hz = C.model_h(idx, ent);                                  --  from its real size - the hitbox VanaCore reports, never the target bar's
@@ -11500,7 +11506,15 @@ function C.mob_plates_()
             while #nm > 3 and imgui.CalcTextSize(nm) > nroom_ do nm = nm:sub(1, #nm - 1); end
             if nm ~= nm0 then nm = nm:sub(1, #nm - 1) .. '..'; end
             local H = pad + lh + 3 * sc + bh + pad * 0.8;
-            local pb = by - ((drows > 0) and (dh + 4 * sc) or 0);       -- (the plate's foot: the debuffs hang under it, outside)
+            local srv_ = ent:GetServerId(idx) or 0;                   -- (what it's casting or readying: a strip hung under the plate)
+            S.sid = srv_;
+            local cst_ = FIGHT.casts and FIGHT.casts[srv_] or nil;
+            if cst_ then
+                local nw_ = os.clock();
+                if (cst_.broke and nw_ - cst_.broke > 1.0) or nw_ - cst_.t0 > (cst_.dur or 0) + 2.0 then cst_ = nil; end
+            end
+            local csh_ = cst_ and math.floor(lh * 0.72 + 9 * sc) or 0;
+            local pb = by - ((drows > 0) and (dh + 4 * sc) or 0) - csh_;   -- (the plate's foot: the cast strip, then the debuffs hang under it, outside)
             local x0 = math.floor(hx - (W + pw + 8 * sc) / 2);
             local y0 = math.floor(pb - H);
             local x1, y1 = x0 - pad, y0;
@@ -11536,9 +11550,66 @@ function C.mob_plates_()
                 text(dl, tx_, math.floor(cy_ - toth_ / 2), tot_, { 0.84, 0.93, 1, 1 });
                 imgui.SetWindowFontScale(fs0);
             end
+            if cst_ then                                              -- (the cast strip: the same glass, a little narrower, joined to the plate's foot -
+                local nw_ = os.clock();                               --  the action, who it's aimed at, and a thin bar filling along its bottom)
+                local tp_ = cst_.kind == 'tp';
+                local f_ = math.min(1, (nw_ - cst_.t0) / math.max(0.1, cst_.dur or 1));
+                local fl_ = cst_.broke and math.max(0, 1 - (nw_ - cst_.broke)) or 1;
+                local sx1, sx2 = x1 + rr, x2 - rr;
+                local sy1, sy2 = y2 - 1, y2 + csh_;
+                local bot = ImDrawFlags_RoundCornersBottom or ImDrawCornerFlags_Bot or 12;
+                DL.RF(dl, sx1, sy1, sx2, sy2, U4(0.045, 0.040, 0.065, 0.74 * fl_), rr * 0.8, bot);
+                local k1 = tp_ and { 1.0, 0.36, 0.62 } or { 0.62, 0.40, 1.0 };   -- (a TP move rose to orange, a spell violet - as the top cast bar)
+                local k2 = tp_ and { 1.0, 0.70, 0.40 } or { 0.85, 0.70, 1.0 };
+                DL.R(dl, sx1, sy1, sx2, sy2, U4(k1[1], k1[2], k1[3], 0.50 * fl_), rr * 0.8, bot, 1.0);
+                local fs0 = FS or 1;
+                imgui.SetWindowFontScale(fs0 * 0.72);
+                local clh = imgui.GetTextLineHeight();
+                local cx_ = sx1 + 6 * sc;
+                local cy_ = sy1 + 2 * sc;
+                local lab = cst_.broke and ('Interrupted: ' .. (cst_.name or '')) or (cst_.name or '');
+                local tgn = nil;
+                if not cst_.broke and cst_.tid and cst_.tid ~= 0 and cst_.tid ~= srv_ then
+                    pcall(function() local ti = index_of(cst_.tid); tgn = ti and ent:GetName(ti) or nil; end);
+                end
+                local room = sx2 - cx_ - 6 * sc;
+                local tgw = 0;
+                if tgn and tgn ~= '' then tgw = imgui.CalcTextSize(tgn) + clh * 0.7; if tgw > room * 0.5 then tgn = nil; tgw = 0; end end
+                local lab0 = lab;
+                while #lab > 3 and imgui.CalcTextSize(lab) > room - tgw do lab = lab:sub(1, #lab - 1); end
+                if lab ~= lab0 then lab = lab:sub(1, #lab - 1) .. '..'; end
+                local lc = cst_.broke and { 1, 1, 1, 0.5 + 0.5 * fl_ } or { 1, 0.93, 0.88, 1 };
+                text(dl, cx_, cy_, lab, lc);
+                if tgn then                                           -- (who it's aimed at: a small arrow and the name, at the strip's right end)
+                    local tgx = sx2 - 6 * sc - imgui.CalcTextSize(tgn);
+                    local am = clh * 0.28;
+                    local acx, acy = tgx - am * 1.6, cy_ + clh / 2;
+                    DL.TF(dl, acx, acy - am, acx, acy + am, acx + am * 1.3, acy, U4(k2[1], k2[2], k2[3], 0.95));
+                    text(dl, tgx, cy_, tgn, { 0.88, 0.94, 1, 1 });
+                end
+                imgui.SetWindowFontScale(fs0);
+                local bx1, bx2 = sx1 + 5 * sc, sx2 - 5 * sc;          -- (the bar along its foot)
+                local bby = sy2 - 4 * sc;
+                local bth = math.max(2, math.floor(2 * sc + 0.5));
+                DL.RF(dl, bx1, bby, bx2, bby + bth, U4(0, 0, 0, 0.55), bth);
+                if cst_.broke then
+                    DL.RF(dl, bx1, bby, bx1 + (bx2 - bx1) * (cst_.at or f_), bby + bth, U4(1, 1, 1, 0.3 + 0.6 * fl_), bth);
+                else
+                    local fx_ = bx1 + (bx2 - bx1) * f_;
+                    if fx_ > bx1 + 1 then
+                        DL.RFM(dl, bx1, bby, fx_, bby + bth, U4(k1[1], k1[2], k1[3], 1), U4(k2[1], k2[2], k2[3], 1), U4(k2[1], k2[2], k2[3], 1), U4(k1[1], k1[2], k1[3], 1));
+                        DL.RF(dl, fx_ - 1.5, bby - 1, fx_, bby + bth + 1, U4(1, 1, 1, 0.95));
+                    end
+                end
+            end
             unsized(pushed);
             -- the debuffs under it, each with its time left
-            if drows > 0 then draw_buffs(dl, x1 + 2 * sc, y2 + 4 * sc, ids, isz, per, 2, 1, left); end   -- (under the plate, outside it)
+            if drows > 0 then draw_buffs(dl, x1 + 2 * sc, y2 + csh_ + 4 * sc, ids, isz, per, 2, 1, left); end   -- (under the plate (and its cast), outside it)
+            if on and cfg.tarrow ~= false then                        -- (your target: YunaUI's arrow right under its plate - the game's is hidden, it sat far over a big one)
+                local aw_, ah_ = math.floor(18 * sc), math.floor(12 * sc);
+                local at_ = by + 4 * sc;
+                image(dl, tex('tarrow_vexw.png'), hx - aw_ / 2, at_, hx + aw_ / 2, at_ + ah_, { 1, 1, 1, 1 });
+            end
         end);
         if not ok_ then C.MP3[idx] = nil; end
     end
@@ -13793,7 +13864,7 @@ function FIGHT.win()
             end_plain('fan_x', 'fan_y');
         else imgui.End(); imgui.PopStyleVar(2); end
     end
-    if (cfg.ecast_place or 'bar') == 'free' and cfg.target_fx ~= 'link' and FIGHT.casts[sid] then
+    if (cfg.ecast_place or 'bar') == 'free' and cfg.target_fx ~= 'link' and FIGHT.casts[sid] and not (C.plated_sid and C.plated_sid(sid)) then   -- (a plated monster: its cast is on its plate)
         first_place('ecast_x', 'ecast_y', -tw / 2, -560);
         if plain_window('YunaUI Enemy cast##yui_ecast', 'ecast_x', 'ecast_y') then
             local dl = imgui.GetWindowDrawList();
