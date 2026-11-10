@@ -11606,7 +11606,7 @@ function C.mob_plates_()
             local rf = ent:GetRenderFlags0(idx) or 0;
             if not (bit.band(rf, 0x200) == 0x200 and bit.band(rf, 0x4000) == 0) then return; end
             local ex, ey = ent:GetLocalPositionX(idx) or 0, ent:GetLocalPositionY(idx) or 0;
-            if math.sqrt((ex - myx) ^ 2 + (ey - myy) ^ 2) > 30 then return; end
+            if idx ~= tidx and math.sqrt((ex - myx) ^ 2 + (ey - myy) ^ 2) > 30 then return; end   -- (your target: its plate at any distance - never the old target bar)
             local px, py, pz, obj = C.tpos(idx, ent);
             if px == nil then return; end
             local S = C.MP3[idx] or {};
