@@ -11211,8 +11211,8 @@ function C.member_bars_on() return cfg.member_bars == true; end   -- (both modes
 function C.member_bars()
     local mbo, mpo = C.member_bars_on(), C.mob_plates_on and C.mob_plates_on();
     pcall(C.mp_names, mpo and not YUI_MAPCOVER and not (YMAP and YMAP.big));
-    pcall(C.np_hide, 'hideplayers', mbo and cfg.member_bars_all == true and cfg.target_fx ~= 'link' and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (friend plates on every player: their names go inside)
-    pcall(C.np_hide, 'hidetrusts', mbo and cfg.target_fx ~= 'link' and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (trusts always have a plate: their names go inside too)   -- (plates drawn: the monsters' own names off - VanaCore's setting; else back)
+    pcall(C.np_hide, 'hideplayers', false);                          -- (bars only for your party, alliance and monsters now: other players keep the game's names)   -- (friend plates on every player: their names go inside)
+    pcall(C.np_hide, 'hidetrusts', mbo and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (trusts always have a plate: their names go inside too)   -- (plates drawn: the monsters' own names off - VanaCore's setting; else back)
     if not (mbo or mpo) or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
     local ds = imgui.GetIO().DisplaySize;
     imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
@@ -11242,7 +11242,7 @@ function C.overhead_idx(idx)                                         -- (does th
         for i = 1, (cfg.member_bars_who == 'party') and 5 or 17 do
             if (party:GetMemberIsActive(i) or 0) ~= 0 and (party:GetMemberTargetIndex(i) or 0) == idx then yes = true; return; end
         end
-        if cfg.member_bars_all == true and idx >= 0x400 and idx < 0x700 and bit.band(ent:GetSpawnFlags(idx) or 0, 0x1) ~= 0 then yes = true; end   -- (another player)
+        if false and idx >= 0x400 and idx < 0x700 and bit.band(ent:GetSpawnFlags(idx) or 0, 0x1) ~= 0 then yes = true; end   -- (another player)
     end);
     return yes;
 end
@@ -11289,7 +11289,7 @@ function C.member_bars_()
             end
         end
     end
-    if cfg.member_bars_all == true then                               -- (BARS > Party bars: everyone - every other player too: HP only, the game sends no MP)
+    if false then                                                     -- (removed - was BARS > Party bars: everyone - every other player too: HP only, the game sends no MP)
         for idx = 0x400, 0x6FF do
             if idx ~= me and not inp[idx] and ent:GetRawEntity(idx) ~= nil and bit.band(ent:GetSpawnFlags(idx) or 0, 0x1) ~= 0 then
                 local nm = ent:GetName(idx);
@@ -11444,7 +11444,7 @@ function C.member_bars_()
                         h1 = { h1[1] + (1 - h1[1]) * bb * 0.5, h1[2] + (1 - h1[2]) * bb * 0.5, h1[3] + (1 - h1[3]) * bb * 0.5 };
                     end
                     local al = (hpp <= 0) and 0.55 or 1;         -- (knocked out: faded)
-                    if false then                                     -- (Hex link's friend plate - the user went back to the plain bars; kept for later: square glass, a stripe down its left -
+                    do                                                -- (Hex link's friend plate: square glass, a thin white edge, a stripe down its left -
                         local nk_ = it.pl and C.NPH.hideplayers or C.NPH.hidetrusts;   --  gold party, azure alliance; its name inside when the game's is hidden)
                         local inner = nk_ and (nk_.mine or nk_.own) and true or false;
                         local hv, mv = math.max(3, hh), wmp and math.max(2, mh) or 0;
@@ -11459,12 +11459,15 @@ function C.member_bars_()
                         if dy_ > 0 then y0 = y0 - dy_; by1, by2 = by1 - dy_, by2 - dy_; end
                         local oth = it.grp == 'other';
                         local GH = C.GOLDH or { 1.0, 0.81, 0.43 };
-                        local ont_ = idx == tgi_;                      -- (no box - lines only, as Hex link's bars; your target: a gold frame, the gold-to-azure line, the hex dots)
+                        local ont_ = idx == tgi_;                      -- (your target: the gold edge, the gold-to-azure line and the hex dots, as an enemy's)
+                        DL.RF(dl, bx1, by1, bx2, by2, U4(0.030, 0.035, 0.055, (ont_ and 0.72 or (oth and 0.36 or 0.44)) * al));
                         if ont_ then
                             local az_ = YUI_AZ();
                             DL.R(dl, bx1, by1, bx2, by2, U4(GH[1], GH[2], GH[3], 0.95 * al), 0, 0, 1.6);
                             DL.RFM(dl, bx1 + 1, by1, bx2 - 1, by1 + math.max(1, math.floor(2 * sc)), U4(GH[1], GH[2], GH[3], al), U4(az_[1], az_[2], az_[3], al), U4(az_[1], az_[2], az_[3], al), U4(GH[1], GH[2], GH[3], al));
                             if C.hexdot then local g2 = C.GOLDH2 or { 1.0, 0.90, 0.62 }; C.hexdot(dl, bx1, by1, 3 * sc, U4(g2[1], g2[2], g2[3], al)); C.hexdot(dl, bx2, by1, 2.4 * sc, U4(az_[1], az_[2], az_[3], al)); end
+                        else
+                            DL.R(dl, bx1, by1, bx2, by2, U4(1, 1, 1, (oth and 0.16 or 0.22) * al), 0, 0, 1.0);
                         end
                         local st_ = (it.grp == 'party') and GH or ((it.grp == 'ally') and YUI_AZ()) or nil;
                         if st_ then DL.RF(dl, bx1, by1, bx1 + math.max(2, math.floor(3 * sc)), by2, U4(st_[1], st_[2], st_[3], 0.95 * al)); end
@@ -19108,7 +19111,7 @@ local function draw_window()
             end
             do                                                       -- (both modes: Vex mode's in its own look - round, glowing, your HP colours)
                 row_switch('##yui_mbars', 'Party bars over heads', 'member_bars', 'On: everyone in your party and alliance (trusts too) gets an HP and an MP bar just under the name over their head, as yours. Only the ones you can see, within 30 yalms.');
-                if cfg.member_bars == true then row_slider('##yui_mbs', 'Party bars size', 'member_bars_scale', 0.5, 2.0, 0.05, '%.2fx'); row_slider('##yui_mbw', 'Party bars width', 'member_bars_w', 0.4, 3.0, 0.05, '%.2fx'); row_slider('##yui_mbt', 'Party bars thickness', 'member_bars_th', 0.4, 3.0, 0.05, '%.2fx'); if cfg.member_bars_mp == nil then cfg.member_bars_mp = true; end row_pick('##yui_mbwho', 'Party bars for', 'member_bars_who', { { 'alliance', 'Party and alliance' }, { 'party', 'Party only' } }); row_switch('##yui_mbmp', 'Party bars: MP', 'member_bars_mp', 'On: an MP bar under each HP bar. Off: the HP bar alone.'); row_switch('##yui_mball', 'Also on other players', 'member_bars_all', 'On: every other player near you gets an HP bar over their head too (HP only: the game never sends their MP). Off: only your party and alliance.'); row_slider('##yui_mby', 'Party bars height', 'member_bars_y', -60, 60, 1, '%d'); end
+                if cfg.member_bars == true then row_slider('##yui_mbs', 'Party bars size', 'member_bars_scale', 0.5, 2.0, 0.05, '%.2fx'); row_slider('##yui_mbw', 'Party bars width', 'member_bars_w', 0.4, 3.0, 0.05, '%.2fx'); row_slider('##yui_mbt', 'Party bars thickness', 'member_bars_th', 0.4, 3.0, 0.05, '%.2fx'); if cfg.member_bars_mp == nil then cfg.member_bars_mp = true; end row_pick('##yui_mbwho', 'Party bars for', 'member_bars_who', { { 'alliance', 'Party and alliance' }, { 'party', 'Party only' } }); row_switch('##yui_mbmp', 'Party bars: MP', 'member_bars_mp', 'On: an MP bar under each HP bar. Off: the HP bar alone.'); row_slider('##yui_mby', 'Party bars height', 'member_bars_y', -60, 60, 1, '%d'); end
             end
             do                                                       -- (a bar over each monster near you - Hex link: your target keeps its own target bar)
                 row_switch('##yui_mplt', 'Enemy plates over heads', 'mob_plates', 'On: every monster near you (within 30 yalms) gets a plate over its head in place of its name - its name, its HP bar with the percent, and its debuffs under it.');
