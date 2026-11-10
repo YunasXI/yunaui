@@ -11341,14 +11341,6 @@ function C.member_bars_()
                         local hv = math.max(3, hh);
                         local mv = wmp and math.max(2, mh) or 0;
                         local inner = it.pl and C.NPH.hideplayers and C.NPH.hideplayers.mine;   -- (its name hidden by us: drawn inside, with the HP %)
-                        if inner and it.grp == 'other' and hpp >= 0.995 and idx ~= tgi_ then   -- (a stranger at full HP, not your target: just its name, as the game
-                            local pushed0 = sized('chat', 13 * sc);                        --  draws it - a plate only when hurt or targeted; a crowded town stays clean)
-                            local nw0 = imgui.CalcTextSize(it.nm or '');
-                            local lh0 = imgui.GetTextLineHeight();
-                            text(dl, math.floor(x0 + W / 2 - nw0 / 2), math.floor(y0 - lh0 + hv), it.nm or '', { 0.92, 0.92, 0.95, 0.92 });
-                            unsized(pushed0);
-                            goto mb_next;
-                        end
                         local acc = (it.grp == 'party') and { 0.50, 0.88, 0.75 } or ((it.grp == 'ally') and { 0.50, 0.72, 1.00 }) or nil;
                         local px_, py_ = math.floor(6 * sc), math.floor(4 * sc);
                         local pushed, lh, nh_ = false, 0, 0;
@@ -11399,7 +11391,6 @@ function C.member_bars_()
                 end
             end
         end
-        ::mb_next::
     end
     for k in pairs(C.MB2) do if not seen[k] then C.MB2[k] = nil; end end
 end
