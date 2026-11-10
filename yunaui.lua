@@ -1474,7 +1474,7 @@ function C.hexring(dl, x, y, r, col, th)                             -- (a hexag
     for k = 1, 6 do dl:AddLine(p_[k], p_[k % 6 + 1], col, th or 1); end
 end
 -- the same for YunaEquip's own HP bar ('Separate bars'), which lives in equip.lua
-YUI_HIDE_STATBARS = function() return cfg.target_fx == 'link' and (cfg.head_bars or 'fixed') == 'head'; end   -- (equip.lua: BARS > Where = Over your head - Hex link mode only)
+YUI_HIDE_STATBARS = function() return C.head_where and C.head_where() == 'head'; end   -- (equip.lua: BARS > Where = Over your head - Hex link mode only)
 YUI_BAR_OVERLAY = function(x, y, fw, h, seed) bar_overlay(x, y, fw, h, bar_fx_for('equip'), seed or 1, C.fxtint(cfg.my_hp_color or cfg.hp_color or 'pink')); end
 -- BARS > TP bar effect (Vex mode): from 1000 TP your TP bar crackles like the target bar, in gold (images/dd2tp) -
 -- stronger at 2000, strongest at 3000, a short flash as each step is reached
@@ -9206,9 +9206,12 @@ end
 -- pieces (1000 each), dim while filling, gold when full (a gold piece = a weapon skill ready), a flash each time one
 -- fills. Low HP breathes. They follow you smoothly; hidden in cutscenes and under the big map.
 C.HB = { x = nil, y = nil, hp = nil, mp = nil, tp = nil, segs = 0, flash = -9 };
-function C.head_bars_on()                                           -- (over your head: Hex link mode only - Normal mode has the fixed bars)
-    if cfg.target_fx ~= 'link' then return false; end
-    local w = cfg.head_bars or 'fixed';
+function C.head_where()                                             -- (where your bars are: 'fixed', 'head' or 'both' - Hex link its own, Vex its own choice)
+    if cfg.target_fx ~= 'link' then return cfg.vex_head or 'fixed'; end
+    return cfg.head_bars or 'fixed';
+end
+function C.head_bars_on()                                           -- (over your head: Hex link always; Vex when BARS > Where says so)
+    local w = C.head_where();
     return w == 'head' or w == 'both';
 end
 function C.aggro()                                                   -- (a monster on you or your party: the enemy list's, alive and in sight)
@@ -10989,6 +10992,11 @@ function C.head_bars_()                                             -- (the bars
     local function bar(y, h, v, c1, c2, bx, bw, al, ex)              -- (bx, bw, al: where and how wide it is now, how see-through - the entrance)
         bx, bw, al = bx or x0, bw or W, al or 1;                     -- (ex: Hex link's life - lag, lead)
         if hmir then ex = ex or {}; C.hexbar(dl, bx, y, bw, h, v, ex.lag, 0, { c1 = c2, c2 = c1, band = h + 1, al = al, live = true, lead = ex.lead }); return; end   -- (Hex link: the hexagon style)
+        if al >= 0.999 then                                          -- (Vex: the party plates' glowing bars with a black edge - landed, not the entrance's trail)
+            glow_bar(dl, bx, y, bw, h, v, ex and ex.lag or nil, c1, c2, (ex and ex.seed) or 0, 'flow');
+            DL.R(dl, bx - 1.5, y - 1.5, bx + bw + 1.5, y + h + 1.5, U4(0, 0, 0, 0.90), h / 2 + 1.5, C.rall, 1.4);
+            return;
+        end
         DL.RF(dl, bx - 1, y - 1, bx + bw + 1, y + h + 1, U4(0, 0, 0, 0.55 * al), (h + 2) / 2);   -- (a dark track)
         local fw = bw * math.max(0, math.min(1, v));
         if fw >= 1 then
@@ -11027,6 +11035,18 @@ function C.head_bars_()                                             -- (the bars
     local ae = now - (H.t0 or -99);
     local intro = ae < 1.6;
     local function clamp01(v) return math.max(0, math.min(1, v)); end
+    if not hmir then                                                 -- (Vex: a light glass plate round the bars and the TP dots - the party plates' family,
+        local pa = intro and clamp01(ae / 0.35) or 1;                --  a thin white edge, a gold line on top: it's you)
+        local px_, py_ = math.floor(7 * sc), math.floor(5 * sc);
+        local dd_ = math.max(4, 5 * sc);
+        local bot = y0 + hh + mh + g + 8 * sc + dd_ * 2;
+        local bx1, by1, bx2, by2 = x0 - px_, y0 - py_, x0 + W + px_, bot + py_ * 0.6;
+        local rr_ = 6 * sc;
+        DL.RF(dl, bx1, by1, bx2, by2, U4(0.045, 0.040, 0.065, 0.42 * pa), rr_);
+        DL.R(dl, bx1, by1, bx2, by2, U4(1, 1, 1, 0.24 * pa), rr_, C.rall, 1.0);
+        DL.RF(dl, bx1 + rr_, by1, bx2 - rr_, by1 + math.max(1, math.floor(1.5 * sc)), U4(1.0, 0.83, 0.42, 0.95 * pa));
+        H.pw = px_;
+    else H.pw = 0; end
     local function back(u) u = u - 1; return 1 + 2.70158 * u ^ 3 + 1.70158 * u ^ 2; end   -- (eases in, overshooting a touch)
     local uh = intro and clamp01(ae / 0.30) or 1;
     local um = intro and clamp01((ae - 0.3) / 0.30) or 1;
@@ -11048,6 +11068,7 @@ function C.head_bars_()                                             -- (the bars
     end
     slide(uh, 0.30, y0, hh, H.hp, h1, h2, -1, { lag = H.hl, lead = hpp });
     local mc_ = (type(YUI_MP_COL) == 'table') and YUI_MP_COL or C.MPCOL;
+    if not hmir then mc_ = { C.mpb1 or C.mp, C.mpb2 or C.mp2 }; end   -- (Vex: the party plates' MP)
     slide(um, 0.60, y0 + hh + g, mh, H.mp, mc_[1], mc_[2], 1, { lag = H.ml, lead = mpp });
     local function sweep(y, h, t0, v)                                -- a light running along one bar once, inside its filled part only (clear of its round ends)
         local q = (ae - t0) / 0.42;
@@ -11089,8 +11110,8 @@ function C.head_bars_()                                             -- (the bars
                 local pw = math.max(2, 2.2 * sc);                    -- (the little bar before each label)
                 local lg = math.max(3, 4 * sc);
                 local fw_ = pw + lg + lw + 10 * sc + nw;
-                local fx = math.floor(hmir and (x0 - 8 * sc - fw_) or (x0 + W + 8 * sc));
-                H.colw = 8 * sc + fw_;
+                local fx = math.floor(hmir and (x0 - 8 * sc - fw_) or (x0 + W + 8 * sc + (H.pw or 0)));
+                H.colw = 8 * sc + fw_ + (H.pw or 0);
                 local my = y0 + (hh + g + mh) / 2;
                 local function otext(px_, py_, col, str, oa)
                     for _, o in ipairs(OUTLINE) do DL.T(dl, px_ + o[1], py_ + o[2], U4(0, 0, 0, 0.9 * (oa or a)), str); end   -- (the chat's full outline)
@@ -11142,7 +11163,7 @@ function C.head_bars_()                                             -- (the bars
                     hrow('MP', ms, y0 + hh + g + mh / 2, C.HEXMP[3], 1);
                     H.colw = 6 * sc + widest;                    -- (no TP number: the TP bar under them says it)
                 else
-                row('HP', hs, tpy - rowh * 2, (C.myjobcol and C.myjobcol() and { 1, 1, 1 }) or (YUI_HEX and C.HEXHP[3]) or { 0.95, 0.50, 0.76 });
+                row('HP', hs, tpy - rowh * 2, (C.myjobcol and C.myjobcol() and { 1, 1, 1 }) or (YUI_HEX and C.HEXHP[3]) or (hc and hc[1]) or { 0.95, 0.50, 0.76 });   -- (Vex: the label in your HP bar's colour)
                 row('MP', ms, tpy - rowh, YUI_HEX and C.HEXMP[3] or { 0.62, 0.58, 1.00 });
                 if tp > 0 then row('TP', ts, tpy, { 1.0, 0.83, 0.42 }); end   -- (not while it's 0: the empty dots say so)
                 end
@@ -19207,6 +19228,8 @@ local function draw_window()
                 if cfg.tp_fx == nil then cfg.tp_fx = true; end
                 row_switch('##yui_tpfx', 'TP bar effect', 'tp_fx', 'On: from 1000 TP your TP bar crackles like the target bar, in gold - stronger at 2000, strongest at 3000. Off: a plain TP bar.');
                 row_pick('##yui_myhpc', 'HP bar colour', 'my_hp_color', { { 'pink', 'Pink' }, { 'white', 'White' }, { 'green', 'Green' }, { 'red', 'Red' } }, nil, function() pcall(C.apply_hp); save(); end);
+                if cfg.vex_head == nil then cfg.vex_head = 'fixed'; end
+                row_pick('##yui_vxhd', 'Where', 'vex_head', { { 'fixed', 'In their place' }, { 'head', 'Over your head' }, { 'both', 'Both' } });   -- (Vex: your bars in their place, over your head as a glass plate, or both)
             else                                                     -- (the gold mode: its HP bars gold, or Void red)
                 row_pick('##yui_hexhpc', 'HP bar colour', 'hex_hp_color', { { 'gold', 'Gold' }, { 'red', 'Void red' } }, nil, function() pcall(C.apply_hp); save(); end);
             end
@@ -19221,7 +19244,7 @@ local function draw_window()
                 if C.vana_cfg() then hint('Your own name and stars over your head are hidden while these bars are on (VanaCore\'s Hide own nameplate), and come back with Fixed.');
                 else hint('Tip: hide your own name and stars over your head in /vana > Options > Nameplates > Hide own nameplate.'); end
             end
-            if cfg.target_fx ~= 'link' or (cfg.head_bars or 'fixed') ~= 'head' then   -- (the fixed bars' own settings: only while they show)
+            if C.head_where() ~= 'head' then                         -- (the fixed bars' own settings: only while they show)
                 if YUI_EQ_BARS then YUI_EQ_BARS(); end
             end
             local docked = YMAP.dock_on and YMAP.dock_on();          -- (EXP, gil and bag built into the minimap: their own pieces never show)
@@ -22902,10 +22925,11 @@ EDIT.G.STEPS = {
         else t[3] = "In Vex mode they are light glass with a mint line for your party and blue for your alliance. HP colour: Green, Purple or White."; end
         t[4] = "Show them for your party only, or your alliance too; size, width, thickness and height are in the same place.";
         return t; end, { { 'member_bars', 'PARTY (Bars over heads)' } } },
-    { "Your HP, MP and TP", function(G) if C.head_bars_on() then return { G.heads(), (cfg.head_bars == 'both') and G.eq() or nil }; end return { G.eq() }; end, function(G)
-        if C.head_bars_on() then return { "Your own bars, over your head: HP, MP, and your TP as a slim bar under them - it turns gold when a weapon skill is ready.",
+    { "Your HP, MP and TP", function(G) if C.head_bars_on() then return { G.heads(), (C.head_where() == 'both') and G.eq() or nil }; end return { G.eq() }; end, function(G)
+        if C.head_bars_on() then return { G.hx() and "Your own bars, over your head: HP, MP, and your TP as a slim bar under them - it turns gold when a weapon skill is ready."
+            or "Your own bars, over your head on a glass plate: HP, MP, and your TP as three dots under them - each one turns gold at 1000, 2000 and 3000.",
             "Listen: a sound plays as your TP reaches 1000, 2000 and 3000, each one stronger, so you know without looking.",
-            "Their size and height, and the TP sound (on / off, volume), are in BARS > YOUR BARS." }; end
+            G.hx() and "Their size and height, and the TP sound (on / off, volume), are in BARS > YOUR BARS." or "Where they go (in their place, over your head or both), their size and height are in BARS > YOUR BARS." }; end
         return { "Your own bars. Anchor them together or place each one apart. Their size, length and thickness are in BARS.",
             "Listen: a soft chime plays as your TP reaches 1000, 2000 and 3000, a step higher each time (SOUND ALERTS > Your TP)." }; end },
     { "Cast bar, EXP, gil and bag", function(G) return { G.win('cast_x'), G.win('exp_x'), G.win('gil_x'), G.win('bag_x') }; end, function(G)
