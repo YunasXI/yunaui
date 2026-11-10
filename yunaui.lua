@@ -4395,7 +4395,8 @@ local function draw_target(dt)
         local link = cfg.target_fx == 'link';                         -- (Hex link: one fixed layout - Magic Burst left of the icon, the fan
         local rdl_ = dl;                                             -- (BARS > Enemy plates: a monster with its plate - the name, HP, debuffs and cast are
         local pl_ = (not link) and (not fake) and tk == 'mob' and C.plated and C.plated(idx);   --  on the plate: drawn into nothing here; the skillchain and Magic
-        if cfg.fight_info ~= false and not link and not pl_ and not (C.GST and C.GST.nobn) then pcall(FIGHT.draw, dl, fsid, x + mdx, y + mdy, w, sc); end   --  Burst as Hex link's Banner at the top)
+        if cfg.fight_info ~= false and not link and not pl_ and not (fake and FIGHT.show and C.mob_plates_on and C.mob_plates_on()) and not (C.GST and C.GST.nobn) then pcall(FIGHT.draw, dl, fsid, x + mdx, y + mdy, w, sc); end   --  Burst as Hex link's Banner at the top)
+        if fake and FIGHT.show and not EDIT.on and C.mob_plates_on and C.mob_plates_on() then pl_ = true; end   -- (Preview them with Enemy plates: only the Banner - no pretend bar under it)
         if pl_ then dl = C.NODL; end
         local nh0 = nh;                                              -- TARGET > Target name size: the name (and its distance) in its own size
         local nk = math.max(0.5, math.min(2.5, tonumber(cfg.target_name_scale) or 1));
@@ -4519,7 +4520,7 @@ local function draw_target(dt)
         end
         if fxs and not pl_ then pcall(FIGHT.fxdraw, fxs, x, top_, by, w, h, sc); end   -- (a plated monster: no entrance up there - it draws on its own layer)
         if link then pcall(FIGHT.linkdraw, fake and 0 or idx, ent, x, by + h / 2, sc, tk); end   -- (TARGET > Entrance: Hex link)
-        local ps = link or pl_;                                       -- (Hex link, or a plated monster: the skillchain and Magic Burst as the Banner at the top)
+        local ps = link or pl_;                                -- (Hex link, or a plated monster: the skillchain and Magic Burst as the Banner at the top)
         if ps and cfg.fight_info ~= false and not (C.GST and C.GST.nobn) then pcall(FIGHT.ps_draw, fsid, sc); end
         if link and not ps and cfg.fight_info ~= false then           -- (Magic Burst, left of the icon, level with the bar)
             pcall(FIGHT.draw, dl, fsid, FIGHT.LBX or (x - FIGHT.LR(sc) * 3.25 - 14 * sc), by + h / 2, w, sc, 'left');   -- (its right edge on the line's bend)
@@ -4621,6 +4622,7 @@ local function draw_subtarget(dt)
     if (idx == nil or idx == 0) and not preview then return; end
     if cfg.target_fx == 'link' and tag ~= 'SUB' and idx == main and not preview then return; end   -- (Hex link: yourself again under yourself - no)
     if tag ~= 'SUB' and not preview and main and C.plated and C.plated(main) then return; end   -- (BARS > Enemy plates: beside the monster's plate instead)
+    if preview and (main == nil or main == 0) and C.mob_plates_on and C.mob_plates_on() then return; end   -- (Preview them with Enemy plates: it's on the plate - not over the Banner)
     local name, hpp = 'Yunas', 0.7;
     if idx and idx ~= 0 then
         local ent = AshitaCore:GetMemoryManager():GetEntity();
@@ -18829,13 +18831,17 @@ local function draw_window()
             row_switch('##yui_tfi', 'Show', 'fight_info', HX and 'What the monster is casting or readying (under the bar), and the skillchain banner with Magic Burst at the top of the screen.'
                 or "Under the bar: what the monster is casting or readying. From the bar's start: a fan of your weapon skills that close the skillchain. Over the name: the Magic Burst window and its elements.");
             if cfg.fight_info ~= false then
-                row_switch('##yui_tfan', HX and 'Skillchain banner' or 'Skillchain fan', 'show_fan', HX and 'On: when your party opens a skillchain, a banner at the top of the screen with the chain, the time and your weapon skills that close it.'
+                local BN_ = HX or (cfg.mob_plates == true);              -- (Vex with Enemy plates: the skillchain as Hex link's Banner too)
+                row_switch('##yui_tfan', BN_ and 'Skillchain banner' or 'Skillchain fan', 'show_fan', BN_ and 'On: when your party opens a skillchain, a banner at the top of the screen with the chain, the time and your weapon skills that close it.'
                     or 'On: when your party opens a skillchain, a fan of your weapon skills that close it.');
                 row_switch('##yui_tmb', 'Magic Burst', 'show_mb', 'On: after a skillchain, the Magic Burst elements and the chain.');
                 if HX then
                     row_slider('##yui_hl_fan', 'Banner size', 'hl_fan', 0.3, 2.0, 0.05, '%.2fx');
                     row_slider('##yui_hl_cast', 'Enemy cast size', 'hl_cast', 0.3, 2.0, 0.05, '%.2fx');
                     hint('The enemy cast size is a share of the target bar size.');
+                elseif BN_ then                                          -- (Enemy plates on: the Banner's size; the casts are on the plates)
+                    row_slider('##yui_hl_fan', 'Banner size', 'hl_fan', 0.3, 2.0, 0.05, '%.2fx');
+                    hint('With Enemy plates on (BARS), the skillchain and Magic Burst show as a banner at the top of the screen, and casts hang under each plate.');
                 else
                     row_slider('##yui_fansc', 'Skillchain fan size', 'fan_scale', 0.4, 2.0, 0.05, '%.2fx');
                     if cfg.fan_hub == nil then cfg.fan_hub = 1.0; end
@@ -18992,7 +18998,6 @@ local function draw_window()
                     if cfg.mob_plates_debuffs == nil then cfg.mob_plates_debuffs = true; end
                     row_switch('##yui_mpld', 'Enemy plates: debuffs', 'mob_plates_debuffs', 'On: the debuffs seen landing on it under its HP bar, each with the time it has left.');
                     row_slider('##yui_mply', 'Enemy plates height', 'mob_plates_y', -60, 60, 1, '%d');
-                    row_slider('##yui_mplbn', 'Skillchain banner size', 'hl_fan', 0.3, 2.0, 0.05, '%.2fx');   -- (a plated target's skillchain: Hex link's Banner - the same setting)
                 end
             end
             if C.head_bars_on() then
