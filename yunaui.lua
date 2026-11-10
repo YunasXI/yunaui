@@ -4517,7 +4517,7 @@ local function draw_target(dt)
             end
             if pa then imgui.PopStyleVar(1); end
         end
-        if fxs then pcall(FIGHT.fxdraw, fxs, x, top_, by, w, h, sc); end
+        if fxs and not pl_ then pcall(FIGHT.fxdraw, fxs, x, top_, by, w, h, sc); end   -- (a plated monster: no entrance up there - it draws on its own layer)
         if link then pcall(FIGHT.linkdraw, fake and 0 or idx, ent, x, by + h / 2, sc, tk); end   -- (TARGET > Entrance: Hex link)
         local ps = link;                                              -- (Hex link: the skillchain and Magic Burst as the honeycomb at the top)
         if ps and cfg.fight_info ~= false and not (C.GST and C.GST.nobn) then pcall(FIGHT.ps_draw, fsid, sc); end
