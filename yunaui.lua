@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.50';
+addon.version = '1.1.51';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -11262,7 +11262,8 @@ function C.member_bars()
     C.NP_T0 = C.NP_T0 or os.clock();                                 -- (names shown for the first moment after loading: the game draws them, their heights are measured)
     local npok_ = os.clock() - C.NP_T0 > 0.7;
     pcall(C.mp_names, npok_ and mpo and not YUI_MAPCOVER and not (YMAP and YMAP.big));
-    pcall(C.np_hide, 'hideplayers', false);                          -- (bars only for your party, alliance and monsters now: other players keep the game's names)   -- (friend plates on every player: their names go inside)
+    pcall(C.np_hide, 'hideplayers', false);                          -- (players keep their own names: VanaCore's nameplates ignore hideplayers, so hiding gave
+                                                                     --  party members two names - until VanaCore has a hide-party/alliance-names option)   -- (friend plates on every player: their names go inside)
     pcall(C.np_hide, 'hidetrusts', npok_ and mbo and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (trusts always have a plate: their names go inside too)   -- (plates drawn: the monsters' own names off - VanaCore's setting; else back)
     if not (mbo or mpo) or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
     local ds = imgui.GetIO().DisplaySize;
@@ -11451,7 +11452,7 @@ function C.member_bars_()
                         local hv = math.max(3, hh);
                         local mv = wmp and math.max(2, mh) or 0;
                         local nk_ = it.pl and C.NPH.hideplayers or C.NPH.hidetrusts;   -- (its name hidden - by us, or the player's own setting: drawn inside, with the HP %)
-                        local inner = nk_ and (nk_.mine or nk_.own) and true or false;
+                        local inner = it.pl or (nk_ and (nk_.mine or nk_.own)) and true or false;   -- (players: always their name inside, VanaCore's own names left on)
                         local acc = (it.grp == 'party') and { 0.50, 0.88, 0.75 } or ((it.grp == 'ally') and { 0.50, 0.72, 1.00 }) or nil;
                         local px_, py_ = math.floor(6 * sc), math.floor(4 * sc);
                         local pushed, lh, nh_ = false, 0, 0;
@@ -11519,7 +11520,7 @@ function C.member_bars_()
                     local al = (hpp <= 0) and 0.55 or 1;         -- (knocked out: faded)
                     do                                                -- (Hex link's friend plate: square glass, a thin white edge, a stripe down its left -
                         local nk_ = it.pl and C.NPH.hideplayers or C.NPH.hidetrusts;   --  gold party, azure alliance; its name inside when the game's is hidden)
-                        local inner = nk_ and (nk_.mine or nk_.own) and true or false;
+                        local inner = it.pl or (nk_ and (nk_.mine or nk_.own)) and true or false;   -- (players: always their name inside, VanaCore's own names left on)
                         local hv, mv = math.max(3, hh), wmp and math.max(2, mh) or 0;
                         hh, mh = hv, mv;
                         if inner then y0 = math.floor(y0 - (hv + (wmp and (g + mv) or 0) + 4 * sc)); end
