@@ -1223,7 +1223,7 @@ local function glow_bar(dl, x, y, w, h, v, lag, c1, c2, seed, fxo)
     end
     if v <= 0 then return; end
     local fw = w * v;
-    local pulse = 0.5 + 0.5 * math.sin(now * 2.2 + seed);
+    local pulse = (fxo == 'none') and 0.5 or (0.5 + 0.5 * math.sin(now * 2.2 + seed));   -- ('none': still - no breathing either)
     for k = 1, 4 do                                                  -- the coloured glow around it, breathing
         DL.RF(dl, x - k, y - k, x + fw + k, y + h + k, U4(c2[1], c2[2], c2[3], (0.11 - k * 0.022) * (0.75 + 0.5 * pulse)), h / 2 + k);
     end
@@ -10993,7 +10993,7 @@ function C.head_bars_()                                             -- (the bars
         bx, bw, al = bx or x0, bw or W, al or 1;                     -- (ex: Hex link's life - lag, lead)
         if hmir then ex = ex or {}; C.hexbar(dl, bx, y, bw, h, v, ex.lag, 0, { c1 = c2, c2 = c1, band = h + 1, al = al, live = true, lead = ex.lead }); return; end   -- (Hex link: the hexagon style)
         if al >= 0.999 then                                          -- (Vex: the party plates' glowing bars with a black edge - landed, not the entrance's trail)
-            glow_bar(dl, bx, y, bw, h, v, ex and ex.lag or nil, c1, c2, (ex and ex.seed) or 0, 'flow');
+            glow_bar(dl, bx, y, bw, h, v, ex and ex.lag or nil, c1, c2, (ex and ex.seed) or 0, 'none');   -- (no moving effect over your head)
             DL.R(dl, bx - 1.5, y - 1.5, bx + bw + 1.5, y + h + 1.5, U4(0, 0, 0, 0.90), h / 2 + 1.5, C.rall, 1.4);
             return;
         end
@@ -11178,7 +11178,7 @@ function C.head_bars_()                                             -- (the bars
         local th = mh;
         local t1, t2 = { 1.00, 0.95, 0.74 }, { 0.95, 0.76, 0.34 };
         if ut >= 1 then
-            glow_bar(dl, tx, ty, tw, th, math.min(1, H.tp / 3000), nil, t1, t2, 11, 'flow');
+            glow_bar(dl, tx, ty, tw, th, math.min(1, H.tp / 3000), nil, t1, t2, 11, 'none');
             DL.R(dl, tx - 1.5, ty - 1.5, tx + tw + 1.5, ty + th + 1.5, U4(0, 0, 0, 0.90), th / 2 + 1.5, C.rall, 1.4);
         else
             DL.RF(dl, tx, ty, tx + tw, ty + th, U4(t2[1], t2[2], t2[3], 0.6 * ut), th / 2);
