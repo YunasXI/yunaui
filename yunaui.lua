@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.51';
+addon.version = '1.1.52';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -4294,8 +4294,25 @@ function C.mob_info(dl, x, y, h, idx, name, a, sc, mid)                -- (TARGE
     C.MOBOUT = nil;
     return fw;
 end
+function C.sc_banner(idx)                                           -- (the skillchain / Magic Burst Banner at the top for this monster, in a window of its own -
+    if cfg.fight_info == false or (C.GST and C.GST.nobn) then return; end   --  drawn outside one, ImGui opens its "Debug" window)
+    local ds_ = imgui.GetIO().DisplaySize;
+    imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
+    imgui.SetNextWindowSize({ ds_.x, ds_.y }, ImGuiCond_Always);
+    local fl_ = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoMove, ImGuiWindowFlags_NoInputs,
+        ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing,
+        ImGuiWindowFlags_NoBringToFrontOnFocus, ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoScrollbar);
+    if imgui.Begin('##yui_platebanner', { true }, fl_) then
+        pcall(function() FIGHT.ps_draw(AshitaCore:GetMemoryManager():GetEntity():GetServerId(idx), 1); end);
+    end
+    imgui.End();
+end
 local function draw_target(dt)
-    if not cfg.target then return; end
+    if not cfg.target then                                           -- (TARGET > Show off: no target bar - but a skillchain on a plated monster (or in Hex
+        local i_ = target_index();                                   --  link, any monster) still gets its Banner at the top)
+        if i_ and i_ ~= 0 and not YUI_PRES and ((C.plated and C.plated(i_)) or cfg.target_fx == 'link') then pcall(C.sc_banner, i_); end
+        return;
+    end
     local idx = target_index();
     local fake = false;
     if YUI_PRES then idx = 0; end                                    -- (the guide's slides: always the pretend target)
@@ -4306,18 +4323,7 @@ local function draw_target(dt)
         if C.overhead_idx and C.overhead_idx(idx) then FIGHT.fx.idx = nil; return; end   -- (their bars already over their head: no target bar for them)
         if C.plated and C.plated(idx) then                            -- (BARS > Enemy plates: its plate has it all - only the skillchain Banner at the top)
             FIGHT.fx.idx = nil;
-            if cfg.fight_info ~= false and not (C.GST and C.GST.nobn) then
-                local ds_ = imgui.GetIO().DisplaySize;                 -- (in a window of its own - drawn outside one, ImGui opens its "Debug" window)
-                imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
-                imgui.SetNextWindowSize({ ds_.x, ds_.y }, ImGuiCond_Always);
-                local fl_ = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoMove, ImGuiWindowFlags_NoInputs,
-                    ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing,
-                    ImGuiWindowFlags_NoBringToFrontOnFocus, ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoScrollbar);
-                if imgui.Begin('##yui_platebanner', { true }, fl_) then
-                    pcall(function() FIGHT.ps_draw(AshitaCore:GetMemoryManager():GetEntity():GetServerId(idx), 1); end);
-                end
-                imgui.End();
-            end
+            pcall(C.sc_banner, idx);
             return;
         end
     end
@@ -4639,6 +4645,7 @@ local function draw_subtarget(dt)
     end
     if (idx == nil or idx == 0) and not preview then return; end
     if cfg.target_fx == 'link' and tag ~= 'SUB' and idx == main and not preview then return; end   -- (Hex link: yourself again under yourself - no)
+    if tag ~= 'SUB' and not preview and not cfg.target then return; end   -- (TARGET > Show off - the plates and bars over heads in its place: no target of target floating alone)
     if tag ~= 'SUB' and not preview and main and C.plated and C.plated(main) then return; end   -- (BARS > Enemy plates: beside the monster's plate instead)
     if preview and (main == nil or main == 0) and C.mob_plates_on and C.mob_plates_on() then return; end   -- (Preview them with Enemy plates: it's on the plate - not over the Banner)
     local name, hpp = 'Yunas', 0.7;
