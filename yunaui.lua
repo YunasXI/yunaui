@@ -11472,8 +11472,27 @@ function C.mob_plates_()
             local nm = C.mob_name(ent:GetName(idx) or '') or '';
             local pct = string.format('%d%%', math.floor(hpp * 100 + 0.5));
             local pw = imgui.CalcTextSize(pct);
+            local tot_, totw_, toth_ = nil, 0, 0;                      -- (your target: who it's after, small, on the name's line over the HP % - the name
+            if idx == tidx and cfg.subtarget then                       --  makes room for it)
+                pcall(function()
+                    local ti = tot_index(idx);
+                    if not ti or ti == 0 or ent:GetRawEntity(ti) == nil then return; end
+                    local tn = C.mob_name(ent:GetName(ti) or '') or '';
+                    if tn == '' then return; end
+                    local fs0 = FS or 1;
+                    imgui.SetWindowFontScale(fs0 * 0.72);
+                    local room = (W + pw + 8 * sc) * 0.45;
+                    local tn0 = tn;
+                    while #tn > 3 and imgui.CalcTextSize(tn) > room do tn = tn:sub(1, #tn - 1); end
+                    if tn ~= tn0 then tn = tn:sub(1, #tn - 1) .. '..'; end
+                    totw_, toth_ = imgui.CalcTextSize(tn);
+                    imgui.SetWindowFontScale(fs0);
+                    tot_ = tn;
+                end);
+            end
+            local nroom_ = tot_ and (W + pw + 8 * sc - totw_ - math.floor(toth_ * 0.8) - 12 * sc) or W;
             local nm0 = nm;
-            while #nm > 3 and imgui.CalcTextSize(nm) > W do nm = nm:sub(1, #nm - 1); end
+            while #nm > 3 and imgui.CalcTextSize(nm) > nroom_ do nm = nm:sub(1, #nm - 1); end
             if nm ~= nm0 then nm = nm:sub(1, #nm - 1) .. '..'; end
             local H = pad + lh + 3 * sc + bh + pad * 0.8;
             local pb = by - ((drows > 0) and (dh + 4 * sc) or 0);       -- (the plate's foot: the debuffs hang under it, outside)
@@ -11500,34 +11519,17 @@ function C.mob_plates_()
             glow_bar(dl, x0, bY, W, bh, S.hp, lagged('mp3' .. idx, hpp, dt), c1, c2, (idx % 97) * 0.41);
             text(dl, x0 + W + 8 * sc, math.floor(bY + bh / 2 - lh / 2), pct, (hpp < 0.25) and { 1, 0.55, 0.55, 1 } or { 1, 0.86, 0.94, 1 });
             S.drawn = os.clock();
-            if on and cfg.subtarget then                              -- (your target's target: a smaller plate of the same glass right of it, at its foot)
-                pcall(function()
-                    local ti = tot_index(idx);
-                    if not ti or ti == 0 or ent:GetRawEntity(ti) == nil then return; end
-                    local tn = C.mob_name(ent:GetName(ti) or '') or '';
-                    if tn == '' then return; end
-                    local k = 0.70;                                   -- (just its name: a slim glass pill joined to the plate's right edge,
-                    local fs0 = FS or 1;                              --  a thin blue line and a small arrow leading into it)
-                    imgui.SetWindowFontScale(fs0 * k);
-                    local tlh = imgui.GetTextLineHeight();
-                    local TW = math.floor(W * 0.6);
-                    local tn0 = tn;
-                    while #tn > 3 and imgui.CalcTextSize(tn) > TW do tn = tn:sub(1, #tn - 1); end
-                    if tn ~= tn0 then tn = tn:sub(1, #tn - 1) .. '..'; end
-                    local tw_ = imgui.CalcTextSize(tn);
-                    local ph = math.floor(tlh + 4 * sc);
-                    local aw = math.floor(ph * 0.34);                 -- (the arrow's room)
-                    local qx1 = x2 - 1;
-                    local qy1 = math.floor((y1 + y2) / 2 - ph / 2);
-                    local qx2, qy2 = qx1 + aw + 5 * sc + tw_ + 7 * sc, qy1 + ph;
-                    local cb = { 0.45, 0.72, 1.00 };
-                    DL.RF(dl, qx1, qy1, qx2, qy2, U4(0.045, 0.040, 0.065, 0.62), ph / 2, (ImDrawFlags_RoundCornersRight or ImDrawCornerFlags_Right or 10));
-                    DL.R(dl, qx1, qy1, qx2, qy2, U4(cb[1], cb[2], cb[3], 0.45), ph / 2, (ImDrawFlags_RoundCornersRight or ImDrawCornerFlags_Right or 10), 1.0);
-                    local ax, ay = qx1 + 4 * sc, qy1 + ph / 2;
-                    DL.TF(dl, ax, ay - aw * 0.55, ax, ay + aw * 0.55, ax + aw * 0.75, ay, U4(cb[1], cb[2], cb[3], 0.95));
-                    text(dl, ax + aw + 4 * sc, math.floor(ay - tlh / 2), tn, { 0.88, 0.95, 1, 1 });
-                    imgui.SetWindowFontScale(fs0);
-                end);
+            if tot_ then                                              -- (the target of target: a small blue arrow and its name, right-aligned)
+                local fs0 = FS or 1;
+                imgui.SetWindowFontScale(fs0 * 0.72);
+                local cbl = { 0.45, 0.72, 1.00 };
+                local tx_ = x2 - pad - totw_;
+                local cy_ = ty + lh / 2;
+                local aw = math.floor(toth_ * 0.32);
+                local ax = tx_ - aw - 4 * sc;
+                DL.TF(dl, ax, cy_ - aw * 0.6, ax, cy_ + aw * 0.6, ax + aw * 0.85, cy_, U4(cbl[1], cbl[2], cbl[3], 0.95));
+                text(dl, tx_, math.floor(cy_ - toth_ / 2), tot_, { 0.84, 0.93, 1, 1 });
+                imgui.SetWindowFontScale(fs0);
             end
             unsized(pushed);
             -- the debuffs under it, each with its time left
