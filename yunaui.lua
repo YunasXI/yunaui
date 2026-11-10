@@ -11470,7 +11470,7 @@ end
 -- its name, its HP bar with the percent, and the debuffs seen landing on it under that (BARS > Enemy plates over heads)
 C.MP3 = {};                                                          -- (per monster: its plate's state)
 C.MNH = {};                                                          -- (per model: how high the game draws its name, in yalms - measured once)
-function C.mob_plates_on() return cfg.mob_plates == true and cfg.target_fx ~= 'link'; end   -- (Vex mode only: Hex link keeps its own target bar - the user's choice)
+function C.mob_plates_on() return cfg.mob_plates == true; end      -- (both modes - in Hex link your target keeps its own target bar, the rest get small Hex bars)
 function C.plated(idx) return C.mob_plates_on() and idx ~= nil and C.MP3[idx] ~= nil and C.MP3[idx].drawn ~= nil and os.clock() - C.MP3[idx].drawn < 0.3; end   -- (a plate over it now)
 function C.plated_sid(sid)                                           -- (a plate over the monster with this server id now)
     if not C.mob_plates_on() then return false; end
@@ -11550,6 +11550,7 @@ function C.mob_plates_()
     local seen = {};
     for _, idx in ipairs(want) do
         local ok_ = pcall(function()
+            if cfg.target_fx == 'link' and idx == tidx then return; end   -- (Hex link: your target has its own target bar - no plate for it)
             if ent:GetRawEntity(idx) == nil or is_party_id(ent:GetServerId(idx)) then return; end
             local hpp = (ent:GetHPPercent(idx) or 0) / 100;
             if hpp <= 0 then return; end
@@ -11647,10 +11648,9 @@ function C.mob_plates_()
             local rr = HXp and 0 or 6 * sc;
             local ca, cb = NEON2 or { 1.0, 0.42, 0.72 }, NEON or { 0.86, 0.24, 0.86 };
             if HXp then ca, cb = C.GOLDH or { 1.0, 0.81, 0.43 }, YUI_AZ(); end
-            if HXp then
-                DL.RF(dl, x1, y1, x2, y2, U4(0.030, 0.035, 0.055, on and 0.84 or 0.68));
-                DL.R(dl, x1, y1, x2, y2, U4(ca[1], ca[2], ca[3], on and 0.95 or 0.45), 0, 0, on and 1.5 or 1.0);
-                if on then
+            if HXp then                                               -- (Hex link: no box - lines only, as its target bar: the name, the hex bar, a gold hex at its start)
+                if C.hexdot then local g2 = C.GOLDH2 or { 1.0, 0.90, 0.62 }; C.hexdot(dl, x0 - 6 * sc, math.floor(y0 + pad * 0.7 + lh + 3 * sc) + bh / 2, 2.6 * sc, U4(g2[1], g2[2], g2[3], 0.95)); end
+                if false then
                     DL.RFM(dl, x1 + 1, y1, x2 - 1, y1 + math.max(1, math.floor(2 * sc)), U4(ca[1], ca[2], ca[3], 1), U4(cb[1], cb[2], cb[3], 1), U4(cb[1], cb[2], cb[3], 1), U4(ca[1], ca[2], ca[3], 1));   -- (gold to azure along its top)
                     if C.hexdot then
                         local g2 = C.GOLDH2 or { 1.0, 0.90, 0.62 };
@@ -11703,7 +11703,7 @@ function C.mob_plates_()
                 local sy1, sy2 = y2 - 1, y2 + csh_;
                 local bot = ImDrawFlags_RoundCornersBottom or ImDrawCornerFlags_Bot or 12;
                 if HXp then bot = 0; sx1, sx2 = x1 + 8 * sc, x2 - 8 * sc; end
-                DL.RF(dl, sx1, sy1, sx2, sy2, HXp and U4(0.030, 0.035, 0.055, 0.80 * fl_) or U4(0.045, 0.040, 0.065, 0.74 * fl_), rr * 0.8, bot);
+                if not HXp then DL.RF(dl, sx1, sy1, sx2, sy2, U4(0.045, 0.040, 0.065, 0.74 * fl_), rr * 0.8, bot); end   -- (Hex link: no box, as its plate)
                 local k1 = tp_ and { 1.0, 0.36, 0.62 } or { 0.62, 0.40, 1.0 };   -- (a TP move rose to orange, a spell violet - as the top cast bar)
                 local k2 = tp_ and { 1.0, 0.70, 0.40 } or { 0.85, 0.70, 1.0 };
                 if HXp then                                           -- (Hex link: a TP move amber, a spell azure; the strip's edge gold)
@@ -11711,7 +11711,7 @@ function C.mob_plates_()
                     k1 = tp_ and { 1.0, 0.62, 0.20 } or { az_[1] * 0.7, az_[2] * 0.7, az_[3] };
                     k2 = tp_ and { 1.0, 0.88, 0.54 } or az_;
                 end
-                DL.R(dl, sx1, sy1, sx2, sy2, HXp and U4(ca[1], ca[2], ca[3], 0.45 * fl_) or U4(k1[1], k1[2], k1[3], 0.50 * fl_), rr * 0.8, bot, 1.0);
+                if not HXp then DL.R(dl, sx1, sy1, sx2, sy2, U4(k1[1], k1[2], k1[3], 0.50 * fl_), rr * 0.8, bot, 1.0); end
                 local fs0 = FS or 1;
                 imgui.SetWindowFontScale(fs0 * 0.72);
                 local clh = imgui.GetTextLineHeight();
@@ -19079,7 +19079,7 @@ local function draw_window()
                 row_switch('##yui_mbars', 'Party bars over heads', 'member_bars', 'On: everyone in your party and alliance (trusts too) gets an HP and an MP bar just under the name over their head, as yours. Only the ones you can see, within 30 yalms.');
                 if cfg.member_bars == true then row_slider('##yui_mbs', 'Party bars size', 'member_bars_scale', 0.5, 2.0, 0.05, '%.2fx'); row_slider('##yui_mbw', 'Party bars width', 'member_bars_w', 0.4, 3.0, 0.05, '%.2fx'); row_slider('##yui_mbt', 'Party bars thickness', 'member_bars_th', 0.4, 3.0, 0.05, '%.2fx'); if cfg.member_bars_mp == nil then cfg.member_bars_mp = true; end row_pick('##yui_mbwho', 'Party bars for', 'member_bars_who', { { 'alliance', 'Party and alliance' }, { 'party', 'Party only' } }); row_switch('##yui_mbmp', 'Party bars: MP', 'member_bars_mp', 'On: an MP bar under each HP bar. Off: the HP bar alone.'); row_switch('##yui_mball', 'Also on other players', 'member_bars_all', 'On: every other player near you gets an HP bar over their head too (HP only: the game never sends their MP). Off: only your party and alliance.'); row_slider('##yui_mby', 'Party bars height', 'member_bars_y', -60, 60, 1, '%d'); end
             end
-            if cfg.target_fx ~= 'link' then                          -- (Vex mode: a plate over each monster near you - Hex link keeps its target bar)
+            do                                                       -- (a bar over each monster near you - Hex link: your target keeps its own target bar)
                 row_switch('##yui_mplt', 'Enemy plates over heads', 'mob_plates', 'On: every monster near you (within 30 yalms) gets a plate over its head in place of its name - its name, its HP bar with the percent, and its debuffs under it.');
                 if cfg.mob_plates == true then
                     row_slider('##yui_mpls', 'Enemy plates size', 'mob_plates_scale', 0.5, 2.0, 0.05, '%.2fx');
