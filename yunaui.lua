@@ -265,7 +265,8 @@ function YUI_TINT(r, g, b)
 end
 local U32S_ = { 0, 0, 0, 1 };
 local function u32(c)                                              -- (with Void red picked: its gold turned red / white, as U4)
-    if YUI_TINT_ON and c[1] then U32S_[1], U32S_[2], U32S_[3] = YUI_TINT(c[1], c[2], c[3]); U32S_[4] = c[4] or 1; return imgui.GetColorU32(U32S_); end
+    if YUI_TINT_ON and c[1] then U32S_[1], U32S_[2], U32S_[3] = YUI_TINT(c[1], c[2], c[3]); U32S_[4] = (c[4] or 1) * (YUI_ADIM or 1); return imgui.GetColorU32(U32S_); end
+    if YUI_ADIM and c[1] then U32S_[1], U32S_[2], U32S_[3], U32S_[4] = c[1], c[2], c[3], (c[4] or 1) * YUI_ADIM; return imgui.GetColorU32(U32S_); end   -- (BARS > Enemy plates: the ones you don't target, faded)
     return imgui.GetColorU32(c);
 end
 -- Frame cost (VanaCore's findings): no Lua table made per draw call. U4(r, g, b, a) is u32({ r, g, b, a }) through one
@@ -274,7 +275,7 @@ end
 local U4, DL;
 do
     local c4, P1, P2, P3, P4 = { 0, 0, 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 };
-    U4 = function(r, g, b, a) if YUI_TINT_ON then r, g, b = YUI_TINT(r, g, b); end c4[1], c4[2], c4[3], c4[4] = r, g, b, a; return imgui.GetColorU32(c4); end
+    U4 = function(r, g, b, a) if YUI_TINT_ON then r, g, b = YUI_TINT(r, g, b); end c4[1], c4[2], c4[3], c4[4] = r, g, b, a * (YUI_ADIM or 1); return imgui.GetColorU32(c4); end
     DL = {};
     function DL.L(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddLine(P1, P2, ...); end
     function DL.R(d, a, b, c, e, ...) P1[1], P1[2], P2[1], P2[2] = a, b, c, e; return d:AddRect(P1, P2, ...); end
@@ -11614,7 +11615,9 @@ function C.mob_plates_()
     end
     if tidx > 0 and (tidx < 0x400 or tidx >= 0x700) and mob_(tidx) then want[#want + 1] = tidx; end
     local seen = {};
+    local tpl_ = tidx > 0 and (tidx < 0x400 or tidx >= 0x700) and mob_(tidx);   -- (a monster targeted: every other plate faded right down - in a big pull your target stands out)
     for _, idx in ipairs(want) do
+        YUI_ADIM = (tpl_ and idx ~= tidx) and 0.28 or nil;
         local ok_ = pcall(function()
             if ent:GetRawEntity(idx) == nil or is_party_id(ent:GetServerId(idx)) then return; end
             local hpp = (ent:GetHPPercent(idx) or 0) / 100;
@@ -11862,6 +11865,7 @@ function C.mob_plates_()
                 image(dl, tex(HXp and 'tarrow_prism2.png' or 'tarrow_vexw.png'), hx - aw_ / 2, at_, hx + aw_ / 2, at_ + ah_, { 1, 1, 1, 1 });
             end
         end);
+        YUI_ADIM = nil;
         if not ok_ then C.MP3[idx] = nil; end
     end
     for k in pairs(C.MP3) do if not seen[k] then C.MP3[k] = nil; end end
