@@ -11035,18 +11035,7 @@ function C.head_bars_()                                             -- (the bars
     local ae = now - (H.t0 or -99);
     local intro = ae < 1.6;
     local function clamp01(v) return math.max(0, math.min(1, v)); end
-    if not hmir then                                                 -- (Vex: a light glass plate round the bars and the TP dots - the party plates' family,
-        local pa = intro and clamp01(ae / 0.35) or 1;                --  a thin white edge, a gold line on top: it's you)
-        local px_, py_ = math.floor(7 * sc), math.floor(5 * sc);
-        local dd_ = math.max(4, 5 * sc);
-        local bot = y0 + hh + mh + g + 8 * sc + dd_ * 2;
-        local bx1, by1, bx2, by2 = x0 - px_, y0 - py_, x0 + W + px_, bot + py_ * 0.6;
-        local rr_ = 6 * sc;
-        DL.RF(dl, bx1, by1, bx2, by2, U4(0.045, 0.040, 0.065, 0.42 * pa), rr_);
-        DL.R(dl, bx1, by1, bx2, by2, U4(1, 1, 1, 0.24 * pa), rr_, C.rall, 1.0);
-        DL.RF(dl, bx1 + rr_, by1, bx2 - rr_, by1 + math.max(1, math.floor(1.5 * sc)), U4(1.0, 0.83, 0.42, 0.95 * pa));
-        H.pw = px_;
-    else H.pw = 0; end
+    H.pw = 0;                                                        -- (Vex: no plate - the bars on their own, as the user asked)
     local function back(u) u = u - 1; return 1 + 2.70158 * u ^ 3 + 1.70158 * u ^ 2; end   -- (eases in, overshooting a touch)
     local uh = intro and clamp01(ae / 0.30) or 1;
     local um = intro and clamp01((ae - 0.3) / 0.30) or 1;
@@ -11142,6 +11131,7 @@ function C.head_bars_()                                             -- (the bars
                     end
                 end
                 local tpy = y0 + hh + mh + g + 8 * sc + math.max(4, 5 * sc) + th_ * 0.14;   -- (TP on the dots' line; MP and HP evenly above it)
+                if not hmir then tpy = y0 + hh + g + mh + g + mh / 2 + th_ * 0.14 + rowh * 0.35; end   -- (Vex: by the TP bar)
                 if hmir then tpy = y0 + hh + mh + g + math.max(1, math.floor(1.5 * sc)) + math.max(4, math.floor(5 * sc + 0.5)) / 2 + th_ * 0.14 + rowh * 0.35; end   -- (Hex link: by the TP bar)
                 if hmir then                                         -- (Hex link: each number on its own bar's line, the bars' size and colours)
                     unsized(pushed);
@@ -11179,6 +11169,30 @@ function C.head_bars_()                                             -- (the bars
         return;
     end
     local fl = math.max(0, 1 - (now - H.flash) / 0.7);
+    if not hmir then                                                 -- (Vex: TP as a short glowing gold bar, centred under MP - the fixed bars' TP colours;
+        local ut = intro and clamp01((ae - 0.62) / 0.28) or 1;        --  a mark at 1000 and 2000, a light as each one fills)
+        if ut <= 0 then return; end
+        local tw = math.floor(W * 0.55);
+        local tx = math.floor(x0 + (W - tw) / 2);
+        local ty = y0 + hh + g + mh + g;
+        local th = mh;
+        local t1, t2 = { 1.00, 0.95, 0.74 }, { 0.95, 0.76, 0.34 };
+        if ut >= 1 then
+            glow_bar(dl, tx, ty, tw, th, math.min(1, H.tp / 3000), nil, t1, t2, 11, 'flow');
+            DL.R(dl, tx - 1.5, ty - 1.5, tx + tw + 1.5, ty + th + 1.5, U4(0, 0, 0, 0.90), th / 2 + 1.5, C.rall, 1.4);
+        else
+            DL.RF(dl, tx, ty, tx + tw, ty + th, U4(t2[1], t2[2], t2[3], 0.6 * ut), th / 2);
+        end
+        for k = 1, 2 do                                              -- (the 1000 / 2000 marks)
+            local mx = math.floor(tx + tw * k / 3);
+            DL.L(dl, mx, ty, mx, ty + th, U4(0, 0, 0, 0.75 * ut), math.max(1, sc));
+        end
+        if fl > 0 then
+            local gw = (1 - fl) * 5 * sc;
+            DL.RF(dl, tx - 2 - gw, ty - 2 - gw, tx + tw + 2 + gw, ty + th + 2 + gw, U4(1, 0.92, 0.65, 0.35 * fl), (th + 4) / 2 + gw);
+        end
+        return;
+    end
     local gold = { 1.0, 0.83, 0.42 };
     local d = math.max(4, 5 * sc);
     local dy = y0 + hh + mh + g + 8 * sc + d;
@@ -19234,7 +19248,7 @@ local function draw_window()
                 row_pick('##yui_hexhpc', 'HP bar colour', 'hex_hp_color', { { 'gold', 'Gold' }, { 'red', 'Void red' } }, nil, function() pcall(C.apply_hp); save(); end);
             end
             if C.head_bars_on() then
-                hint('Over your head: thin HP and MP bars, the TP as three dots (gold when full: a weapon skill is ready) and the numbers beside them.');
+                hint(YUI_HEX and 'Over your head: thin HP and MP bars, the TP as a slim bar (gold when a weapon skill is ready) and the numbers beside them.' or 'Over your head: HP and MP bars, the TP as a short gold bar under them (marked at 1000 and 2000) and the numbers beside them.');
                 row_slider('##yui_hbs', 'Head bars size', 'head_bars_scale', 0.5, 2.5, 0.05, '%.2fx');
                 row_slider('##yui_hby', 'Head bars height', 'head_bars_y', -80, 80, 1, '%d');
                 row_pick('##yui_hbn', 'Head bars numbers', 'head_nums', { { 'always', 'Always' }, { 'change', 'When they change' }, { 'off', 'Off' } });
@@ -22927,7 +22941,7 @@ EDIT.G.STEPS = {
         return t; end, { { 'member_bars', 'PARTY (Bars over heads)' } } },
     { "Your HP, MP and TP", function(G) if C.head_bars_on() then return { G.heads(), (C.head_where() == 'both') and G.eq() or nil }; end return { G.eq() }; end, function(G)
         if C.head_bars_on() then return { G.hx() and "Your own bars, over your head: HP, MP, and your TP as a slim bar under them - it turns gold when a weapon skill is ready."
-            or "Your own bars, over your head on a glass plate: HP, MP, and your TP as three dots under them - each one turns gold at 1000, 2000 and 3000.",
+            or "Your own bars, over your head: HP, MP, and your TP as a short gold bar under them, marked at 1000 and 2000.",
             "Listen: a sound plays as your TP reaches 1000, 2000 and 3000, each one stronger, so you know without looking.",
             G.hx() and "Their size and height, and the TP sound (on / off, volume), are in BARS > YOUR BARS." or "Where they go (in their place, over your head or both), their size and height are in BARS > YOUR BARS." }; end
         return { "Your own bars. Anchor them together or place each one apart. Their size, length and thickness are in BARS.",
