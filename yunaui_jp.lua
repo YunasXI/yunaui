@@ -182,7 +182,8 @@ local function hook_fonts()
                     pcall(function() c.DstFont = font; end);
                     KEEP[#KEEP + 1] = c;
                     JP.MERGED[#JP.MERGED + 1] = font; JP.MERGED[tostring(font)] = true;
-                    add(jp, tonumber(px) or 17, c);   -- (元フォントと同じサイズで合成: 違うと日本語だけ大きさがずれる)
+                    local k_ = tonumber(YUI_JPK) or 1;               -- (CHAT > Japanese text size: the chat fonts' Japanese alone, bigger or smaller)
+                    add(jp, (tonumber(px) or 17) * k_, c);   -- (元フォントと同じサイズで合成: 違うと日本語だけ大きさがずれる)
                 end);
                 busy = false;
             end

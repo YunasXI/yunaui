@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.53';
+addon.version = '1.1.54';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -488,6 +488,9 @@ local function load_fonts()
         end
     end
     fonts.jpcfg = {};
+    local jk = math.max(0.7, math.min(1.8, tonumber(cfg.chat_jp_scale) or 1));   -- (CHAT > Japanese text size: the Japanese characters alone bigger or smaller
+    C.JPK = jk;                                                      --  than the chat font's letters - made at that size here, so a reload applies it)
+    YUI_JPK = (jk ~= 1) and jk or nil;                               -- ([JP] its own merge, right after each font, reads this)
     for _, px in ipairs({ 13, 16, 20, 26, 34 }) do
         local font = nil;
         if file then
@@ -503,10 +506,11 @@ local function load_fonts()
                 c.MergeMode = true;
                 pcall(function() c.DstFont = font; end);
                 fonts.jpcfg[#fonts.jpcfg + 1] = c;                   -- (kept while the font lives)
-                imgui.AddFontFromFileTTF(jp, px, c);
+                imgui.AddFontFromFileTTF(jp, px * jk, c);
             end);
         end
     end
+    YUI_JPK = nil;
     fonts.chat = fonts.sized.chat[2] and fonts.sized.chat[2][1] or fonts.main;
     YUI_FONTS = fonts;                                              -- (the Damage Meter uses these: no font of its own)
 end
@@ -9353,6 +9357,7 @@ function C.bigarrow()
     if cfg.tarrow == false then return; end
     local tg = AshitaCore:GetMemoryManager():GetTarget();
     local idx = tg and tg:GetTargetIndex(0) or 0;
+    if idx ~= 0 and C.TGS and C.TGS[1] == idx and os.clock() - C.TGS[2] < 0.3 then C.TBIG = 'plate'; return; end   -- (a targeted stranger: YunaUI's bigger arrow over their name)
     if idx ~= 0 and C.plated and C.plated(idx) then C.TBIG = 'plate'; return; end   -- (BARS > Enemy plates: the game's arrow hidden - YunaUI's sits right under the plate)
     if idx == 0 or idx >= 0x400 then return; end                      -- (players and their pets: the game's)
     local ent = AshitaCore:GetMemoryManager():GetEntity();
@@ -10779,7 +10784,7 @@ function C.snd_play(name, volkey)                                  -- (volkey: t
     local S = C.SND;
     if S.winmm == nil then local ok, lib = pcall(ffi.load, 'winmm'); S.winmm = ok and lib or false; end
     if not S.winmm then return; end
-    local vol = math.max(0, math.min(1.5, tonumber(cfg[volkey or 'tp_sound_vol']) or 0.6));
+    local vol = math.max(0, math.min(2.0, tonumber(cfg[volkey or 'tp_sound_vol']) or 0.6));
     if vol <= 0.001 then return; end
     local key = name .. '@' .. string.format('%.2f', vol);
     local buf = S.bufs[key];
@@ -10798,6 +10803,10 @@ function C.snd_play(name, volkey)                                  -- (volkey: t
         local smp = ffi.cast('int16_t*', buf + 44);
         for i = 0, n - 1 do
             local v = smp[i] * vol;
+            if vol > 1 then                                          -- (louder than recorded: the peaks rounded off, not cut flat - no crackle)
+                local a = (v < 0) and -v or v;
+                if a > 22000 then a = 22000 + 10767 * (1 - math.exp(-(a - 22000) / 10767)); v = (v < 0) and -a or a; end
+            end
             if v > 32767 then v = 32767; elseif v < -32768 then v = -32768; end
             smp[i] = v;
         end
@@ -11353,6 +11362,13 @@ function C.member_bars_()
             end
         end
     end
+    if cfg.target == false then                                       -- (TARGET > Show off: a player outside your party you target gets a plate as a
+        local t_ = 0;                                                 --  friend's - name, HP % and bar - with YunaUI's arrow over it; the game's name hidden)
+        pcall(function() t_ = mm:GetTarget():GetTargetIndex(0) or 0; end);
+        if t_ >= 0x400 and t_ < 0x700 and t_ ~= me and not inp[t_] and ent:GetRawEntity(t_) ~= nil and bit.band(ent:GetSpawnFlags(t_) or 0, 0x1) ~= 0 then
+            list[#list + 1] = { idx = t_, key = 't' .. t_, hpp = (ent:GetHPPercent(t_) or 0) / 100, grp = 'other', pl = true, tg = true, nm = ent:GetName(t_) or '' };
+        end
+    end
     if false then                                                     -- (removed - was BARS > Party bars: everyone - every other player too: HP only, the game sends no MP)
         for idx = 0x400, 0x6FF do
             if idx ~= me and not inp[idx] and ent:GetRawEntity(idx) ~= nil and bit.band(ent:GetSpawnFlags(idx) or 0, 0x1) ~= 0 then
@@ -11482,7 +11498,7 @@ function C.member_bars_()
                         local by1 = y0 - py_ - nh_;
                         local by2 = y0 + hv + (wmp and (g + mv) or 0) + py_;
                         local dy_ = C.mb_place(bx1, by1, bx2, by2);
-                        if dy_ > 0 then y0 = y0 - dy_; by1, by2 = by1 - dy_, by2 - dy_; end
+                        if dy_ > 0 then y0 = y0 - dy_; by1, by2 = by1 - dy_, by2 - dy_; end it.by1 = by1;
                         local oth = it.grp == 'other';
                         local rr_ = 6 * sc;
                         local ont_ = idx == tgi_;                      -- (your target: a bright white edge, a soft line inside, the glass stronger)
@@ -11550,7 +11566,7 @@ function C.member_bars_()
                         local bx1, bx2 = x0 - px_, x0 + W + px_;
                         local by1, by2 = y0 - py_ - nh_, y0 + hv + (wmp and (g + mv) or 0) + py_;
                         local dy_ = C.mb_place(bx1, by1, bx2, by2);
-                        if dy_ > 0 then y0 = y0 - dy_; by1, by2 = by1 - dy_, by2 - dy_; end
+                        if dy_ > 0 then y0 = y0 - dy_; by1, by2 = by1 - dy_, by2 - dy_; end it.by1 = by1;
                         local oth = it.grp == 'other';
                         local GH = C.GOLDH or { 1.0, 0.81, 0.43 };
                         local ont_ = idx == tgi_;                      -- (your target: the gold edge, the gold-to-azure line and the hex dots, as an enemy's)
@@ -11588,6 +11604,7 @@ function C.member_bars_()
                     local mc = (type(YUI_MP_COL) == 'table') and YUI_MP_COL or C.MPCOL;
                     if wmp then C.hexbar(dl, x0, y0 + hh + g, W * 0.8, mh, S.mp, nil, 0, { c1 = mc[2], c2 = mc[1], band = mh + 1, al = al, live = true, lead = mpp }); end
                     end                                              -- (Hex link's gold bars)
+                    if it.tg then pcall(C.tg_mark, dl, idx, sx, sc, it.by1 or y0); end   -- (the stranger you target: the arrow over its plate)
                 end
             end
         end
@@ -11617,6 +11634,14 @@ function C.plate_h(idx, ent)                                         -- (where i
     local h = math.max(0.6, 1.3 * hb);                               -- (a Goblin's name: 1.29 x its hitbox; a Mandragora's 1.02 - flat)
     if C.flat(idx, ent) then h = math.min(h, math.max(0.6, hb * 1.03)); end   -- (wide but low: a crab's hitbox is wide, not tall)
     return h;
+end
+function C.tg_mark(dl, idx, sx, sc, top)                            -- (a targeted player outside your party: YunaUI's arrow over their plate, bigger
+    C.TGS = { idx, os.clock() };                                     --  than the game's - the game's own arrow and name hidden meanwhile: C.bigarrow, C.hide_tname)
+    if cfg.tarrow == false then return; end
+    local hex = cfg.target_fx == 'link';
+    local aw_, ah_ = math.floor((hex and 28 or 27) * sc), math.floor((hex and 27 or 18) * sc);
+    local tip = top - 5 * sc + math.sin(os.clock() * 3.2) * 2.5 * sc;
+    image(dl, tex(hex and 'tarrow_prism2.png' or 'tarrow_vexw.png'), sx - aw_ / 2, tip - ah_, sx + aw_ / 2, tip, { 1, 1, 1, 1 });
 end
 C.NPH = {};                                                          -- (VanaCore's [graphics] nameplates.hide* we turned on: put back as they were)
 function C.np_hide(key, on)                                          -- (key: 'hidemonsters' / 'hideplayers' - set only if the player hadn't already,
@@ -18765,9 +18790,9 @@ function PANEL.mini()                                                -- minimise
 end
 local function draw_window()
     C.sound_rows = function()                                        -- (SOUND ALERTS: every sound YunaUI plays, by what it's for)
-        local function vol(id, label, key, prevkey, play)            -- (a volume slider; letting go plays the sound at its new volume)
+        local function vol(id, label, key, prevkey, play, mx)        -- (a volume slider; letting go plays the sound at its new volume; up to 2x - an MP3 1.5x, its loudest)
             if cfg[key] == nil then cfg[key] = 0.6; end                  -- (never set: the 0.6 it plays at, not 0)
-            row_slider(id, label, key, 0.0, 1.5, 0.05, '%.2fx', nil, function() C.SND.bufs = {}; C.SND[prevkey] = os.clock(); save(); end);
+            row_slider(id, label, key, 0.0, mx or 2.0, 0.05, '%.2fx', nil, function() C.SND.bufs = {}; C.SND[prevkey] = os.clock(); save(); end);
             if C.SND[prevkey] and os.clock() - C.SND[prevkey] > 0.35 then C.SND[prevkey] = nil; pcall(play); end
         end
         section('YOUR TP');
@@ -18796,9 +18821,9 @@ local function draw_window()
             if cfg.mode_snd ~= false then vol('##yui_modesv', 'Mode switch volume', 'mode_snd_vol', 'prevm', function() C.snd_play((cfg.target_fx == 'link') and 'mode_hex' or 'mode_vex', 'mode_snd_vol'); end); end
             section('ACTION BARS');
             row_switch('##yui_mbsn', 'Scroll sound', 'mb_sound', 'A short tick each time the pick moves on the action bar.');
-            if cfg.mb_sound ~= false then vol('##yui_mbsv', 'Scroll sound volume', 'mb_snd_vol', 'prevs', function() C.mp3_play('mb_scroll', 'mb_snd_vol'); end); end
+            if cfg.mb_sound ~= false then vol('##yui_mbsv', 'Scroll sound volume', 'mb_snd_vol', 'prevs', function() C.mp3_play('mb_scroll', 'mb_snd_vol'); end, 1.5); end
             row_switch('##yui_mbvo', 'Voice when an ability is ready', 'mb_voice', 'When a job ability you used comes off a recast of 30 s or more, a soft voice says it - "Berserk up".');
-            if cfg.mb_voice ~= false then vol('##yui_mbvv', 'Voice volume', 'mb_voice_vol', 'prevj', function() C.jav_say(551); end); end   -- (hear it: Boost)
+            if cfg.mb_voice ~= false then vol('##yui_mbvv', 'Voice volume', 'mb_voice_vol', 'prevj', function() C.jav_say(551); end, 1.5); end   -- (hear it: Boost)
         end
         imgui.TextColored(C.muted, 'Every sound YunaUI plays is here. Moving a volume slider plays the sound at its new volume.');
     end
@@ -19053,7 +19078,7 @@ local function draw_window()
             if cfg.panel_sound == nil then cfg.panel_sound = true; end
             if cfg.panel_sound_vol == nil then cfg.panel_sound_vol = 0.5; end
             row_switch('##yui_psnd', 'Tab sound', 'panel_sound', 'On: a soft sound when you open another tab of this panel.');
-            if cfg.panel_sound then row_slider('##yui_psndv', 'Tab sound volume', 'panel_sound_vol', 0.05, 1.5, 0.05, '%.2fx', nil,
+            if cfg.panel_sound then row_slider('##yui_psndv', 'Tab sound volume', 'panel_sound_vol', 0.05, 2.0, 0.05, '%.2fx', nil,
                 function() save(); pcall(C.snd_play, 'panel_tab', 'panel_sound_vol'); end); end
             copy_section();
         elseif tab == 2 then
@@ -19411,6 +19436,15 @@ local function draw_window()
             row_slider('##yui_s_c', 'Size', 'chat_size', 11, 34, 1, '%d px');
             row_slider('##yui_s_cg', 'Line spacing', 'chat_gap', 0, 16, 1, '%d px');
             hint('Line spacing: the room between rows, also inside a long message.');
+            if YUI_JP then                                           -- (the game in Japanese: its characters' size against the chat font's letters)
+                if cfg.chat_jp_scale == nil then cfg.chat_jp_scale = 1.0; end
+                row_slider('##yui_s_cjp', 'Japanese text size', 'chat_jp_scale', 0.8, 1.6, 0.05, '%.2fx');
+                hint('Only the Japanese characters in the chat grow or shrink; letters and numbers stay as they are. Reload YunaUI to see it.');
+                if math.abs((tonumber(cfg.chat_jp_scale) or 1) - (C.JPK or 1)) > 0.001 and accent_button('RELOAD YUNAUI TO APPLY##yui_s_cjpr', { ROW_W, 0 }) then
+                    save();
+                    pcall(function() AshitaCore:GetChatManager():QueueCommand(1, '/addon reload yunaui'); end);
+                end
+            end
             hint('Font: ' .. (fonts.chat_name or 'AvantGarde not found - using a fallback'));
             section('COLOURS');
             hint('Each channel\'s colour is used for its text and (Clear look) for the bar on the left of its messages.');
@@ -19752,6 +19786,7 @@ function C.hide_tname()
     pcall(function() me = AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0) or 0; end);
     local want = cfg.target_fx == 'link' and cfg.hl_hidename ~= false and idx ~= 0 and idx ~= me and cfg.target ~= false
         and not (C.overhead_idx and C.overhead_idx(idx));               -- (bars over their head: their name stays when you target them)
+    if idx ~= 0 and C.TGS and C.TGS[1] == idx and os.clock() - C.TGS[2] < 0.3 then want = true; end   -- (a targeted stranger's plate has their name inside)
     local H = C.HN;
     if not want or idx ~= H.idx then C.hn_off(); end
     if not want then return; end
