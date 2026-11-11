@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.52';
+addon.version = '1.1.53';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -11271,6 +11271,11 @@ function C.member_bars()
     pcall(C.mp_names, npok_ and mpo and not YUI_MAPCOVER and not (YMAP and YMAP.big));
     pcall(C.np_hide, 'hideplayers', false);                          -- (players keep their own names: VanaCore's nameplates ignore hideplayers, so hiding gave
                                                                      --  party members two names - until VanaCore has a hide-party/alliance-names option)   -- (friend plates on every player: their names go inside)
+    do                                                               -- (party / alliance players with a plate: VanaCore's own name off, it's inside the plate
+        local h_ = npok_ and mbo and not YUI_MAPCOVER and not (YMAP and YMAP.big);   --  - VanaCore's hideparty / hidealliance; strangers keep theirs)
+        pcall(C.np_hide, 'hideparty', h_);
+        pcall(C.np_hide, 'hidealliance', h_ and cfg.member_bars_who ~= 'party');
+    end
     pcall(C.np_hide, 'hidetrusts', npok_ and mbo and not YUI_MAPCOVER and not (YMAP and YMAP.big));   -- (trusts always have a plate: their names go inside too)   -- (plates drawn: the monsters' own names off - VanaCore's setting; else back)
     if not (mbo or mpo) or YUI_MAPCOVER or (YMAP and YMAP.big) then return; end
     local ds = imgui.GetIO().DisplaySize;
@@ -11645,7 +11650,7 @@ function C.mnh_keep(k, h)                                            -- (a famil
     cfg.mob_nh[k] = math.floor(h * 100 + 0.5) / 100;
     save();
 end
-function C.mpn_all_off() pcall(C.np_hide, 'hidemonsters', false); pcall(C.np_hide, 'hideplayers', false); pcall(C.np_hide, 'hidetrusts', false); end               -- (YunaUI unloading: the monsters' names back)
+function C.mpn_all_off() pcall(C.np_hide, 'hidemonsters', false); pcall(C.np_hide, 'hideplayers', false); pcall(C.np_hide, 'hidetrusts', false); pcall(C.np_hide, 'hideparty', false); pcall(C.np_hide, 'hidealliance', false); end               -- (YunaUI unloading: the monsters' names back)
 function C.mob_plates_()
     local mm = AshitaCore:GetMemoryManager();
     local party, ent = mm:GetParty(), mm:GetEntity();
