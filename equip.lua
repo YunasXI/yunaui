@@ -2874,7 +2874,9 @@ function JOBS.statbar(key, value, v, lag, pct)
         flags = bit.bor(flags, ImGuiWindowFlags_NoMove);
         imgui.SetNextWindowPos({ ax, ay }, ImGuiCond_Always);
     else
-    imgui.SetNextWindowPos({ cfg[kx], cfg[ky] }, ((JOBS.sb_move or 0) > 0) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
+    JOBS.sb_first = JOBS.sb_first or {};                             -- (its first draw since loading: where the settings say, not where ImGui remembers it)
+    local first_ = not JOBS.sb_first[kx]; JOBS.sb_first[kx] = true;
+    imgui.SetNextWindowPos({ cfg[kx], cfg[ky] }, (((JOBS.sb_move or 0) > 0) or first_) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
     end
     imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
     imgui.PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);

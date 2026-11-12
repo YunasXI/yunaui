@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.55';
+addon.version = '1.1.56';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1147,7 +1147,10 @@ local function plain_window(name, kx, ky, force)
     end
     local seen = WATCH.seen and WATCH.seen[kx];                      -- (its place changed while it wasn't drawn - a mode switch with the macro bar shut:
     local moved_ = seen and (math.abs(seen[1] - px) > 0.5 or math.abs(seen[2] - py) > 0.5);   --  it goes there when it shows, not back to where it was)
-    imgui.SetNextWindowPos({ px, py }, (WATCH.move > 0 or force or one or moved_) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
+    local first_ = seen == nil;                                      -- (its first draw since YunaUI loaded: where the settings say - ImGui still remembers
+                                                                     --  where the window stood before a reload, and that old place was written back into
+                                                                     --  the settings: a fresh config kept the old, broken places - Byegawd)
+    imgui.SetNextWindowPos({ px, py }, (WATCH.move > 0 or force or one or moved_ or first_) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
     local flags = NOFRAME;
     if (cfg.locked and not EDIT.on) or force or (EDIT.on and EDIT.rs_hot) then flags = bit.bor(flags, ImGuiWindowFlags_NoMove); end
     imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
@@ -13584,7 +13587,7 @@ local function draw_chat(n)
         end
         local sx_, sy_ = tonumber(cfg[p .. 'x']) or 20, tonumber(cfg[p .. 'y']) or 700;
         local moved_ = st.seen and (math.abs(st.seen[1] - sx_) > 0.5 or math.abs(st.seen[2] - sy_) > 0.5);   -- (its place changed while it wasn't drawn - a mode
-        imgui.SetNextWindowPos({ sx_, sy_ }, (WATCH.move > 0 or st.relink or moved_) and ImGuiCond_Always or ImGuiCond_FirstUseEver);   --  switch, the wave not on it yet: it goes there, not back)
+        imgui.SetNextWindowPos({ sx_, sy_ }, (WATCH.move > 0 or st.relink or moved_ or st.seen == nil) and ImGuiCond_Always or ImGuiCond_FirstUseEver);   --  switch, the wave not on it yet: it goes there, not back; its first draw since loading: where the settings say)
     end
     st.relink = false;                                               -- (resized by its linked twin: placed again, its bottom kept)
     imgui.SetNextWindowSize({ w, h }, ImGuiCond_Always);
@@ -19054,6 +19057,35 @@ local function draw_window()
                 local sw_, sh_ = C.screen();
                 hint(string.format('YunaUI is using %d x %d. If pieces sit off the screen, or stop short of its edge, try another choice here.', sw_, sh_));
             end
+            if C.UPD then                                            -- (the in-game updater: only where VanaCore can download)
+                section('UPDATES');
+                local U_ = C.UPD;
+                if cfg.upd_check == nil then cfg.upd_check = true; end
+                row_switch('##yui_updck', 'Tell me about new versions', 'upd_check', 'On: when YunaUI loads it asks GitHub if a newer version is out and shows a card with what is new and an UPDATE button. Nothing is downloaded until you press it. Off: it never asks by itself.');
+                do                                                   -- (what it knows, in plain sight: your version, and the newest it was told of)
+                    local st_ = 'You have ' .. tostring(addon.version) .. '.';
+                    if U_.state == 'checking' then st_ = st_ .. '  Checking...';
+                    elseif U_.said then st_ = st_ .. '  ' .. U_.said;
+                    elseif type(cfg.upd_tag) == 'string' and U_.newer(cfg.upd_tag, addon.version) then st_ = st_ .. '  ' .. cfg.upd_tag .. ' is out.';
+                    elseif type(cfg.upd_tag) == 'string' then st_ = st_ .. '  Up to date.'; end
+                    imgui.TextColored({ 0.72, 0.70, 0.80, 1 }, st_);
+                end
+                if accent_button(((U_.state == 'checking') and 'CHECKING...' or 'CHECK NOW') .. '##yui_updnow', { ROW_W, 0 }, true, true) then pcall(U_.check, true); end
+                if imgui.IsItemHovered() then YUI_TIP('Asks GitHub now. A newer version shows a card\nwith what is new and the UPDATE button.'); end
+                if U_.dev then
+                    hint('This is a development copy of YunaUI (it has its own version history): it can check, but it is never updated from here.');
+                else
+                    local bm_ = U_.back_to();
+                    if bm_ then
+                        local sure_ = C.UPD_SURE and os.clock() - C.UPD_SURE < 4;
+                        if accent_button((sure_ and 'SURE? CLICK AGAIN' or ('GO BACK TO ' .. tostring(bm_.from))) .. '##yui_updback', { ROW_W, 0 }, true, true) then
+                            if sure_ then C.UPD_SURE = nil; pcall(U_.back); else C.UPD_SURE = os.clock(); end
+                        end
+                        if imgui.IsItemHovered() then YUI_TIP('Puts back the files as they were before the last update,\nthen reloads YunaUI. Your settings are not touched.'); end
+                    end
+                    hint('You have ' .. tostring(addon.version) .. '. UPDATE downloads only the files that changed, checks them, keeps the old ones, then reloads YunaUI - your settings and layout stay as they are.');
+                end
+            end
             section('MY LAYOUTS');                                   -- five of your own, each with a name
             pcall(LAYOUT.mine_rows);
             hint('Give it a name, SAVE keeps your whole UI as it is now: where everything is, every size, look, colour and on / off (the chat and the Damage Meter too). LOAD puts it all back exactly as saved. (A layout saved before 1.1.33 keeps only places and sizes: SAVE it again.)');
@@ -20022,6 +20054,105 @@ function C.mb_edit_open(id)
     E.name0 = E.name[1];
     JP.me_open(E);   -- [JP]
     C.ME = E;
+end
+-- The in-game updater (yunaui_update.lua): a few seconds after loading it asks GitHub for the newest release; a newer
+-- one shows a card - what's new, UPDATE / LATER / SKIP - and UPDATE downloads the changed files, swaps them in and
+-- reloads. GENERAL > UPDATES: the check on / off, Check now, Go back to the version before.
+function C.upd_frame()
+    local U = C.UPD;
+    if U == nil then                                                 -- (loaded once; false when it isn't there or can't run here)
+        C.UPD = false;
+        local ok_, m_ = pcall(dofile, (addon.path:gsub('[\\/]+$', '')) .. '\\yunaui_update.lua');
+        if not ok_ or type(m_) ~= 'table' or not m_.can() then return; end
+        m_.init({ cfg = cfg, save = save, msg = msg, version = addon.version, root = addon.path,
+            reload = function() pcall(function() AshitaCore:GetChatManager():QueueCommand(1, '/addon reload yunaui'); end); end });
+        C.UPD, C.UPD_T0 = m_, os.clock();
+        return;
+    end
+    if not U then return; end
+    if C.UPD_T0 and os.clock() - C.UPD_T0 > 6 then C.UPD_T0 = nil; pcall(U.check); end   -- (once, when the game has settled)
+    if U.state == 'idle' or U.state == 'checking' then return; end
+    if (C.MD and C.MD.on) or (EDIT and (EDIT.on or (EDIT.G and EDIT.G.on))) or YUI_PRES then return; end   -- (not over the style chooser, Edit Mode or the guide)
+    local ps = C.ps or 1;
+    local SW, SH = C.screen();
+    local PW = math.max(440, 480 * ps);
+    imgui.SetNextWindowPos({ SW / 2 - PW / 2, SH * 0.12 }, ImGuiCond_Appearing);
+    imgui.SetNextWindowSize({ PW, 0 }, ImGuiCond_Always);
+    imgui.PushStyleColor(ImGuiCol_WindowBg, { 0.06, 0.05, 0.08, 0.96 });
+    imgui.PushStyleColor(ImGuiCol_Border, { NEON2[1], NEON2[2], NEON2[3], 0.8 });
+    imgui.PushStyleVar(ImGuiStyleVar_WindowRounding, 10 * ps);
+    imgui.PushStyleVar(ImGuiStyleVar_FrameRounding, 6 * ps);
+    imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 16 * ps, 14 * ps });
+    if imgui.Begin('##yui_update', { true }, bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing)) then
+        local pushed = sized('chat', 15 * ps);
+        local dl = imgui.GetWindowDrawList();
+        local x, y = imgui.GetCursorScreenPos();
+        local tag = U.offer and U.offer.tag or (cfg.upd_tag or '');
+        spaced(dl, x, y, (U.state == 'done') and 'YUNAUI UPDATED' or ('YUNAUI ' .. tostring(tag) .. ' IS OUT'), U4(NEON2[1], NEON2[2], NEON2[3], 1), 2 * ps);
+        imgui.Dummy({ 10, imgui.GetTextLineHeight() + 2 });
+        unsized(pushed);
+        local pb_ = sized('chat', 14 * ps);                           -- (the words in YunaUI's own font)
+        imgui.PushTextWrapPos(imgui.GetCursorPosX() + PW - 32 * ps);
+        local GREY, WHITE = { 0.62, 0.60, 0.72, 1 }, { 0.92, 0.91, 0.95, 1 };
+        local bw = (imgui.GetContentRegionAvail() - 16 * ps) / 3;
+        if U.state == 'offer' then
+            imgui.TextColored(GREY, 'You have ' .. tostring(U.cur) .. '. What is new:');
+            imgui.Dummy({ 4, 4 });
+            local notes = U.offer.notes or {};
+            for i = 1, math.min(#notes, 8) do
+                local s = notes[i];
+                if #s > 260 then s = s:sub(1, 257) .. '...'; end
+                imgui.TextColored(WHITE, '-  ' .. s);
+            end
+            if #notes == 0 then imgui.TextColored(WHITE, 'Fixes and improvements.'); end
+            imgui.Dummy({ 4, 8 * ps });
+            if U.dev and not U.test then                             -- (a development copy: told, never updated over)
+                imgui.TextColored(GREY, 'This is a development copy: it is not updated from here.');
+                imgui.Dummy({ 4, 4 * ps });
+            else
+                if accent_button('UPDATE##yui_updgo', { bw, 0 }) then pcall(U.start); end
+                if imgui.IsItemHovered() then YUI_TIP('Downloads the files that changed, keeps a copy of the old ones,\nthen reloads YunaUI. Your settings and layout are not touched.'); end
+                imgui.SameLine(0, 8 * ps);
+            end
+            if accent_button('LATER##yui_updlater', { bw, 0 }, true) then pcall(U.later); end
+            if imgui.IsItemHovered() then YUI_TIP('Asked again the next time YunaUI loads.'); end
+            imgui.SameLine(0, 8 * ps);
+            if accent_button('SKIP IT##yui_updskip', { bw, 0 }, true) then pcall(U.skip); end
+            if imgui.IsItemHovered() then YUI_TIP('This version is not offered again.\nGENERAL > UPDATES > Check now still finds it.'); end
+        elseif U.state == 'listing' then
+            imgui.TextColored(WHITE, 'Looking at what changed...');
+        elseif U.state == 'downloading' then
+            imgui.TextColored(WHITE, string.format('Downloading  %d / %d', U.done or 0, U.total or 0));
+            local cx, cy = imgui.GetCursorScreenPos();
+            local w_, f_ = PW - 32 * ps, (U.total or 0) > 0 and (U.done or 0) / U.total or 0;
+            DL.RF(dl, cx, cy + 4, cx + w_, cy + 4 + 6 * ps, U4(1, 1, 1, 0.10), 3 * ps);
+            if f_ > 0 then DL.RF(dl, cx, cy + 4, cx + w_ * f_, cy + 4 + 6 * ps, U4(NEON2[1], NEON2[2], NEON2[3], 1), 3 * ps); end
+            imgui.Dummy({ w_, 14 * ps });
+            imgui.TextColored(GREY, 'Keep playing: nothing changes until every file is here and checked.');
+        elseif U.state == 'applying' then
+            imgui.TextColored(WHITE, 'Checking the files and swapping them in...');
+        elseif U.state == 'done' then
+            imgui.TextColored(WHITE, 'Reloading YunaUI...');
+        else                                                         -- (failed / manual)
+            imgui.TextColored({ 1, 0.62, 0.66, 1 }, tostring(U.why or 'The update did not go through.'));
+            imgui.Dummy({ 4, 8 * ps });
+            if U.state == 'failed' and U.offer then
+                if accent_button('TRY AGAIN##yui_updretry', { bw, 0 }) then pcall(U.start); end
+                imgui.SameLine(0, 8 * ps);
+            end
+            if accent_button('COPY LINK##yui_updlink', { bw, 0 }, true) then
+                if imgui.SetClipboardText and pcall(imgui.SetClipboardText, U.page()) then msg('Release page link copied: paste it in your browser.'); end
+            end
+            if imgui.IsItemHovered() then YUI_TIP('Copies the release page link, to download it by hand.'); end
+            imgui.SameLine(0, 8 * ps);
+            if accent_button('CLOSE##yui_updclose', { bw, 0 }, true) then pcall(U.later); end
+        end
+        imgui.PopTextWrapPos();
+        unsized(pb_);
+    end
+    imgui.End();
+    imgui.PopStyleVar(3);
+    imgui.PopStyleColor(2);
 end
 function C.mb_editor()                                               -- (the panel: Ctrl 3 - its name, its 6 lines, TEST / SAVE / CANCEL)
     local E = C.ME;
@@ -23795,6 +23926,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         if p == nil or p:GetMemberIsActive(0) == 0 then return; end   -- not logged in / zoning
         if YUI_OUT() then return; end
         pcall(C.res_tick);                                           -- (GENERAL > SIZE > Follow the resolution)
+        do local oku_, eru_ = pcall(C.upd_frame); if not oku_ and YUI_ERRLOG then YUI_ERRLOG('update', eru_); end end   -- (the in-game updater: its check and its card)
         -- each piece on its own: a problem in one (shown once in chat) never stops the others, the logo or the window
         if C.PROF then C.PROF_N = (C.PROF_N or 0) + 1; end           -- (/yui prof: frames counted)
         local function piece(fn, ...)
@@ -24434,6 +24566,16 @@ ashita.events.register('command', 'yui_command', function(e)
             msg(string.format('Target bar: head %s,%s | bar %s,%s | box %s x %s | usual place %s,%s | mode %s',
                 tostring(hd and math.floor(hd[1])), tostring(hd and math.floor(hd[2])), tostring(bp_ and math.floor(bp_[1])), tostring(bp_ and math.floor(bp_[2])),
                 tostring(tsz and math.floor(tsz[1])), tostring(tsz and math.floor(tsz[2])), tostring(cfg.target_x), tostring(cfg.target_y), tostring(cfg.target_fx)));
+            local function win_(k)                                   -- (a window: where it's kept and how big it measured - one bigger than the screen can't be moved)
+                local s1, s2 = WATCH.size and WATCH.size[k .. '_x'], WATCH.calm and WATCH.calm[k .. '_x'];
+                return string.format('%s,%s size %sx%s (settled %sx%s)', tostring(cfg[k .. '_x']), tostring(cfg[k .. '_y']), tostring(s1 and math.floor(s1[1])), tostring(s1 and math.floor(s1[2])),
+                    tostring(s2 and math.floor(s2[1])), tostring(s2 and math.floor(s2[2])));
+            end
+            msg('Party: ' .. win_('party') .. ' | Alliance 1: ' .. win_('alliance') .. ' | Alliance 2: ' .. win_('ally2'));
+            local mp_ = imgui.GetIO().MousePos;
+            msg(string.format('Party: grow up %s, bottom %s, alliances anchored %s, locked %s, party size %s | mouse %s,%s (move it to the bottom right corner first)',
+                tostring(cfg.party_up), tostring(cfg.party_bot), tostring(cfg.ally_anchor), tostring(cfg.locked), tostring(cfg.party_scale),
+                tostring(mp_ and math.floor(mp_.x)), tostring(mp_ and math.floor(mp_.y))));
         end);
     elseif sub == 'buffdebug' then                                   -- (PARTY > buff timers: say how each one you cast on someone is worked out)
         BUFFS.dbg = not BUFFS.dbg; msg('Buff timer debug ' .. (BUFFS.dbg and 'on' or 'off'));
