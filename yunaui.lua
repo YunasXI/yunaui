@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.54';
+addon.version = '1.1.55';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -293,16 +293,19 @@ JP.wrap_dl(DL);   -- [JP]
 -- can't draw with one bigger than the screen (every window after it vanishes, the settings too), and one partly off the
 -- screen, on half pixels or with no size makes every addon's window shake (as equip.lua's JOBS.clip already knew).
 C.SCR = { t = -9, w = 0, h = 0 };
-function C.screen()                                                  -- (the biggest the game window is said to be: on a 4K screen scaled by Windows,
-    local ds = imgui.GetIO().DisplaySize;                            --  ImGui's own size was half - the bar cut off, windows kept off the right half)
-    local w, h = math.floor((ds and tonumber(ds.x)) or 1920), math.floor((ds and tonumber(ds.y)) or 1080);
-    local S, now = C.SCR, os.clock();
-    if now - S.t > 1 then
-        S.t, S.w, S.h = now, 0, 0;
-        pcall(function() local a, b = vana.ui.screen(); S.w, S.h = math.max(S.w, tonumber(a) or 0), math.max(S.h, tonumber(b) or 0); end);
-        pcall(function() local i = vana.window.info(); S.w, S.h = math.max(S.w, tonumber(i.client_width) or 0), math.max(S.h, tonumber(i.client_height) or 0); end);
+function C.screen()                                                  -- (the size YunaUI draws in = VanaCore's interface size (vana.ui.screen): ImGui's own
+    local ds = imgui.GetIO().DisplaySize;                            --  can be half of it (a 4K screen scaled by Windows: the bar cut off) or bigger than it
+    local w, h = math.floor((ds and tonumber(ds.x)) or 1920), math.floor((ds and tonumber(ds.y)) or 1080);   --  (3840 x 2160 said, 2560 x 1440 drawn), and
+    local S, now = C.SCR, os.clock();                                --  the window's picture can be bigger too: taking the biggest put every piece off
+    if now - S.t > 1 then                                            --  the screen, out of reach even in Edit Mode - Byegawd)
+        S.t, S.w, S.h, S.cw, S.ch = now, 0, 0, 0, 0;
+        pcall(function() local a, b = vana.ui.screen(); S.w, S.h = tonumber(a) or 0, tonumber(b) or 0; end);
+        pcall(function() local i = vana.window.info(); S.cw, S.ch = tonumber(i.client_width) or 0, tonumber(i.client_height) or 0; end);
     end
-    return math.max(w, S.w), math.max(h, S.h);
+    if cfg.screen_mode == 'imgui' then return w, h; end              -- (GENERAL > Screen size: a way out for a PC where the guess is wrong)
+    if cfg.screen_mode == 'big' then return math.max(w, S.w, S.cw), math.max(h, S.h, S.ch); end
+    if S.w > 200 and S.h > 200 then return math.floor(S.w), math.floor(S.h); end   -- (VanaCore's interface size: what ImGui and the mouse work in)
+    return math.max(w, S.cw), math.max(h, S.ch);                     -- (not told yet - the first frame, an old VanaCore: the biggest, as before)
 end
 function YUI_GS() return math.max(0.5, math.min(4, tonumber(cfg.scale) or 1)); end   -- GENERAL > Size of everything (equip.lua's bars too)
 -- GENERAL > SIZE > Follow the resolution: VanaCore's interface size (vana.ui.screen) watched; when it changes - the
@@ -19045,6 +19048,12 @@ local function draw_window()
             if cfg.res_follow == nil then cfg.res_follow = true; end
             row_switch('##yui_resf', 'Follow the resolution', 'res_follow', 'On: when you change the resolution (in VanaCore or the game), every piece resizes by the same amount and keeps its place on the screen, so the UI looks the same at 1080p, 1440p or 4K. Your own sizes stay yours. Off: nothing changes by itself.');
             hint('Makes every piece bigger or smaller at once. With Follow the resolution on it changes by itself when your resolution does. Each piece\'s own Size still works on top of it.');
+            do                                                       -- (the size YunaUI places things in: said here, with a way out when it's wrong for a PC)
+                if cfg.screen_mode == nil then cfg.screen_mode = 'auto'; end
+                row_pick('##yui_scrm', 'Screen size', 'screen_mode', { { 'auto', 'Automatic' }, { 'imgui', 'Game window' }, { 'big', 'Biggest' } }, nil, function() C.SCR.t = -9; WATCH.move = 3; save(); end);
+                local sw_, sh_ = C.screen();
+                hint(string.format('YunaUI is using %d x %d. If pieces sit off the screen, or stop short of its edge, try another choice here.', sw_, sh_));
+            end
             section('MY LAYOUTS');                                   -- five of your own, each with a name
             pcall(LAYOUT.mine_rows);
             hint('Give it a name, SAVE keeps your whole UI as it is now: where everything is, every size, look, colour and on / off (the chat and the Damage Meter too). LOAD puts it all back exactly as saved. (A layout saved before 1.1.33 keeps only places and sizes: SAVE it again.)');
