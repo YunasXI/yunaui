@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.59';
+addon.version = '1.1.60';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -4484,6 +4484,19 @@ local function draw_target(dt)
         local dl = imgui.GetWindowDrawList();
         local x, y = imgui.GetCursorScreenPos();
         x, y = x + 6, y + 4;
+        local tbo_ = false;                                          -- (following a head: drawn where it was asked to be, whatever the window did - on one
+        if hp_ then                                                  --  PC its window stood ~400 px left and 100 up of the head while everything YunaUI
+            local okp_, wx_, wy_ = pcall(imgui.GetWindowPos);        --  draws straight on the screen (the arrow, the plates) was right: Byegawd)
+            if okp_ and type(wx_) == 'table' then wx_, wy_ = wx_.x or wx_[1], wx_.y or wx_[2]; end
+            if okp_ and tonumber(wx_) and tonumber(wy_) then
+                local odx_, ody_ = hp_[1] - wx_, hp_[2] - wy_;
+                C.TBW = { math.floor(wx_), math.floor(wy_), math.floor(odx_), math.floor(ody_), os.clock() };   -- (/yui screen says it)
+                if math.abs(odx_) > 2 or math.abs(ody_) > 2 then
+                    x, y = x + odx_, y + ody_;
+                    tbo_ = pcall(function() C.fullclip(dl); end);    -- (outside the window's box: the whole screen to draw in)
+                end
+            end
+        end
         local tk, tmi = C.tkind(idx, ent, fake);                     -- TARGET > Friends look: a player / NPC never looks like a monster
         local fm_ = nil;                                             -- (Hex link: a player / NPC uses the monster's layout - see below)
         if cfg.target_fx == 'link' and tk ~= 'mob' then
@@ -4506,6 +4519,7 @@ local function draw_target(dt)
             if cfg.target_fx == 'link' then FIGHT.tbar = { x + w, y + used + 6 * sc, w, os.clock(), sc };   -- (Hex link: the target of target under it)
             else FIGHT.ndemo = { x, y + used + 6 * sc + bh2, w, os.clock() }; end   -- (Normal mode: under it, centred)
             imgui.Dummy({ w + 12, used + 10 + bh2 });
+            if tbo_ then pcall(function() dl:PopClipRect(); end); end
             end_plain(tkx, tky);
             pcall(C.tb_off);
             cfg._tx, cfg._ty = nil, nil;
@@ -4713,6 +4727,7 @@ local function draw_target(dt)
         dl = rdl_;
         imgui.Dummy({ w + 12, nh + h + 18 + bh2 + ch });
         if fullclip then pcall(function() dl:PopClipRect(); end); end
+        if tbo_ then pcall(function() dl:PopClipRect(); end); end
         if fa_ < 1 then imgui.PopStyleVar(1); end
         end_plain(tkx, tky);
         pcall(C.tb_off);
@@ -24771,6 +24786,8 @@ ashita.events.register('command', 'yui_command', function(e)
                 tostring(sz and math.floor(sz[1])), tostring(sz and math.floor(sz[2])), tostring(cfg.scale), tostring(cfg.mbar_scale)));
             local tsz = (WATCH.calm and WATCH.calm['_tx']) or (WATCH.size and WATCH.size['_tx']);   -- (Hex link's target bar: where it thinks the head is, where it went)
             local hd, bp_ = C.TBB, C.TBP;
+            local tw_ = C.TBW;
+            if tw_ and os.clock() - tw_[5] < 1 then msg(string.format('Target bar window: at %d,%d - %d,%d from where it was asked (drawn where asked)', tw_[1], tw_[2], tw_[3], tw_[4])); end
             msg(string.format('Target bar: head %s,%s | bar %s,%s | box %s x %s | usual place %s,%s | mode %s',
                 tostring(hd and math.floor(hd[1])), tostring(hd and math.floor(hd[2])), tostring(bp_ and math.floor(bp_[1])), tostring(bp_ and math.floor(bp_[2])),
                 tostring(tsz and math.floor(tsz[1])), tostring(tsz and math.floor(tsz[2])), tostring(cfg.target_x), tostring(cfg.target_y), tostring(cfg.target_fx)));
