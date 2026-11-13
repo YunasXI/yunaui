@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.56';
+addon.version = '1.1.57';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1143,14 +1143,29 @@ local function plain_window(name, kx, ky, force)
         local sw, sh = (sz and sz[1]) or 1, (sz and sz[2]) or 1;
         local nx = math.max(0, math.min(W - math.min(sw, W), px));   -- (the whole window on the screen - never partly off it)
         local ny = math.max(0, math.min(H - math.min(sh, H), py));
-        if nx ~= px or ny ~= py then px, py, one = nx, ny, one or 1; cfg[kx], cfg[ky] = nx, ny; end
+        if nx ~= px or ny ~= py then
+            if C.DD and imgui.IsMouseDown(0) then C.dd_note(kx, 'clamp'); end   -- (/yui dragdebug: kept on the screen while the button is down)
+            px, py, one = nx, ny, one or 1; cfg[kx], cfg[ky] = nx, ny;
+        end
     end
     local seen = WATCH.seen and WATCH.seen[kx];                      -- (its place changed while it wasn't drawn - a mode switch with the macro bar shut:
     local moved_ = seen and (math.abs(seen[1] - px) > 0.5 or math.abs(seen[2] - py) > 0.5);   --  it goes there when it shows, not back to where it was)
+    if C.DD and imgui.IsMouseDown(0) then                            -- (/yui dragdebug: every reason this window is put back while the button is down)
+        C.dd_note(kx, 'n');
+        if WATCH.move > 0 then C.dd_note(kx, 'all'); end
+        if force then C.dd_note(kx, 'fixed'); end
+        if one then C.dd_note(kx, 'one'); end
+        if moved_ then C.dd_note(kx, 'moved'); end
+        if (cfg.locked and not EDIT.on) or force or (EDIT.on and EDIT.rs_hot) then C.dd_note(kx, 'nomove'); end
+    end
     local first_ = seen == nil;                                      -- (its first draw since YunaUI loaded: where the settings say - ImGui still remembers
                                                                      --  where the window stood before a reload, and that old place was written back into
                                                                      --  the settings: a fresh config kept the old, broken places - Byegawd)
-    imgui.SetNextWindowPos({ px, py }, (WATCH.move > 0 or force or one or moved_ or first_) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
+    local keys_ = WATCH.key;                                         -- (a window that changes what places it - the target bar: over the head in Hex link,
+    if not keys_ then keys_ = {}; WATCH.key = keys_; end             --  its usual place in Edit Mode and Vex; the gear strip, the sub-target: put there
+    local swap_ = keys_[name] ~= nil and keys_[name] ~= kx;          --  at once. Left where it last stood, that spot - wherever the head had been, off the
+    keys_[name] = kx;                                                --  screen even - was saved as its usual place: "sometimes high, sometimes low", Byegawd)
+    imgui.SetNextWindowPos({ px, py }, (WATCH.move > 0 or force or one or moved_ or first_ or swap_) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
     local flags = NOFRAME;
     if (cfg.locked and not EDIT.on) or force or (EDIT.on and EDIT.rs_hot) then flags = bit.bor(flags, ImGuiWindowFlags_NoMove); end
     imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
@@ -1180,6 +1195,15 @@ local function end_plain(kx, ky)
         local c_, now_ = WATCH.calm[kx], os.clock();                 --  wider, cards sliding in, never pushes it off its place)
         if c_ == nil or now_ - c_[3] > 1 then c_ = { sw, sh, now_ }; WATCH.calm[kx] = c_;
         else c_[1], c_[2] = math.min(c_[1], sw), math.min(c_[2], sh); end   -- (each second it starts again from now: a real grow is seen)
+    end
+    do                                                               -- (is a YunaUI window the one under the mouse? Edit Mode: when none has been for a
+        local hov_ = imgui.IsWindowHovered();                        --  moment while the mouse is over this one, something else - another addon's
+        local down_ = imgui.IsMouseDown(0);                          --  see-through window - lies on top and takes the click: this one comes to the front)
+        if hov_ then C.EDH = os.clock(); end
+        local mx_, my_ = imgui.GetMousePos();
+        local in_ = type(mx_) == 'number' and type(sw) == 'number' and mx_ >= wx and mx_ <= wx + sw and my_ >= wy and my_ <= wy + sh;
+        if C.DD and down_ and in_ then C.dd_note(kx, hov_ and 'grab' or 'under'); end
+        if EDIT.on and in_ and not hov_ and not down_ and os.clock() - (C.EDH or 0) > 0.25 then pcall(imgui.SetWindowFocus); end
     end
     local follow_ = type(kx) == 'string' and kx:sub(1, 1) == '_';   -- (_tx, _sbx: placed every frame by what they follow - never saved: on some
     if not follow_ and (math.abs(wx - (tonumber(cfg[kx]) or 0)) > 0.5 or math.abs(wy - (tonumber(cfg[ky]) or 0)) > 0.5) then   --  PCs the game set them a hair
@@ -20055,6 +20079,39 @@ function C.mb_edit_open(id)
     JP.me_open(E);   -- [JP]
     C.ME = E;
 end
+-- /yui dragdebug: for 15 seconds, while the mouse button is down, each window notes why it was put back (kept on the
+-- screen, placed by something else, fixed, no-move) and whether it was the one under the mouse; then a line for each.
+function C.dd_note(k, what)
+    local D = C.DD;
+    if not D then return; end
+    local r = D[k];
+    if not r then r = {}; D[k] = r; end
+    r[what] = (r[what] or 0) + 1;
+end
+function C.dd_report()
+    local D = C.DD;
+    C.DD, C.DD_T = nil, nil;
+    if not D then return; end
+    local any = false;
+    for k, r in pairs(D) do
+        if (r.grab or 0) > 0 or (r.under or 0) > 0 then
+            any = true;
+            local sz = WATCH.size and WATCH.size[k];
+            msg(string.format('Drag %s: under the mouse %d frames, covered by something else %d | put back: screen edge %d, placed %d, all windows %d, moved %d, fixed %d, no-move %d | now %s,%s size %sx%s',
+                tostring(k):gsub('_x$', ''), r.grab or 0, r.under or 0, r.clamp or 0, r.one or 0, r.all or 0, r.moved or 0, r.fixed or 0, r.nomove or 0,
+                tostring(cfg[k]), tostring(cfg[(k:gsub('_x$', '_y'))]), tostring(sz and math.floor(sz[1])), tostring(sz and math.floor(sz[2]))));
+        end
+    end
+    if not any then msg('Drag debug: the mouse button was never down over a YunaUI window. (Was it held on the piece?)'); end
+    local W, H = C.screen();
+    local ds_ = imgui.GetIO().DisplaySize;
+    local mp_ = imgui.GetIO().MousePos;
+    msg(string.format('Drag debug: screen %dx%d (ImGui %sx%s), mouse %s,%s, Edit Mode %s, locked %s, forcing %s, resize grip %s / %s, party grow up %s (bottom %s, set %s), alliances anchored %s, mode %s',
+        W, H, tostring(ds_ and math.floor(ds_.x)), tostring(ds_ and math.floor(ds_.y)), tostring(mp_ and math.floor(mp_.x)), tostring(mp_ and math.floor(mp_.y)),
+        tostring(EDIT.on), tostring(cfg.locked), tostring(WATCH.move), tostring(EDIT.rs ~= nil), tostring(EDIT.rs_hot), tostring(cfg.party_up), tostring(cfg.party_bot),
+        tostring(ALLY.py_set), tostring(cfg.ally_anchor), tostring(cfg.target_fx)));
+    msg('Drag debug done. Send a screenshot of these lines.');
+end
 -- The in-game updater (yunaui_update.lua): a few seconds after loading it asks GitHub for the newest release; a newer
 -- one shows a card - what's new, UPDATE / LATER / SKIP - and UPDATE downloads the changed files, swaps them in and
 -- reloads. GENERAL > UPDATES: the check on / off, Check now, Go back to the version before.
@@ -23926,6 +23983,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         if p == nil or p:GetMemberIsActive(0) == 0 then return; end   -- not logged in / zoning
         if YUI_OUT() then return; end
         pcall(C.res_tick);                                           -- (GENERAL > SIZE > Follow the resolution)
+        if C.DD_T and os.clock() > C.DD_T then pcall(C.dd_report); end   -- (/yui dragdebug: its 15 seconds are over)
         do local oku_, eru_ = pcall(C.upd_frame); if not oku_ and YUI_ERRLOG then YUI_ERRLOG('update', eru_); end end   -- (the in-game updater: its check and its card)
         -- each piece on its own: a problem in one (shown once in chat) never stops the others, the logo or the window
         if C.PROF then C.PROF_N = (C.PROF_N or 0) + 1; end           -- (/yui prof: frames counted)
@@ -24549,6 +24607,23 @@ ashita.events.register('command', 'yui_command', function(e)
         M.fakesc = { fake = true, ts = now, dur = 10, go = true, close = {}, burst = {} };   -- (and a pretend skillchain: weapon skills close it, spells burst)
         M.flash[2], M.flash[3] = now, now + 0.15;
         msg('Action bars test: Ctrl 3 and 4 used - hold Ctrl to watch them heal');
+    elseif sub == 'dragdebug' then                                   -- (a piece that can't be dragged: what happens to it while the button is down)
+        C.DD, C.DD_T = {}, os.clock() + 15;
+        msg('Drag debug: for the next 15 seconds, try to drag the piece that is stuck (hold it and pull). A report follows.');
+    elseif sub == 'place' then                                       -- (/yui place party 600 300: a piece put somewhere by its name - for one that can't be dragged)
+        local nm_, px_, py_ = (args[3] or ''):lower(), tonumber(args[4]), tonumber(args[5]);
+        local NM = { alliance1 = 'alliance', alliance2 = 'ally2', ally1 = 'alliance', minimap = 'map', timers = 'timer', gear = 'strip', treasure = 'loot', enemies = 'enemy', castbar = 'cast' };
+        nm_ = NM[nm_] or nm_;
+        if nm_ == '' or type(cfg[nm_ .. '_x']) ~= 'number' or not px_ or not py_ then
+            msg('Usage: /yui place <piece> <x> <y>   e.g. /yui place party 600 300   (pieces: party, alliance, ally2, target, sub, enemy, pet, cast, exp, gil, bag, timer, strip, loot, chat, chat2, map)');
+        else
+            cfg[nm_ .. '_x'], cfg[nm_ .. '_y'] = math.floor(px_), math.floor(py_);
+            if nm_ == 'party' then ALLY.py_set, cfg.party_bot = nil, nil; end
+            WATCH.one = WATCH.one or {}; WATCH.one[nm_ .. '_x'] = 3;
+            WATCH.move = 3;
+            save();
+            msg(string.format('%s placed at %d, %d.', nm_, math.floor(px_), math.floor(py_)));
+        end
     elseif sub == 'screen' then                                      -- (every screen size YunaUI is told, and the macro bar's place and size: for a player's
         pcall(function()                                             --  screen it doesn't fit - a scaled 4K one cut the bar at its middle)
             local ds = imgui.GetIO().DisplaySize;
