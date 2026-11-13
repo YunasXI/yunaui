@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.57';
+addon.version = '1.1.58';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -304,6 +304,10 @@ function C.screen()                                                  -- (the siz
     end
     if cfg.screen_mode == 'imgui' then return w, h; end              -- (GENERAL > Screen size: a way out for a PC where the guess is wrong)
     if cfg.screen_mode == 'big' then return math.max(w, S.w, S.cw), math.max(h, S.h, S.ch); end
+    if cfg.res_follow ~= false then                                  -- (Follow the resolution: the size it last accepted, until it accepts another - a size
+        local aw, ah = tonumber(cfg.res_w) or 0, tonumber(cfg.res_h) or 0;   --  said for a moment (an alt-tab, the game minimized) squeezed every window
+        if aw >= 320 and ah >= 240 then return math.floor(aw), math.floor(ah); end   --  into it at once, before the change was even taken: the layout was lost)
+    end
     if S.w > 200 and S.h > 200 then return math.floor(S.w), math.floor(S.h); end   -- (VanaCore's interface size: what ImGui and the mouse work in)
     return math.max(w, S.cw), math.max(h, S.ch);                     -- (not told yet - the first frame, an old VanaCore: the biggest, as before)
 end
@@ -352,6 +356,52 @@ function C.res_apply(ow, oh, nw, nh)                                -- (from one
         D.size = math.floor(math.max(50, math.min(250, (tonumber(D.size) or 100) * k)) + 0.5);
         if tonumber(D.x) and tonumber(D.y) then YUI_DPS.place(D.x * kx, D.y * ky); else YUI_DPS.save(); end
     end);
+    for _, T_ in ipairs({ WATCH.size or {}, WATCH.calm or {} }) do   -- (each window's measured size by the same amount: kept on the screen by its old,
+        for _, z in pairs(T_) do                                     --  bigger size for a frame, a window by the edge was pushed off its new place)
+            if type(z) == 'table' and tonumber(z[1]) and tonumber(z[2]) then z[1], z[2] = z[1] * k, z[2] * k; end
+        end
+    end
+    C.RES.relay = os.clock();
+    WATCH.move = 3;
+end
+-- The layout as it stands (every place, the chats' sizes, Size of everything, your bars, the Damage Meter), and put back.
+-- Kept for each resolution it was used at: coming BACK to a size gives that size's own layout exactly - scaling there and
+-- back again lost it (pieces pushed against the edges in between, rounding): a game that reports another size for a
+-- moment - alt-tabbing out of full screen - left the chat, party list and target bar off the screen (Byegawd).
+function C.res_grab()
+    local t = { scale = tonumber(cfg.scale) or 1, pos = {}, t = os.time() };
+    for key, v in pairs(cfg) do
+        if type(key) == 'string' and type(v) == 'number' then
+            local base = key:match('^(.+)_x$');
+            if base and type(cfg[base .. '_y']) == 'number' then t.pos[key], t.pos[base .. '_y'] = v, cfg[base .. '_y']; end
+            local wb = key:match('^(.+)_w$');
+            if wb and C.RES.PX[wb] and type(cfg[wb .. '_h']) == 'number' then t.pos[key], t.pos[wb .. '_h'] = v, cfg[wb .. '_h']; end
+        end
+    end
+    pcall(function()
+        local E = YUI_EQ_GET and YUI_EQ_GET();
+        if type(E) ~= 'table' then return; end
+        t.eq = {};
+        for _, k_ in ipairs({ 'hpbar_x', 'hpbar_y', 'mpbar_x', 'mpbar_y', 'tpbar_x', 'tpbar_y' }) do t.eq[k_] = tonumber(E[k_]); end
+    end);
+    pcall(function()
+        local D = YUI_DPS and YUI_DPS.get and YUI_DPS.get();
+        if type(D) == 'table' and tonumber(D.x) and tonumber(D.y) then t.dps = { tonumber(D.x), tonumber(D.y), tonumber(D.size) }; end
+    end);
+    return t;
+end
+function C.res_put(t)
+    cfg.scale = math.max(0.5, math.min(4, tonumber(t.scale) or 1));
+    for k_, v in pairs(t.pos or {}) do if type(k_) == 'string' and type(v) == 'number' then cfg[k_] = v; end end
+    cfg.party_bot = nil;                                             -- (PARTY > Grow upward: its bottom taken again where it lands)
+    pcall(function() if type(t.eq) == 'table' and next(t.eq) and YUI_EQ_APPLY then YUI_EQ_APPLY(t.eq); end end);
+    pcall(function()
+        local D = YUI_DPS and YUI_DPS.get and YUI_DPS.get();
+        if type(D) ~= 'table' or type(t.dps) ~= 'table' or not t.dps[1] then return; end
+        if tonumber(t.dps[3]) then D.size = t.dps[3]; end
+        YUI_DPS.place(t.dps[1], t.dps[2]);
+    end);
+    C.RES.relay = os.clock();
     WATCH.move = 3;
 end
 function C.res_tick()
@@ -364,13 +414,33 @@ function C.res_tick()
     local ow, oh = tonumber(cfg.res_w) or 0, tonumber(cfg.res_h) or 0;
     if ow < 320 or oh < 240 then cfg.res_w, cfg.res_h = w, h; pcall(save); return; end   -- (the first time: noted, nothing changes)
     if math.abs(w - ow) <= 2 and math.abs(h - oh) <= 2 then R.seen = nil; return; end
-    if not R.seen or R.seen[1] ~= w or R.seen[2] ~= h then R.seen = { w, h, now }; return; end   -- (a new size: once it holds for a second - not mid-drag of the window)
-    if now - R.seen[3] < 1.0 then return; end
+    local away = false;                                              -- (the game minimized: whatever size it says then isn't one you play at)
+    pcall(function() local i_ = vana.window.info(); away = type(i_) == 'table' and i_.minimized == true; end);
+    if away then R.seen = nil; return; end
+    if not R.seen or R.seen[1] ~= w or R.seen[2] ~= h then R.seen = { w, h, now }; return; end   -- (a new size: once it holds for three seconds - not mid-drag of the
+    if now - R.seen[3] < 3.0 then return; end                        --  window, not the moment an alt-tab takes)
     R.seen = nil;
-    C.res_apply(ow, oh, w, h);
+    local S = type(cfg.res_snap) == 'table' and cfg.res_snap or {};  -- (each size's own layout: this one kept as it is now, the new size's put back if it has one)
+    cfg.res_snap = S;
+    S[ow .. 'x' .. oh] = C.res_grab();
+    local back = S[w .. 'x' .. h];
+    local had = type(back) == 'table' and type(back.pos) == 'table' and next(back.pos) ~= nil;
+    if had then C.res_put(back); else C.res_apply(ow, oh, w, h); end
+    do                                                               -- (at most four sizes kept: the oldest goes)
+        local n_, old_k, old_t = 0, nil, nil;
+        for k_, v in pairs(S) do
+            if type(v) == 'table' then
+                n_ = n_ + 1;
+                if k_ ~= (w .. 'x' .. h) and k_ ~= (ow .. 'x' .. oh) and (old_t == nil or (tonumber(v.t) or 0) < old_t) then old_k, old_t = k_, tonumber(v.t) or 0; end
+            end
+        end
+        if n_ > 4 and old_k then S[old_k] = nil; end
+    end
+    R.n, R.last = (R.n or 0) + 1, string.format('%dx%d -> %dx%d', ow, oh, w, h);   -- (/yui screen and /yui dragdebug say it)
     cfg.res_w, cfg.res_h = w, h;
     pcall(save);
-    msg(('Resolution %dx%d: the UI resized to match (Size of everything %.2fx). GENERAL > SIZE > Follow the resolution turns this off.'):format(w, h, tonumber(cfg.scale) or 1));
+    if had then msg(('Resolution %dx%d: your layout for this size is back. GENERAL > SIZE > Follow the resolution turns this off.'):format(w, h));
+    else msg(('Resolution %dx%d: the UI resized to match (Size of everything %.2fx). GENERAL > SIZE > Follow the resolution turns this off.'):format(w, h, tonumber(cfg.scale) or 1)); end
 end
 function C.cliprect(a, b)
     local w, h = C.screen();
@@ -1165,7 +1235,11 @@ local function plain_window(name, kx, ky, force)
     if not keys_ then keys_ = {}; WATCH.key = keys_; end             --  its usual place in Edit Mode and Vex; the gear strip, the sub-target: put there
     local swap_ = keys_[name] ~= nil and keys_[name] ~= kx;          --  at once. Left where it last stood, that spot - wherever the head had been, off the
     keys_[name] = kx;                                                --  screen even - was saved as its usual place: "sometimes high, sometimes low", Byegawd)
-    imgui.SetNextWindowPos({ px, py }, (WATCH.move > 0 or force or one or moved_ or first_ or swap_) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
+    local held_ = WATCH.grab == kx and imgui.IsMouseDown(0);         -- (the one you're holding with the mouse: never put back while you hold it - whatever
+    if WATCH.grab and not imgui.IsMouseDown(0) then WATCH.grab = nil; end   --  else is asking every window to its place that frame. Anything that kept asking
+                                                                     --  (the party list re-fitting itself, a counter left up) made every drag snap straight
+                                                                     --  back: the chat, the party list - Byegawd. Let go, it's kept on the screen as before)
+    imgui.SetNextWindowPos({ px, py }, (force or (not held_ and (WATCH.move > 0 or one or moved_ or first_ or swap_))) and ImGuiCond_Always or ImGuiCond_FirstUseEver);
     local flags = NOFRAME;
     if (cfg.locked and not EDIT.on) or force or (EDIT.on and EDIT.rs_hot) then flags = bit.bor(flags, ImGuiWindowFlags_NoMove); end
     imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
@@ -1200,6 +1274,7 @@ local function end_plain(kx, ky)
         local hov_ = imgui.IsWindowHovered();                        --  moment while the mouse is over this one, something else - another addon's
         local down_ = imgui.IsMouseDown(0);                          --  see-through window - lies on top and takes the click: this one comes to the front)
         if hov_ then C.EDH = os.clock(); end
+        if hov_ and imgui.IsMouseClicked(0) then WATCH.grab = kx; end   -- (taken with the mouse: plain_window leaves it alone while it's held)
         local mx_, my_ = imgui.GetMousePos();
         local in_ = type(mx_) == 'number' and type(sw) == 'number' and mx_ >= wx and mx_ <= wx + sw and my_ >= wy and my_ <= wy + sh;
         if C.DD and down_ and in_ then C.dd_note(kx, hov_ and 'grab' or 'under'); end
@@ -5790,20 +5865,21 @@ function ALLY.keep(kx, ky)                                          -- (after en
     if t0 and os.clock() - t0 < 2.0 then ALLY.lastw[kx] = nil; return; end   --  or it'd be pushed left and stay there)
     local pw = ALLY.lastw[kx];
     ALLY.lastw[kx] = sw;
+    if C.RES.relay and os.clock() - C.RES.relay < 2 then pw = nil; end   -- (the resolution just changed: its new width isn't a member joining - it stays where the layout put it)
     if pw and math.abs(pw - sw) > 1 then                             -- it got wider / narrower (a trust joined...): on the right half of the
         local x0 = tonumber(cfg[kx]) or 0;                           -- screen its RIGHT edge stays put, so a list by the screen's right edge
         if x0 + pw / 2 > W / 2 then                                  -- doesn't creep left
             cfg[kx] = math.floor(x0 + pw - sw);
-            WATCH.move = 2;
-            save();
-        end
+            WATCH.one = WATCH.one or {}; WATCH.one[kx] = 2;           -- (only this list goes to its place - asking every window, each time its width changed,
+            if os.clock() - (WATCH.saved or 0) > 1 then WATCH.saved = os.clock(); save(); else WATCH.later = true; end   --  put back whatever was being dragged; and the
+        end                                                          --  settings written to disk every time cost frames: at most once a second now)
     end
     local x, y = tonumber(cfg[kx]) or 0, tonumber(cfg[ky]) or 0;
     local nx, ny = ALLY.inside(x, y, sw, sh);
     if math.abs(nx - x) > 1 or math.abs(ny - y) > 1 then
         cfg[kx], cfg[ky] = nx, ny;
-        WATCH.move = 2;
-        save();
+        WATCH.one = WATCH.one or {}; WATCH.one[kx] = 2;
+        if os.clock() - (WATCH.saved or 0) > 1 then WATCH.saved = os.clock(); save(); else WATCH.later = true; end
     end
 end
 -- The cards' looks (PARTY > CARDS), for your party (Spine) and the alliances:
@@ -13611,7 +13687,8 @@ local function draw_chat(n)
         end
         local sx_, sy_ = tonumber(cfg[p .. 'x']) or 20, tonumber(cfg[p .. 'y']) or 700;
         local moved_ = st.seen and (math.abs(st.seen[1] - sx_) > 0.5 or math.abs(st.seen[2] - sy_) > 0.5);   -- (its place changed while it wasn't drawn - a mode
-        imgui.SetNextWindowPos({ sx_, sy_ }, (WATCH.move > 0 or st.relink or moved_ or st.seen == nil) and ImGuiCond_Always or ImGuiCond_FirstUseEver);   --  switch, the wave not on it yet: it goes there, not back; its first draw since loading: where the settings say)
+        if st.grab and not imgui.IsMouseDown(0) then st.grab = nil; end   -- (held with the mouse: never put back while you hold it - see plain_window)
+        imgui.SetNextWindowPos({ sx_, sy_ }, (not st.grab and (WATCH.move > 0 or st.relink or moved_ or st.seen == nil)) and ImGuiCond_Always or ImGuiCond_FirstUseEver);   --  switch, the wave not on it yet: it goes there, not back; its first draw since loading: where the settings say)
     end
     st.relink = false;                                               -- (resized by its linked twin: placed again, its bottom kept)
     imgui.SetNextWindowSize({ w, h }, ImGuiCond_Always);
@@ -13630,6 +13707,7 @@ local function draw_chat(n)
             C.CHATR = C.CHATR or {};
             C.CHATR[n] = { wx_, wy_, ww_, wh_, os.clock() };
         end);
+        if not big and imgui.IsWindowHovered() and imgui.IsMouseClicked(0) then st.grab = true; end   -- (taken with the mouse)
         local dl = imgui.GetWindowDrawList();
         local x, y = imgui.GetWindowPos();
         local now = os.clock();
@@ -20110,6 +20188,7 @@ function C.dd_report()
         W, H, tostring(ds_ and math.floor(ds_.x)), tostring(ds_ and math.floor(ds_.y)), tostring(mp_ and math.floor(mp_.x)), tostring(mp_ and math.floor(mp_.y)),
         tostring(EDIT.on), tostring(cfg.locked), tostring(WATCH.move), tostring(EDIT.rs ~= nil), tostring(EDIT.rs_hot), tostring(cfg.party_up), tostring(cfg.party_bot),
         tostring(ALLY.py_set), tostring(cfg.ally_anchor), tostring(cfg.target_fx)));
+    msg(string.format('Resolution changes this session: %d (last %s) | Follow the resolution %s | noted size %sx%s', (C.RES and C.RES.n) or 0, tostring(C.RES and C.RES.last), tostring(cfg.res_follow ~= false), tostring(cfg.res_w), tostring(cfg.res_h)));
     msg('Drag debug done. Send a screenshot of these lines.');
 end
 -- The in-game updater (yunaui_update.lua): a few seconds after loading it asks GitHub for the newest release; a newer
@@ -24045,7 +24124,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
                 if new and YUI_EQ_APPLY then YUI_EQ_APPLY(new); end
             end
         end
-        if WATCH.move > 0 then WATCH.move = WATCH.move - 1; end
+        if WATCH.move > 0 then WATCH.move = math.min(WATCH.move, 6) - 1; end   -- (never left up: whatever raised it, it's down again within a few frames)
         if WATCH.later and os.clock() - (WATCH.saved or 0) > 1 then WATCH.later, WATCH.saved = nil, os.clock(); pcall(save); end
         if not ui.open and not EDIT.on then ALLY.pick = nil; end     -- (the pretend selection mark lasts only while placing things)
         SUBPREVIEW = SUBPREVIEW or function() return (ui.open and ui.tab == 2) or EDIT.on or FIGHT.show; end   -- (Preview them: the target of target too)
@@ -24631,9 +24710,16 @@ ashita.events.register('command', 'yui_command', function(e)
             local u1, u2 = 0, 0; pcall(function() u1, u2 = vana.ui.screen(); end);
             local wi = {}; pcall(function() wi = vana.window.info() or {}; end);
             local W, H = C.screen();
+            pcall(function()                                             -- (the game's window on its monitor: a window bigger than the monitor, or partly off it,
+                local mo = type(wi.monitors) == 'table' and wi.monitors[tonumber(wi.monitor) or 1] or nil;   --  shows only a part of the interface - the rest is "off screen")
+                msg(string.format('Window: at %s,%s size %sx%s (picture %sx%s) | monitor %s: at %s,%s size %sx%s | full screen %s, maximized %s',
+                    tostring(wi.x), tostring(wi.y), tostring(wi.width), tostring(wi.height), tostring(wi.client_width), tostring(wi.client_height), tostring(wi.monitor),
+                    tostring(mo and mo.x), tostring(mo and mo.y), tostring(mo and mo.width), tostring(mo and mo.height), tostring(wi.covering), tostring(wi.maximized)));
+            end);
             local sz = WATCH.size and WATCH.size.mbp_x;
             msg(string.format('Screen: ImGui %sx%s (scale %s) | VanaCore UI %sx%s | window %sx%s | YunaUI uses %dx%d', tostring(ds and ds.x), tostring(ds and ds.y),
                 tostring(fb and fb.x), tostring(u1), tostring(u2), tostring(wi.client_width), tostring(wi.client_height), W, H));
+            msg(string.format('Resolution changes this session: %d (last %s) | Follow the resolution %s | noted size %sx%s', (C.RES and C.RES.n) or 0, tostring(C.RES and C.RES.last), tostring(cfg.res_follow ~= false), tostring(cfg.res_w), tostring(cfg.res_h)));
             msg(string.format('Macro bar: at %s,%s size %s x %s | Size of everything %s, bar size %s', tostring(cfg.mbp_x), tostring(cfg.mbp_y),
                 tostring(sz and math.floor(sz[1])), tostring(sz and math.floor(sz[2])), tostring(cfg.scale), tostring(cfg.mbar_scale)));
             local tsz = (WATCH.calm and WATCH.calm['_tx']) or (WATCH.size and WATCH.size['_tx']);   -- (Hex link's target bar: where it thinks the head is, where it went)
