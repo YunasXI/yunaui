@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.58';
+addon.version = '1.1.59';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -9270,8 +9270,22 @@ function C.chat_pop(mode, line)                                      -- (from ch
         if idx then C.BUBS[who] = { idx = idx, msg = msg, cat = cat_of(mode), t = now }; end
     end
 end
--- A point in the world on the screen (nil when behind the camera): the game's own view and projection
+-- A point in the world on the screen (nil when behind the camera). VanaCore's own vana.world.to_screen first: it is the
+-- camera VanaCore really draws with. The game's old view and projection (below) gave the same pixel here, but on some
+-- PCs it disagrees with what's drawn - the target bar meant to sit over a monster's head stood at the top of the screen
+-- or off it, "sometimes high, sometimes low" (Byegawd). The old way stays for a point VanaCore won't place (far off the
+-- screen: the callers still want to know which way) and where the function isn't there.
 function C.w2s(wx, wy, wz)
+    local T = C.W2SN;
+    if T == nil then
+        T = false;
+        pcall(function() if type(vana.world) == 'table' and type(vana.world.to_screen) == 'function' then T = vana.world.to_screen; end end);
+        C.W2SN = T;
+    end
+    if T and cfg.w2s_old ~= true then
+        local okn, nx_, ny_ = pcall(T, wx, wz, wy);                  -- (VanaCore: x, y, then the height)
+        if okn and tonumber(nx_) and tonumber(ny_) then return nx_, ny_; end
+    end
     local dev = d3d.get_device();
     local _, v = dev:GetTransform(ffi.C.D3DTS_VIEW);
     local _, pj = dev:GetTransform(ffi.C.D3DTS_PROJECTION);
@@ -13688,6 +13702,15 @@ local function draw_chat(n)
         local sx_, sy_ = tonumber(cfg[p .. 'x']) or 20, tonumber(cfg[p .. 'y']) or 700;
         local moved_ = st.seen and (math.abs(st.seen[1] - sx_) > 0.5 or math.abs(st.seen[2] - sy_) > 0.5);   -- (its place changed while it wasn't drawn - a mode
         if st.grab and not imgui.IsMouseDown(0) then st.grab = nil; end   -- (held with the mouse: never put back while you hold it - see plain_window)
+        if C.DD and imgui.IsMouseDown(0) then                        -- (/yui dragdebug: the chats too)
+            local dk_ = p .. 'x';
+            C.dd_note(dk_, 'n');
+            if st.grab then C.dd_note(dk_, 'grab'); end
+            if WATCH.move > 0 then C.dd_note(dk_, 'all'); end
+            if st.relink then C.dd_note(dk_, 'one'); end
+            if moved_ then C.dd_note(dk_, 'moved'); end
+            if cfg.locked then C.dd_note(dk_, 'nomove'); end
+        end
         imgui.SetNextWindowPos({ sx_, sy_ }, (not st.grab and (WATCH.move > 0 or st.relink or moved_ or st.seen == nil)) and ImGuiCond_Always or ImGuiCond_FirstUseEver);   --  switch, the wave not on it yet: it goes there, not back; its first draw since loading: where the settings say)
     end
     st.relink = false;                                               -- (resized by its linked twin: placed again, its bottom kept)
@@ -15230,6 +15253,14 @@ local function draw_strip()
         WATCH.move = WATCH.move + 1;                                 -- follow the bar every frame
     else
         first_place('strip_x', 'strip_y', -W / 2, -330);
+    end
+    if kx == '_sx' then                                              -- (joined to the chat or under a bar: still kept whole on the screen - what it follows
+        local SW_, SH_ = C.screen();                                 --  may sit by an edge, and a piece that follows was never kept in: off the screen, Byegawd)
+        local z_ = WATCH.size and WATCH.size['_sx'];
+        if z_ and tonumber(cfg._sx) and tonumber(cfg._sy) and SW_ and SH_ then
+            cfg._sx = math.max(0, math.min(SW_ - math.min(z_[1], SW_), cfg._sx));
+            cfg._sy = math.max(0, math.min(SH_ - math.min(z_[2], SH_), cfg._sy));
+        end
     end
     local open = plain_window('YunaUI Strip##yui_strip', kx, ky);
     if bp or anc_ then WATCH.move = WATCH.move - 1; cfg._sx, cfg._sy = nil, nil; end
@@ -20166,30 +20197,44 @@ function C.dd_note(k, what)
     if not r then r = {}; D[k] = r; end
     r[what] = (r[what] or 0) + 1;
 end
+function C.dd_copy(out)                                              -- (a report where it can be had with the chat off the screen: the clipboard, and a file)
+    local nl_ = string.char(10);
+    local txt = 'YunaUI ' .. tostring(addon.version) .. nl_ .. table.concat(out, nl_);
+    pcall(function() if imgui.SetClipboardText then imgui.SetClipboardText(txt); end end);
+    pcall(function()
+        local f = io.open((addon.path:gsub('[' .. string.char(92) .. '/]+$', '')) .. string.char(92) .. 'yunaui-debug.txt', 'w');
+        if f then f:write(txt, nl_); f:close(); end
+    end);
+end
 function C.dd_report()
     local D = C.DD;
     C.DD, C.DD_T = nil, nil;
     if not D then return; end
+    local out = {};
+    local function say(t) out[#out + 1] = tostring(t); msg(t); end
     local any = false;
     for k, r in pairs(D) do
         if (r.grab or 0) > 0 or (r.under or 0) > 0 then
             any = true;
             local sz = WATCH.size and WATCH.size[k];
-            msg(string.format('Drag %s: under the mouse %d frames, covered by something else %d | put back: screen edge %d, placed %d, all windows %d, moved %d, fixed %d, no-move %d | now %s,%s size %sx%s',
+            say(string.format('Drag %s: under the mouse %d frames, covered by something else %d | put back: screen edge %d, placed %d, all windows %d, moved %d, fixed %d, no-move %d | now %s,%s size %sx%s',
                 tostring(k):gsub('_x$', ''), r.grab or 0, r.under or 0, r.clamp or 0, r.one or 0, r.all or 0, r.moved or 0, r.fixed or 0, r.nomove or 0,
                 tostring(cfg[k]), tostring(cfg[(k:gsub('_x$', '_y'))]), tostring(sz and math.floor(sz[1])), tostring(sz and math.floor(sz[2]))));
         end
     end
-    if not any then msg('Drag debug: the mouse button was never down over a YunaUI window. (Was it held on the piece?)'); end
+    if not any then say('Drag debug: the mouse button was never down over a YunaUI window. (Was it held on the piece?)'); end
     local W, H = C.screen();
     local ds_ = imgui.GetIO().DisplaySize;
     local mp_ = imgui.GetIO().MousePos;
-    msg(string.format('Drag debug: screen %dx%d (ImGui %sx%s), mouse %s,%s, Edit Mode %s, locked %s, forcing %s, resize grip %s / %s, party grow up %s (bottom %s, set %s), alliances anchored %s, mode %s',
+    say(string.format('Drag debug: screen %dx%d (ImGui %sx%s), mouse %s,%s, Edit Mode %s, locked %s, forcing %s, resize grip %s / %s, party grow up %s (bottom %s, set %s), alliances anchored %s, mode %s',
         W, H, tostring(ds_ and math.floor(ds_.x)), tostring(ds_ and math.floor(ds_.y)), tostring(mp_ and math.floor(mp_.x)), tostring(mp_ and math.floor(mp_.y)),
         tostring(EDIT.on), tostring(cfg.locked), tostring(WATCH.move), tostring(EDIT.rs ~= nil), tostring(EDIT.rs_hot), tostring(cfg.party_up), tostring(cfg.party_bot),
         tostring(ALLY.py_set), tostring(cfg.ally_anchor), tostring(cfg.target_fx)));
-    msg(string.format('Resolution changes this session: %d (last %s) | Follow the resolution %s | noted size %sx%s', (C.RES and C.RES.n) or 0, tostring(C.RES and C.RES.last), tostring(cfg.res_follow ~= false), tostring(cfg.res_w), tostring(cfg.res_h)));
-    msg('Drag debug done. Send a screenshot of these lines.');
+    say(string.format('Resolution changes this session: %d (last %s) | Follow the resolution %s | noted size %sx%s', (C.RES and C.RES.n) or 0, tostring(C.RES and C.RES.last), tostring(cfg.res_follow ~= false), tostring(cfg.res_w), tostring(cfg.res_h)));
+    say(string.format('Chat: at %s,%s size %sx%s | combat log on %s joined %s | third chat %s joined %s | big %s', tostring(cfg.chat_x), tostring(cfg.chat_y), tostring(cfg.chat_w),
+        tostring(cfg.chat_h), tostring(cfg.chat_split), tostring(cfg.chat_link), tostring(cfg.chat3), tostring(cfg.chat3_link), tostring(C.bigchat)));
+    C.dd_copy(out);
+    msg('Drag debug done: the report is copied - paste it (Ctrl V) in Discord. Also saved as yunaui-debug.txt in the YunaUI folder.');
 end
 -- The in-game updater (yunaui_update.lua): a few seconds after loading it asks GitHub for the newest release; a newer
 -- one shows a card - what's new, UPDATE / LATER / SKIP - and UPDATE downloads the changed files, swaps them in and
@@ -24704,7 +24749,9 @@ ashita.events.register('command', 'yui_command', function(e)
             msg(string.format('%s placed at %d, %d.', nm_, math.floor(px_), math.floor(py_)));
         end
     elseif sub == 'screen' then                                      -- (every screen size YunaUI is told, and the macro bar's place and size: for a player's
+        local out_, msg0_ = {}, msg;                                 -- (said in the chat, and copied: the chat may be the thing that's off the screen)
         pcall(function()                                             --  screen it doesn't fit - a scaled 4K one cut the bar at its middle)
+            local function msg(t) out_[#out_ + 1] = tostring(t); msg0_(t); end
             local ds = imgui.GetIO().DisplaySize;
             local fb = imgui.GetIO().DisplayFramebufferScale;
             local u1, u2 = 0, 0; pcall(function() u1, u2 = vana.ui.screen(); end);
@@ -24727,6 +24774,22 @@ ashita.events.register('command', 'yui_command', function(e)
             msg(string.format('Target bar: head %s,%s | bar %s,%s | box %s x %s | usual place %s,%s | mode %s',
                 tostring(hd and math.floor(hd[1])), tostring(hd and math.floor(hd[2])), tostring(bp_ and math.floor(bp_[1])), tostring(bp_ and math.floor(bp_[2])),
                 tostring(tsz and math.floor(tsz[1])), tostring(tsz and math.floor(tsz[2])), tostring(cfg.target_x), tostring(cfg.target_y), tostring(cfg.target_fx)));
+            pcall(function()                                             -- (the same head by both ways of placing a point of the world on the screen: they should agree)
+                local mm_ = AshitaCore:GetMemoryManager();
+                local ti_ = mm_:GetTarget():GetTargetIndex(0) or 0;
+                if ti_ == 0 then return; end
+                local en_ = mm_:GetEntity();
+                local px_, py_, pz_ = C.tpos(ti_, en_);
+                if not px_ then return; end
+                local th_ = C.tall(ti_, en_);
+                local n1, n2 = C.w2s(px_, pz_ - th_, py_);
+                local was_ = cfg.w2s_old;
+                cfg.w2s_old = true;
+                local o1, o2 = C.w2s(px_, pz_ - th_, py_);
+                cfg.w2s_old = was_;
+                msg(string.format('Head check: used %s,%s | old way %s,%s | VanaCore way %s', tostring(n1 and math.floor(n1)), tostring(n2 and math.floor(n2)), tostring(o1 and math.floor(o1)),
+                    tostring(o2 and math.floor(o2)), (C.W2SN and was_ ~= true) and 'on' or 'off'));
+            end);
             local function win_(k)                                   -- (a window: where it's kept and how big it measured - one bigger than the screen can't be moved)
                 local s1, s2 = WATCH.size and WATCH.size[k .. '_x'], WATCH.calm and WATCH.calm[k .. '_x'];
                 return string.format('%s,%s size %sx%s (settled %sx%s)', tostring(cfg[k .. '_x']), tostring(cfg[k .. '_y']), tostring(s1 and math.floor(s1[1])), tostring(s1 and math.floor(s1[2])),
@@ -24737,7 +24800,10 @@ ashita.events.register('command', 'yui_command', function(e)
             msg(string.format('Party: grow up %s, bottom %s, alliances anchored %s, locked %s, party size %s | mouse %s,%s (move it to the bottom right corner first)',
                 tostring(cfg.party_up), tostring(cfg.party_bot), tostring(cfg.ally_anchor), tostring(cfg.locked), tostring(cfg.party_scale),
                 tostring(mp_ and math.floor(mp_.x)), tostring(mp_ and math.floor(mp_.y))));
+            msg(string.format('Chat: at %s,%s size %sx%s | combat log on %s joined %s | third chat %s joined %s | big %s | Follow the resolution %s', tostring(cfg.chat_x), tostring(cfg.chat_y),
+                tostring(cfg.chat_w), tostring(cfg.chat_h), tostring(cfg.chat_split), tostring(cfg.chat_link), tostring(cfg.chat3), tostring(cfg.chat3_link), tostring(C.bigchat), tostring(cfg.res_follow ~= false)));
         end);
+        if #out_ > 0 then pcall(C.dd_copy, out_); msg('Copied: paste it (Ctrl V) in Discord. Also saved as yunaui-debug.txt in the YunaUI folder.'); end
     elseif sub == 'buffdebug' then                                   -- (PARTY > buff timers: say how each one you cast on someone is worked out)
         BUFFS.dbg = not BUFFS.dbg; msg('Buff timer debug ' .. (BUFFS.dbg and 'on' or 'off'));
     elseif sub == 'mbdebug' then                                     -- (ACTION BARS: say what the keyboard does to the bar)
