@@ -203,11 +203,20 @@ local ui = { open = { s.visible ~= false }, expanded = {}, place = true, font = 
 if s.mode == 2 then s.mode = 1; end                                 -- (one damage view now: the old Total view is gone)
 function ui.toggle_hate()
     if s.mode == 3 then
-        s.mode = 1;
+        s.mode = (s.last_dps == 4) and 4 or 1;
     else
         s.last_dps, s.mode = s.mode, 3;
     end
     settings.save('dps');
+end
+function ui.toggle_taken()                                           -- (the Taken tab: the damage your party took; a second click goes back)
+    if s.mode == 4 then s.mode = 1; else s.mode = 4; end
+    settings.save('dps');
+end
+function ui.title()                                                  -- (the window's title for the tab that's open)
+    if s.mode == 3 then return 'ENMITY'; end
+    if s.mode == 4 then return 'DAMAGE TAKEN'; end
+    return 'DAMAGE';
 end
 
 -- A segment holds everyone's damage: the current fight, or the whole session (total)
@@ -220,9 +229,55 @@ local function touch(seg, t)
     seg.last = t;
 end
 local meter = { fight = nil, total = new_segment(now()) };
+-- Past fights: one segment per fight (a new one after BREAK seconds with nothing happening), named after the monster
+-- that took the most damage; the last 10 kept for the session. Each segment also holds the damage the party TOOK
+-- (seg.taken: the same shape as a segment, so the rows, details and chat report work for it as they are).
+meter.cur, meter.hist, meter.HIST_MAX = nil, {}, 10;
+function meter.fight_now(t)                                        -- (the current fight - a new one after a quiet BREAK)
+    local c = meter.cur;
+    if c and t - c.last >= BREAK then
+        if (c.sum or 0) > 0 or (c.taken and c.taken.sum or 0) > 0 then
+            c.ended = c.last;
+            table.insert(meter.hist, 1, c);
+            while #meter.hist > meter.HIST_MAX do table.remove(meter.hist); end
+        end
+        c = nil;
+    end
+    if c == nil then c = new_segment(t); c.mobs = {}; meter.cur = c; end
+    return c;
+end
+function meter.mob_name(sid)                                        -- (a monster's name from its server id, kept once seen)
+    meter.names = meter.names or {};
+    local n = meter.names[sid];
+    if n ~= nil then return n or nil; end
+    meter.names[sid] = false;
+    pcall(function()
+        local idx = meter.index_of and meter.index_of(sid);   -- (set below, once the enmity code that has it is loaded)
+        if idx then
+            local nm = AshitaCore:GetMemoryManager():GetEntity():GetName(idx);
+            if type(nm) == 'string' and nm ~= '' then meter.names[sid] = nm; end
+        end
+    end);
+    return meter.names[sid] or nil;
+end
+function meter.note_mob(seg, sid, dmg)                              -- (how much each monster took: the fight's name is the top one)
+    if not seg or not seg.mobs or (dmg or 0) <= 0 then return; end
+    local nm = meter.mob_name(sid);
+    if nm then seg.mobs[nm] = (seg.mobs[nm] or 0) + dmg; end
+end
+function meter.label(seg)                                           -- ("Carabosse  2:41")
+    local best, bd = nil, -1;
+    for n, d in pairs(seg.mobs or {}) do if d > bd then best, bd = n, d; end end
+    return best or 'Fight';
+end
+function meter.taken_view(seg)                                       -- (a segment's damage taken, shown as a segment of its own)
+    if seg == nil then return nil; end
+    local tk = seg.taken;
+    return { start = seg.start, last = seg.last, paused = seg.paused, done = 0, sum = tk and tk.sum or 0, actors = tk and tk.actors or {}, mobs = seg.mobs, ended = seg.ended };
+end
 
 -- Order the breakdown is shown in
-local CATS = { 'Melee', 'Ranged', 'Weapon skill', 'Magic', 'Ability', 'Pet', 'Skillchain', 'Add. effect', 'Spikes' };
+local CATS = { 'Melee', 'Ranged', 'Weapon skill', 'Magic', 'Ability', 'TP move', 'Pet', 'Skillchain', 'Add. effect', 'Spikes' };
 
 ----------------------------------------------------------------------------------------------------
 -- Combat log: action packet 0x28
@@ -334,10 +389,25 @@ local function record(who, cat, dmg, kind, abil)
     local t = now();
     local f = meter.fight;
     if f == nil then f = new_segment(t); meter.fight = f; end
+    local cf = meter.fight_now(t);
     touch(f, t);
     touch(meter.total, t);
+    touch(cf, t);
     add_to(f, who, cat, dmg, kind, abil);
     add_to(meter.total, who, cat, dmg, kind, abil);
+    add_to(cf, who, cat, dmg, kind, abil);
+end
+-- One hit a monster landed on someone in your party / alliance (trusts too): into each segment's damage taken
+function meter.record_taken(who, cat, dmg, kind, abil)
+    local t = now();
+    local f = meter.fight;
+    if f == nil then f = new_segment(t); meter.fight = f; end
+    local cf = meter.fight_now(t);
+    for _, seg in ipairs({ f, meter.total, cf }) do
+        touch(seg, t);
+        seg.taken = seg.taken or new_segment(t);
+        add_to(seg.taken, who, cat, dmg, kind, abil);
+    end
 end
 
 -- Magic accuracy: one spell on one monster, landed or fully resisted (into the current fight and the session total)
@@ -345,9 +415,11 @@ local function record_macc(who, landed)
     local t0 = now();
     local f = meter.fight;
     if f == nil then f = new_segment(t0); meter.fight = f; end
+    local cf = meter.fight_now(t0);
     touch(f, t0);
     touch(meter.total, t0);
-    for _, seg in ipairs({ f, meter.total }) do
+    touch(cf, t0);
+    for _, seg in ipairs({ f, meter.total, cf }) do
         local a = actor_of(seg, who);
         a.macc = a.macc or { land = 0, miss = 0 };
         if landed then a.macc.land = a.macc.land + 1; else a.macc.miss = a.macc.miss + 1; end
@@ -404,6 +476,7 @@ function hate.index_of(id)
     end
     return nil;
 end
+meter.index_of = hate.index_of;                                     -- (the fight log, above, names its fights with it)
 
 -- The monster's level and whether it's a notorious monster, from the mobdb addon's data (addons\mobdb\data\<zone>.lua),
 -- read once per zone. Unknown monsters (e.g. CatsEyeXI's own Campaign ones) use your level, as before.
@@ -824,6 +897,7 @@ local function parse_action(e)
             end
             if src and base and is_mob(target, map) then
                 local kind = HIT[m];
+                if kind then meter.note_mob(meter.cur, target, p); end   -- (which monster this fight is about)
                 if kind then record(src.who, base, p, kind, abil);
                 elseif MISS[m] then record(src.who, base, 0, 'miss', abil); end
                 local extra = SC_MSG[ae_m];
@@ -831,6 +905,17 @@ local function parse_action(e)
                 if cat == 4 and not src.pet then record_macc(src.who, not MRESIST[m]); end
             elseif src == nil and is_mob(actor, map) and map[target] and sp_m == 44 and sp_p > 0 then
                 record(map[target].who, 'Spikes', sp_p, 'hit', nil);   -- your spikes hit the monster
+            end
+            -- Damage taken: a monster's melee, ranged, spell or TP move landing on someone in your party / alliance
+            if src == nil and is_mob(actor, map) and map[target] and not map[target].pet then
+                local tc = ({ [1] = 'Melee', [2] = 'Ranged', [4] = 'Magic', [11] = 'TP move' })[cat];
+                if tc then
+                    local tkind = HIT[m];
+                    local tab = (cat == 4) and ability_name(4, param) or nil;
+                    if tkind then meter.record_taken(map[target].who, tc, p, tkind, tab);
+                    elseif MISS[m] then meter.record_taken(map[target].who, tc, 0, 'miss', tab); end
+                    if tkind then meter.note_mob(meter.cur, actor, 0.25 * p); end   -- (who hit you counts a little for the fight's name too)
+                end
             end
 
             -- Enmity
@@ -878,9 +963,11 @@ local function segment()
             ui.demo_seg = seg;
         end
         ui.demo_seg.last = now();
-        return ui.demo_seg;
+        return (s.mode == 4) and meter.taken_view(ui.demo_seg) or ui.demo_seg;
     end
-    return meter.fight;
+    local base = ui.view or meter.fight;                             -- (a fight picked from the list behind the clock, else everything since Reset)
+    if s.mode == 4 then return meter.taken_view(base); end
+    return base;
 end
 
 -- Seconds of fighting: it ticks while damage is coming in and holds still during a break (see BREAK).
@@ -937,6 +1024,28 @@ local function reset()
     meter.fight, meter.total = nil, new_segment(now());
     hate.mobs = {};
     ui.expanded = {};
+    ui.view = nil;                                                   -- (back to the live numbers; your past fights stay in the list)
+end
+-- The list behind the clock: everything since Reset, the fight going on, then the last fights, newest first
+function ui.fights_menu(id)
+    if imgui.BeginPopup(id) then
+        imgui.TextColored(C.muted, 'Show');
+        imgui.Separator();
+        if imgui.Selectable('Since Reset (live)', ui.view == nil) then ui.view = nil; ui.expanded = {}; end
+        local list = {};
+        if meter.cur and ((meter.cur.sum or 0) > 0 or (meter.cur.taken and meter.cur.taken.sum or 0) > 0) then list[#list + 1] = meter.cur; end
+        for _, f in ipairs(meter.hist) do list[#list + 1] = f; end
+        if #list == 0 then imgui.TextColored(C.muted, 'No fights yet'); end
+        for i, f in ipairs(list) do
+            local live = (f == meter.cur) and (now() - f.last < BREAK);
+            local lab = string.format('%s  %s%s##ym_fight%d', meter.label(f), clock_text(duration(f)), live and '  (now)' or '', i);
+            if imgui.Selectable(lab, ui.view == f) then ui.view = f; ui.expanded = {}; end
+            if imgui.IsItemHovered() then
+                imgui.SetTooltip(string.format('%s dealt  |  %s taken', fmt(f.sum or 0), fmt(f.taken and f.taken.sum or 0)));
+            end
+        end
+        imgui.EndPopup();
+    end
 end
 
 ----------------------------------------------------------------------------------------------------
@@ -1051,7 +1160,7 @@ local function report(channel)
     local dur = duration(seg);
     -- No '%' sign: the game rejects a chat line with one ("A command error occurred"). The lines go out one by one
     -- (ui.chat_queue, sent from d3d_present) so the game's chat doesn't drop any for coming too fast.
-    ui.chat_queue = { string.format('/%s [Damage Meter] %s  %s dmg', channel, clock_text(dur), fmt(seg.sum)) };
+    ui.chat_queue = { string.format('/%s [%s] %s  %s %s', channel, (s.mode == 4) and 'Damage Taken' or 'Damage Meter', clock_text(dur), fmt(seg.sum), (s.mode == 4) and 'taken' or 'dmg') };
     for i, a in ipairs(list) do
         if i > 5 then break; end
         -- damage, then accuracy (melee + ranged swings that hit) and magic accuracy (spells that landed), when there are any
@@ -1100,6 +1209,18 @@ function fx.report_menu(id)
         imgui.EndPopup();
     end
 end
+-- The clock beside the title, with the picked fight's name; a click on it opens the list of fights
+function ui.clock_line(seg)
+    local t = clock_text(duration(seg));
+    if ui.view then return t .. '  ' .. meter.label(ui.view); end
+    return t;
+end
+function ui.clock_click()
+    if imgui.IsItemHovered() and not ui.report_open then
+        imgui.SetTooltip(ui.view and 'Showing a past fight. Click to pick another, or go back to live.' or 'Click to look at a past fight (the last 10 are kept).');
+    end
+    if imgui.IsItemClicked() then imgui.OpenPopup('##ydps_fights'); end
+end
 -- The top line: the view's name (click it to post the meter in chat) and the fight's clock; on the right the view
 -- menu, Enmity, - and X, each as wide as its text
 local function draw_header()
@@ -1110,7 +1231,7 @@ local function draw_header()
     local H = Z(30);
     local ww = imgui.GetWindowWidth();
     local seg = segment();
-    local title = (s.mode == 3) and 'ENMITY' or 'DAMAGE';
+    local title = ui.title();
     -- the buttons' places first (right side), so the title can see whether it fits beside them
     local right = ww - Z(12);
     local bw = Z(28);
@@ -1118,8 +1239,10 @@ local function draw_header()
     local x_min = x_close - bw - Z(2);
     local enw = text_w('Enmity') + Z(26);
     local x_enm = x_min - Z(10) - enw;
+    local tkw = text_w('Taken') + Z(26);                             -- the Taken tab: the damage your party took
+    local x_tak = x_enm - Z(6) - tkw;
     local cw = text_w('Reset') + Z(26);                           -- the Reset button
-    local x_cb = x_enm - Z(8) - cw;
+    local x_cb = x_tak - Z(8) - cw;
     local need = text_w(title) + ((seg and s.mode ~= 3) and (Z(10) + text_w('00:00')) or 0) + Z(14) + Z(28);   -- (+ the anchor)
     local two = (ox + need > x_cb);                           -- too narrow: title on a line of its own
     local ty = two and (oy + Z(34)) or (oy + Z(5));
@@ -1139,7 +1262,7 @@ local function draw_header()
             if imgui.IsItemClicked() then imgui.OpenPopup('##ydps_report'); end
             imgui.SetCursorScreenPos({ cx_, cy_ });
         end
-        if seg and s.mode ~= 3 then imgui.TextColored(C.muted, clock_text(duration(seg))); imgui.SameLine(0, Z(6)); end
+        if seg and s.mode ~= 3 then imgui.TextColored(C.muted, ui.clock_line(seg)); ui.clock_click(); imgui.SameLine(0, Z(6)); end
     else
     local tsx, tsy = imgui.GetCursorScreenPos();
     for _, d in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { 1, 1 } }) do put_text(tsx + d[1], tsy + d[2], { 0, 0, 0, 0.9 }, title); end
@@ -1148,11 +1271,12 @@ local function draw_header()
         imgui.SetTooltip('Damage Meter\nClick (or right click anywhere) to post the meter in party or linkshell chat.');
     end
     if imgui.IsItemClicked() then imgui.OpenPopup('##ydps_report'); end
-    if seg and s.mode ~= 3 then imgui.SameLine(0, Z(10)); imgui.TextColored(C.muted, clock_text(duration(seg))); end
+    if seg and s.mode ~= 3 then imgui.SameLine(0, Z(10)); imgui.TextColored(C.muted, ui.clock_line(seg)); ui.clock_click(); end
     imgui.SameLine(0, Z(4));
     end
     fx.anchor_button('##ym_anchor', imgui.GetTextLineHeight());
     fx.report_menu('##ydps_report');
+    ui.fights_menu('##ydps_fights');
 
     imgui.SetCursorPos({ x_cb, oy + Z(3) });                -- RESET: the numbers only start again when you press it
     if fx.hexcol() then
@@ -1169,6 +1293,22 @@ local function draw_header()
         local dur = duration(seg);
         imgui.SetTooltip(string.format('Clear every number and start again.%s',
             seg and string.format('\nNow: %s  |  %s dmg  |  party %s DPS', clock_text(dur), fmt(seg.sum), fmt(seg.sum / dur)) or ''));
+    end
+
+    local ton = s.mode == 4;                                         -- TAKEN: lit while open; a second click goes back
+    imgui.SetCursorPos({ x_tak, oy + Z(3) });
+    if fx.hexcol() then
+        if fx.chip_button('##ym_taken', 'Taken', tkw, Z(24), fx.hexcol().azure, ton) then ui.toggle_taken(); end
+    else
+    imgui.PushStyleColor(ImGuiCol_Button, ton and { 0.55, 0.62, 1.0, 0.55 } or { 0.55, 0.62, 1.0, 0.12 });
+    imgui.PushStyleColor(ImGuiCol_ButtonHovered, ton and { 0.55, 0.62, 1.0, 0.70 } or { 0.55, 0.62, 1.0, 0.25 });
+    imgui.PushStyleColor(ImGuiCol_ButtonActive, { 0.55, 0.62, 1.0, 0.80 });
+    imgui.PushStyleColor(ImGuiCol_Text, ton and { 1, 1, 1, 1 } or { 0.78, 0.82, 1.0, 1 });
+    if imgui.Button('Taken##ym_taken', { tkw, Z(24) }) then ui.toggle_taken(); end
+    imgui.PopStyleColor(4);
+    end
+    if imgui.IsItemHovered() then
+        imgui.SetTooltip('Damage taken: what the monsters did to each of you\n(melee, ranged, spells, TP moves).');
     end
 
     local on = s.mode == 3;                                   -- ENMITY: lit while open; a second click goes back
@@ -1435,7 +1575,7 @@ local function draw_rows()
         local hov = imgui.IsItemHovered();
         if imgui.IsItemClicked() then ui.expanded[a.name] = not ui.expanded[a.name]; end
         if hov then
-            imgui.SetTooltip(string.format('%s DPS\n%s', fmt(a.total / dur), ui.expanded[a.name] and 'Click to hide the details' or 'Click for the details'));
+            imgui.SetTooltip(string.format('%s %s\n%s', fmt(a.total / dur), (s.mode == 4) and 'taken a second' or 'DPS', ui.expanded[a.name] and 'Click to hide the details' or 'Click for the details'));
             DL.RF(dl, x - Z(4), y - Z(2), x + W + Z(4), y + h - Z(2), U4(1, 1, 1, 0.05), Z(4));
         end
         local left = string.format('%d. %s', i, a.name or '?');
@@ -1453,7 +1593,8 @@ local function draw_rows()
     imgui.SetWindowFontScale(0.8);
     local x, y = imgui.GetCursorScreenPos();
     local pw = text_w('100.0%') / 0.8 + Z(14);                 -- (this line is drawn smaller: same column as the rows)
-    put_text(x + W - pw - text_w('DAMAGE'), y + 2, C.muted, 'DAMAGE');
+    local foot_ = (s.mode == 4) and 'TAKEN' or 'DAMAGE';
+    put_text(x + W - pw - text_w(foot_), y + 2, C.muted, foot_);
     put_text(x + W - text_w('SHARE'), y + 2, C.muted, 'SHARE');
     put_text(x, y + 2, C.muted, 'click a name for details');
     imgui.Dummy({ W, imgui.GetTextLineHeight() + 4 });
@@ -1659,7 +1800,7 @@ local function draw_meter()
                 if ui.hx_sweep and t_ - ui.hx_sweep < 1 then gl, gs = (t_ - ui.hx_sweep), 1;
                 elseif YUI_HEXGLINT then gl = YUI_HEXGLINT(ui.hx_t0); end
                 local okf, tr = pcall(YUI_HEXFRAME, imgui.GetWindowDrawList(), s.x + 2, s.y + Z(9), s.x + ww - 2, s.y + wh - 2,
-                    { s = scale.k, fill = math.min(0.94, (tonumber(s.backdrop) or 0.55) + 0.25), title = (s.mode == 3) and 'ENMITY' or 'DAMAGE',
+                    { s = scale.k, fill = math.min(0.94, (tonumber(s.backdrop) or 0.55) + 0.25), title = ui.title(),
                       t = t_ - (ui.hx_t0 or t_), pulse = { fx.hexcol().azure, pk }, glint = gl, gs = gs });
                 ui.trect = okf and tr or nil;
             else
@@ -1735,7 +1876,7 @@ local function draw_mini_win(o)
         do
             local bx, by = imgui.GetCursorScreenPos();
             imgui.SetWindowFontScale(0.85);
-            local label = (o.cols and 'ENMITY' or 'DAMAGE');
+            local label = o.cols and 'ENMITY' or ((s.mode == 4) and 'DAMAGE TAKEN' or 'DAMAGE');   -- (the Taken tab: its own title, as the open meter's)
             local bw, bh = text_w(label) + Z(4), imgui.GetTextLineHeight() + Z(4);
             if imgui.InvisibleButton('##ym_open' .. o.id, { bw, bh }) then o.restore(); end
             local hov = imgui.IsItemHovered();
@@ -1850,7 +1991,8 @@ local function draw_mini()
         list = enm and hate_top5() or sorted_actors(segment()), rows = enm and 5 or 3,
         cols = enm, width = enm and Z(250) or nil,
         empty = nil, hov = 'mini_hov',                       -- (nothing written when there's no damage yet)
-        tip = string.format('Damage Meter - %s DPS\nClick to open, drag to move', fmt(my_dps())),
+        tip = (s.mode == 4) and string.format('Damage taken - you %s a second\nClick to open, drag to move', fmt(my_dps()))
+            or string.format('Damage Meter - %s DPS\nClick to open, drag to move', fmt(my_dps())),
         moved = function(x, y) s.x, s.y = x, y; end,
         restore = function() s.minimized, ui.place = false, true; settings.save('dps'); end });
     pcall(fx.anchor_effect);
