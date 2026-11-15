@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.61';
+addon.version = '1.1.62';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -536,6 +536,7 @@ local function load_fonts()
     fonts.main = add('segoeui.ttf', 17) or add('SegUIVar.ttf', 17);
     fonts.semi = add('seguisb.ttf', 17);
     fonts.title = add('bahnschrift.ttf', 22);
+    fonts.light = add('segoeuil.ttf', 96) or add('seguisli.ttf', 96);   -- (the AFK screen's clock: Segoe UI Light, thin)
     -- the same fonts made at a few sizes, so the size sliders stay sharp (the nearest bigger one is shrunk a little)
     fonts.sized = { main = {}, semi = {}, chat = {} };
     for _, px in ipairs({ 13, 17, 22, 28, 36 }) do
@@ -17317,6 +17318,7 @@ function C.inv_packet(e)                                             -- (0x0DC: 
     if cfg.party_invite == false then return; end
     local name = (e.data:sub(0x0C + 1, 0x0C + 16):match('^[^%z]*')) or '';
     if name == '' then name = 'Someone'; end
+    pcall(C.afk_alert, 'invite', name);                              -- (the AFK screen: a card for it)
     local G = C.GOT;
     for i = #G.list, 1, -1 do if G.list[i].inv then table.remove(G.list, i); end end   -- (a new invite replaces an old one)
     table.insert(G.list, 1, { inv = true, label = 'INVITE', text = name .. '   /join to accept', t0 = os.clock(), life = 12 });
@@ -19234,6 +19236,15 @@ local function draw_window()
                     hint('You have ' .. tostring(addon.version) .. '. UPDATE downloads only the files that changed, checks them, keeps the old ones, then reloads YunaUI - your settings and layout stay as they are.');
                 end
             end
+            section('AFK SCREEN');                                   -- (the game dimmed while you're away: the time, your tells and invites)
+            if cfg.afk_auto == nil then cfg.afk_auto = true; end
+            row_switch('##yui_afka', 'Turn on by itself', 'afk_auto', 'On: after a while with no key, button or mouse move the game is dimmed and a calm screen shows the time, the zone, and a card for each tell and party invite. Not while you fight, are knocked out or in a cutscene. Any key or mouse move brings the game back.');
+            if cfg.afk_auto ~= false then
+                if cfg.afk_min == nil then cfg.afk_min = 5; end
+                row_slider('##yui_afkm', 'After', 'afk_min', 1, 30, 1, '%d min');
+            end
+            row_switch('##yui_afk12', '12-hour clock', 'afk_12h', 'On: the AFK screen shows 10:38 PM. Off: 22:38.');
+            hint('Type /afk to turn it on now. When you come back, the chat says what came while you were away.');
             section('MY LAYOUTS');                                   -- five of your own, each with a name
             pcall(LAYOUT.mine_rows);
             hint('Give it a name, SAVE keeps your whole UI as it is now: where everything is, every size, look, colour and on / off (the chat and the Damage Meter too). LOAD puts it all back exactly as saved. (A layout saved before 1.1.33 keeps only places and sizes: SAVE it again.)');
@@ -20250,6 +20261,242 @@ function C.dd_report()
         tostring(cfg.chat_h), tostring(cfg.chat_split), tostring(cfg.chat_link), tostring(cfg.chat3), tostring(cfg.chat3_link), tostring(C.bigchat)));
     C.dd_copy(out);
     msg('Drag debug done: the report is copied - paste it (Ctrl V) in Discord. Also saved as yunaui-debug.txt in the YunaUI folder.');
+end
+-- The AFK screen: after a while with no key, button or mouse move (GENERAL > AFK SCREEN, 5 minutes by default), or at
+-- once with /afk, the game is dimmed and a calm screen shows the time, Vana'diel's day and hour, the zone and its
+-- weather, and a card for each tell and party invite that comes in. Any key, button or mouse move brings the game back,
+-- and the chat says what came while you were away. Not while you fight, are knocked out or in a cutscene.
+C.AFK = { on = false, last = os.clock(), alerts = {} };
+C.AFK_SKIP = { [9] = true, [16] = true, [17] = true, [18] = true, [91] = true, [92] = true, [164] = true, [165] = true };
+function C.afk_input(src, e)                                         -- (a key, a button, a mouse move: you're here)
+    local A = C.AFK;
+    if src == 'k' and e then                                         -- (not Alt / Ctrl / Shift / Win / Tab on their own - an Alt+Tab
+        local wp, lp = tonumber(e.wparam) or 0, tonumber(e.lparam) or 0;   --  away isn't you coming back - and not a key let go)
+        if C.AFK_SKIP[wp] or lp >= 2147483648 or lp < 0 then return; end
+    elseif (src == 'x' or src == 'd') and e then                     -- (a button let go, or a pad's hat at rest)
+        local st = tonumber(e.state) or 0;
+        if st == 0 or st == -1 or st == 65535 or st == 4294967295 then return; end
+        local b = tonumber(e.button) or 0;                           -- (DirectInput: under 32 = the sticks and triggers, which drift by a
+        if src == 'd' and (b < 32 or (b >= 48 and st < 128)) then return; end   --  few points all the time; 32 the D-pad; 48 up the buttons)
+    end
+    A.last = os.clock();
+    if A.on and os.clock() > (A.calm or 0) then C.afk_stop(); end
+end
+function C.afk_can()                                                 -- (only when nothing needs you: idle, alive, no cutscene)
+    local st = 0;
+    pcall(function()
+        local mm = AshitaCore:GetMemoryManager();
+        local me = mm:GetParty():GetMemberTargetIndex(0) or 0;
+        if me ~= 0 then st = mm:GetEntity():GetStatus(me) or 0; end
+    end);
+    if st == 1 or st == 2 or st == 3 or st == 4 then return false; end
+    if C.UI and C.UI.open then return false; end
+    return true;
+end
+function C.afk_start(manual)
+    local A = C.AFK;
+    A.on, A.t0, A.alerts, A.fade = true, os.clock(), {}, 0;
+    A.calm = os.clock() + (manual and 1.5 or 0.3);                    -- (the key that typed /afk, or the last frame's move, doesn't wake it)
+    A.fin = manual and 1.0 or 3.0;                                     -- (its fade-in: slow, never a snap)
+    A.nt, A.ni = 0, 0;                                                 -- (every tell and invite, for the chat line - cards drop off past six)
+    A.mx, A.my = nil, nil;
+end
+function C.afk_stop()
+    local A = C.AFK;
+    if not A.on then return; end
+    A.on = false;
+    local tells, inv = A.nt or 0, A.ni or 0;
+    if tells + inv > 0 then
+        local p = {};
+        if tells > 0 then p[#p + 1] = tells .. (tells == 1 and ' tell' or ' tells'); end
+        if inv > 0 then p[#p + 1] = inv .. (inv == 1 and ' party invite' or ' party invites'); end
+        msg('While you were away: ' .. table.concat(p, ', ') .. '.');
+    end
+end
+function C.afk_alert(kind, who, text)                                -- (a tell or an invite while the screen is up: a card)
+    local A = C.AFK;
+    if not A.on then return; end
+    if kind == 'tell' then A.nt = (A.nt or 0) + 1; else A.ni = (A.ni or 0) + 1; end
+    who = who or '?';
+    for i, a in ipairs(A.alerts) do                                    -- (the same person again: their one card, its count up, the newest words)
+        if a.kind == kind and a.who == who then
+            table.remove(A.alerts, i);
+            a.n, a.text, a.at = (a.n or 1) + 1, text or a.text, os.time();
+            table.insert(A.alerts, 1, a);
+            return;
+        end
+    end
+    table.insert(A.alerts, 1, { kind = kind, who = who, text = text or '', at = os.time(), n = 1 });
+    while #A.alerts > 6 do table.remove(A.alerts); end
+end
+function C.afk_front()                                               -- (is the game the window in front? asked 4 times a second)
+    local A = C.AFK;
+    local now = os.clock();
+    if A.front_t and now - A.front_t < 0.25 then return A.front; end
+    A.front_t = now;
+    local ok, r = pcall(function()
+        local ffi = require('ffi');
+        if not C.AFK_FFI then
+            pcall(ffi.cdef, 'void* GetForegroundWindow(void); unsigned long GetWindowThreadProcessId(void* h, unsigned long* p); unsigned long GetCurrentProcessId(void);');
+            C.AFK_FFI = ffi.new('unsigned long[1]');
+        end
+        C.AFK_FFI[0] = 0;
+        ffi.C.GetWindowThreadProcessId(ffi.C.GetForegroundWindow(), C.AFK_FFI);
+        return tonumber(C.AFK_FFI[0]) == tonumber(ffi.C.GetCurrentProcessId());
+    end);
+    A.front = (not ok) or r;                                         -- (can't tell: as before, the mouse counts)
+    return A.front;
+end
+function C.afk_clock(t)                                             -- (the time: 22:38, or 10:38 + PM with the 12-hour clock)
+    if cfg.afk_12h then return tostring(tonumber(os.date('%I', t)) or 12) .. os.date(':%M', t), os.date('%p', t); end
+    return os.date('%H:%M', t), nil;
+end
+function C.afk_tell(mode, raw)                                       -- (text_in: an incoming tell, "Name>> words")
+    if not C.AFK.on or mode ~= 12 then return; end
+    local s = raw;
+    pcall(function() local p = AshitaCore:GetChatManager():ParseAutoTranslate(raw, true); if p then s = p; end end);
+    s = clean(s) or s;
+    local who, words = s:match('^%s*%(?([%w_]+)%)?%s*>>%s*(.*)$');
+    if not who then who, words = s:match('^%s*([%w_]+)%s*:%s*(.*)$'); end
+    C.afk_alert('tell', who or 'Tell', words or s);
+end
+function C.afk_frame()
+    local A = C.AFK;
+    local now = os.clock();
+    pcall(function()                                                 -- (the mouse moved, or a button is down: you're here)
+        local io = imgui.GetIO();
+        local mp = io.MousePos;
+        local mx, my = mp and mp.x, mp and mp.y;
+        if mx and (math.abs(mx) > 100000 or math.abs(my) > 100000) then mx = nil; end   -- (no mouse: the game lost focus - an Alt+Tab, not a move)
+        if not C.afk_front() then mx = nil; end                      -- (another window in front: the mouse is busy there, not with the game)
+        if not mx then A.mx, A.my = nil, nil; end
+        if mx and (A.mx == nil or math.abs(mx - A.mx) > 2 or math.abs(my - A.my) > 2) then
+            if A.mx ~= nil then C.afk_input(); end
+            A.mx, A.my = mx, my;
+        end
+        if mx and (imgui.IsMouseDown(0) or imgui.IsMouseDown(1)) then C.afk_input(); end
+    end);
+    if not A.on then
+        local mins = math.max(1, math.min(60, tonumber(cfg.afk_min) or 5));
+        if cfg.afk_auto ~= false and now - A.last > mins * 60 and C.afk_can() then C.afk_start(false); end
+        return;
+    end
+    if not C.afk_can() and (C.UI == nil or not C.UI.open) then C.afk_stop(); return; end   -- (a fight, a cutscene: the game back at once)
+    A.fade = math.min(1, (A.fade or 0) + (imgui.GetIO().DeltaTime or 0.016) / (A.fin or 1));
+    local f = A.fade * A.fade * (3 - 2 * A.fade);                     -- (eased in and out)
+    local W, H = C.screen();
+    local ds = imgui.GetIO().DisplaySize;
+    imgui.SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
+    imgui.SetNextWindowSize({ ds.x, ds.y }, ImGuiCond_Always);
+    local fl = bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoMove, ImGuiWindowFlags_NoInputs,
+        ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing,
+        ImGuiWindowFlags_NoNav, ImGuiWindowFlags_NoScrollbar);
+    if imgui.Begin('##yui_afk', { true }, fl) then
+        local fg = nil;
+        pcall(function() fg = imgui.GetForegroundDrawList(); end);
+        if fg then
+            local k = math.max(0.6, H / 1080);
+            local hex = YUI_HEX;
+            local AC = hex and (C.GOLDH or { 1.0, 0.76, 0.34 }) or NEON2;              -- (the mode's colour: gold, or Vex's pink)
+            local AC2 = hex and (YUI_AZ and YUI_AZ() or { 0.40, 0.75, 1.0 }) or NEON;  -- (and its second: azure, or violet)
+            local function c(t, a) return U4(t[1], t[2], t[3], (a or 1) * f); end
+            local muted = { 0.62, 0.59, 0.72 };
+            local white = { 0.94, 0.92, 0.97 };
+            DL.RF(fg, 0, 0, W, H, U4(0.035, 0.028, 0.05, 0.84 * f));               -- (the game, dimmed right down)
+            local function txt(size, x, y, col, str, centre, gap)                    -- (YunaUI's font at that size, a dark edge)
+                local pushed = sized('chat', size);
+                local w_ = gap and spaced_w(str, gap) or (tonumber((imgui.CalcTextSize(str))) or 0);
+                local x_ = centre and (x - w_ / 2) or x;
+                if gap then
+                    spaced(fg, x_ + 1, y + 1, str, U4(0, 0, 0, 0.6 * f), gap);
+                    spaced(fg, x_, y, str, col, gap);
+                else
+                    DL.T(fg, x_ + 1, y + 1, U4(0, 0, 0, 0.6 * f), str);
+                    DL.T(fg, x_, y, col, str);
+                end
+                local h_ = imgui.GetTextLineHeight();
+                unsized(pushed);
+                return w_, h_;
+            end
+            local m = 40 * k;
+            txt(15 * k, m, m, c(muted), 'YUNA UI', false, 3 * k);
+            local away = math.floor(now - (A.t0 or now));
+            local aw = (away >= 3600) and string.format('AWAY  %d:%02d:%02d', math.floor(away / 3600), math.floor(away / 60) % 60, away % 60)
+                or string.format('AWAY  %d:%02d', math.floor(away / 60), away % 60);
+            local cx, cy = W / 2, H * 0.30;
+            local ch = 0;
+            local tstr, ampm = C.afk_clock();
+            if fonts.light and YUI_NEWFONT(fonts.light) and push_font(fonts.light, 128 * k) then   -- (the time, big and thin)
+                local tw = tonumber((imgui.CalcTextSize(tstr))) or 0;
+                DL.T(fg, cx - tw / 2 + 1, cy + 2, U4(0, 0, 0, 0.30 * f), tstr);
+                DL.T(fg, cx - tw / 2, cy, c(white), tstr);
+                ch = imgui.GetTextLineHeight();
+                imgui.PopFont();
+                if ampm then txt(22 * k, cx + tw / 2 + 10 * k, cy + ch * 0.62, c(muted), ampm, false, 2 * k); end   -- (AM / PM, small, beside it)
+            else
+                local tw_, ch_ = txt(110 * k, cx, cy, c(white), tstr, true);
+                ch = ch_;
+                if ampm then txt(22 * k, cx + tw_ / 2 + 10 * k, cy + ch * 0.62, c(muted), ampm, false, 2 * k); end
+            end
+            local ly = cy + ch + 14 * k;
+            local breath = 0.75 + 0.25 * math.sin(now * 1.2);
+            DL.RF(fg, cx - 150 * k, ly, cx + 150 * k, ly + math.max(1, 1.5 * k), c(AC, 0.85 * breath));
+            local vt = (os.time() - 1009810800) * 25;
+            local hr, mn = math.floor(vt / 3600) % 24, math.floor(vt / 60) % 60;
+            local d = C.VDAYS and C.VDAYS[math.floor(vt / 86400) % 8 + 1] or { 'Vana\'diel', AC };
+            local _, h2 = txt(20 * k, cx, ly + 16 * k, c(d[2]), string.format('%s  %02d:%02d', d[1]:upper(), hr, mn), true, 4 * k);
+            local zone = '';
+            pcall(function() zone = C.zone_name(AshitaCore:GetMemoryManager():GetParty():GetMemberZone(0)) or ''; end);
+            local wx = C.AMB and C.AMB.wx or 0;
+            local wn = C.WXNAME and C.WXNAME[wx] or nil;
+            local line = zone .. ((wn and zone ~= '') and ('  -  ' .. wn) or (wn or ''));
+            local ny = ly + 16 * k + h2 + 10 * k;
+            if line ~= '' then
+                local _, h3 = txt(17 * k, cx, ny, c(muted), line, true);
+                ny = ny + h3 + 8 * k;
+            end
+            txt(13 * k, cx, ny, c(muted, 0.75), aw, true, 3 * k);         -- (how long you've been away)
+            -- the cards: newest first, up to six, in rows of three
+            local n = #A.alerts;
+            local cw, chh, gap = 250 * k, 66 * k, 12 * k;
+            local per = math.min(3, math.max(1, n));
+            local top = ny + 56 * k;
+            for i, a in ipairs(A.alerts) do
+                local row, col = math.floor((i - 1) / 3), (i - 1) % 3;
+                local inrow = math.min(3, n - row * 3);
+                local x0 = cx - (inrow * cw + (inrow - 1) * gap) / 2 + col * (cw + gap);
+                local y0 = top + row * (chh + gap);
+                local inv = a.kind == 'invite';
+                local ac = inv and AC or AC2;
+                local cnt = a.n or 1;
+                for j = math.min(cnt - 1, 2), 1, -1 do                -- (more than one from them: the cards under it peek out, a small stack)
+                    local ix, oy = 10 * k * j, 6 * k * j;
+                    DL.RF(fg, x0 + ix, y0 + oy, x0 + cw - ix, y0 + chh + oy, U4(0.11, 0.09, 0.15, (0.92 - 0.2 * j) * f), 6 * k);
+                    DL.R(fg, x0 + ix, y0 + oy, x0 + cw - ix, y0 + chh + oy, c(ac, 0.42 - 0.12 * j), 6 * k, C.rall, math.max(1, 1.0 * k));
+                end
+                DL.RF(fg, x0, y0, x0 + cw, y0 + chh, U4(0.09, 0.075, 0.12, 0.92 * f), 6 * k);
+                DL.R(fg, x0, y0, x0 + cw, y0 + chh, c(ac, 0.45), 6 * k, C.rall, math.max(1, 1.0 * k));
+                local head = inv and ((cnt > 1) and (cnt .. ' PARTY INVITES') or 'PARTY INVITE') or ((cnt > 1) and (cnt .. ' TELLS') or 'TELL');
+                txt(10 * k, x0 + 12 * k, y0 + 8 * k, c(ac), head .. '   ' .. table.concat({ C.afk_clock(a.at) }, ' '), false, 2 * k);
+                txt(15 * k, x0 + 12 * k, y0 + 22 * k, c(white), a.who);
+                local s_ = inv and 'invited you to their party' or a.text;
+                do                                                 -- (a long tell: cut with dots to the card's width)
+                    local pushed = sized('chat', 13 * k);
+                    local room = cw - 24 * k;
+                    if (tonumber((imgui.CalcTextSize(s_))) or 0) > room then
+                        while #s_ > 3 and (tonumber((imgui.CalcTextSize(s_ .. '...'))) or 0) > room do s_ = s_:sub(1, -2); end
+                        s_ = s_ .. '...';
+                    end
+                    unsized(pushed);
+                end
+                txt(13 * k, x0 + 12 * k, y0 + 43 * k, c(muted), s_);
+            end
+            local hint = n > 0 and 'Move the mouse or press any key to come back' or 'Move the mouse or press any key to come back  -  tells and invites will show here';
+            local ha = 1 - math.max(0, math.min(1, (now - (A.t0 or now) - 6) / 1.5));   -- (shown 6 seconds, then fades: it sat on the chat)
+            if ha > 0 then txt(14 * k, cx, H * 0.80, c(muted, 0.85 * ha), hint, true); end
+        end
+    end
+    imgui.End();
 end
 -- The in-game updater (yunaui_update.lua): a few seconds after loading it asks GitHub for the newest release; a newer
 -- one shows a card - what's new, UPDATE / LATER / SKIP - and UPDATE downloads the changed files, swaps them in and
@@ -24123,7 +24370,8 @@ ashita.events.register('d3d_present', 'yui_present', function()
         if YUI_OUT() then return; end
         pcall(C.res_tick);                                           -- (GENERAL > SIZE > Follow the resolution)
         if C.DD_T and os.clock() > C.DD_T then pcall(C.dd_report); end   -- (/yui dragdebug: its 15 seconds are over)
-        do local oku_, eru_ = pcall(C.upd_frame); if not oku_ and YUI_ERRLOG then YUI_ERRLOG('update', eru_); end end   -- (the in-game updater: its check and its card)
+        do local oku_, eru_ = pcall(C.upd_frame); if not oku_ and YUI_ERRLOG then YUI_ERRLOG('update', eru_); end end
+   -- (the in-game updater: its check and its card)
         -- each piece on its own: a problem in one (shown once in chat) never stops the others, the logo or the window
         if C.PROF then C.PROF_N = (C.PROF_N or 0) + 1; end           -- (/yui prof: frames counted)
         local function piece(fn, ...)
@@ -24224,9 +24472,11 @@ ashita.events.register('d3d_present', 'yui_present', function()
         chat_lit_all = ui.open or not cfg.setup_done or EDIT.G.on or legacy.pad.open;
         if ui.open then ui.was_open = true;
         elseif ui.was_open and not cfg.setup_done then cfg.setup_done = true; save(); end
+        if not (C.AFK.on and (C.AFK.fade or 0) >= 0.97) then        -- (the AFK screen up: the chat hidden - its cards say what came)
         piece(draw_chat, 1);
         piece(draw_chat, 2);
         piece(draw_chat, 3);
+        end
         piece(draw_party, dt);
         piece(draw_exp, dt);
         CAST.preview = (ui.open and ui.tab == 4) or EDIT.on;       -- the BARS tab (and Edit Mode) show a preview of it
@@ -24251,7 +24501,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         YUI_EQ_HIDE = true;                                          -- (the old gear wheel never shows)
         YUI_LOCKED = cfg.locked and true or false;                 -- the HP / MP / TP bars (equip.lua) follow this lock
         DOLL.preview = (ui.open and ui.tab == 6) or (EDIT.G.on and EDIT.G.STEPS[EDIT.G.i][1] == 'Gear');                     -- the EQUIP tab shows the strip at full brightness
-        piece(draw_strip);      -- the wheel steps aside while the paper doll is on
+        if not (C.AFK.on and (C.AFK.fade or 0) >= 0.97) then piece(draw_strip); end   -- the wheel steps aside while the paper doll is on (and the AFK screen)
         piece(draw_doll);
         piece(draw_gil);
         piece(draw_bag);
@@ -24261,6 +24511,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         piece(EDIT.G.splash);                                        -- and its send-off
         piece(C.MD.draw);                                            -- (the mode chooser: Normal or Hex link)
         piece(C.modesw);                                             -- (the mode switch icon)
+        do local oka_, era_ = pcall(C.afk_frame); if not oka_ and YUI_ERRLOG then YUI_ERRLOG('afk', era_); end end   -- (GENERAL > AFK SCREEN: last, over all of it)
     end);
     if not ok then YUI_ERRLOG('frame', err); end
     if not ok and ui.last_err ~= tostring(err) then ui.last_err = tostring(err); msg('Draw error: ' .. ui.last_err); end
@@ -24296,6 +24547,7 @@ ashita.events.register('text_in', 'yui_text', function(e)
     if e.blocked or e.message == nil or #e.message > 2048 then return; end
     local mode = bit.band(e.mode, 0xFF);
     if mode == 152 then return; end
+    if C.AFK.on then pcall(C.afk_tell, mode, e.message); end            -- (the AFK screen: a tell gets a card)
     chat_add(mode, e.message);
     -- (as FancyChat does) battle lines go only to YunaUI's chat: the game's own chat never gets them, so in a busy fight
     -- it doesn't keep trying to pop open. Talk, NPC dialogue (150 / 151) and system lines still reach it.
@@ -24303,6 +24555,7 @@ ashita.events.register('text_in', 'yui_text', function(e)
 end);
 
 ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStation and other DirectInput pads
+    pcall(C.afk_input, "d", e);                                           -- (the AFK screen: you're back)
     local b, st = e.button, e.state or 0;
     do local okp_, blk_ = pcall(C.pad_event, 'd', b, st); if okp_ and blk_ then e.blocked = true; return; end end   -- (CONTROLS: the panel's)
     local bl_, br_ = 54, 55;                                         -- (MACRO BAR: L2 / R2 held - or L1 / R1, as the player picked)
@@ -24481,6 +24734,7 @@ ashita.events.register('xinput_state', 'yui_pad_xs', function(e)    -- Xbox (XIn
     end);
 end);
 ashita.events.register('xinput_button', 'yui_pad_x', function(e)    -- Xbox (XInput) pads
+    pcall(C.afk_input, "x", e);                                           -- (the AFK screen: you're back)
     local b, st = e.button, e.state or 0;
     do local okp_, blk_ = pcall(C.pad_event, 'x', b, st); if okp_ and blk_ then e.blocked = true; return; end end   -- (CONTROLS: the panel's)
     if (b == 8 or b == 9) and C.mb_l1() and st ~= 0 and C.mb_mine() and not ((C.MB.xl or 0) > 60 and (C.MB.xr or 0) > 60) then   -- (L1 / R1 picked: one shoulder never the game's)
@@ -24597,6 +24851,7 @@ end
 -- (the same through the game window's key messages: Enter and the arrows don't always come as DirectInput events)
 C.MB_VK = { [0x25] = -1, [0x27] = 1, [0x0D] = 'run' };               -- (up / down left to the game: they turn the macro page)
 ashita.events.register('key', 'yui_mb_key', function(e)
+    pcall(C.afk_input, "k", e);                                           -- (the AFK screen: you're back)
     local wp = tonumber(e.wparam) or 0;
     if wp >= 0x30 and wp <= 0x39 then                                -- (the digit YunaUI ran a macro with: not the game's as a window message either)
         for _, vk in pairs(C.MB.kdig or {}) do if vk == wp then e.blocked = true; return; end end
@@ -24702,6 +24957,7 @@ ashita.events.register('command', 'yui_command', function(e)
     if #args == 0 then return; end
     local cmd = args[1]:lower():gsub('^/+', '');
     if (cmd == 'assist' or cmd == 'as') and C.mb_assist(e.command) then e.blocked = true; return; end   -- (typed /assist too: on anyone with a target)
+    if cmd == 'afk' then e.blocked = true; pcall(C.afk_toggle); return; end   -- (/afk: the AFK screen now)
     if cmd ~= 'yui' and cmd ~= 'yunaui' then return; end
     e.blocked = true;
     local sub = (args[2] or ''):lower();
@@ -24763,6 +25019,7 @@ ashita.events.register('command', 'yui_command', function(e)
             save();
             msg(string.format('%s placed at %d, %d.', nm_, math.floor(px_), math.floor(py_)));
         end
+    elseif sub == 'afk' then pcall(C.afk_toggle);                                         -- (/yui afk: the AFK screen on or off)
     elseif sub == 'screen' then                                      -- (every screen size YunaUI is told, and the macro bar's place and size: for a player's
         local out_, msg0_ = {}, msg;                                 -- (said in the chat, and copied: the chat may be the thing that's off the screen)
         pcall(function()                                             --  screen it doesn't fit - a scaled 4K one cut the bar at its middle)
@@ -24879,3 +25136,9 @@ ashita.events.register('command', 'yui_command', function(e)
     elseif sub == 'reset' then settings.reset(); msg('Reset to default (reload the addon to move everything back).');
     else msg('/yui  - open YunaUI   |   /yui edit   |   /yui guide   |   /yui lock | unlock   |   /yui reset'); end
 end);
+
+-- The AFK screen's on/off for /afk and /yui afk (its hooks are in the key, pad and command handlers above:
+-- VanaCore keeps one handler per event)
+function C.afk_toggle()
+    if C.AFK.on then C.AFK.calm = 0; C.afk_stop(); else C.afk_start(true); end
+end
