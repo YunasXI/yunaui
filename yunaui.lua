@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.64';
+addon.version = '1.1.65';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -9418,6 +9418,7 @@ end
 function C.gu_set(gu, el, on)
     on = on and true or false;
     if C.GUH[el] == on then return; end
+    if not on and C.GUH[el] == nil then C.GUH[el] = false; return; end   -- (never hidden by YunaUI: left alone, no "show" for a window it didn't hide)
     local ok = pcall(on and gu.hide or gu.show, el);
     if ok or not on then C.GUH[el] = on; end
 end
@@ -20905,8 +20906,8 @@ function C.mb_sync()
     local gu = type(v) == 'table' and v.gameui or nil;
     if type(gu) ~= 'table' or type(gu.hide) ~= 'function' then return; end
     local want = cfg.macrobar ~= false and C.MB.ok == true;
-    if want == C.MB.hid then return; end
-    C.MB.hid = want;
+    if want == (C.MB.hid == true) then return; end                   -- (never hidden by YunaUI: never "shown again" either - VanaCore's show on a bar it
+    C.MB.hid = want;                                                 --  hadn't hidden lost the slot words on the game's own bar, Arestia 2026-11-15)
     if want then pcall(gu.hide, 'macro_bar'); else pcall(gu.show, 'macro_bar'); end
 end
 function C.macrobar()
