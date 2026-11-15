@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.63';
+addon.version = '1.1.64';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -16929,6 +16929,8 @@ function C.chest_draw(n, fake)                                       -- (the che
         imgui.SetNextWindowSize({ sz, sz }, ImGuiCond_Always);
         imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
         imgui.PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        if over and not imgui.IsAnyItemActive() then pcall(imgui.SetNextWindowFocus); end   -- (the mouse over it: in front - a window next to it (the pet bar, the
+                                                                     --  gear strip) whose box reached over it took the click and the drag: Doz)
         if imgui.Begin('##yui_chest', { true }, bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoMove, ImGuiWindowFlags_NoScrollbar,
                 ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_NoBackground, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing)) then
           if n and n > 0 and not K.open then                         -- (how many items: a small badge on its top right)
@@ -16946,6 +16948,7 @@ function C.chest_draw(n, fake)                                       -- (the che
           do                                                         -- (a preview - Edit Mode, its tab: dragged to its place, but no open / shut - Doz
             local clk_ = imgui.InvisibleButton('##yui_chestbtn', { sz, sz });   --  couldn't move it at all in Edit Mode)
             if fake then clk_ = false; end
+            if C.DD and over and imgui.IsMouseDown(0) then C.dd_note('chest_x', imgui.IsItemHovered() and 'grab' or 'under'); end   -- (/yui dragdebug: the chest too)
             if imgui.IsItemActive() and not (cfg.locked and not EDIT.on) then   -- (held and moved: it's dragged - its own place from then on)
                 local d = imgui.GetIO().MouseDelta;
                 local ddx, ddy = tonumber(d and (d.x or d[1])) or 0, tonumber(d and (d.y or d[2])) or 0;
