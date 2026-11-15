@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.62';
+addon.version = '1.1.63';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -16943,8 +16943,9 @@ function C.chest_draw(n, fake)                                       -- (the che
             DL.T(fg, bx + 0.6, by, U4(1, 1, 1, a), t_);              -- (a hair to the right again: bolder)
             imgui.SetWindowFontScale(1);
           end
-          if not fake then                                           -- (a preview: just the look, no clicks)
-            local clk_ = imgui.InvisibleButton('##yui_chestbtn', { sz, sz });
+          do                                                         -- (a preview - Edit Mode, its tab: dragged to its place, but no open / shut - Doz
+            local clk_ = imgui.InvisibleButton('##yui_chestbtn', { sz, sz });   --  couldn't move it at all in Edit Mode)
+            if fake then clk_ = false; end
             if imgui.IsItemActive() and not (cfg.locked and not EDIT.on) then   -- (held and moved: it's dragged - its own place from then on)
                 local d = imgui.GetIO().MouseDelta;
                 local ddx, ddy = tonumber(d and (d.x or d[1])) or 0, tonumber(d and (d.y or d[2])) or 0;
