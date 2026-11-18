@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.66';
+addon.version = '1.1.67';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -326,6 +326,7 @@ function C.res_apply(ow, oh, nw, nh)                                -- (from one
     local k = nh / oh;
     local kx, ky = nw / ow, nh / oh;
     cfg.scale = math.max(0.5, math.min(4, (tonumber(cfg.scale) or 1) * k));
+    cfg.party_bot = nil;                                             -- (PARTY > Grow upward: its bottom taken again at its new place)
     for key, v in pairs(cfg) do
         if type(key) == 'string' and type(v) == 'number' then
             local base = key:match('^(.+)_x$');
@@ -8716,7 +8717,8 @@ local function draw_party(dt)
             local py = tonumber(cfg.party_y) or 0;
             if hn and hn > 4 then
                 local moved = ALLY.py_set ~= nil and math.abs(py - ALLY.py_set) > 0.5;
-                if cfg.party_bot == nil or ALLY.py_set == nil or (moved and (imgui.IsMouseDown(0) or EDIT.on)) then
+                if tonumber(cfg.party_bot) == nil or (moved and (imgui.IsMouseDown(0) or EDIT.on)) then   -- (its saved bottom kept at a login / load: taken again from the top there - you alone in it
+                                                                     --  at first, the party still coming - it crept up each login onto the alliances, Fluff)
                     cfg.party_bot = py + hn;                         -- (placed or moved - dragged, Edit Mode, a layout: its bottom taken again)
                 else                                                 -- (only kept on the screen: its bottom stays as it was)
                     local _, H_ = C.screen();
