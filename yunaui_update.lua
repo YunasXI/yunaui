@@ -14,6 +14,20 @@ local U = {
 local HDR = { ['User-Agent'] = 'YunaUI-updater', ['Accept'] = 'application/vnd.github+json' };
 local E = nil;                                                       -- (what yunaui.lua gives: cfg, save, msg, version, root)
 
+local function JT(fmt, ...)                                          -- [JP] format after translation, so joined messages read naturally
+    local t = fmt;
+    pcall(function()
+        local J = rawget(_G, 'JP');
+        if type(J) == 'table' and type(J.t) == 'function' then t = J.t(fmt); end
+    end);
+    if select('#', ...) > 0 then
+        local ok, r = pcall(string.format, t, ...);
+        if ok then return r; end
+        return string.format(fmt, ...);
+    end
+    return t;
+end
+
 local function ver(s)                                                -- '1.2.3' -> 1, 2, 3 (nil when it isn't one)
     local a, b, c = tostring(s or ''):match('^v?(%d+)%.(%d+)%.(%d+)$');
     if not a then return nil; end
@@ -63,7 +77,7 @@ function U.init(env)
     pcall(function() U.dev = vana.fs.exists(U.root .. '\\.git') and true or false; end);   -- (a development copy: never updated over)
     local cfg = E.cfg;
     if type(cfg.upd_done) == 'table' and cfg.upd_done.to == U.cur then   -- (just updated: said once)
-        E.msg(string.format('Updated to %s (from %s). GENERAL > UPDATES has a button to go back.', tostring(cfg.upd_done.to), tostring(cfg.upd_done.from)));
+        E.msg(JT('Updated to %s (from %s). GENERAL > UPDATES has a button to go back.', tostring(cfg.upd_done.to), tostring(cfg.upd_done.from)));   -- [JP]
         cfg.upd_done.said = true;
         cfg.upd_back = cfg.upd_done.from;                            -- (what Go back returns to)
         cfg.upd_done = nil;
@@ -91,7 +105,7 @@ function U.check(force)
         local ok, res = pcall(function() return vana.http.json('https://api.github.com/repos/' .. U.REPO .. '/releases/latest', { headers = HDR, timeout = 15 }):await(); end);
         if not ok or type(res) ~= 'table' or not ver(res.tag_name) then
             U.state = 'idle';
-            if force then U.state, U.why, U.said = 'failed', 'Could not reach GitHub to check. Try again later.', 'Could not reach GitHub.'; end
+            if force then U.state, U.why, U.said = 'failed', JT('Could not reach GitHub to check. Try again later.'), JT('Could not reach GitHub.'); end   -- [JP]
             return;
         end
         cfg.upd_tag, cfg.upd_t, cfg.upd_notes = tostring(res.tag_name):gsub('^v', ''), now, notes_of(res.body);
@@ -99,12 +113,12 @@ function U.check(force)
         pcall(E.save);
         if U.newer(cfg.upd_tag, U.cur) and (force or cfg.upd_skip ~= cfg.upd_tag) then
             U.offer = { tag = cfg.upd_tag, notes = cfg.upd_notes };
-            U.state, U.said = 'offer', cfg.upd_tag .. ' is out.';
+            U.state, U.said = 'offer', JT('%s is out.', cfg.upd_tag);   -- [JP]
         else
             U.offer = nil;
             U.state = 'idle';
-            U.said = 'Up to date.';
-            if force then E.msg('YunaUI is up to date (' .. tostring(U.cur) .. ').'); end
+            U.said = JT('Up to date.');   -- [JP]
+            if force then E.msg(JT('YunaUI is up to date (%s).', tostring(U.cur))); end   -- [JP]
         end
     end);
 end
@@ -136,9 +150,9 @@ function U.start()
         -- 1. what changed
         local ok, cmp = pcall(function() return vana.http.json('https://api.github.com/repos/' .. U.REPO .. '/compare/' .. enc(cur) .. '...' .. enc(tag), { headers = HDR, timeout = 20 }):await(); end);
         if not ok or type(cmp) ~= 'table' or type(cmp.files) ~= 'table' then
-            return fail('Could not work out what changed since ' .. tostring(cur) .. '. Download the new version from the release page.', true);
+            return fail(JT('Could not work out what changed since %s. Download the new version from the release page.', tostring(cur)), true);   -- [JP]
         end
-        if #cmp.files >= 300 then return fail('This update is a big one. Download it from the release page.', true); end
+        if #cmp.files >= 300 then return fail(JT('This update is a big one. Download it from the release page.'), true); end   -- [JP]
         local get, del = {}, {};
         for _, f in ipairs(cmp.files) do
             local name = tostring(f.filename or '');
@@ -151,7 +165,7 @@ function U.start()
                 end
             end
         end
-        if #get == 0 and #del == 0 then return fail('Nothing to update.', false); end
+        if #get == 0 and #del == 0 then return fail(JT('Nothing to update.'), false); end   -- [JP]
         -- 2. download, beside the addon
         local stage = root .. '\\_update\\' .. tag;
         local staged, dirs = {}, { root .. '\\_update', stage };
@@ -167,7 +181,7 @@ function U.start()
             end);
             if not okd then
                 clean(staged, dirs);
-                return fail('The download stopped (' .. name .. '). Nothing was changed. Try again.', false);
+                return fail(JT('The download stopped (%s). Nothing was changed. Try again.', name), false);   -- [JP]
             end
             staged[#staged + 1] = to;
             U.done = U.done + 1;
@@ -177,14 +191,14 @@ function U.start()
         local new = {};
         for _, name in ipairs(get) do
             local data = read_all(stage .. '\\' .. win(name));
-            if data == nil then clean(staged, dirs); return fail('A downloaded file could not be read (' .. name .. '). Nothing was changed.', false); end
+            if data == nil then clean(staged, dirs); return fail(JT('A downloaded file could not be read (%s). Nothing was changed.', name), false); end   -- [JP]
             if name:match('%.lua$') then
                 local fn, cerr = loadstring(data, '@' .. name);
-                if not fn then clean(staged, dirs); return fail('A downloaded file is broken (' .. name .. '). Nothing was changed.', false); end
+                if not fn then clean(staged, dirs); return fail(JT('A downloaded file is broken (%s). Nothing was changed.', name), false); end   -- [JP]
             end
             if name == 'yunaui.lua' and not data:find("addon.version = '" .. tag .. "'", 1, true) then
                 clean(staged, dirs);
-                return fail('The download is not version ' .. tag .. '. Nothing was changed.', false);
+                return fail(JT('The download is not version %s. Nothing was changed.', tag), false);   -- [JP]
             end
             new[name] = data;
         end
@@ -211,8 +225,8 @@ function U.start()
             kept[#kept + 1] = name;
             return true;
         end
-        for _, name in ipairs(get) do if not keep(name) then clean(staged, dirs); return fail('Could not keep a copy of the old files. Nothing was changed.', false); end end
-        for _, name in ipairs(del) do if vana.fs.exists(root .. '\\' .. win(name)) and not keep(name) then clean(staged, dirs); return fail('Could not keep a copy of the old files. Nothing was changed.', false); end end
+        for _, name in ipairs(get) do if not keep(name) then clean(staged, dirs); return fail(JT('Could not keep a copy of the old files. Nothing was changed.'), false); end end   -- [JP]
+        for _, name in ipairs(del) do if vana.fs.exists(root .. '\\' .. win(name)) and not keep(name) then clean(staged, dirs); return fail(JT('Could not keep a copy of the old files. Nothing was changed.'), false); end end   -- [JP]
         local man = { 'return { from = ' .. string.format('%q', cur) .. ', to = ' .. string.format('%q', tag) .. ', files = {' };
         for _, n in ipairs(kept) do man[#man + 1] = string.format('%q,', n); end
         man[#man + 1] = '}, added = {';
@@ -228,7 +242,7 @@ function U.start()
                     if b then write_all(root .. '\\' .. win(w), b); else pcall(vana.fs.remove, root .. '\\' .. win(w)); end
                 end
                 clean(staged, dirs);
-                return fail('A file could not be replaced (' .. name .. '). Everything was put back as it was.', false);
+                return fail(JT('A file could not be replaced (%s). Everything was put back as it was.', name), false);   -- [JP]
             end
             written[#written + 1] = name;
         end
@@ -254,14 +268,14 @@ function U.back()
     if not m or not U.can() or (U.dev and not U.test) then return false; end
     local root, bdir = U.root, U.root .. '\\_backup';
     for _, n in ipairs(m.files) do                                   -- (every kept file must be there before anything is written)
-        if read_all(bdir .. '\\' .. win(n)) == nil then E.msg('Go back: the kept files are not all there. Nothing was changed.'); return false; end
+        if read_all(bdir .. '\\' .. win(n)) == nil then E.msg(JT('Go back: the kept files are not all there. Nothing was changed.')); return false; end   -- [JP]
     end
     for _, n in ipairs(m.files) do write_all(root .. '\\' .. win(n), read_all(bdir .. '\\' .. win(n))); end
     for _, n in ipairs(m.added or {}) do pcall(vana.fs.remove, root .. '\\' .. win(n)); end
     E.cfg.upd_skip = m.to;                                           -- (that version isn't offered again by itself; Check now still finds it)
     E.cfg.upd_done = nil;
     pcall(E.save);
-    E.msg('Back to ' .. tostring(m.from) .. '. Reloading YunaUI...');
+    E.msg(JT('Back to %s. Reloading YunaUI...', tostring(m.from)));   -- [JP]
     if not U.test and E.reload then E.reload(); end
     return true;
 end

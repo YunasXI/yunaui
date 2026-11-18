@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.65';
+addon.version = '1.1.66';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -109,7 +109,7 @@ local defaults = T{
     logo_x = 700, logo_y = 600, logo_size = 72, fan_right = false, fan_room = false,
     win_x = 240, win_y = 160,
     target = true, target_x = -1, target_y = 60, target_w = 520,
-    party = true, party_x = 1600, party_y = 450, buffs_left = false,
+    party = true, party_fish = true, party_x = 1600, party_y = 450, buffs_left = false,  -- [FISH]
     alliance = true, alliance_x = 40, alliance_y = 250, ally2_x = 330, ally2_y = 250, ally1_scale = 0.75, ally2_scale = 0.75, party_cols = 1, ally1_cols = 1, ally2_cols = 1, party_gap = 0,
     barfx = 'none', barfx_target = 'same', barfx_party = 'same', barfx_alliance = 'same', barfx_equip = 'same', barfx_pet = 'same', barfx_alpha = 1.0, barfx_size = 0.6,
     map_frame = 'glass', strip_under = 'free', strip_fx = 'none', strip_fit = true, strip_cols = 4, strip_icon = 26, strip_dim = 0.35, strip_swap_only = false, strip_x = -1, strip_y = -1,
@@ -573,7 +573,7 @@ local function load_fonts()
         end
         font = font or add('GOTHIC.TTF', px) or add('segoeui.ttf', px);
         if font then table.insert(fonts.sized.chat, { font, px }); end
-        if font and jp then
+        if font and jp and not (JP.font_has_japanese and JP.font_has_japanese(font)) then   -- [JP]
             pcall(function()
                 local T_ = (imgui.types or vana.imgui.types).ImFontConfig;
                 local c = T_.new();
@@ -9422,6 +9422,79 @@ function C.gu_set(gu, el, on)
     local ok = pcall(on and gu.hide or gu.show, el);
     if ok or not on then C.GUH[el] = on; end
 end
+
+C.FISH_ST = {                                                       -- [FISH] (entity animation / GetStatus: fishing states)
+    [6] = true, [32] = true,                                       -- (legacy / NPC fishing)
+    [38] = true, [39] = true, [40] = true, [41] = true, [42] = true, [43] = true,   -- (older ANIMATION_FISHING_*)
+    [50] = true, [51] = true, [52] = true, [53] = true,            -- (fishing_start / fight 1-3: the stamina gauge)
+    [56] = true, [57] = true, [58] = true, [59] = true, [60] = true, [61] = true, [62] = true,   -- (retail / new fishing: 57 = fish on the line)
+};                                                                  -- (85 is a mount, not fishing - YunaUI head bars already treat it that way)
+function C.fish_status()                                            -- [FISH] (entity GetStatus, and GetPlayer():GetStatus if it exists)
+    local ent_st, ply_st, vc_st = 0, nil, nil;
+    pcall(function()
+        local mm = AshitaCore:GetMemoryManager();
+        local me = mm:GetParty():GetMemberTargetIndex(0) or 0;
+        if me ~= 0 then ent_st = tonumber(mm:GetEntity():GetStatus(me)) or 0; end
+        pcall(function() ply_st = tonumber(mm:GetPlayer():GetStatus()); end);
+    end);
+    pcall(function()
+        local v = rawget(_G, 'vana');
+        if v and v.game and type(v.game.self) == 'function' then
+            local a = { v.game.self() };
+            vc_st = tonumber(a[7]);                                  -- (vana.game.self: status is the 7th return)
+        end
+    end);
+    local fish = C.FISH_ST[ent_st] or (ply_st ~= nil and C.FISH_ST[ply_st]) or (vc_st ~= nil and C.FISH_ST[vc_st]) or false;
+    return fish, ent_st, ply_st, vc_st;
+end
+function C.fish_debug()                                             -- [FISH] (/yui fishdebug: status and party_list hide, for the fishing gauge)
+    local fish, ent_st, ply_st, vc_st = C.fish_status();
+    local opt = cfg.party_fish ~= false;
+    local want_hide = (cfg.party and true or false) and not (opt and fish);
+    local rec = C.GUH and C.GUH['party_list'];
+    rec = (rec == nil) and 'nil' or tostring(rec);
+    local hud = '-';
+    pcall(function()
+        local vc = C.vana_cfg();
+        if vc then
+            local v = vc.get('client', 'party.hide');
+            if v ~= nil then hud = tostring(v); end
+        end
+    end);
+    local who = '-';
+    pcall(function()
+        local gu = C.gameui();
+        if gu and type(gu.hidden) == 'function' then
+            who = tostring(gu.hidden('party_list') or '-');
+        end
+    end);
+    local gw = '-';
+    pcall(function()
+        local v = rawget(_G, 'vana');
+        if not (v and v.gameui and v.gameui.window) then return; end
+        local w = v.gameui.window('gaugewin');
+        if w then
+            gw = string.format('x=%s y=%s hidden=%s drawn=%s', tostring(w.x), tostring(w.y), tostring(w.hidden), tostring(w.drawn));
+        else
+            gw = 'nil';
+        end
+    end);
+    local function yn(v)
+        local s = v and 'yes' or 'no';
+        local J = rawget(_G, 'JP');                                  -- (Japanese comes through the usual JP.t / JP.fmt path; safe if JP is absent)
+        if J and type(J.t) == 'function' then s = J.t(s); end
+        return s;
+    end
+    local fmt = 'Fishing debug: entity %s, player %s, VanaCore %s, detected %s, hide requested %s, YunaUI hid-record %s, option %s, HUD party.hide %s, hidden() %s, gaugewin %s';
+    local args = {
+        tostring(ent_st), tostring(ply_st), tostring(vc_st),
+        yn(fish), yn(want_hide), rec, yn(opt), hud, who, gw,
+    };
+    local text = string.format(fmt, unpack(args));
+    local J = rawget(_G, 'JP');
+    if J and type(J.fmt) == 'function' then text = J.fmt(fmt, unpack(args)); end
+    msg(text);
+end
 function C.gu_sync()                                                 -- (the party / alliance lists, the Target window, the network window)
     if not C.GOTOP then                                              -- (the game's menus drawn over YunaUI's windows where they meet - the
         C.GOTOP = true;                                              --  player's [client] menus.ontop=0 turns it off; on again for Vekien's
@@ -9433,7 +9506,14 @@ function C.gu_sync()                                                 -- (the par
     if gu == nil then return; end
     C.gu_set(gu, 'network_window', false);                           -- (no longer hidden by YunaUI: VanaCore's HUD > Hide decides - hiding it here
                                                                      --  locked that switch, players couldn't bring the window back)
-    C.gu_set(gu, 'party_list', cfg.party);
+    local hide_party = cfg.party and true or false;               -- [FISH]
+    if hide_party and cfg.party_fish ~= false then             -- [FISH] (show the game's party list again, so the stamina gauge can appear)
+        local now_ = os.clock();                                     -- (asked 4 times a second, not every frame)
+        if now_ - (C.FISH_AT or -9) > 0.25 then C.FISH_AT = now_; C.FISH_ON = C.fish_status() and true or false; end
+        local fish_ = C.FISH_ON;
+        if fish_ then hide_party = false; end                  -- [FISH] (56-62 retail / 38-43 older / 50-53 fight: not 85, which is a mount)
+    end
+    C.gu_set(gu, 'party_list', hide_party);                     -- [FISH]
     C.gu_set(gu, 'alliance_lists', cfg.alliance);
     C.gu_set(gu, 'target_window', cfg.target);
 end
@@ -12577,6 +12657,7 @@ end
 -- Break a line into pieces that fit the width (kept until the width or the text size changes)
 -- How wide a line is, with the auto-translate marks counted as their icons
 local function line_w(s)
+    if JP.chat_line_width and JP.chat_current() then return JP.chat_line_width(s); end   -- [JP]
     local plain = s:gsub('[\1\2]', '');
     local _, n = s:gsub('[\1\2]', '');
     return imgui.CalcTextSize(plain) + n * (imgui.GetTextLineHeight() * 0.42 + 2);
@@ -12608,6 +12689,7 @@ C.HL = { { 'too weak to be worthwhile', { 0.62, 0.62, 0.66 } }, { 'easy prey', {
          { 'very tough', { 1.0, 0.58, 0.25 } }, { 'tough', { 1.0, 0.90, 0.35 } }, { 'impossible to gauge', { 0.85, 0.45, 1.0 } } };
 local function chat_line(dl, x, y, s, c, a, lh)
     local edge = CHAT_EDGE.outline;                                  -- (always: a thin dark line round every letter)
+    if JP.chat_edge then edge = JP.chat_edge(edge); end   -- [JP]
     local OUTLINE = edge[1];
     local oc = U4(0, 0, 0, edge[2] * a);
     local tc = U4(c[1], c[2], c[3], a);
@@ -12641,12 +12723,14 @@ local function chat_line(dl, x, y, s, c, a, lh)
             local q = str:find('[<>]', p_);
             local run = str:sub(p_, (q or (#str + 1)) - 1);
             if run ~= '' then
+                if JP.chat_shadow_pass then JP.chat_shadow_pass(dl, DL.T, cx, y, run, a); end   -- [JP]
                 for _, o in ipairs(OUTLINE) do DL.T(dl, cx + o[1], y + o[2], oc, run); end
                 DL.T(dl, cx, y, tc, run);
                 cx = cx + imgui.CalcTextSize(run);
             end
             if q == nil then break; end
             local ch = str:sub(q, q);
+            if JP.chat_shadow_pass then JP.chat_shadow_pass(dl, DL.T, cx, y + low, ch, a); end   -- [JP]
             for _, o in ipairs(OUTLINE) do DL.T(dl, cx + o[1], y + low + o[2], oc, ch); end
             DL.T(dl, cx, y + low, tc, ch);
             cx = cx + imgui.CalcTextSize(ch);
@@ -12670,7 +12754,7 @@ local function chat_line(dl, x, y, s, c, a, lh)
         local seg = s:sub(i, (j or (n + 1)) - 1);
         if seg ~= '' then put(seg); end
         if j == nil then break; end
-        cx = cx + at_icon(dl, cx, y, lh - 2, s:byte(j) == 1, a);
+        cx = cx + at_icon(dl, cx, y, (JP.chat_icon_height and JP.chat_icon_height(lh)) or (lh - 2), s:byte(j) == 1, a);   -- [JP]
         i = j + 1;
     end
 end
@@ -12683,6 +12767,7 @@ function C.feed_fit(dl, e, maxw, notime)                             -- (does it
     local f = e.feed;
     if f == nil then return; end
     local sig = tostring(maxw) .. ':' .. tostring(#(f.res or {})) .. ':' .. tostring(f.state) .. ':' .. tostring(f.target);
+    sig = sig .. ':' .. tostring(imgui.GetFontSize());   -- [JP]
     if f.fit_sig == sig then return; end
     f.split = nil;
     local w_ = C.feed_draw(dl, 0, 0, e, 1, 0, true, notime, 1) or 0;
@@ -12800,6 +12885,7 @@ end
 -- look: a soft shade behind the lines, the time in brackets at the start of each message)
 function C.clear_on() return cfg.chat_look ~= 'classic'; end
 function C.wrapc(e, maxw, key)                                       -- (classic: the whole line, time and all, wrapped)
+    if JP.chat_wrap and JP.chat_current() then return JP.chat_wrap(e, maxw, key, false); end   -- [JP]
     if e.ww == maxw and e.wk == key and e.lines then return e.lines; end
     local out, cur = {}, '';
     for word in e.text:gmatch('%S+') do
@@ -12829,6 +12915,7 @@ end
 -- The chat's rows (clear look): the message without its time, wrapped narrower (the time and the channel bar sit on its left, so
 -- the rows after the first start under the message, not under the time). Gives the rows and the time ("12:39").
 function C.wrapb(e, maxw, key)
+    if JP.chat_wrap and JP.chat_current() then return JP.chat_wrap(e, maxw, key, true); end   -- [JP]
     if e.btext == e.text and e.bw == maxw and e.bk == key and e.blines then return e.blines, e.bts; end
     local tl = e.tslen or 0;
     local ts = (tl > 0 and #e.text > tl) and e.text:sub(1, tl) or nil;
@@ -13928,10 +14015,10 @@ local function draw_chat(n)
         local hov_e = nil;                                           -- (the line under the mouse: a click copies it)
         -- the text, from the bottom up
         local size = (tonumber(cfg.chat_size) or 16) * YUI_GS();   -- (CHAT > Size, times GENERAL > Size of everything)
-        local pushed = sized('chat', size);
+        local pushed = sized((JP.chat_kind and JP.chat_kind()) or 'chat', (JP.chat_size and JP.chat_size(size)) or size);   -- [JP]
         local lh = imgui.GetTextLineHeight() + math.max(0, math.min(16, tonumber(cfg.chat_gap) or 6));   -- CHAT > Line spacing
         local pad = 12;
-        local bar = math.floor(size * 1.5 + 6);                       -- room for the tabs (the combat window's label)
+        local bar = math.floor(((JP.chat_size and JP.chat_size(size)) or size) * 1.5 + 6);   -- [JP]                       -- room for the tabs (the combat window's label)
         local maxw = w - pad * 2;
         C.iclip({ x, y }, { x + w, y + h }, true);
         local tk = 1 - (1 - math.max(0, math.min(1, st.hv))) ^ 3;
@@ -19210,7 +19297,7 @@ local function draw_window()
                 if cfg.screen_mode == nil then cfg.screen_mode = 'auto'; end
                 row_pick('##yui_scrm', 'Screen size', 'screen_mode', { { 'auto', 'Automatic' }, { 'imgui', 'Game window' }, { 'big', 'Biggest' } }, nil, function() C.SCR.t = -9; WATCH.move = 3; save(); end);
                 local sw_, sh_ = C.screen();
-                hint(string.format('YunaUI is using %d x %d. If pieces sit off the screen, or stop short of its edge, try another choice here.', sw_, sh_));
+                hint((JP.fmt and JP.fmt('YunaUI is using %d x %d. If pieces sit off the screen, or stop short of its edge, try another choice here.', sw_, sh_)) or string.format('YunaUI is using %d x %d. If pieces sit off the screen, or stop short of its edge, try another choice here.', sw_, sh_));   -- [JP]
             end
             if C.UPD then                                            -- (the in-game updater: only where VanaCore can download)
                 section('UPDATES');
@@ -19223,6 +19310,7 @@ local function draw_window()
                     elseif U_.said then st_ = st_ .. '  ' .. U_.said;
                     elseif type(cfg.upd_tag) == 'string' and U_.newer(cfg.upd_tag, addon.version) then st_ = st_ .. '  ' .. cfg.upd_tag .. ' is out.';
                     elseif type(cfg.upd_tag) == 'string' then st_ = st_ .. '  Up to date.'; end
+                    if JP.upd_status then st_ = JP.upd_status(addon.version, U_, cfg) or st_; end   -- [JP]
                     imgui.TextColored({ 0.72, 0.70, 0.80, 1 }, st_);
                 end
                 if accent_button(((U_.state == 'checking') and 'CHECKING...' or 'CHECK NOW') .. '##yui_updnow', { ROW_W, 0 }, true, true) then pcall(U_.check, true); end
@@ -19233,12 +19321,12 @@ local function draw_window()
                     local bm_ = U_.back_to();
                     if bm_ then
                         local sure_ = C.UPD_SURE and os.clock() - C.UPD_SURE < 4;
-                        if accent_button((sure_ and 'SURE? CLICK AGAIN' or ('GO BACK TO ' .. tostring(bm_.from))) .. '##yui_updback', { ROW_W, 0 }, true, true) then
+                        if accent_button((sure_ and 'SURE? CLICK AGAIN' or ((JP.fmt and JP.fmt('GO BACK TO %s', tostring(bm_.from))) or ('GO BACK TO ' .. tostring(bm_.from)))) .. '##yui_updback', { ROW_W, 0 }, true, true) then   -- [JP]
                             if sure_ then C.UPD_SURE = nil; pcall(U_.back); else C.UPD_SURE = os.clock(); end
                         end
                         if imgui.IsItemHovered() then YUI_TIP('Puts back the files as they were before the last update,\nthen reloads YunaUI. Your settings are not touched.'); end
                     end
-                    hint('You have ' .. tostring(addon.version) .. '. UPDATE downloads only the files that changed, checks them, keeps the old ones, then reloads YunaUI - your settings and layout stay as they are.');
+                    hint((JP.fmt and JP.fmt('You have %s. UPDATE downloads only the files that changed, checks them, keeps the old ones, then reloads YunaUI - your settings and layout stay as they are.', addon.version)) or ('You have ' .. tostring(addon.version) .. '. UPDATE downloads only the files that changed, checks them, keeps the old ones, then reloads YunaUI - your settings and layout stay as they are.'));   -- [JP]
                 end
             end
             section('AFK SCREEN');                                   -- (the game dimmed while you're away: the time, your tells and invites)
@@ -19267,7 +19355,7 @@ local function draw_window()
                 if cfg.mode_icon ~= false then row_switch('##yui_modec', 'Stick to the chat', 'ms_chat', "On: YUNA UI sits on the chat's top edge, at its corner, and follows it when you move or resize the chat. Off: drag it anywhere."); end
                 row_switch('##yui_modei', 'Mode switch icon', 'mode_icon', 'On: YUNA UI on the screen shows your mode - its UI pink in Vex mode, gold in Hex link - and a click turns it over to the other one. Drag it anywhere.');
             end
-            JP.settings_ui(section, accent_button, hint);   -- [JP]
+            JP.settings_ui(section, accent_button, hint, row_slider, row_pick);   -- [JP]
             if not YUI_PUBLIC then                                   -- (the mode: a card of its own - it was at the top of the panel)
                 section('MODE');
                 local HX_ = cfg.target_fx == 'link';
@@ -19385,6 +19473,10 @@ local function draw_window()
             ------------------------------------------------------------------ PARTY
             section('PARTY LIST');
             row_switch('##yui_p', 'Show', 'party');
+            if cfg.party then                                   -- [FISH]
+                row_switch('##yui_pfish', 'Show the game\'s party list while fishing', 'party_fish',   -- [FISH]
+                    'On: while you fish, the game\'s own party list is shown again, so the hooked fish\'s stamina gauge can appear. Off: it stays hidden during fishing too.');   -- [FISH]
+            end
             row_switch('##yui_pup', 'Grow upward', 'party_up', 'On: the list fills from the bottom - with a small party (or alone) it sits low, its bottom where a full party\'s would be, and new members push it up.', nil, function()
                 if ALLY.pgap and ALLY.pn then                        -- (turned on: down to where a full party's bottom would be; off: back up)
                     local d = (6 - ALLY.pn) * ALLY.pgap;
@@ -19651,6 +19743,7 @@ local function draw_window()
                 end
             end
             hint('Font: ' .. (fonts.chat_name or 'AvantGarde not found - using a fallback'));
+            if JP.chat_fx_ui then JP.chat_fx_ui(section, accent_button, hint, row_slider, row_switch, row_pick); end   -- [JP]
             section('COLOURS');
             hint('Each channel\'s colour is used for its text and (Clear look) for the bar on the left of its messages.');
             row_slider('##yui_cbri', 'Brightness', 'chat_bright', 0.6, 2.0, 0.05, '%.2fx');
@@ -20313,9 +20406,9 @@ function C.afk_stop()
     local tells, inv = A.nt or 0, A.ni or 0;
     if tells + inv > 0 then
         local p = {};
-        if tells > 0 then p[#p + 1] = tells .. (tells == 1 and ' tell' or ' tells'); end
-        if inv > 0 then p[#p + 1] = inv .. (inv == 1 and ' party invite' or ' party invites'); end
-        msg('While you were away: ' .. table.concat(p, ', ') .. '.');
+        if tells > 0 then p[#p + 1] = (JP.fmt and JP.fmt('%d tells', tells)) or (tells .. (tells == 1 and ' tell' or ' tells')); end   -- [JP]
+        if inv > 0 then p[#p + 1] = (JP.fmt and JP.fmt('%d party invites', inv)) or (inv .. (inv == 1 and ' party invite' or ' party invites')); end   -- [JP]
+        msg((JP.fmt and JP.fmt('While you were away: %s.', table.concat(p, JP.active and '、' or ', '))) or ('While you were away: ' .. table.concat(p, ', ') .. '.'));   -- [JP]
     end
 end
 function C.afk_alert(kind, who, text)                                -- (a tell or an invite while the screen is up: a card)
@@ -20426,8 +20519,8 @@ function C.afk_frame()
             local m = 40 * k;
             txt(15 * k, m, m, c(muted), 'YUNA UI', false, 3 * k);
             local away = math.floor(now - (A.t0 or now));
-            local aw = (away >= 3600) and string.format('AWAY  %d:%02d:%02d', math.floor(away / 3600), math.floor(away / 60) % 60, away % 60)
-                or string.format('AWAY  %d:%02d', math.floor(away / 60), away % 60);
+            local aw = (away >= 3600) and ((JP.fmt and JP.fmt('AWAY  %d:%02d:%02d', math.floor(away / 3600), math.floor(away / 60) % 60, away % 60)) or string.format('AWAY  %d:%02d:%02d', math.floor(away / 3600), math.floor(away / 60) % 60, away % 60))   -- [JP]
+                or ((JP.fmt and JP.fmt('AWAY  %d:%02d', math.floor(away / 60), away % 60)) or string.format('AWAY  %d:%02d', math.floor(away / 60), away % 60));   -- [JP]
             local cx, cy = W / 2, H * 0.30;
             local ch = 0;
             local tstr, ampm = C.afk_clock();
@@ -20449,11 +20542,12 @@ function C.afk_frame()
             local vt = (os.time() - 1009810800) * 25;
             local hr, mn = math.floor(vt / 3600) % 24, math.floor(vt / 60) % 60;
             local d = C.VDAYS and C.VDAYS[math.floor(vt / 86400) % 8 + 1] or { 'Vana\'diel', AC };
-            local _, h2 = txt(20 * k, cx, ly + 16 * k, c(d[2]), string.format('%s  %02d:%02d', d[1]:upper(), hr, mn), true, 4 * k);
+            local _, h2 = txt(20 * k, cx, ly + 16 * k, c(d[2]), string.format('%s  %02d:%02d', (JP.active and JP.t and JP.t(d[1])) or d[1]:upper(), hr, mn), true, 4 * k);   -- [JP]
             local zone = '';
             pcall(function() zone = C.zone_name(AshitaCore:GetMemoryManager():GetParty():GetMemberZone(0)) or ''; end);
             local wx = C.AMB and C.AMB.wx or 0;
             local wn = C.WXNAME and C.WXNAME[wx] or nil;
+            if wn and JP.wx then wn = JP.wx(wn); end   -- [JP]
             local line = zone .. ((wn and zone ~= '') and ('  -  ' .. wn) or (wn or ''));
             local ny = ly + 16 * k + h2 + 10 * k;
             if line ~= '' then
@@ -20481,7 +20575,7 @@ function C.afk_frame()
                 end
                 DL.RF(fg, x0, y0, x0 + cw, y0 + chh, U4(0.09, 0.075, 0.12, 0.92 * f), 6 * k);
                 DL.R(fg, x0, y0, x0 + cw, y0 + chh, c(ac, 0.45), 6 * k, C.rall, math.max(1, 1.0 * k));
-                local head = inv and ((cnt > 1) and (cnt .. ' PARTY INVITES') or 'PARTY INVITE') or ((cnt > 1) and (cnt .. ' TELLS') or 'TELL');
+                local head = inv and ((cnt > 1) and ((JP.fmt and JP.fmt('%d PARTY INVITES', cnt)) or (cnt .. ' PARTY INVITES')) or (JP.t and JP.t('PARTY INVITE') or 'PARTY INVITE')) or ((cnt > 1) and ((JP.fmt and JP.fmt('%d TELLS', cnt)) or (cnt .. ' TELLS')) or (JP.t and JP.t('TELL') or 'TELL'));   -- [JP]
                 txt(10 * k, x0 + 12 * k, y0 + 8 * k, c(ac), head .. '   ' .. table.concat({ C.afk_clock(a.at) }, ' '), false, 2 * k);
                 txt(15 * k, x0 + 12 * k, y0 + 22 * k, c(white), a.who);
                 local s_ = inv and 'invited you to their party' or a.text;
@@ -20536,7 +20630,7 @@ function C.upd_frame()
         local dl = imgui.GetWindowDrawList();
         local x, y = imgui.GetCursorScreenPos();
         local tag = U.offer and U.offer.tag or (cfg.upd_tag or '');
-        spaced(dl, x, y, (U.state == 'done') and 'YUNAUI UPDATED' or ('YUNAUI ' .. tostring(tag) .. ' IS OUT'), U4(NEON2[1], NEON2[2], NEON2[3], 1), 2 * ps);
+        spaced(dl, x, y, (JP.upd_title and JP.upd_title(U.state, tag)) or ((U.state == 'done') and 'YUNAUI UPDATED' or ('YUNAUI ' .. tostring(tag) .. ' IS OUT')), U4(NEON2[1], NEON2[2], NEON2[3], 1), 2 * ps);   -- [JP]
         imgui.Dummy({ 10, imgui.GetTextLineHeight() + 2 });
         unsized(pushed);
         local pb_ = sized('chat', 14 * ps);                           -- (the words in YunaUI's own font)
@@ -20544,7 +20638,7 @@ function C.upd_frame()
         local GREY, WHITE = { 0.62, 0.60, 0.72, 1 }, { 0.92, 0.91, 0.95, 1 };
         local bw = (imgui.GetContentRegionAvail() - 16 * ps) / 3;
         if U.state == 'offer' then
-            imgui.TextColored(GREY, 'You have ' .. tostring(U.cur) .. '. What is new:');
+            imgui.TextColored(GREY, (JP.fmt and JP.fmt('You have %s. What is new:', U.cur)) or ('You have ' .. tostring(U.cur) .. '. What is new:'));   -- [JP]
             imgui.Dummy({ 4, 4 });
             local notes = U.offer.notes or {};
             for i = 1, math.min(#notes, 8) do
@@ -20570,7 +20664,7 @@ function C.upd_frame()
         elseif U.state == 'listing' then
             imgui.TextColored(WHITE, 'Looking at what changed...');
         elseif U.state == 'downloading' then
-            imgui.TextColored(WHITE, string.format('Downloading  %d / %d', U.done or 0, U.total or 0));
+            imgui.TextColored(WHITE, (JP.fmt and JP.fmt('Downloading  %d / %d', U.done or 0, U.total or 0)) or string.format('Downloading  %d / %d', U.done or 0, U.total or 0));   -- [JP]
             local cx, cy = imgui.GetCursorScreenPos();
             local w_, f_ = PW - 32 * ps, (U.total or 0) > 0 and (U.done or 0) / U.total or 0;
             DL.RF(dl, cx, cy + 4, cx + w_, cy + 4 + 6 * ps, U4(1, 1, 1, 0.10), 3 * ps);
@@ -22526,6 +22620,7 @@ function YMAP.dock(dl, x, y, M, cx, cy, low, MW, MH)                 -- (low: th
         local we = C.WXEL[wx];
         local ts, dc = string.format('%s  %02d:%02d', d[1], hr, mn), d[2];
         local wn, wc = we and C.WXNAME[wx] or nil, we and C.VDAYS[we][2] or nil;
+        if wn and JP.wx then wn = JP.wx(wn); end   -- [JP]
         local pushed = sized('chat', 10.5 * s);
         local th_ = imgui.GetTextLineHeight();
         local tw0 = tonumber((imgui.CalcTextSize(ts))) or 0;         -- (one line in a slanted chip under the top edge, the tags' shape)
@@ -22810,6 +22905,7 @@ function YMAP.capsule(dl, x, y, M, cx, cy, low, MW, MH)
         local we = C.WXEL[wx];
         local ts = string.format('%s  %02d:%02d', d[1], hr, mn);
         local wn, wc = we and C.WXNAME[wx] or nil, we and C.VDAYS[we][2] or nil;
+        if wn and JP.wx then wn = JP.wx(wn); end   -- [JP]
         local tw0, th0 = YMAP.tsize(ts, 10.5 * s);
         local ww0 = wn and YMAP.tsize(wn, 10.5 * s) or 0;
         local ph = math.floor(th0 * 1.25);
@@ -24026,7 +24122,7 @@ function EDIT.G.draw()
         local lh = imgui.GetTextLineHeight() + 3 * k;
         for pi, para in ipairs(words) do
             if pi > 1 then y = y + lh * 0.45; end
-            for _, ln in ipairs(G.lines(para, CW - pad * 2)) do
+            for _, ln in ipairs((JP.guide_lines and JP.guide_lines(para, CW - pad * 2)) or G.lines(para, CW - pad * 2)) do   -- [JP]
                 DL.T(fg, cx + pad, y, U4(0.88, 0.87, 0.93, 1), ln);
                 y = y + lh;
             end
@@ -25024,6 +25120,8 @@ ashita.events.register('command', 'yui_command', function(e)
             save();
             msg(string.format('%s placed at %d, %d.', nm_, math.floor(px_), math.floor(py_)));
         end
+    elseif sub == 'fishdebug' then                                  -- [FISH] (/yui fishdebug: status and party_list hide, for the fishing gauge)
+        pcall(C.fish_debug);
     elseif sub == 'afk' then pcall(C.afk_toggle);                                         -- (/yui afk: the AFK screen on or off)
     elseif sub == 'screen' then                                      -- (every screen size YunaUI is told, and the macro bar's place and size: for a player's
         local out_, msg0_ = {}, msg;                                 -- (said in the chat, and copied: the chat may be the thing that's off the screen)

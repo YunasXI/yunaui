@@ -8,7 +8,8 @@
 local imgui = require('imgui');
 local L = require('yunaui_lang');
 
-local JP = { active = false, cfg = { ui_lang = 'auto', font_scale = 1.0, minimap_text_scale = 1.3, keep_fonts = false } };
+local JP = { active = false, cfg = { ui_lang = 'auto', font_scale = 1.0, minimap_text_scale = 1.3, keep_fonts = false, font = 'default', chat_outline_on = true, chat_shadow = true, chat_shadow_dist = 2, chat_shadow_pct = 85, chat_outline_pct = 85, chat_outline_w = 1, chat_shadow_col = 'black' } };
+local FX_DEF = { chat_shadow = true, chat_shadow_dist = 2, chat_shadow_pct = 85, chat_outline_pct = 85, chat_outline_w = 1, chat_shadow_col = 'black' };   -- (縁取りと影: ダブルクリックで戻す値 = 今までの見た目)
 local good, install_core_proxy;   -- (前方宣言)
 local JA, UP = L.JA, {};
 local memo, memo_n = {}, 0;
@@ -25,13 +26,32 @@ local function load_cfg()
         if s and s >= 0.8 and s <= 1.4 then JP.cfg.font_scale = s; end
         local m = tonumber(t.minimap_text_scale);
         if m and m >= 0.5 and m <= 2.0 then JP.cfg.minimap_text_scale = m; end
+        if type(t.font) == 'string' and t.font ~= '' and not t.font:find('[/\\]') then JP.cfg.font = t.font; end   -- (言語 > フォント: 'default' / 'meiryo' / fonts フォルダのファイル名)
+        for _, k in ipairs({ 'chat_outline_on', 'chat_shadow' }) do
+            if type(t[k]) == 'boolean' then JP.cfg[k] = t[k]; end
+        end
+        local function num(k, lo, hi)
+            local v = tonumber(t[k]); if v and v >= lo and v <= hi then JP.cfg[k] = math.floor(v + 0.5); end
+        end
+        num('chat_shadow_pct', 0, 100); num('chat_outline_pct', 0, 100);
+        local function frac(k, lo, hi, st)                           -- (0.25 / 0.5 刻みの値: 刻みに丸めて範囲内だけ)
+            local v = tonumber(t[k]); if v and v >= lo and v <= hi then JP.cfg[k] = math.floor(v / st + 0.5) * st; end
+        end
+        frac('chat_shadow_dist', 1, 6, 0.5);
+        frac('chat_outline_w', 0, 3, 0.25);
+        if tonumber(t.chat_outline_w) == nil and t.chat_outline_on == false then JP.cfg.chat_outline_w = 0; end   -- (前の「縁取り なし」= 太さ 0)
+        if t.chat_shadow_col == 'black' or t.chat_shadow_col == 'gray' or t.chat_shadow_col == 'white' then JP.cfg.chat_shadow_col = t.chat_shadow_col; end
         JP.cfg.keep_fonts = t.keep_fonts == true;
     end
 end
 local function save_cfg()
     local f = io.open(CFG_FILE, 'w');
     if not f then return; end
-    f:write(string.format('return { ui_lang = %q, font_scale = %.2f, minimap_text_scale = %.2f, keep_fonts = %s };\n', JP.cfg.ui_lang, JP.cfg.font_scale, JP.cfg.minimap_text_scale or 1.3, tostring(JP.cfg.keep_fonts == true)));
+    local c = JP.cfg;
+    f:write(string.format('return { ui_lang = %q, font_scale = %.2f, minimap_text_scale = %.2f, keep_fonts = %s, font = %q, chat_outline_on = %s, chat_shadow = %s, chat_shadow_dist = %.2f, chat_shadow_pct = %d, chat_outline_pct = %d, chat_outline_w = %.2f, chat_shadow_col = %q };\n',
+        c.ui_lang, c.font_scale, c.minimap_text_scale or 1.3, tostring(c.keep_fonts == true),
+        tostring(c.font or 'default'), tostring((tonumber(c.chat_outline_w) or 1) > 0), tostring(c.chat_shadow),
+        c.chat_shadow_dist, c.chat_shadow_pct, c.chat_outline_pct, c.chat_outline_w or 1, c.chat_shadow_col));
     f:close();
 end
 
@@ -76,6 +96,90 @@ function JP.msg(t)                                                   -- (公式 
     return t;
 end
 YUI_JP_T = JP.msg;   -- dps.lua / equip.lua のチャットメッセージ用（翻訳してShift-JISへ。公式 msg と同じ）
+
+function JP.fmt(s, ...)
+    if not JP.active then
+        if select('#', ...) > 0 then return string.format(s, ...); end
+        return s;
+    end
+    local t = JP.t(s);
+    if select('#', ...) > 0 then
+        local ok, r = pcall(string.format, t, ...);
+        if ok then return r; end
+        return string.format(s, ...);
+    end
+    return t;
+end
+function JP.upd_status(ver, U, cfg)                                  -- (GENERAL > UPDATES: your version and what it last heard)
+    if not JP.active then return nil; end
+    local st = JP.fmt('You have %s.', ver);
+    if U.state == 'checking' then return st .. '  ' .. JP.t('Checking...'); end
+    if U.said and U.said ~= '' then return st .. '  ' .. U.said; end
+    if type(cfg.upd_tag) == 'string' and U.newer and U.newer(cfg.upd_tag, ver) then return st .. '  ' .. JP.fmt('%s is out.', cfg.upd_tag); end
+    if type(cfg.upd_tag) == 'string' then return st .. '  ' .. JP.t('Up to date.'); end
+    return st;
+end
+
+function JP.wx(s)                                                    -- (weather names: a small table, so "Blizzard" the weather is not the spell)
+    if not JP.active or type(s) ~= 'string' then return s; end
+    local W = L and L.WX;
+    if type(W) == 'table' and W[s] then return W[s]; end
+    return JP.t(s);
+end
+function JP.upd_title(state, tag)
+    if not JP.active then return nil; end
+    if state == 'done' then return JP.t('YUNAUI UPDATED'); end
+    return JP.fmt('YUNAUI %s IS OUT', tostring(tag or ''));
+end
+
+-- ガイド本文は行に折り返してから描くため、段落ごと先に翻訳し、日本語は文字単位で折り返す
+function JP.guide_lines(s, maxw)
+    if not JP.active or type(s) ~= 'string' then return nil; end
+    local pref, path = s:match('^(It is turned off right now: turn it on in /yui > )(.+)%.$');
+    if pref then
+        s = '今はオフです。/yui > ' .. JP.t(path) .. ' でオンにしてください。';
+    else
+        s = JP.t(s);
+    end
+    if type(maxw) ~= 'number' or maxw <= 0 then return { s }; end
+    local function cw(t)
+        local w = imgui.CalcTextSize(t);
+        if type(w) == 'table' then w = w[1] or w.x or 0; end
+        return tonumber(w) or 0;
+    end
+    local chars = {};
+    for ch in s:gmatch('[%z\1-\127\194-\244][\128-\191]*') do chars[#chars + 1] = ch; end
+    local function break_after(ch)
+        if ch == ' ' or ch == '\t' then return true; end
+        if ch:byte(1) and ch:byte(1) >= 128 then return true; end   -- CJK などは直後で切ってよい
+        return ch:find('[、。，,．%.！!？?%）%)%]」』]') ~= nil;
+    end
+    local out, line, last_br = {}, '', 0;
+    for i, ch in ipairs(chars) do
+        if ch == '\n' then
+            out[#out + 1] = line; line, last_br = '', 0;
+        else
+            local try = line .. ch;
+            if line ~= '' and cw(try) > maxw then
+                if last_br > 0 and last_br < #line then
+                    out[#out + 1] = line:sub(1, last_br);
+                    local rest = line:sub(last_br + 1);
+                    if rest:sub(1, 1) == ' ' then rest = rest:sub(2); end
+                    line, last_br = rest .. ch, 0;
+                else
+                    out[#out + 1] = line;
+                    line, last_br = ((ch == ' ') and '' or ch), 0;
+                end
+            else
+                line = try;
+                if break_after(ch) then last_br = #line; end
+            end
+        end
+    end
+    if line ~= '' then out[#out + 1] = line; end
+    if #out == 0 then out[1] = s; end
+    return out;
+end
 
 -------------------------------------------------------------------- UTF-8 文字単位の字間描画
 function JP.mb(s) return JP.active and type(s) == 'string' and s:find('[\128-\255]') ~= nil; end
@@ -128,6 +232,8 @@ local JPFONT = nil;
 local function jp_font_path()
     if JPFONT ~= nil then return JPFONT or nil; end
     JPFONT = false;
+    local pp = JP.picked_path and JP.picked_path();
+    if pp and JP.font_has_jp_file(pp) then JPFONT = pp; return JPFONT; end   -- (選んだフォントに日本語がある: それを合成)
     local dir = (os.getenv('WINDIR') or 'C:\\Windows') .. '\\Fonts\\';
     for _, n in ipairs({ 'meiryo.ttc', 'YuGothM.ttc', 'msgothic.ttc' }) do
         local f = io.open(dir .. n, 'rb');
@@ -151,47 +257,214 @@ local function fexists(p)
     if FEXIST[p] == nil then local f = io.open(p, 'rb'); FEXIST[p] = f ~= nil; if f then f:close(); end end
     return FEXIST[p];
 end
+
+-------------------------------------------------------------------- 言語 > フォント（fonts フォルダ＋Windowsのメイリオ）
+local function win_fonts() return (os.getenv('WINDIR') or 'C:\\Windows') .. '\\Fonts\\'; end
+local function fonts_dir() return (addon and addon.path or '.') .. '/fonts/'; end
+local FONT_EXT = { ttf = true, otf = true, ttc = true };
+-- fonts フォルダの一覧（実行時に読む。5秒ごとに読み直し）。
+-- ashita.fs.get_directory はパスだけだと「フォルダ」しか返さない（空の表）→ ファイルにはフィルターが要る。
+-- フィルターの書き方（正規表現 / ワイルドカード）が環境で違うので、いくつか試して全部まとめる。
+local function fonts_dir_win()
+    local base = tostring((addon and addon.path) or '.'):gsub('/', '\\'):gsub('\\+$', '');
+    return base .. '\\fonts\\';
+end
+local FLIST = { at = -100, list = nil, how = nil, popen_done = false, popen = nil };
+local KNOWN_FONTS = { 'texgyreadventor-regular.otf', 'TeXGyreAdventor-Regular.otf', 'AvantGarde-Book.ttf', 'AvantGarde-Book.otf',
+    'AvantGardeBook.ttf', 'avantgarde.ttf', 'AVGARDN.TTF' };
+function JP.font_list()
+    if FLIST.list and os.clock() < FLIST.at then return FLIST.list, FLIST.how; end
+    FLIST.at = os.clock() + 5;
+    local list, seen, how = {}, {}, {};
+    local function take(names, tag)
+        if type(names) ~= 'table' then return; end
+        local got = 0;
+        for k, n in pairs(names) do
+            if type(n) ~= 'string' and type(k) == 'string' then n = k; end   -- (名前がキーで返る形にも対応)
+            if type(n) == 'table' then n = n.name or n.Name or n[1]; end
+            if type(n) == 'string' then
+                n = n:match('[^/\\]+$') or n;
+                local ext = (n:match('%.([^%.]+)$') or ''):lower();
+                if FONT_EXT[ext] and not seen[n:lower()] then
+                    local f = io.open(fonts_dir() .. n, 'rb');         -- (本当に読めるファイルだけ)
+                    if f then f:close(); seen[n:lower()] = true; list[#list + 1] = n; got = got + 1; end
+                end
+            end
+        end
+        if got > 0 and not how[tag] then how[tag] = true; how[#how + 1] = tag; end
+    end
+    local gd = ashita and ashita.fs and ashita.fs.get_directory;     -- (Ashita v4: フィルターは正規表現)
+    local dirs = { fonts_dir_win(), (fonts_dir_win():gsub('\\$', '')), fonts_dir() };
+    if type(gd) == 'function' then
+        for _, d in ipairs(dirs) do
+            for _, flt in ipairs({ '.*\\.[tT][tT][fF]$', '.*\\.[oO][tT][fF]$', '.*\\.[tT][tT][cC]$', '.*' }) do
+                local ok, names = pcall(gd, d, flt);
+                if ok then take(names, 'fs'); end
+            end
+            if #list > 0 then break; end
+        end
+    end
+    if #list == 0 then                                               -- (ワイルドカード形式: ashita.fs のフィルターが正規表現でない環境 / v3 の ashita.file.get_dir)
+        local gd3 = ashita and ashita.file and ashita.file.get_dir;
+        for _, d in ipairs(dirs) do
+            for _, flt in ipairs({ '*.ttf', '*.otf', '*.ttc' }) do
+                if type(gd) == 'function' then local ok, names = pcall(gd, d, flt); if ok then take(names, 'fs*'); end end
+                if type(gd3) == 'function' then local ok, names = pcall(gd3, d, flt, false); if ok then take(names, 'file'); end end
+            end
+            if #list > 0 then break; end
+        end
+    end
+    if #list == 0 and not FLIST.popen_done then                      -- (最後の手段: dir /b。黒い窓が一瞬出ることがあるので1回だけ)
+        FLIST.popen_done = true;
+        pcall(function()
+            if type(io.popen) ~= 'function' then return; end
+            local h = io.popen('dir /b /a-d "' .. fonts_dir_win() .. '" 2>nul');
+            if not h then return; end
+            local t = {};
+            for line in h:lines() do t[#t + 1] = (line:gsub('[\r\n]+$', '')); end
+            h:close();
+            FLIST.popen = t;
+        end);
+    end
+    if FLIST.popen then take(FLIST.popen, 'dir'); end
+    local probe = {};                                                -- (公式が使うフォント名と、保存されている選択)
+    for _, n in ipairs(KNOWN_FONTS) do probe[#probe + 1] = n; end
+    if type(JP.cfg.font) == 'string' and JP.cfg.font ~= 'default' and JP.cfg.font ~= 'meiryo' then probe[#probe + 1] = JP.cfg.font; end
+    take(probe, 'probe');
+    table.sort(list, function(a, b) return a:lower() < b:lower(); end);
+    FLIST.list = list;
+    FLIST.how = (#how > 0) and table.concat(how, '+') or nil;
+    FLIST.ok = how[1] ~= nil and how[1] ~= 'probe';
+    return list, FLIST.how;
+end
+function JP.font_list_status() return FLIST.ok == true, fonts_dir_win(), FLIST.how; end
+-- 選んだフォントのファイル（無ければ nil = 既定）。起動時に1回だけ決める（フォントは起動時に読むため）。
+local PICK = nil;
+local function picked_path()
+    if PICK ~= nil then return PICK or nil; end
+    PICK = false;
+    local k = JP.cfg.font or 'default';
+    if k == 'meiryo' then
+        if fexists(win_fonts() .. 'meiryo.ttc') then PICK = win_fonts() .. 'meiryo.ttc'; end
+    elseif k ~= 'default' and not k:find('[/\\]') then
+        if fexists(fonts_dir() .. k) then PICK = fonts_dir() .. k; end
+    end
+    return PICK or nil;
+end
+JP.picked_path = picked_path;
+-- フォントに日本語があるか: OS/2 表の ulCodePageRange1 の bit17（JIS/日本）を見る（ヘッダだけ読む）
+local function u32be(b, i) local a, c, d, e = b:byte(i, i + 3); if not e then return nil; end return ((a * 256 + c) * 256 + d) * 256 + e; end
+local function u16be(b, i) local a, c = b:byte(i, i + 1); if not c then return nil; end return a * 256 + c; end
+local JPCP = {};
+local function has_japanese(path)
+    if path == nil then return false; end
+    local key = tostring(path):lower();
+    if JPCP[key] ~= nil then return JPCP[key]; end
+    JPCP[key] = false;
+    pcall(function()
+        local f = io.open(path, 'rb'); if not f then return; end
+        local function at(off, n) f:seek('set', off); return f:read(n) or ''; end
+        local base = 0;
+        if at(0, 4) == 'ttcf' then base = u32be(at(12, 4), 1) or 0; end   -- (.ttc: 1つ目のフォント = 読み込まれるもの)
+        local n = u16be(at(base + 4, 2), 1) or 0;
+        local dir = at(base + 12, 16 * math.min(n, 64));
+        for i = 0, math.min(n, 64) - 1 do
+            if dir:sub(i * 16 + 1, i * 16 + 4) == 'OS/2' then
+                local off = u32be(dir, i * 16 + 9);
+                local t = off and at(off, 86) or '';
+                local ver = u16be(t, 1) or 0;
+                local cp = (ver >= 1) and u32be(t, 79) or nil;
+                if cp then JPCP[key] = math.floor(cp / 131072) % 2 == 1; end
+                break;
+            end
+        end
+        f:close();
+    end);
+    return JPCP[key];
+end
+JP.font_has_jp_file = has_japanese;
 function JP.map_font(path)
     if not JP.active or type(path) ~= 'string' then return path; end
     if JP.cfg.keep_fonts then return path; end                       -- (Keep YunaUI fonts: English letters and numbers in YunaUI's own fonts - the Japanese merged in)
     local base = (path:match('[^/\\]+$') or path):lower();
     local to = FONTMAP[base];
     if not to then return path; end
+    local pp = picked_path();                                        -- (言語 > フォント: 選んだもの。既定なら今まで通りメイリオ)
+    if pp then return pp; end
     local dir = (os.getenv('WINDIR') or 'C:\\Windows') .. '\\Fonts\\';
     if fexists(dir .. to) then return dir .. to; end
     if to == 'meiryob.ttc' and fexists(dir .. 'meiryo.ttc') then return dir .. 'meiryo.ttc'; end
     return path;
 end
-local KEEP = {};
+-- このロード内だけの共用。unloadを越えてnativeポインタを保持しない。
+local KEEP, FONT_CACHE, FONT_DYNAMIC, FONT_JP, AUTO_TRIED = {}, {}, {}, {}, {};
 JP.MERGED = {};
+local function font_key(path) return tostring(path):gsub('/', '\\'):lower(); end
+local function dynamic_font(font)
+    local ok, v = pcall(function() return font.LegacySize; end);
+    return ok and v ~= nil;
+end
+local function japanese_file(path)
+    local base = (tostring(path):match('[^/\\]+$') or ''):lower();
+    if base == 'meiryo.ttc' or base == 'meiryob.ttc' or base == 'yugothm.ttc' or base == 'msgothic.ttc' then return true; end
+    return has_japanese(path);                                       -- (fonts フォルダの日本語フォントも: 二重に合成しない)
+end
+local function mark_japanese(font)
+    if not font or FONT_JP[tostring(font)] then return; end
+    FONT_JP[tostring(font)] = true;
+    JP.MERGED[#JP.MERGED + 1] = font; JP.MERGED[tostring(font)] = true;
+end
+function JP.font_has_japanese(font) return font and FONT_JP[tostring(font)] == true; end
 local function hook_fonts()
     local add = imgui.AddFontFromFileTTF;
     if type(add) ~= 'function' then return; end
-    local busy = false;
+    -- 同一ファイル・同一サイズを共用。新ImGuiはサイズ可変なのでファイル単位で共用。
+    -- cfg/追加引数つきは個別設定か合成なので、一切キャッシュしない。
+    local function shared_add(domain, path, px, cfg, ...)
+        if cfg ~= nil or select('#', ...) > 0 then return add(path, px, cfg, ...); end
+        local key = domain .. ':' .. font_key(path);
+        if FONT_DYNAMIC[key] then return FONT_DYNAMIC[key]; end
+        local sized_key = key .. ':' .. tostring(px);
+        if FONT_CACHE[sized_key] then return FONT_CACHE[sized_key]; end
+        local font = add(path, px);
+        if font then
+            FONT_CACHE[sized_key] = font;
+            if dynamic_font(font) then FONT_DYNAMIC[key] = font; end
+            if japanese_file(path) then mark_japanese(font); end
+        end
+        return font;
+    end
+    -- 日本語の字がないフォントにだけ、1回だけ日本語フォントを合成（サイズ可変フォントは1つ＝合成も1回）
+    local function merge_jp(font, px)
+        if not font or JP.font_has_japanese(font) or AUTO_TRIED[tostring(font)] then return; end
+        AUTO_TRIED[tostring(font)] = true;
+        local jp = jp_font_path();
+        if not jp then return; end
+        pcall(function()
+            local T_ = (imgui.types or vana.imgui.types).ImFontConfig;
+            local c = T_.new(); c.MergeMode = true;
+            pcall(function() c.DstFont = font; end);
+            KEEP[#KEEP + 1] = c;
+            local k_ = tonumber(YUI_JPK) or 1;               -- (CHAT > Japanese text size: official YUI_JPK)
+            local merged = add(jp, (tonumber(px) or 17) * k_, c);
+            if merged then mark_japanese(font); end
+        end);
+    end
+    -- チャットとUIは別の領域: CHATの描画判定が他のUIへ波及しないようにする。
+    JP.raw_add_font = function(path, px, cfg, ...)
+        local font = shared_add('chat', path, px, cfg, ...);
+        if cfg == nil then merge_jp(font, px); end                  -- (fonts フォルダの英字フォント: 日本語はメイリオで)
+        return font;
+    end
     local g = function(path, px, cfg, ...)
         path = JP.map_font(path);
-        local font = add(path, px, cfg, ...);
-        if font and cfg == nil and not busy then
-            local jp = jp_font_path();
-            if jp and path ~= jp then
-                busy = true;
-                pcall(function()
-                    local T_ = (imgui.types or vana.imgui.types).ImFontConfig;
-                    local c = T_.new();
-                    c.MergeMode = true;
-                    pcall(function() c.DstFont = font; end);
-                    KEEP[#KEEP + 1] = c;
-                    JP.MERGED[#JP.MERGED + 1] = font; JP.MERGED[tostring(font)] = true;
-                    local k_ = tonumber(YUI_JPK) or 1;               -- (CHAT > Japanese text size: the chat fonts' Japanese alone, bigger or smaller)
-                    add(jp, (tonumber(px) or 17) * k_, c);   -- (元フォントと同じサイズで合成: 違うと日本語だけ大きさがずれる)
-                end);
-                busy = false;
-            end
-        end
+        local font = shared_add('ui', path, px, cfg, ...);
+        if cfg == nil then merge_jp(font, px); end
         return font;
     end
     pcall(function() imgui.AddFontFromFileTTF = g; end);
 end
+
 function JP.boot()
     load_cfg();
     local m = JP.cfg.ui_lang;
@@ -203,6 +476,7 @@ function JP.boot()
     -- （ここは公式の imgui 変換・フォント処理より前に実行されるので、公式の日本語対応がすべて有効になる）
     YUI_JP = true;
     hook_fonts();
+    JP.hook_chat_metrics();
     for k, v in pairs(JA) do local u = k:upper(); if u ~= k and JA[u] == nil then UP[u] = v; end end
     for _, n in ipairs({ 'Text', 'TextUnformatted', 'TextWrapped', 'TextDisabled', 'CalcTextSize', 'SetTooltip',
                          'Button', 'SmallButton', 'Selectable', 'Checkbox', 'BulletText', 'SeparatorText' }) do wrap(n, 1); end
@@ -301,11 +575,12 @@ end
 function JP.wrap_dl(DL)
     if not JP.active then return; end
     local T = DL.T;
-    DL.T = function(d, a, b, col, t, ...) t = JP.t(t); return with_jp('DL.T', t, T, d, a, b, col, t, ...); end
+    DL.T = function(d, a, b, col, t, ...) t = JP.t(t); if JP.chat_current() then return JP.chat_draw(T, d, a, b, col, t, ...); end return with_jp('DL.T', t, T, d, a, b, col, t, ...); end
 end
 
 -------------------------------------------------------------------- フォント（日本語フォントを合成）
 function JP.fonts(fonts)
+    JP.load_chat_fonts(fonts);
     -- ツールチップ（装備の「メイン: ○○」など）を日本語の字形があるフォントで出す
     if JP.active and type(YUI_TIP) == 'function' and not JP.tip_wrapped then
         JP.tip_wrapped = true;
@@ -313,7 +588,7 @@ function JP.fonts(fonts)
         YUI_TIP = function(t, ...) local s = JP.t(tostring(t or '')); return with_jp('YUI_TIP', s, TIP, s, ...); end
     end
     if JP.dbg then dlog('fonts', 'fonts', 'main=' .. tostring(fonts and fonts.main), 'chat=' .. tostring(fonts and fonts.chat), 'merged=' .. #JP.MERGED); end
-    -- 合成は hook_fonts() がフォント追加のたびに行う。ここは旧フックとの互換用（何もしない）。
+    -- 日本語の合成と同一フォントの共用は hook_fonts() で管理する。
 end
 
 -------------------------------------------------------------------- リキャストタイマーの名前
@@ -605,7 +880,7 @@ end
 
 -------------------------------------------------------------------- 設定画面「言語」セクション
 local LBL = { auto = 'Auto', en = 'English', ja = '日本語' };
-function JP.settings_ui(section, accent_button, hint)
+function JP.settings_ui(section, accent_button, hint, row_slider, row_pick)
     section('LANGUAGE');
     local avail = 300;
     pcall(function() local a = imgui.GetContentRegionAvail(); avail = (type(a) == 'table' and a[1]) or tonumber(a) or avail; end);
@@ -629,6 +904,279 @@ function JP.settings_ui(section, accent_button, hint)
         if clicked then JP.cfg.keep_fonts = not on; save_cfg(); end
         hint(JP.t("On: HP, MP, numbers and English names keep YunaUI's own fonts; menus, items and weapon skills stay in Japanese. Reload the addon after changing."));
     end
+    if JP.active and type(row_pick) == 'function' then             -- 言語 > フォント（プルダウン）
+        local opts = { { 'default', 'デフォルト（メイリオ）' }, { 'meiryo', 'メイリオ (Windows)' } };
+        local have = { default = true, meiryo = true };
+        for _, n in ipairs(JP.font_list()) do
+            opts[#opts + 1] = { n, (n:gsub('%.[^%.]+$', '')) }; have[n] = true;
+        end
+        local cur = JP.cfg.font or 'default';
+        if not have[cur] then opts[#opts + 1] = { cur, (cur:gsub('%.[^%.]+$', '')) .. '（見つかりません）' }; end
+        row_pick('##yui_jp_font', 'フォント', 'font', opts, JP.cfg, function() save_cfg(); end);
+        hint('変更後は /addon reload yunaui で反映されます。');
+        hint('fonts フォルダのフォントから選べます。日本語の字がないフォントは、日本語の部分をメイリオで表示します。');
+        local pp = picked_path();
+        if (JP.cfg.font or 'default') ~= 'default' and not pp then hint('選んだフォントが見つからないため、デフォルトで表示中です。'); end
+        local okl, dir_, how_ = JP.font_list_status();
+        if not okl then imgui.TextColored({ 0.6, 0.6, 0.65, 1 }, 'fontsフォルダを読めませんでした: ' .. tostring(dir_) .. (how_ and ('（' .. how_ .. '）') or '')); end
+    end
+end
+
+-------------------------------------------------------------------- チャット > 縁取りと影（チャットの文字だけに効く）
+-- 縁取りと影の行は公式の行（row_slider / row_switch / row_pick）をそのまま使う:
+-- 変更は公式の「元に戻す」（Undo の表示・Ctrl+Z）に入る。公式の行と同じく、ダブルクリックで既定値に戻す（これも Undo 可）。
+local function row_hovered(x0, y0, h)
+    local rw = tonumber(YUI_ROW_W) or 300;
+    local inside = false;
+    pcall(function() inside = imgui.IsMouseHoveringRect({ x0, y0 }, { x0 + rw, y0 + h }); end);
+    if not inside then pcall(function() local mx, my = imgui.GetMousePos(); if type(mx) == 'table' then mx, my = mx[1] or mx.x, mx[2] or mx.y; end inside = mx >= x0 and mx <= x0 + rw and my >= y0 and my <= y0 + h; end); end
+    if inside then local wh = true; pcall(function() wh = imgui.IsWindowHovered(); end); inside = wh ~= false; end
+    return inside;
+end
+local function fx_row(draw, key, text, tip, on_change)
+    local c = JP.cfg;
+    local x0, y0 = imgui.GetCursorScreenPos();
+    local h = imgui.GetFrameHeight();
+    draw();
+    if not row_hovered(x0, y0, h) then return; end
+    if tip then YUI_TIP(tip); end
+    if key and FX_DEF[key] ~= nil and imgui.IsMouseDoubleClicked(0) and c[key] ~= FX_DEF[key] then
+        local old = c[key];
+        c[key] = FX_DEF[key]; on_change(key, c[key]);
+        if YUI_UNDO_PUSH then pcall(YUI_UNDO_PUSH, c, key, old, text, on_change); end
+    end
+end
+function JP.chat_fx_ui(section, accent_button, hint, row_slider, row_switch, row_pick)
+    if not JP.active or type(row_slider) ~= 'function' then return; end
+    local c = JP.cfg;
+    local function fix(step, after)                                  -- (公式の行の on_change: 刻みに丸めて保存。Undo からも呼ばれる)
+        return function(key)
+            if step then c[key] = math.floor((tonumber(c[key]) or 0) / step + 0.5) * step; end
+            if after then after(); end
+            save_cfg();
+        end
+    end
+    local function slider(id, text, key, lo, hi, step, fmt, tip, after)
+        local oc = fix(step, after);
+        fx_row(function() row_slider(id, text, key, lo, hi, step, fmt, c, oc); end, key, text, tip, oc);
+    end
+    section('チャットの縁取りと影');
+    slider('##yui_jpow', '縁取りの太さ', 'chat_outline_w', 0, 3, 0.25, '%.2f px',
+        'チャットの文字のまわりの黒い縁取りの太さ（ピクセル）。0 で縁取りなし。1 が公式と同じです。\nダブルクリックで既定値（1.00 px）に戻します。',
+        function() c.chat_outline_on = (tonumber(c.chat_outline_w) or 0) > 0; end);
+    slider('##yui_jpoa', '縁取りの濃さ', 'chat_outline_pct', 0, 100, 1, '%d%%', '縁取りの濃さ。0% で見えなくなります。\nダブルクリックで既定値（85%）に戻します。');
+    local sw = fix(nil);
+    if type(row_switch) == 'function' then
+        row_switch('##yui_jpsh', '影', 'chat_shadow', 'オン: 文字の右下に影を付けます。オフ: 影なし（縁取りだけ）。', c, sw);
+    end
+    if c.chat_shadow ~= false then
+        if type(row_pick) == 'function' then
+            fx_row(function() row_pick('##yui_jpsc', '影の色', 'chat_shadow_col', { { 'black', '黒' }, { 'gray', '濃い灰' }, { 'white', '白' } }, c, sw); end,
+                nil, '影の色', '黒（既定）・少し柔らかい濃い灰・白（暗い背景で文字を浮き立たせます）。', sw);
+        end
+        slider('##yui_jpsd', '影の距離', 'chat_shadow_dist', 1, 6, 0.5, '%.1f px', '文字から右下へ、影をどれだけずらすか（ピクセル）。\nダブルクリックで既定値（2.0 px）に戻します。');
+        slider('##yui_jpsa', '影の濃さ', 'chat_shadow_pct', 0, 100, 1, '%d%%', '影の濃さ。0% で見えなくなります。\nダブルクリックで既定値（85%）に戻します。');
+    end
+    hint('すぐに反映。変更は「元に戻す」（Ctrl+Z）で戻せます。');
+end
+
+-------------------------------------------------------------------- チャットの縁取りと影
+-- chat_line のフック1: 公式の縁取り（黒い8点）の濃さ・なしを設定から返す
+local EDGE_CACHE = {};
+function JP.chat_edge(edge)
+    if not JP.active or type(edge) ~= 'table' then return edge; end
+    local c = JP.cfg;
+    local w = tonumber(c.chat_outline_w) or 1;
+    local al = (w <= 0) and 0 or ((tonumber(c.chat_outline_pct) or 85) / 100);
+    local key = tostring(edge) .. ':' .. al .. ':' .. w;
+    if EDGE_CACHE[key] then return EDGE_CACHE[key]; end
+    local pts = edge[1];
+    if al > 0 and math.abs(w - 1) > 1e-6 then                         -- (太さ: 1 は公式の8点そのまま。1.5 を超えると隙間が出るので16点）
+        pts = {};
+        local n = (w > 1.5) and 16 or 8;
+        for k = 0, n - 1 do
+            local t_ = k * 2 * math.pi / n;
+            local ox, oy = math.cos(t_), math.sin(t_);
+            if n == 8 then ox, oy = (math.abs(ox) > 0.3) and (ox > 0 and 1 or -1) or 0, (math.abs(oy) > 0.3) and (oy > 0 and 1 or -1) or 0; end
+            pts[#pts + 1] = { ox * w, oy * w };
+        end
+    end
+    local r = { (al > 0) and pts or {}, al };
+    EDGE_CACHE[key] = r;
+    return r;
+end
+-- chat_line のフック2: 縁取りの前に右下の影を、設定の色・濃さ・距離で描く
+local SHCOL = { black = { 0, 0, 0 }, gray = { 0.28, 0.28, 0.30 }, white = { 1, 1, 1 } };
+function JP.chat_shadow_pass(dl, T, x, y, str, a)
+    local c = JP.cfg;
+    if not JP.active or c.chat_shadow == false then return; end
+    local al = c.chat_shadow_pct / 100 * (tonumber(a) or 1);
+    if al <= 0 then return; end
+    local rgb = SHCOL[c.chat_shadow_col] or SHCOL.black;
+    local col = imgui.GetColorU32({ rgb[1], rgb[2], rgb[3], al });
+    T(dl, x + c.chat_shadow_dist, y + c.chat_shadow_dist, col, str);
+end
+
+-------------------------------------------------------------------- チャットのフォント（言語 > フォントで選んだもの）
+-- UI全体のフォントとは別の領域で保持（CHATの描画判定が他のUIへ波及しないように）。
+-- 1つのフォントで日英とも同じ大きさ: 計測・描画は公式どおり（uniform）。サイズ可変フォントなら1つだけ読む。
+local CHAT = { fonts = {}, ja = {}, en = {}, max = 1, ja_k = 1, en_k = 1, scale = 1, busy = false };
+local function first_font(paths)
+    for _, path in ipairs(paths) do if fexists(path) then return path; end end
+end
+function JP.load_chat_fonts(fonts)
+    if not JP.active or not fonts or not fonts.sized or not JP.raw_add_font then return; end
+    local dir = win_fonts();
+    local ja = picked_path() or first_font({ dir .. 'meiryob.ttc', dir .. 'meiryo.ttc', dir .. 'YuGothM.ttc', dir .. 'msgothic.ttc' });   -- (デフォルト: 今まで通りメイリオ太字)
+    if not ja then return; end
+    CHAT.uniform = true;
+    for _, px in ipairs({ 13, 16, 20, 26, 34 }) do
+        local ok, jf = pcall(JP.raw_add_font, ja, px);
+        if ok and jf then
+            CHAT.ja[#CHAT.ja + 1] = { jf, px }; CHAT.en[#CHAT.en + 1] = { jf, px };
+            CHAT.fonts[tostring(jf)] = true;
+        end
+    end
+    if #CHAT.ja == 0 then return; end
+    fonts.sized.jpchat = CHAT.ja;
+    CHAT.ready = true;
+end
+function JP.chat_kind() return CHAT.ready and 'jpchat' or 'chat'; end
+function JP.chat_size(size) return CHAT.ready and size * CHAT.max or size; end
+function JP.chat_current()
+    if not CHAT.ready or CHAT.busy then return false; end
+    local f = imgui.GetFont(); return f ~= nil and CHAT.fonts[tostring(f)] == true;
+end
+local RUNS, RN = {}, 0;
+local function chat_runs(text)
+    text = tostring((YUI_U8 and YUI_U8(text)) or text or '');
+    if RUNS[text] then return RUNS[text]; end
+    local runs, cur, kind = {}, '', nil;
+    for _, ch in ipairs(chars(text)) do
+        local k = ch:byte() < 128 and 'en' or 'ja';
+        if k ~= kind and cur ~= '' then runs[#runs + 1] = { cur, kind }; cur = ''; end
+        cur, kind = cur .. ch, k;
+    end
+    if cur ~= '' then runs[#runs + 1] = { cur, kind }; end
+    if RN > 2048 then RUNS, RN = {}, 0; end
+    RUNS[text], RN = runs, RN + 1;
+    return runs;
+end
+-- PushFont(font, 0) は新ImGuiの現在の基準サイズを引き継ぐ。
+-- 旧ImGuiはベイク済みの大きさを使い、窓倍率を一時補正する。
+local function chat_run(kind, size, fn)
+    local k = (kind == 'ja') and CHAT.ja_k or CHAT.en_k;
+    local list = CHAT[kind];
+    local pick = list[#list];
+    for _, e in ipairs(list) do if e[2] >= size * k / CHAT.max then pick = e; break; end end
+    local scale, new = CHAT.scale, YUI_NEWFONT and YUI_NEWFONT(pick[1]);
+    local ok, err;
+    if new then ok, err = pcall(imgui.PushFont, pick[1], 0);
+    else ok, err = pcall(imgui.PushFont, pick[1]); end
+    if not ok then error(err, 0); end
+    local ratio = k / CHAT.max;
+    imgui.SetWindowFontScale(new and (scale * ratio) or (size * ratio / pick[2]));
+    local result = { pcall(fn) };
+    imgui.PopFont(); imgui.SetWindowFontScale(scale);
+    if not result[1] then error(result[2], 0); end
+    return unpack(result, 2);
+end
+-- この計測と描画はラップ前のCalcTextSizeを使用（翻訳や再帰による日英の不一致を防止）。
+function JP.hook_chat_metrics()
+    local scale = imgui.SetWindowFontScale;
+    imgui.SetWindowFontScale = function(k) CHAT.scale = k; return scale(k); end
+    local calc = imgui.CalcTextSize;
+    CHAT.calc = calc;
+    imgui.CalcTextSize = function(text, ...)
+        if not JP.chat_current() then return calc(text, ...); end
+        text = JP.t(text);
+        return JP.chat_measure(text);
+    end
+end
+local WIDTHS, WN = {}, 0;
+function JP.chat_measure(text)
+    if CHAT.uniform then return CHAT.calc((YUI_U8 and YUI_U8(text)) or text); end
+    local size = imgui.GetFontSize();
+    local str = tostring((YUI_U8 and YUI_U8(text)) or text or '');
+    local key = tostring(size) .. ':' .. str;
+    local cached = WIDTHS[key]; if cached then return cached[1], cached[2]; end
+    local width, height = 0, 0;
+    CHAT.busy = true;
+    local ok, err = pcall(function()
+        for _, run in ipairs(chat_runs(str)) do
+            local w, h = chat_run(run[2], size, function() return CHAT.calc(run[1]); end);
+            width, height = width + w, math.max(height, h or 0);
+        end
+    end);
+    CHAT.busy = false;
+    if not ok then error(err, 0); end
+    if WN > 4096 then WIDTHS, WN = {}, 0; end
+    WIDTHS[key], WN = { width, height }, WN + 1;
+    return width, height;
+end
+function JP.chat_draw(T, dl, x, y, col, text, ...)
+    if CHAT.uniform then return T(dl, x, y, col, text, ...); end
+    local size, cx = imgui.GetFontSize(), x;
+    local args = { ... };
+    CHAT.busy = true;
+    local ok, err = pcall(function()
+        for _, run in ipairs(chat_runs(text)) do
+            local w = chat_run(run[2], size, function()
+                T(dl, cx, y, col, run[1], unpack(args));
+                return CHAT.calc(run[1]);
+            end);
+            cx = cx + w;
+        end
+    end);
+    CHAT.busy = false;
+    if not ok then error(err, 0); end
+end
+function JP.chat_icon_height(lh)
+    return JP.chat_current() and imgui.GetTextLineHeight() or (lh - 2);
+end
+function JP.chat_line_width(s)
+    s = (YUI_U8 and YUI_U8(s)) or s;
+    local w, i = 0, 1;
+    while i <= #s do
+        local j = s:find('[<>\1\2]', i);
+        local run = s:sub(i, (j or (#s + 1)) - 1);
+        if run ~= '' then w = w + imgui.CalcTextSize(run); end
+        if not j then break; end
+        local ch = s:sub(j, j);
+        if ch == '\1' or ch == '\2' then w = w + imgui.GetTextLineHeight() * 0.42 + 2;
+        else w = w + imgui.CalcTextSize(ch); end
+        i = j + 1;
+    end
+    if s:match('^<([^<>\1\2]+)>') then w = w + 2 * math.max(1, imgui.GetTextLineHeight() * 0.14); end
+    return w;
+end
+
+-- 公式の空白区切りを維持し、長い単語・空白のない日本語だけ文字単位で安全に折り返す。
+-- UTF-8 / 定型文アイコン(\1,\2)をバイト途中で切らない。
+function JP.chat_wrap(e, maxw, key, clear)
+    local sig = tostring(maxw) .. ':' .. tostring(imgui.GetFontSize()) .. ':' .. tostring(key) .. ':' .. tostring(clear);
+    if e.jp_wrap_sig == sig and e.jp_wrap_text == e.text then return e.jp_lines, e.jp_ts; end
+    local tl = clear and (e.tslen or 0) or 0;
+    local ts = (tl > 0 and #e.text > tl) and e.text:sub(1, tl) or nil;
+    local body = ts and e.text:sub(tl + 1) or e.text;
+    body = (YUI_U8 and YUI_U8(body)) or body;
+    local out, cur = {}, '';
+    for word in body:gmatch('%S+') do
+        local try = cur == '' and word or cur .. ' ' .. word;
+        if cur ~= '' and JP.chat_line_width(try) > maxw then out[#out + 1], cur = cur, ''; end
+        if JP.chat_line_width(word) <= maxw then cur = cur == '' and word or cur .. ' ' .. word;
+        else
+            for _, ch in ipairs(chars(word)) do
+                if cur ~= '' and JP.chat_line_width(cur .. ch) > maxw then out[#out + 1], cur = cur, ''; end
+                cur = cur .. ch;
+            end
+        end
+    end
+    if cur ~= '' then out[#out + 1] = cur; end
+    if #out == 0 then out[1] = ''; end
+    e.jp_wrap_sig, e.jp_wrap_text, e.jp_lines = sig, e.text, out;
+    e.jp_ts = ts and (ts:gsub('[%[%]]', ''):match('^%s*(.-)%s*$')) or nil;
+    return out, e.jp_ts;
 end
 
 -------------------------------------------------------------------- /yui lang
