@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.67';
+addon.version = '1.1.68';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -1050,7 +1050,7 @@ function C.scase(name)                                               -- ('EXPORT
     for _, w in ipairs({ 'ui', 'hp', 'mp', 'tp', 'ws', 'pdf', 'rng', 'exp' }) do
         t = t:gsub('%f[%w]' .. w .. '%f[%W]', w:upper());
     end
-    return (t:gsub('Yunaui', 'YunaUI'):gsub('yunaui', 'YunaUI'));
+    return (t:gsub('Yunaui', 'YunaUI'):gsub('yunaui', 'YunaUI'):gsub('ko%-fi', 'Ko-fi'));
 end
 local function accent_button(label, size, quiet, small)
     local ps = C.ps;
@@ -20698,6 +20698,74 @@ function C.upd_frame()
     imgui.PopStyleVar(3);
     imgui.PopStyleColor(2);
 end
+-- A thank-you card, shown ONCE (a new install, or the first load after this update) and never again: YunaUI is free;
+-- support on Ko-fi means more time for fixes, help and updates. Never over a fight, the update card, the guide or Edit
+-- Mode; a quiet moment after the login. /yui thanks shows it again. The Ko-fi heart at the top of /yui stays for later.
+C.TY = { t0 = nil };
+function C.ty_frame()
+    if cfg.thanks_v1 == true and not C.TY.force then return; end
+    if cfg.welcomed ~= true then return; end                         -- (a brand new player: the first-launch steps first)
+    if (C.MD and C.MD.on) or (EDIT and (EDIT.on or (EDIT.G and EDIT.G.on))) or YUI_PRES or (C.AFK and C.AFK.on) then return; end
+    if C.UPD and C.UPD.state and C.UPD.state ~= 'idle' and C.UPD.state ~= 'checking' then return; end   -- (the update card first)
+    local st_ = 0;
+    pcall(function()
+        local mm = AshitaCore:GetMemoryManager();
+        st_ = tonumber(mm:GetEntity():GetStatus(mm:GetParty():GetMemberTargetIndex(0) or 0)) or 0;
+    end);
+    if st_ == 1 and not C.TY.force then C.TY.t0 = os.clock(); return; end   -- (fighting: later, when it's calm)
+    C.TY.t0 = C.TY.t0 or os.clock();
+    if os.clock() - C.TY.t0 < 20 and not C.TY.force then return; end   -- (20 s after the login, not the first thing seen)
+    local function T(s) return (JP.t and JP.t(s)) or s; end
+    local function done_()
+        cfg.thanks_v1, C.TY.force = true, nil;
+        pcall(save);
+    end
+    local ps = C.ps or 1;
+    local SW, SH = C.screen();
+    local PW = math.max(420, 460 * ps);
+    imgui.SetNextWindowPos({ SW / 2 - PW / 2, SH * 0.16 }, ImGuiCond_Appearing);
+    imgui.SetNextWindowSize({ PW, 0 }, ImGuiCond_Always);
+    imgui.PushStyleColor(ImGuiCol_WindowBg, { 0.06, 0.05, 0.08, 0.96 });
+    imgui.PushStyleColor(ImGuiCol_Border, { PANEL.GOLD[1], PANEL.GOLD[2], PANEL.GOLD[3], 0.55 });
+    imgui.PushStyleVar(ImGuiStyleVar_WindowRounding, 10 * ps);
+    imgui.PushStyleVar(ImGuiStyleVar_FrameRounding, 6 * ps);
+    imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 18 * ps, 16 * ps });
+    if imgui.Begin('##yui_thanks', { true }, bit.bor(ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing)) then
+        local dl = imgui.GetWindowDrawList();
+        local pushed = sized('chat', 15 * ps);
+        local x, y = imgui.GetCursorScreenPos();
+        spaced(dl, x, y, T('THANK YOU FOR USING YUNAUI'), U4(PANEL.GOLD[1], PANEL.GOLD[2], PANEL.GOLD[3], 1), 2 * ps);
+        imgui.Dummy({ 10, imgui.GetTextLineHeight() + 4 * ps });
+        unsized(pushed);
+        local pb_ = sized('chat', 14 * ps);
+        imgui.PushTextWrapPos(imgui.GetCursorPosX() + PW - 36 * ps);
+        local GREY, WHITE = { 0.62, 0.60, 0.70, 1 }, { 0.92, 0.91, 0.95, 1 };
+        imgui.TextColored(WHITE, T('YunaUI is free, and it stays free - every part of it, for everyone.'));
+        imgui.Dummy({ 4, 6 * ps });
+        imgui.TextColored(WHITE, T('It is made and looked after by one person. Support on Ko-fi turns into more time for it: quicker fixes, help when something breaks, and new updates.'));
+        imgui.Dummy({ 4, 6 * ps });
+        imgui.TextColored(GREY, T('Completely optional - nothing changes either way. This card only shows once.'));
+        imgui.Dummy({ 4, 12 * ps });
+        local bw = (imgui.GetContentRegionAvail() - 8 * ps) / 2;
+        if accent_button(T('SUPPORT ON KO-FI') .. '##yui_tyk', { bw, 0 }) then
+            local ok_ = false;
+            pcall(function() ok_ = vana.system.open_url(PANEL.KOFI) and true or false; end);
+            if not ok_ then pcall(function() ashita.misc.open_url(PANEL.KOFI); ok_ = true; end); end
+            if not ok_ and imgui.SetClipboardText and pcall(imgui.SetClipboardText, PANEL.KOFI) then msg('Ko-fi link copied: paste it in your browser.'); end
+            done_();
+        end
+        if imgui.IsItemHovered() then YUI_TIP(T('Opens ko-fi.com/yunasxi in your browser.')); end
+        imgui.SameLine(0, 8 * ps);
+        if accent_button(T('CLOSE') .. '##yui_tyc', { bw, 0 }, true) then done_(); end
+        imgui.Dummy({ 4, 6 * ps });
+        imgui.TextColored(GREY, T('The Ko-fi heart at the top of /yui is there if you ever want it later.'));
+        imgui.PopTextWrapPos();
+        unsized(pb_);
+    end
+    imgui.End();
+    imgui.PopStyleVar(3);
+    imgui.PopStyleColor(2);
+end
 function C.mb_editor()                                               -- (the panel: Ctrl 3 - its name, its 6 lines, TEST / SAVE / CANCEL)
     local E = C.ME;
     if not E then return; end
@@ -24474,6 +24542,7 @@ ashita.events.register('d3d_present', 'yui_present', function()
         pcall(C.res_tick);                                           -- (GENERAL > SIZE > Follow the resolution)
         if C.DD_T and os.clock() > C.DD_T then pcall(C.dd_report); end   -- (/yui dragdebug: its 15 seconds are over)
         do local oku_, eru_ = pcall(C.upd_frame); if not oku_ and YUI_ERRLOG then YUI_ERRLOG('update', eru_); end end
+        do local okt_, ert_ = pcall(C.ty_frame); if not okt_ and YUI_ERRLOG then YUI_ERRLOG('thanks', ert_); end end   -- (the one-time thank-you card)
    -- (the in-game updater: its check and its card)
         -- each piece on its own: a problem in one (shown once in chat) never stops the others, the logo or the window
         if C.PROF then C.PROF_N = (C.PROF_N or 0) + 1; end           -- (/yui prof: frames counted)
@@ -25124,6 +25193,7 @@ ashita.events.register('command', 'yui_command', function(e)
         end
     elseif sub == 'fishdebug' then                                  -- [FISH] (/yui fishdebug: status and party_list hide, for the fishing gauge)
         pcall(C.fish_debug);
+    elseif sub == 'thanks' then C.TY.force, C.TY.t0 = true, nil;                    -- (/yui thanks: the thank-you card again)
     elseif sub == 'afk' then pcall(C.afk_toggle);                                         -- (/yui afk: the AFK screen on or off)
     elseif sub == 'screen' then                                      -- (every screen size YunaUI is told, and the macro bar's place and size: for a player's
         local out_, msg0_ = {}, msg;                                 -- (said in the chat, and copied: the chat may be the thing that's off the screen)
