@@ -43,6 +43,21 @@ jobs:
           sed -i "s/^addon.version *= *'[^']*';/addon.version = '${{ steps.version.outputs.version }}';/" dist/yunaui/yunaui.lua
           (cd dist && zip -qr "yunaui-${{ steps.version.outputs.version }}.zip" yunaui)
 
+      - name: Package .vcaddon (VanaCore launcher / ffxiprivateservers.com)
+        run: |
+          python3 - "${{ steps.version.outputs.version }}" <<'PY'
+          import json, re, sys
+          v = sys.argv[1]
+          src = open('dist/yunaui/yunaui.lua', encoding='utf-8').read()
+          m = re.search(r"^addon\.desc\s*=\s*'((?:[^'\\]|\\.)*)'", src, re.M)
+          desc = m.group(1).replace("\\'", "'") if m else ''
+          info = {"format": 1, "name": "yunaui", "version": v, "title": "YunaUI", "author": "Yunas",
+                  "description": desc, "homepage": "https://github.com/YunasXI/yunaui"}
+          open('dist/addon.json', 'w', encoding='utf-8').write(json.dumps(info, ensure_ascii=False, indent=2) + '\n')
+          PY
+          cat dist/addon.json
+          (cd dist && zip -qr "yunaui-${{ steps.version.outputs.version }}.vcaddon" addon.json yunaui)
+
       - name: Create release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -51,4 +66,4 @@ jobs:
           prev="${{ steps.version.outputs.previous }}"
           if [ "$prev" != "0.0.0" ]; then notes=$(git log --no-merges --format='- %s' "$prev"..HEAD); fi
           notes=${notes:-"- First official release"}
-          gh release create "$v" "dist/yunaui-$v.zip" --title "v$v" --target "$GITHUB_SHA" --notes "$notes"
+          gh release create "$v" "dist/yunaui-$v.zip" "dist/yunaui-$v.vcaddon" --title "v$v" --target "$GITHUB_SHA" --notes "$notes"
