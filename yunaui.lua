@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.69';
+addon.version = '1.1.70';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -19865,6 +19865,23 @@ local function draw_window()
                 row_switch('##yui_mbboth', 'Both rows', 'mb_both', 'On: Ctrl and Alt rows one over the other, the row you hold bright. Off: only the row you hold.');
                 if wv_ then row_slider('##yui_mbtx', 'Text size', 'mb_text', 0.6, 2.5, 0.05, '%.2fx'); end
                 row_pick('##yui_mbbt', 'Macro buttons (controller)', 'mb_btn', { { 'l2', 'L2 / R2' }, { 'l1', 'L1 / R1' } });   -- (as the player set the game's pad)
+                do                                                   -- (Set my buttons: for a pad that numbers its shoulders its own way - the two pressed next)
+                    local L_ = C.MBL;
+                    if L_ and os.clock() - L_.at > 20 then C.MBL, L_ = nil, nil; end
+                    local own_ = tonumber(cfg.mb_dl) and tonumber(cfg.mb_dr);
+                    local bw_ = own_ and (ROW_W - 8) / 2 or ROW_W;
+                    if accent_button((L_ and 'WAITING - CLICK TO STOP' or 'SET MY BUTTONS') .. '##yui_mblearn', { bw_, 0 }, true) then
+                        if L_ then C.MBL = nil; else C.MBL = { step = 1, at = os.clock() }; end
+                    end
+                    if imgui.IsItemHovered() then YUI_TIP('For a controller where the bar opens with the wrong buttons, or not at all:\npress the button for the Ctrl row, then the one for the Alt row.'); end
+                    if own_ then
+                        imgui.SameLine(0, 8);
+                        if accent_button('FORGET THEM##yui_mbforget', { bw_, 0 }, true) then cfg.mb_dl, cfg.mb_dr, C.MBL = nil, nil, nil; pcall(save); end
+                    end
+                    if L_ then hint((L_.step == 1) and 'Now press the controller button that should open the Ctrl row (the left one).' or 'Now press the button for the Alt row (the right one).');
+                    elseif own_ then hint(string.format('Your own buttons are in use (%d and %d) - the choice above is not used for this controller.', tonumber(cfg.mb_dl) - 47, tonumber(cfg.mb_dr) - 47));
+                    else hint('Bar opens with the wrong buttons, or not at all? SET MY BUTTONS and press yours. (Xbox controllers do not need this.)'); end
+                end
                 row_switch('##yui_mbsw', 'Swap Ctrl / Alt (controller)', 'mb_padswap', 'On: the right button opens the Ctrl row and the left one the Alt row.');
                 row_switch('##yui_mbnum', 'Show numbers', 'mb_nums', 'Off: only the macro names on the bar, no 1 - 0 over them.');
                 row_pick('##yui_mbpd', C.mb_bn() .. ' (controller)', 'mb_pad', { { 'hold', 'Hold to show' }, { 'toggle', 'Press to show, press again to hide' } });   -- (Ctrl / Alt: always held, as the game)
@@ -24729,9 +24746,17 @@ end);
 ashita.events.register('dinput_button', 'yui_pad_d', function(e)    -- PlayStation and other DirectInput pads
     pcall(C.afk_input, "d", e);                                           -- (the AFK screen: you're back)
     local b, st = e.button, e.state or 0;
+    local L_ = C.MBL;                                                -- (ACTION BARS > Set my buttons: the next two buttons pressed are the pad's macro buttons -
+    if L_ and os.clock() - L_.at > 20 then C.MBL, L_ = nil, nil; end   --  every pad numbers its shoulders its own way: teknetic's opened the bar with L1 / R1)
+    if L_ and type(b) == 'number' and b >= 48 and st >= 128 then
+        if L_.step == 1 then cfg.mb_dl, L_.step, L_.at = b, 2, os.clock();
+        elseif b ~= cfg.mb_dl then cfg.mb_dr, C.MBL = b, nil; pcall(save); msg('Action bars: your controller buttons are set.'); end
+        e.blocked = true; return;
+    end
     do local okp_, blk_ = pcall(C.pad_event, 'd', b, st); if okp_ and blk_ then e.blocked = true; return; end end   -- (CONTROLS: the panel's)
     local bl_, br_ = 54, 55;                                         -- (MACRO BAR: L2 / R2 held - or L1 / R1, as the player picked)
     if C.mb_l1() then bl_, br_ = 52, 53; end
+    if tonumber(cfg.mb_dl) and tonumber(cfg.mb_dr) then bl_, br_ = tonumber(cfg.mb_dl), tonumber(cfg.mb_dr); end   -- (the player's own, learned: they win)
     if b == bl_ then C.MB.dl2 = st >= 128; elseif b == br_ then C.MB.dr2 = st >= 128; end
     if (b == bl_ or b == br_) and st >= 128 and C.mb_mine() and not (C.MB.dl2 and C.MB.dr2) then   -- (the game never sees one trigger go down: its hidden palette stays shut - a release always reaches it, or it could think one still held)
         e.blocked = true; return;
