@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.70';
+addon.version = '1.1.71';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -2754,6 +2754,11 @@ function FIGHT.mine()
     pcall(function()
         local pl = AshitaCore:GetMemoryManager():GetPlayer();
         for k, v in pairs(FIGHT.SKILLS[3] or {}) do if v and pl:HasWeaponSkill(k) then out[#out + 1] = v; end end
+    end);
+    pcall(function()                                                 -- (and your pet's: the blood pacts of the avatar out now, a jug pet's Ready moves -
+        local pl = AshitaCore:GetMemoryManager():GetPlayer();         --  the server lists only those, by the pet skill's id + 0x200)
+        if pl.HasPetCommand == nil then return; end
+        for k, v in pairs(FIGHT.SKILLS[13] or {}) do if v and pl:HasPetCommand(k + 0x200) then out[#out + 1] = v; end end
     end);
     FIGHT.mine_list = out;
     return out;
@@ -14542,10 +14547,16 @@ end
 -- your jobs and experience (or limit points), for the map hub: nil when there's no character
 -- EXP / merits: the job at 75 or more - its real level, not the synced one (a level sync party lowers GetMainJobLevel;
 -- the game's own per-job level keeps the real one)
-function C.lv75(pl, lvl)
-    if (tonumber(lvl) or 0) >= 75 then return true; end
-    local ok, real = pcall(function() return pl:GetJobLevel(pl:GetMainJob() or 0); end);
-    return ok and (tonumber(real) or 0) >= 75 or false;
+function C.lv75(pl, lvl)                                             -- (capped: 75, AND its EXP full - EXP lost at 75 (a death) is earned back as EXP
+    local at75 = (tonumber(lvl) or 0) >= 75;                         --  first, the game's bar shows EXP again: merits only once it's full - Mythicangel)
+    if not at75 then
+        local ok, real = pcall(function() return pl:GetJobLevel(pl:GetMainJob() or 0); end);
+        at75 = ok and (tonumber(real) or 0) >= 75 or false;
+    end
+    if not at75 then return false; end
+    local okx, cur, need = pcall(function() return tonumber(pl:GetExpCurrent()) or 0, tonumber(pl:GetExpNeeded()) or 0; end);
+    if not okx or need <= 0 then return true; end
+    return cur >= need - 1;
 end
 function C.expinfo()
     local pl = AshitaCore:GetMemoryManager():GetPlayer();
