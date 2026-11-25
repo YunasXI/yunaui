@@ -1030,6 +1030,13 @@ function JP.load_chat_fonts(fonts)
     local ja = picked_path() or first_font({ dir .. 'meiryob.ttc', dir .. 'meiryo.ttc', dir .. 'YuGothM.ttc', dir .. 'msgothic.ttc' });   -- (デフォルト: 今まで通りメイリオ太字)
     if not ja then return; end
     CHAT.uniform = true;
+    -- CHAT > 日本語の文字サイズ (cfg.chat_jp_scale, YUI_CHAT_JPK): 英字フォントなら合成する日本語をその大きさで、
+    -- 日本語のあるフォントなら日本語の部分だけをその倍率で描く（1.1.66 で効かなくなっていた）
+    local jk = tonumber(YUI_CHAT_JPK) or 1;
+    local own_jp = has_japanese(ja);
+    if own_jp and math.abs(jk - 1) > 0.001 then CHAT.uniform, CHAT.ja_k = false, jk; end
+    local prev = YUI_JPK;
+    YUI_JPK = (not own_jp and math.abs(jk - 1) > 0.001) and jk or nil;
     for _, px in ipairs({ 13, 16, 20, 26, 34 }) do
         local ok, jf = pcall(JP.raw_add_font, ja, px);
         if ok and jf then
@@ -1037,6 +1044,7 @@ function JP.load_chat_fonts(fonts)
             CHAT.fonts[tostring(jf)] = true;
         end
     end
+    YUI_JPK = prev;
     if #CHAT.ja == 0 then return; end
     fonts.sized.jpchat = CHAT.ja;
     CHAT.ready = true;

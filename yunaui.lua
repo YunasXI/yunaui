@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.71';
+addon.version = '1.1.72';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -566,6 +566,7 @@ local function load_fonts()
     local jk = math.max(0.7, math.min(1.8, tonumber(cfg.chat_jp_scale) or 1));   -- (CHAT > Japanese text size: the Japanese characters alone bigger or smaller
     C.JPK = jk;                                                      --  than the chat font's letters - made at that size here, so a reload applies it)
     YUI_JPK = (jk ~= 1) and jk or nil;                               -- ([JP] its own merge, right after each font, reads this)
+    YUI_CHAT_JPK = jk;                                               -- ([JP] and the chat's own font, made later: JP.load_chat_fonts)
     for _, px in ipairs({ 13, 16, 20, 26, 34 }) do
         local font = nil;
         if file then
