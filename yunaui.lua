@@ -3,7 +3,7 @@
 -- Japanese localization: Tsukasa (yunaui_jp.lua, yunaui_lang.lua; the [JP] lines) - https://github.com/Tsukasa-17/yunaui-jp
 addon.name    = 'yunaui';
 addon.author  = 'Yunas';
-addon.version = '1.1.72';
+addon.version = '1.1.73';
 addon.desc    = 'YunaUI: target bar, party and alliance lists, chat, your bars, gear strip, pet bar, cooldowns and a damage meter, in one style.';
 addon.link    = '';
 
@@ -15872,29 +15872,35 @@ function TIMERS.scan()
     local job = pl:GetMainJob() or 0;
     local abils, spells = {}, {};
     if cfg.timers_abils ~= false then
-        for i = 0, 31 do
+        for i = 0, 31 do pcall(function()                           -- (each on its own: one bad read no longer empties the whole list)
             local id, t = rc:GetAbilityTimerId(i), rc:GetAbilityTimer(i);
             if (id ~= 0 or i == 0) and (t or 0) > 0 and not TIMERS.SKIP[id] then
                 local name, left, full;
                 if id == 0xC3 then name, left, full = TIMERS.charges('Quick Draw', t, 0xC3, 120, 2);
                 elseif id == 0x66 then name, left, full = TIMERS.charges('Ready', t, 0x66, 90, 3);
                 elseif id == 0xE7 then name, left, full = TIMERS.strats(t, pl);
-                else name, left = TIMERS.abil_name(id, job), t; end
+                else
+                    local ok_, n_ = pcall(TIMERS.abil_name, id, job);
+                    name, left = (ok_ and n_) or '(Ability)', t;
+                end
                 local old = TIMERS.abils[id];
                 full = full or ((old and old.full >= left) and old.full or left);
                 abils[id] = { name = name, left = left, full = full, kind = (id == 0 or id == 254) and 'sp' or 'ja' };
             end
-        end
+        end); end
     end
     if cfg.timers_spells ~= false then
-        for i = 0, 1024 do
-            local t = rc:GetSpellTimer(i);
-            if (t or 0) > 0 then
+        for i = 0, 1023 do                                           -- (the game's 1024 spell recasts: 0-1023)
+            local ok_, t = pcall(rc.GetSpellTimer, rc, i);
+            if ok_ and (tonumber(t) or 0) > 0 then
                 local old = TIMERS.spells[i];
                 local name = old and old.name;
                 if name == nil then
-                    local r = AshitaCore:GetResourceManager():GetSpellById(i);
-                    name = (r and r.Name and r.Name[1]) or '(Spell)';
+                    pcall(function()
+                        local r = AshitaCore:GetResourceManager():GetSpellById(i);
+                        name = r and r.Name and r.Name[1];
+                    end);
+                    name = name or '(Spell)';
                 end
                 spells[i] = { name = name, left = t, full = (old and old.full >= t) and old.full or t, kind = 'ma' };
             end
@@ -16651,7 +16657,8 @@ function C.loot_packet(e)
         pcall(function()                                             -- (to you: TREASURE POOL > Item popup)
             local me = AshitaCore:GetMemoryManager():GetParty():GetMemberName(0) or '';
             local p = L.pool[slot];
-            if (wid or 0) > 0 and me ~= '' and wname == me and p then C.got_add(p.id); end
+            local gid = (p and p.id) or (L.dropid and L.dropid[slot]);   -- (not read yet: the item the drop said)
+            if (wid or 0) > 0 and me ~= '' and wname == me and gid then C.got_add(gid); end
         end);
         if (wid or 0) > 0 and cfg.loot_voice ~= false then           -- (to you: the item sound - once for a burst of items)
             local me = '';
@@ -16789,6 +16796,10 @@ function C.loot_drop(e)
     local idx = struct.unpack('H', d, 0x12 + 1) or 0;
     local slot = struct.unpack('B', d, 0x14 + 1);
     local old = struct.unpack('B', d, 0x15 + 1) or 0;                -- (already there when you came in: no flight)
+    if slot ~= nil and slot <= 9 and id > 0 and id ~= 65535 then     -- (kept: the item in that slot, for WON when it goes to you before the pool is read -
+        C.LOOT.dropid = C.LOOT.dropid or {};                         --  a solo drop: "it fell" and "it's yours" come together. The chat's line was the
+        C.LOOT.dropid[slot] = id;                                    --  only other sign, and it is English only - Shomachan's Japanese game never had WON)
+    end
     if slot == nil or slot > 9 or id == 0 or old ~= 0 then return; end
     if idx == 0 and sid > 0 then idx = bit.band(sid, 0xFFF); end
     do return; end                                                   -- (the coin flying from the monster into the pool: removed - the item just slides into the pool)
